@@ -6,12 +6,15 @@ import { ElementComment } from "@/interfaces/elementcomment.interface";
 
 interface ElementCommentStore {
   isCommentsVisible: boolean;
+  showCommentButtons: boolean;
   activeCommentElementId: string | undefined;
   viewMode: "all" | "unresolved" | "resolved";
   sortOrder: "newest" | "oldest";
 
   toggleCommentsVisibility: () => void;
   setCommentsVisible: (visible: boolean) => void;
+  toggleCommentButtons: () => void;
+  setCommentButtonsVisible: (visible: boolean) => void;
   setActiveCommentElement: (elementId: string | undefined) => void;
   setViewMode: (mode: "all" | "unresolved" | "resolved") => void;
   setSortOrder: (order: "newest" | "oldest") => void;
@@ -22,6 +25,7 @@ export const useElementCommentStore = create<ElementCommentStore>()(
   persist(
     (set) => ({
       isCommentsVisible: true,
+      showCommentButtons: true,
       activeCommentElementId: undefined,
       viewMode: "all",
       sortOrder: "newest",
@@ -32,6 +36,14 @@ export const useElementCommentStore = create<ElementCommentStore>()(
 
       setCommentsVisible: (visible: boolean) => {
         set({ isCommentsVisible: visible });
+      },
+
+      toggleCommentButtons: () => {
+        set((state) => ({ showCommentButtons: !state.showCommentButtons }));
+      },
+
+      setCommentButtonsVisible: (visible: boolean) => {
+        set({ showCommentButtons: visible });
       },
 
       setActiveCommentElement: (elementId: string | undefined) => {
@@ -55,6 +67,7 @@ export const useElementCommentStore = create<ElementCommentStore>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         isCommentsVisible: state.isCommentsVisible,
+        showCommentButtons: state.showCommentButtons,
         viewMode: state.viewMode,
         sortOrder: state.sortOrder,
       }),

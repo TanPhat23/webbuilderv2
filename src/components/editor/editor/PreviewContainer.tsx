@@ -16,7 +16,7 @@ import ElementLoading from "@/components/editor/skeleton/ElementLoading";
 
 type PreviewContainerProps = {
   currentView: Viewport;
-  children: React.ReactNode;
+  children: React.ReactElement;
   isLoading?: boolean;
 };
 
@@ -277,7 +277,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   const content = isLoading ? (
     <ElementLoading count={6} variant="mixed" />
   ) : (
-    children
+    React.cloneElement(children, { iframeRef } as any)
   );
   const iframePortal = mountNode ? createPortal(content, mountNode) : null;
 

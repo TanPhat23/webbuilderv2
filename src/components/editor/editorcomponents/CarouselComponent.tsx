@@ -50,6 +50,8 @@ const CarouselComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <Carousel
       ref={elementRef as any}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(element)}
       {...eventHandlers}
       opts={carouselSettings}

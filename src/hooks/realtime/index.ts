@@ -1,7 +1,7 @@
 "use client";
 
 export { useWebSocket } from "./use-websocket";
-export { useCollab } from "./use-collab";
+
 export { useMouseTracking } from "./use-mouse-tracking";
 
 export type {
@@ -26,8 +26,6 @@ export {
   isMouseMoveMessage,
   isUserDisconnectMessage,
 } from "@/interfaces/realtime.interface";
-
-export type { UseCollabOptions, UseCollabReturn } from "./use-collab";
 
 // Re-export MouseMoveMessage type
 export type { MouseMoveMessage } from "@/interfaces/realtime.interface";

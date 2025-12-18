@@ -58,6 +58,8 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(sectionElement)}
       {...eventHandlers}
       style={{

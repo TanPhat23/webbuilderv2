@@ -44,6 +44,8 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
     return (
       <div
         ref={elementRef as React.RefObject<HTMLDivElement>}
+        data-element-id={element.id}
+        data-element-type={element.type}
         {...getCommonProps(cmsElement)}
         {...eventHandlers}
         style={{
@@ -67,6 +69,8 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(cmsElement)}
       {...eventHandlers}
       style={{

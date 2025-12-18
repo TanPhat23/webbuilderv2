@@ -54,13 +54,17 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
     : contentItems && contentItems.length > 0
       ? contentItems
       : [];
-
+  useEffect(()=>{
+    console.log("Content Items", contentItems)
+  },[])
   const limitedItems = itemsToRender.slice(0, limit);
 
   if (!contentTypeId) {
     return (
       <div
         ref={elementRef as React.RefObject<HTMLDivElement>}
+        data-element-id={element.id}
+        data-element-type={element.type}
         {...getCommonProps(cmsElement)}
         {...eventHandlers}
         style={{
@@ -84,6 +88,8 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(cmsElement)}
       {...eventHandlers}
       style={{

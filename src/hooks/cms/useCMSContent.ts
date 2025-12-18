@@ -24,7 +24,7 @@ export const useCMSContent = (
   const { contentTypeId, limit, sortBy, sortOrder, enabled = true } = options;
 
   const {
-    data: contentItems = [],
+    data: contentItemsData,
     isLoading,
     error,
     refetch,
@@ -41,6 +41,7 @@ export const useCMSContent = (
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
   });
+  const contentItems = contentItemsData ?? [];
 
   return {
     contentItems,

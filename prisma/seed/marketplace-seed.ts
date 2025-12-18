@@ -1,6 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import "dotenv/config";
+import { PrismaClient } from "../../src/generated/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 // Seed data
 const categories = [
@@ -256,8 +259,8 @@ async function main() {
           Id: category.id,
           Name: category.name,
         },
-      })
-    )
+      }),
+    ),
   );
   console.log(`✅ Created ${createdCategories.length} categories`);
 
@@ -269,8 +272,8 @@ async function main() {
         data: {
           Name: tag,
         },
-      })
-    )
+      }),
+    ),
   );
   console.log(`✅ Created ${createdTags.length} tags`);
 

@@ -24,6 +24,8 @@ export const API_ENDPOINTS = {
   },
   AI: {
     GENERATE_CONTENT: "/api/v1/ai/generate-content",
+    GENERATE_CONTENT_STREAM: "/api/v1/ai/generate-content-stream",
+    GENERATE: "/api/1.0.0/ai/generate",
   },
   CMS: {
     CONTENT_TYPES: {
@@ -196,6 +198,16 @@ export const API_ENDPOINTS = {
       `/api/v1/element-event-workflows?workflowId=${workflowId}`,
   },
 };
+
+export const AI_ENDPOINTS = {
+  GENERATE_CONTENT: "/api/v1/ai/generate-content",
+};
+
+export const AI_EXPORT_ENDPOINTS = {
+  RECONSTRUCT: "/reconstruct",
+  HEALTH: "/health",
+};
+
 export const NEXT_API_ENDPOINTS = {
   ELEMENTS: {
     UPDATE: (id: string) => `/api/elements/${id}`,

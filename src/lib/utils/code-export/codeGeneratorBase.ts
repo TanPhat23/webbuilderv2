@@ -8,7 +8,7 @@ export interface CodeGenerationOptions {
   includeTailwind?: boolean;
   responsiveBreakpoints?: boolean;
   minify?: boolean;
-  exportFormat?: "html" | "react";
+  exportFormat?: "html" | "react" | "vue" | "angular";
   page?: Page;
 }
 
@@ -212,25 +212,25 @@ document.querySelectorAll('form').forEach(form => {
     // Indent CSS rules
     const indentedCss = css
       ? css
-          .split("\n")
-          .map((line) => (line ? `    ${line}` : line))
-          .join("\n")
+        .split("\n")
+        .map((line) => (line ? `    ${line}` : line))
+        .join("\n")
       : "    /* No styles generated */";
 
     // Indent HTML content
     const indentedHtml = html
       ? html
-          .split("\n")
-          .map((line) => (line ? `  ${line}` : line))
-          .join("\n")
+        .split("\n")
+        .map((line) => (line ? `  ${line}` : line))
+        .join("\n")
       : "  <!-- No content generated -->";
 
     // Indent JS code
     const indentedJs = js
       ? js
-          .split("\n")
-          .map((line) => (line ? `    ${line}` : line))
-          .join("\n")
+        .split("\n")
+        .map((line) => (line ? `    ${line}` : line))
+        .join("\n")
       : "    // No JavaScript generated";
 
     // Get page metadata

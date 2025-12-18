@@ -28,8 +28,11 @@ import {
   copyToClipboard,
   downloadFile,
   downloadZip,
+  createZipFromFiles,
 } from "./codeexport/fileUtils";
-import { ExportOptions } from "./codeexport/types";
+import { ExportOptions, FileNode } from "./codeexport/types";
+import { aiExportService } from "@/services/aiexportcode";
+import { convertCodeToFileTree } from "@/lib/utils/code-export/elementToFileTree";
 
 interface ExportDialogProps {
   children?: React.ReactNode;
@@ -58,37 +61,67 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
   });
   const [selectedFile, setSelectedFile] = useState("");
   const [selectedContent, setSelectedContent] = useState("");
+  const [fileStructure, setFileStructure] = useState<FileNode[]>([]);
+  const [zipBlob, setZipBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
     if (isOpen && elements.length > 0) {
       console.log("Generating code for", elements.length, "elements");
       console.log("Export options:", options);
-      console.log("Current page:", currentPage);
       setIsGenerating(true);
+
       generateCodeFromElements(elements as EditorElement[], {
         ...options,
         page: currentPage || undefined,
       })
-        .then((code) => {
-          console.log("Generated code:", {
-            htmlLength: code.html.length,
-            cssLength: code.css.length,
-            jsLength: code.js.length,
-            fullPageLength: code.fullPage.length,
-          });
+        .then(async (code) => {
           setGeneratedCode(code);
-          const structure = buildFileStructure(code, options);
-          console.log("Built file structure:", structure);
-          if (structure.length > 0) {
-            setSelectedFile(structure[0].path);
-            setSelectedContent(structure[0].content || "");
-            console.log(
-              "Selected file:",
-              structure[0].path,
-              "with content length:",
-              structure[0].content?.length || 0,
-            );
+
+          // Convert code to file tree format
+          const fileTree = convertCodeToFileTree(code, options.exportFormat);
+          try {
+            // Send to AI server for reconstruction
+            const reconstructed = await aiExportService.reconstructProject(fileTree);
+
+            // Convert reconstructed data to FileNode structure for display
+            const structure = convertToFileNodes(reconstructed);
+            setFileStructure(structure);
+
+            // Create ZIP from reconstructed files
+            const zip = await createZipFromFiles(reconstructed);
+            setZipBlob(zip);
+
+            // Select first file
+            if (structure.length > 0) {
+              const firstFile = findFirstFile(structure);
+              if (firstFile) {
+                setSelectedFile(firstFile.path);
+                setSelectedContent(firstFile.content || "");
+              }
+            }
+          } catch (error) {
+            console.error("AI reconstruction failed:", error);
+            // Fallback to local generation
+            console.log("Using local generation as fallback");
+            const structure = buildFileStructure(code, options);
+            setFileStructure(structure);
+
+            if (structure.length > 0) {
+              setSelectedFile(structure[0].path);
+              setSelectedContent(structure[0].content || "");
+            }
+
+            // Create ZIP for local
+            const localFiles = structure.map(node => ({
+              type: node.type,
+              parentPath: node.path.includes('/') ? node.path.substring(0, node.path.lastIndexOf('/')) : '',
+              name: node.name,
+              content: node.content
+            }));
+            const zip = await createZipFromFiles(localFiles);
+            setZipBlob(zip);
           }
+
           setIsGenerating(false);
         })
         .catch((err) => {
@@ -110,15 +143,14 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
   const handleCopy = async (text: string) => {
     try {
       await copyToClipboard(text);
-      // You could add a toast notification here
     } catch (err) {
       console.error("Copy failed:", err);
     }
   };
 
   const handleDownloadAll = () => {
-    if (generatedCode.zipBlob && !isGenerating) {
-      downloadZip(generatedCode.zipBlob, options.exportFormat);
+    if (zipBlob && !isGenerating) {
+      downloadZip(zipBlob, options.exportFormat);
     }
   };
 
@@ -141,7 +173,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
         <DialogHeader>
           <DialogTitle>Export Editor Components as Code</DialogTitle>
           <DialogDescription>
-            Generate HTML, CSS, and JavaScript code from your editor components.
+            Generate HTML, React, Vue, or Angular code from your editor components.
           </DialogDescription>
         </DialogHeader>
 
@@ -149,12 +181,12 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
           {isGenerating ? (
             <div className="flex items-center justify-center w-full">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              <span className="ml-2">Generating code...</span>
+              <span className="ml-2">Processing with AI...</span>
             </div>
           ) : (
             <>
               <FileTree
-                files={buildFileStructure(generatedCode, options)}
+                files={fileStructure}
                 selectedFile={selectedFile}
                 onFileSelect={handleFileSelect}
               />
@@ -188,7 +220,7 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
           <Button
             variant="outline"
             onClick={handleDownloadAll}
-            disabled={isGenerating || !generatedCode.zipBlob}
+            disabled={isGenerating || !zipBlob}
           >
             <Download className="w-4 h-4 mr-2" />
             Download All Files
@@ -198,5 +230,56 @@ const ExportDialog: React.FC<ExportDialogProps> = ({ children }) => {
     </Dialog>
   );
 };
+
+// Helper functions
+function convertToFileNodes(reconstructed: any[]): FileNode[] {
+  const nodes: FileNode[] = [];
+  const nodeMap = new Map<string, FileNode>();
+
+  // Create all nodes
+  for (const item of reconstructed) {
+    const fullPath = item.parentPath ? `${item.parentPath}/${item.name}` : item.name;
+    const node: FileNode = {
+      name: item.name,
+      type: item.type,
+      path: fullPath,
+      content: item.content,
+      children: item.type === "folder" ? [] : undefined,
+    };
+    nodeMap.set(fullPath, node);
+  }
+
+  // Build tree structure
+  for (const item of reconstructed) {
+    const fullPath = item.parentPath ? `${item.parentPath}/${item.name}` : item.name;
+    const node = nodeMap.get(fullPath);
+
+    if (node) {
+      if (item.parentPath) {
+        const parent = nodeMap.get(item.parentPath);
+        if (parent && parent.children) {
+          parent.children.push(node);
+        }
+      } else {
+        nodes.push(node);
+      }
+    }
+  }
+
+  return nodes;
+}
+
+function findFirstFile(nodes: FileNode[]): FileNode | null {
+  for (const node of nodes) {
+    if (node.type === "file") {
+      return node;
+    }
+    if (node.children) {
+      const found = findFirstFile(node.children);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 export default ExportDialog;

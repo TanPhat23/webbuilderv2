@@ -13,18 +13,7 @@ import {
 } from "../ui/card";
 import { Button } from "../ui/button";
 import { UpdateMetadataDialog } from "./UpdateMetadataDialog";
-
-interface UserProfile {
-  email: string;
-  address: string;
-  joinDate: string;
-  username: string;
-  bio: string;
-}
-
-interface PersonalInfoCardProps {
-  profile: UserProfile;
-}
+import { PersonalInfoCardProps } from "@/interfaces/profile.interface";
 
 export default function PersonalInfoCard({ profile }: PersonalInfoCardProps) {
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false);

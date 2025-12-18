@@ -12,6 +12,8 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
+import { useUserProjects } from "@/hooks/features/useProjects";
+import { useMarketplaceItems } from "@/hooks/features/useMarketplace";
 import ProfileHero from "./ProfileHero";
 import PersonalInfoCard from "./PersonalInfoCard";
 import RecentActivitiesCard from "./RecentActivitiesCard";
@@ -22,6 +24,14 @@ import { SubscriptionCard } from "./SubscriptionCard";
 export function ProfileContent() {
   const { user, isLoaded } = useUser();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  const { data: projects = [], isLoading: projectsLoading } = useUserProjects();
+  
+  const { data: allMarketplaceItems = [], isLoading: templatesLoading } = useMarketplaceItems();
+  const userTemplates = useMemo(() => {
+    if (!user?.id) return [];
+    return allMarketplaceItems.filter(item => item.authorId === user.id);
+  }, [allMarketplaceItems, user?.id]);
 
   const profile = useMemo(() => {
     if (!user) return null;
@@ -59,21 +69,21 @@ export function ProfileContent() {
     () => [
       {
         label: "Projects",
-        value: "0",
+        value: projectsLoading ? "..." : projects.length.toString(),
         icon: FileText,
         color: "text-blue-500",
         bgColor: "bg-blue-500/10",
       },
       {
         label: "Templates",
-        value: "0",
+        value: templatesLoading ? "..." : userTemplates.length.toString(),
         icon: Heart,
         color: "text-pink-500",
         bgColor: "bg-pink-500/10",
       },
       {
         label: "Shared",
-        value: "0",
+        value: templatesLoading ? "..." : userTemplates.filter(t => t.featured).length.toString(),
         icon: Star,
         color: "text-yellow-500",
         bgColor: "bg-yellow-500/10",
@@ -86,7 +96,7 @@ export function ProfileContent() {
         bgColor: "bg-green-500/10",
       },
     ],
-    []
+    [projects.length, projectsLoading, userTemplates, templatesLoading]
   );
 
   const handleDownload = () => {
@@ -186,7 +196,7 @@ export function ProfileContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <PersonalInfoCard profile={profile} />
           <SubscriptionCard />
-          <RecentActivitiesCard />
+          <RecentActivitiesCard projects={projects} templates={userTemplates} />
         </div>
 
         <div className="flex justify-end pt-4">

@@ -101,6 +101,8 @@ const ImageComponent: React.FC<Props> = ({ element, data }) => {
   return element.src ? (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       className={cn(
         "relative w-full h-full",
         isDragOver && "ring-2 ring-primary ring-offset-2",
@@ -135,6 +137,8 @@ const ImageComponent: React.FC<Props> = ({ element, data }) => {
   ) : (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       className={cn(
         "w-full h-full",
         isDragOver && "ring-2 ring-primary ring-offset-2",

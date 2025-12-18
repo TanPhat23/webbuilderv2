@@ -15,8 +15,6 @@ class ApiClient {
   async get<T>(url: string, options: RequestInit = {}): Promise<T> {
     const token = await getToken();
 
-    console.debug("[API] GET request:", { url, hasToken: !!token });
-
     const response = await fetch(url, {
       ...options,
       headers: {
@@ -37,7 +35,6 @@ class ApiClient {
     }
 
     const data = await response.json();
-    console.debug("[API] GET success:", { url, dataType: typeof data });
     return data;
   }
 

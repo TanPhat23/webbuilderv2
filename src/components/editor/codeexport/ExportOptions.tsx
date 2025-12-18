@@ -27,6 +27,8 @@ export function ExportOptions({
         >
           <option value="html">HTML Export</option>
           <option value="react">React Export</option>
+          <option value="vue">Vue Export</option>
+          <option value="angular">Angular Export</option>
         </select>
       </div>
       {options.exportFormat === "html" && (

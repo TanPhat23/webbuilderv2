@@ -58,16 +58,16 @@ export function ElementCommentButton({ element }: ElementCommentButtonProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute top-0 right-0 z-30"
+            className="absolute -right-3 -top-3 z-30 pointer-events-none"
             style={{
-              transform: "translateY(-42px)",
+              transform: "translate(50%, -50%)",
             }}
           >
             <Button
               size="sm"
               variant={isActive ? "default" : "outline"}
               className={cn(
-                "h-8 px-2.5 gap-1.5 shadow-lg border-border transition-all duration-200",
+                "h-8 px-2.5 gap-1.5 shadow-lg border-border transition-all duration-200 pointer-events-auto",
                 "hover:scale-105 hover:shadow-xl active:scale-95",
                 isActive
                   ? "bg-primary hover:bg-primary border-primary text-primary-foreground"

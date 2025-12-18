@@ -13,6 +13,7 @@ import DataLoaderConfiguration from "./DataLoaderConfiguration";
 import { BreakpointSelector } from "./BreakpointSelector";
 import CMSConfiguration from "./CMSConfiguration";
 import { ImageConfiguration } from "./ImageConfiguration";
+import { SelectConfigurationAccordion } from "./SelectConfiguration";
 
 export default function Configurations() {
   const { selectedElement } = useSelectionStore();
@@ -34,6 +35,8 @@ export default function Configurations() {
         return <FormConfigurationAccordion />;
       case "Input":
         return <InputConfiguration />;
+      case "Select":
+        return <SelectConfigurationAccordion />;
       case "Image":
         return <ImageConfiguration />;
       case "Carousel":
@@ -41,11 +44,11 @@ export default function Configurations() {
       case "DataLoader":
         return <DataLoaderConfiguration />;
       case "CMSContentList":
+        return selectedElement ? <CMSConfiguration /> : null;
       case "CMSContentItem":
+        return selectedElement ? <CMSConfiguration /> : null;
       case "CMSContentGrid":
-        return selectedElement ? (
-          <CMSConfiguration elementId={selectedElement.id} />
-        ) : null;
+        return selectedElement ? <CMSConfiguration /> : null;
       default:
         return null;
     }

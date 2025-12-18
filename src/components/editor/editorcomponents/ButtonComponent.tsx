@@ -34,6 +34,8 @@ const ButtonComponent = ({ element }: EditorComponentProps) => {
   return (
     <button
       ref={elementRef as React.RefObject<HTMLButtonElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...commonProps}
       {...eventHandlers}
       type="button"

@@ -8,6 +8,14 @@ type ElementStore<TElement extends EditorElement> = {
   elements: TElement[];
   past: TElement[][];
   future: TElement[][];
+  yjsUpdateCallback: ((elements: EditorElement[]) => void) | null;
+  collaborativeCallback:
+    | ((
+        type: "update" | "delete" | "create" | "move",
+        id?: string,
+        data?: any,
+      ) => void)
+    | null;
   loadElements: (
     elements: TElement[],
     skipSave?: boolean,
@@ -27,10 +35,21 @@ type ElementStore<TElement extends EditorElement> = {
   undo: () => ElementStore<TElement>;
   redo: () => ElementStore<TElement>;
   clearHistory: () => ElementStore<TElement>;
+  setYjsUpdateCallback: (
+    callback: ((elements: EditorElement[]) => void) | null,
+  ) => void;
+  setCollaborativeCallback: (
+    callback:
+      | ((
+          type: "update" | "delete" | "create" | "move",
+          id?: string,
+          data?: any,
+        ) => void)
+      | null,
+  ) => void;
 };
 
 const createElementStore = <TElement extends EditorElement>() => {
-
   return create<ElementStore<TElement>>((set, get) => {
     const takeSnapshot = () => {
       const { elements, past } = get();
@@ -40,17 +59,44 @@ const createElementStore = <TElement extends EditorElement>() => {
       });
     };
 
+    const triggerYjsCallback = () => {
+      const { elements, yjsUpdateCallback } = get();
+      if (yjsUpdateCallback && typeof yjsUpdateCallback === "function") {
+        yjsUpdateCallback(elements as EditorElement[]);
+      }
+    };
+
+    const triggerCollaborativeCallback = (
+      type: "update" | "delete" | "create" | "move",
+      id?: string,
+      data?: any,
+    ) => {
+      const { collaborativeCallback } = get();
+      if (
+        collaborativeCallback &&
+        typeof collaborativeCallback === "function"
+      ) {
+        collaborativeCallback(type, id, data);
+      }
+    };
+
     return {
       elements: [],
       past: [],
       future: [],
+      yjsUpdateCallback: null,
+      collaborativeCallback: null,
 
-      loadElements: (elements: TElement[]) => {
+      loadElements: (elements: TElement[], skipSave?: boolean) => {
         set({ elements });
+        if (!skipSave) {
+          triggerYjsCallback();
+        }
         return get();
       },
 
       updateElement: (id: string, updatedElement: Partial<TElement>) => {
+        console.log("Updating element:", id, updatedElement);
         takeSnapshot();
         const { elements } = get();
         const updatedTree = elementHelper.mapUpdateById(
@@ -77,6 +123,8 @@ const createElementStore = <TElement extends EditorElement>() => {
           }
         }
 
+        triggerYjsCallback();
+        triggerCollaborativeCallback("update", id, updatedElement);
         return get();
       },
 
@@ -90,6 +138,8 @@ const createElementStore = <TElement extends EditorElement>() => {
         set({
           elements: updatedTree,
         });
+        triggerYjsCallback();
+        triggerCollaborativeCallback("delete", id);
         return get();
       },
 
@@ -106,6 +156,12 @@ const createElementStore = <TElement extends EditorElement>() => {
         ) as TElement[];
 
         set({ elements: updated });
+        triggerYjsCallback();
+        triggerCollaborativeCallback(
+          "create",
+          elementToBeInserted.id,
+          elementToBeInserted,
+        );
         return get();
       },
 
@@ -153,6 +209,10 @@ const createElementStore = <TElement extends EditorElement>() => {
         set({
           elements: updatedTree,
         });
+        triggerYjsCallback();
+        for (const newEl of newElements) {
+          triggerCollaborativeCallback("create", newEl.id, newEl);
+        }
         return get();
       },
 
@@ -183,6 +243,7 @@ const createElementStore = <TElement extends EditorElement>() => {
           (e: TElement) => recursivelyUpdate(e) as TElement,
         );
         set({ elements: updated });
+        triggerYjsCallback();
         return get();
       },
 
@@ -196,6 +257,7 @@ const createElementStore = <TElement extends EditorElement>() => {
           elements: previous,
           future: [elements, ...future],
         });
+        triggerYjsCallback();
         return get();
       },
 
@@ -209,6 +271,7 @@ const createElementStore = <TElement extends EditorElement>() => {
           elements: next,
           future: newFuture,
         });
+        triggerYjsCallback();
         return get();
       },
 
@@ -253,6 +316,15 @@ const createElementStore = <TElement extends EditorElement>() => {
           ) as TElement[];
 
           set({ elements: updatedTree });
+
+          triggerYjsCallback();
+
+          // Send only the first element's move to avoid conflicts
+          triggerCollaborativeCallback("move", id1, {
+            elementId: id1,
+            newParentId: parentId,
+            newPosition: idx2,
+          });
         } else {
           // Top-level elements
           const idx1 = elements.findIndex((e) => e.id === id1);
@@ -267,6 +339,15 @@ const createElementStore = <TElement extends EditorElement>() => {
           ];
 
           set({ elements: newElements });
+
+          triggerYjsCallback();
+
+          // Send only the first element's move to avoid conflicts
+          triggerCollaborativeCallback("move", id1, {
+            elementId: id1,
+            newParentId: null,
+            newPosition: idx2,
+          });
         }
 
         return get();
@@ -275,6 +356,24 @@ const createElementStore = <TElement extends EditorElement>() => {
       clearHistory: () => {
         set({ past: [], future: [] });
         return get();
+      },
+
+      setYjsUpdateCallback: (
+        callback: ((elements: EditorElement[]) => void) | null,
+      ) => {
+        set({ yjsUpdateCallback: callback });
+      },
+
+      setCollaborativeCallback: (
+        callback:
+          | ((
+              type: "update" | "delete" | "create" | "move",
+              id?: string,
+              data?: any,
+            ) => void)
+          | null,
+      ) => {
+        set({ collaborativeCallback: callback });
       },
     };
   });

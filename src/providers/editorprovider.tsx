@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { EditorSideBar } from "@/components/editor/sidebar/EditorSideBar";
 import LayoutSideBar from "@/components/editor/sidebar/LayoutSideBar";
 import AIChatProvider from "./aiprovider";
@@ -30,20 +30,59 @@ export function useEditorContext() {
   return context;
 }
 
-function EditorLayout({ children }: EditorProviderProps) {
+function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
   const { chatOpen } = useAiChat();
 
   return (
-    <SidebarProvider className="flex h-screen w-screen overflow-hidden">
+    <SidebarProvider
+      defaultOpen={true}
+      className="shrink-0"
+      style={
+        {
+          "--sidebar-width": "16rem",
+          "--sidebar-width-icon": "3rem",
+        } as React.CSSProperties
+      }
+    >
       <EditorSideBar />
       {chatOpen && <AIChatPanel />}
-      <main className="flex-1 relative h-screen overflow-hidden">
-        <SidebarTrigger />
-        {children}
-      </main>
-      <LayoutSideBar />
-      <ElementCommentsPanel />
+      {children}
     </SidebarProvider>
+  );
+}
+
+function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <SidebarProvider
+      defaultOpen={true}
+      className="shrink-0"
+      style={
+        {
+          "--sidebar-width": "16rem",
+          "--sidebar-width-icon": "3rem",
+        } as React.CSSProperties
+      }
+    >
+      {children}
+      <LayoutSideBar />
+    </SidebarProvider>
+  );
+}
+
+function EditorLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex h-screen w-screen overflow-hidden">
+      <LeftSidebarWrapper>
+        <div className="flex flex-1 min-w-0">
+          <RightSidebarWrapper>
+            <main className="flex-1 relative h-screen overflow-hidden min-w-0">
+              {children}
+            </main>
+          </RightSidebarWrapper>
+        </div>
+      </LeftSidebarWrapper>
+      <ElementCommentsPanel />
+    </div>
   );
 }
 

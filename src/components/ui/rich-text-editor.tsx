@@ -14,6 +14,8 @@ export function RichTextEditor({
   placeholder = "Enter some text...",
 }: RichTextEditorProps) {
   const [editorState, setEditorState] = useState<any>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
 
   useEffect(() => {
     // Initialize with empty state if no value
@@ -29,24 +31,49 @@ export function RichTextEditor({
 
   const handleChange = useCallback(
     (newValue: string) => {
-      onChange?.(newValue);
+      // Don't update while streaming
+      if (!isStreaming) {
+        onChange?.(newValue);
+      }
     },
-    [onChange],
+    [onChange, isStreaming],
   );
 
   const handleAIContentGenerated = useCallback(
     (content: string) => {
-      // Append AI generated content to current value
-      const newValue = value ? `${value}\n${content}` : content;
-      onChange?.(newValue);
+      setIsStreaming(true);
+      setStreamingContent("");
+
+      let currentIndex = 0;
+      const streamInterval = setInterval(() => {
+        if (currentIndex < content.length) {
+          const chunk = content.substring(0, currentIndex + 1);
+          setStreamingContent(chunk);
+          currentIndex++;
+        } else {
+          clearInterval(streamInterval);
+          setIsStreaming(false);
+
+          const newValue = value ? `${value}\n${content}` : content;
+          onChange?.(newValue);
+          setStreamingContent("");
+        }
+      }, 20); // Adjust speed here (lower = faster)
+
+      return () => clearInterval(streamInterval);
     },
     [value, onChange],
   );
 
+  // Combine current value with streaming content for display
+  const displayValue = isStreaming
+    ? (value ? `${value}\n${streamingContent}` : streamingContent)
+    : value;
+
   return (
     <div className="h-full w-full relative">
       <Editor
-        initialContent={editorState}
+        initialContent={displayValue || editorState}
         onContentChange={handleChange}
         placeholder={placeholder}
       />

@@ -216,7 +216,7 @@ export default function CssTextareaImporter({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" className="h-6">
+        <Button variant="outline" className="w-full">
           Import CSS
         </Button>
       </DialogTrigger>

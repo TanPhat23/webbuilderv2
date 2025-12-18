@@ -12,6 +12,8 @@ type MouseStore = {
   mousePositions: Record<string, MousePosition>;
   selectedElements: Record<string, string>;
   users: Record<string, Collaborator>;
+  remoteUsers: Record<string, MousePosition>;
+  selectedByUser: Record<string, string>;
   updateMousePosition: (userId: string, position: MousePosition) => void;
   removeMousePosition: (userId: string) => void;
   setSelectedElement: (userId: string, elementId: string) => void;
@@ -19,6 +21,9 @@ type MouseStore = {
   setMousePositions: (positions: Record<string, MousePosition>) => void;
   setSelectedElements: (elements: Record<string, string>) => void;
   setUsers: (users: Record<string, Collaborator>) => void;
+  setRemoteUsers: (remoteUsers: Record<string, MousePosition>) => void;
+  setSelectedByUser: (selectedByUser: Record<string, string>) => void;
+  syncFromAwareness: (awareness: any) => void;
   removeUser: (userId: string) => void;
   clear: () => void;
 };
@@ -27,6 +32,8 @@ export const useMouseStore = create<MouseStore>((set, get) => ({
   mousePositions: {},
   selectedElements: {},
   users: {},
+  remoteUsers: {},
+  selectedByUser: {},
 
   updateMousePosition: (userId: string, position: MousePosition) => {
     set((state) => ({
@@ -85,8 +92,44 @@ export const useMouseStore = create<MouseStore>((set, get) => ({
     });
   },
 
+  setRemoteUsers: (remoteUsers: Record<string, MousePosition>) => {
+    set({ remoteUsers });
+  },
+
+  setSelectedByUser: (selectedByUser: Record<string, string>) => {
+    set({ selectedByUser });
+  },
+
+  syncFromAwareness: (awareness: any) => {
+    if (!awareness || !awareness.getStates) return;
+
+    const allStates = awareness.getStates();
+    const remoteUsers: Record<string, MousePosition> = {};
+    const selectedByUser: Record<string, string> = {};
+
+    allStates.forEach((state: any, clientId: any) => {
+      if (state && state.cursor) {
+        remoteUsers[clientId.toString()] = {
+          x: state.cursor.x || 0,
+          y: state.cursor.y || 0,
+        };
+      }
+      if (state && state.selectedElement) {
+        selectedByUser[clientId.toString()] = state.selectedElement;
+      }
+    });
+
+    set({ remoteUsers, selectedByUser });
+  },
+
   clear: () => {
-    set({ mousePositions: {}, selectedElements: {}, users: {} });
+    set({
+      mousePositions: {},
+      selectedElements: {},
+      users: {},
+      remoteUsers: {},
+      selectedByUser: {},
+    });
   },
 }));
 

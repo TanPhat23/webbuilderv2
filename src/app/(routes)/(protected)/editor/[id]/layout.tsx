@@ -52,7 +52,6 @@ export default async function ProtectedEditorLayout({
       redirect("/dashboard");
     }
 
-    // Log unexpected errors
     console.error("[EditorLayout] Authorization error:", error);
     redirect("/dashboard");
   }

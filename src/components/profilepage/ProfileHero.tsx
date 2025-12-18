@@ -5,24 +5,7 @@ import { Edit2 } from "lucide-react";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-
-interface UserProfile {
-  name: string;
-  bio: string;
-  avatar: string;
-  initials: string;
-}
-
-interface Stat {
-  label: string;
-  value: string;
-}
-
-interface ProfileHeroProps {
-  profile: UserProfile;
-  stats: Stat[];
-  onEditClick?: () => void;
-}
+import { ProfileHeroProps } from "@/interfaces/profile.interface";
 
 export default function ProfileHero({
   profile,

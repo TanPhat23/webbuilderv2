@@ -10,5 +10,5 @@ export interface ExportOptions {
   includeTailwind: boolean;
   responsiveBreakpoints: boolean;
   minify: boolean;
-  exportFormat: "html" | "react";
+  exportFormat: "html" | "react" | "angular" | "vue";
 }

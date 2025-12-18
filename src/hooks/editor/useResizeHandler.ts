@@ -47,6 +47,7 @@ interface ResizeState {
   aspectRatio?: number;
   ownerDocument: Document;
   ownerWindow: Window;
+  initialStyles: ResponsiveStyles;
 }
 
 /**
@@ -176,20 +177,20 @@ export function useResizeHandler({
     clientX: number,
     clientY: number,
   ): ResponsiveStyles => {
-    const { directionFlags, startPos } = state;
+    const { directionFlags, startPos, initialStyles } = state;
     const currentElement = elementRef.current;
-    const defaultStyles = currentElement.styles?.default || {};
+    const initialDefaultStyles = initialStyles.default || {};
 
     // Handle gap resize
     if (directionFlags.specialType === "gap") {
       const deltaY = clientY - startPos.y;
-      const currentGap = parseInt(String(defaultStyles.gap || "0"), 10);
-      const newGap = Math.max(0, currentGap + deltaY);
+      const initialGap = parseInt(String(initialDefaultStyles.gap || "0"), 10);
+      const newGap = Math.max(0, initialGap + deltaY);
 
       return {
         ...currentElement.styles,
         default: {
-          ...defaultStyles,
+          ...currentElement.styles?.default,
           gap: `${newGap}px`,
         },
       };
@@ -211,7 +212,8 @@ export function useResizeHandler({
         e: "Right",
         w: "Left",
       };
-      const propName = `${type}${sideMap[side]}` as keyof typeof defaultStyles;
+      const propName =
+        `${type}${sideMap[side]}` as keyof typeof initialDefaultStyles;
 
       // Calculate delta based on side
       let delta = 0;
@@ -220,13 +222,16 @@ export function useResizeHandler({
       else if (side === "e") delta = clientX - startPos.x;
       else if (side === "w") delta = startPos.x - clientX;
 
-      const currentValue = parseInt(String(defaultStyles[propName] || "0"), 10);
-      const newValue = Math.max(0, currentValue + delta);
+      const initialValue = parseInt(
+        String(initialDefaultStyles[propName] || "0"),
+        10,
+      );
+      const newValue = Math.max(0, initialValue + delta);
 
       return {
         ...currentElement.styles,
         default: {
-          ...defaultStyles,
+          ...currentElement.styles?.default,
           [propName]: `${newValue}px`,
         },
       };
@@ -469,6 +474,7 @@ export function useResizeHandler({
       aspectRatio,
       ownerDocument: ownerDoc,
       ownerWindow: ownerWin,
+      initialStyles: element.styles || { default: {} },
     };
 
     ownerDoc.addEventListener("mousemove", onMouseMove);

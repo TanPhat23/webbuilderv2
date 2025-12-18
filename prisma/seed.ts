@@ -1,6 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../src/generated/client.js";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 // Seed data
 const categories = [
@@ -62,7 +64,8 @@ const marketplaceItems = [
     title: "Modern Business Landing Page",
     description:
       "A sleek and professional landing page template perfect for startups and businesses looking to make a strong first impression.",
-    preview: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
     templateType: "page",
     featured: true,
     pageCount: 1,
@@ -75,7 +78,8 @@ const marketplaceItems = [
     title: "E-commerce Product Showcase",
     description:
       "Complete e-commerce template with product grids, shopping cart, and checkout flow.",
-    preview: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=800",
     templateType: "full-site",
     featured: false,
     pageCount: 5,
@@ -100,7 +104,8 @@ const marketplaceItems = [
     title: "Restaurant Menu Block",
     description:
       "Beautiful menu display component with categories, prices, and descriptions.",
-    preview: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800",
     templateType: "block",
     featured: false,
     tags: ["restaurant", "menu", "food"],
@@ -112,7 +117,8 @@ const marketplaceItems = [
     title: "Blog Homepage Template",
     description:
       "Full blog template with featured posts, categories, and responsive design.",
-    preview: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=800",
     templateType: "page",
     featured: true,
     pageCount: 1,
@@ -138,7 +144,8 @@ const marketplaceItems = [
     title: "Contact Form Section",
     description:
       "Professional contact form with validation and multiple input types.",
-    preview: "https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=800",
     templateType: "section",
     featured: false,
     tags: ["contact", "form", "validation"],
@@ -150,7 +157,8 @@ const marketplaceItems = [
     title: "Photography Gallery Block",
     description:
       "Responsive image gallery with lightbox and filtering capabilities.",
-    preview: "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800",
+    preview:
+      "https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=800",
     templateType: "block",
     featured: false,
     tags: ["photography", "gallery", "lightbox"],
@@ -256,8 +264,8 @@ async function main() {
           Id: category.id,
           Name: category.name,
         },
-      })
-    )
+      }),
+    ),
   );
   console.log(`✅ Created ${createdCategories.length} categories\n`);
 
@@ -269,8 +277,8 @@ async function main() {
         data: {
           Name: tag,
         },
-      })
-    )
+      }),
+    ),
   );
   console.log(`✅ Created ${createdTags.length} tags\n`);
 

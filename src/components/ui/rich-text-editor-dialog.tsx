@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,12 @@ export function RichTextEditorDialog({
 }: RichTextEditorDialogProps) {
   const [open, setOpen] = useState(false);
   const [tempValue, setTempValue] = useState(value || "");
+
+  useEffect(() => {
+    if (open) {
+      setTempValue(value || "");
+    }
+  }, [value, open]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {

@@ -34,14 +34,40 @@ export function downloadFile(content: string, filename: string): void {
  */
 export function downloadZip(
   zipBlob: Blob,
-  exportFormat: "html" | "react"
+  exportFormat: "html" | "react" | "angular" | "vue"
 ): void {
   const url = URL.createObjectURL(zipBlob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = exportFormat === "react" ? "react-app.zip" : "html-export.zip";
+
+  const fileNames = {
+    react: "react-app.zip",
+    html: "html-export.zip",
+    angular: "angular-app.zip",
+    vue: "vue-app.zip"
+  };
+
+  a.download = fileNames[exportFormat] || "export.zip";
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export async function createZipFromFiles(
+  files: Array<{ type: string; parentPath: string; name: string; content?: string }>
+): Promise<Blob> {
+  const JSZip = (await import("jszip")).default;
+  const zip = new JSZip();
+
+  for (const file of files) {
+    if (file.type === "file" && file.content) {
+      const fullPath = file.parentPath
+        ? `${file.parentPath}/${file.name}`
+        : file.name;
+      zip.file(fullPath, file.content);
+    }
+  }
+
+  return await zip.generateAsync({ type: "blob" });
 }

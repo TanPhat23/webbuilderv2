@@ -6,13 +6,19 @@ import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents"
 import { EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useElementStore } from "@/globalstore/elementstore";
 import { useSelectionStore } from "@/globalstore/selectionstore";
-import { FormElement, InputElement } from "@/interfaces/elements.interface";
+import {
+  FormElement,
+  InputElement,
+  FormSettings,
+} from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import ElementLoader from "../ElementLoader";
 import { usePageStore } from "@/globalstore/pagestore";
+import { Plus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function FormComponent({ element, data }: EditorComponentProps) {
   const { id } = useParams();
@@ -22,9 +28,19 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
       elementId: element.id,
       projectId: id as string,
     });
-  const { addElement, updateElement } = useElementStore<EditorElement>();
+  const { addElement } = useElementStore<EditorElement>();
   const formElement = element as FormElement;
   const { currentPage } = usePageStore();
+
+  const { selectedElement } = useSelectionStore();
+  const isSelected = selectedElement?.id === formElement.id;
+
+  const settings = (formElement.settings as FormSettings) || {
+    method: "post",
+    action: "",
+    target: "_self",
+    autoComplete: "on",
+  };
 
   const handleAddField = () => {
     const newField = elementHelper.createElement.create<InputElement>(
@@ -35,15 +51,6 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
     if (!newField) return;
     addElement(newField);
   };
-
-  const handleChildChange = (index: number, updatedChild: EditorElement) => {
-    const updated = [...formElement.elements];
-    updated[index] = updatedChild;
-    updateElement(formElement.id, { ...formElement, elements: updated });
-  };
-
-  const { selectedElement } = useSelectionStore();
-  const isEditing = selectedElement?.id === formElement.id;
 
   const safeStyles = elementHelper.getSafeStyles(formElement);
 
@@ -59,9 +66,15 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
   return (
     <form
       ref={elementRef as React.RefObject<HTMLFormElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(formElement)}
       {...eventHandlers}
-      className="flex flex-col gap-4 p-4 border rounded-lg"
+      className={cn(
+        "flex flex-col gap-4 p-6 border rounded-xl transition-all duration-200",
+        "bg-card text-card-foreground border-border shadow-sm",
+        formElement.tailwindStyles,
+      )}
       style={{
         ...safeStyles,
         width: "100%",
@@ -69,20 +82,24 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
         cursor: eventsActive ? "pointer" : "inherit",
         userSelect: eventsActive ? "none" : "auto",
       }}
+      action={settings.action}
+      method={settings.method}
+      target={settings.target}
+      autoComplete={settings.autoComplete}
+      noValidate={settings.noValidate}
     >
       <ElementLoader elements={formElement.elements} data={data} />
 
-      <div className="flex flex-row w-full">
-        {isEditing && (
-          <Button
-            type="button"
-            className="px-4 py-2 bg-green-500 text-white rounded w-full"
-            onClick={handleAddField}
-          >
-            + Add Field
-          </Button>
-        )}
-      </div>
+      {isSelected && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full border-dashed border-2 hover:border-solid hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all"
+          onClick={handleAddField}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Form Field
+        </Button>
+      )}
     </form>
   );
 }

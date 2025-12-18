@@ -35,6 +35,8 @@ const ListComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <ul
       ref={elementRef as React.RefObject<HTMLUListElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       {...getCommonProps(listElement)}
       {...eventHandlers}
       style={{

@@ -1,12 +1,20 @@
 import { EditorElement } from "@/types/global.type";
+import { Page } from "@/interfaces/page.interface";
 import {
-  CodeGenerationOptions,
   GeneratedCode,
   BaseCodeGenerator,
 } from "./codeGeneratorBase";
 import { HTMLCodeGenerator, ReactCodeGenerator } from "./codeGenerators";
 
-export type { CodeGenerationOptions, GeneratedCode };
+export type { GeneratedCode };
+
+export interface CodeGenerationOptions {
+  includeTailwind?: boolean;
+  responsiveBreakpoints?: boolean;
+  minify?: boolean;
+  exportFormat?: "html" | "react" | "vue" | "angular";
+  page?: Page;
+}
 
 class CodeGeneratorFactory {
   static createGenerator(

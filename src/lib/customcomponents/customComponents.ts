@@ -6,6 +6,7 @@ import {
   navbarComponent4,
   navbarComponent5,
 } from "./navbar/navbarComponents";
+import { siteTemplates } from "./sitetemplates/siteTemplateComponents";
 import {
   footerComponent,
   footerComponent2,
@@ -62,6 +63,7 @@ const customComponents: CustomComponent[] = [
   formComponent1,
   formComponent2,
   ...landingPageSections,
+  ...siteTemplates,
 ];
 
 export const customComps = customComponents

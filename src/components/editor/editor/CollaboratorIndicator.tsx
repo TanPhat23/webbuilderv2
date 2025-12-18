@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
 import { useMouseStore } from "@/globalstore/mousestore";
 import { useAuth } from "@clerk/nextjs";
+import CollaborationStatus from "./CollaborationStatus";
 
 // Helper functions for user display
 const getFullName = (user: { userName: string; email: string }) => {
@@ -26,6 +27,9 @@ const getAvatarInitial = (user: { userName: string; email: string }) => {
 
 interface CollaboratorIndicatorProps {
   projectId: string;
+  isConnected?: boolean;
+  isSynced?: boolean;
+  collabType?: "yjs" | "websocket";
 }
 
 interface OnlineUserItemProps {
@@ -62,6 +66,9 @@ function OnlineUserItem({ user, isCurrentUser = false }: OnlineUserItemProps) {
 
 export default function CollaboratorIndicator({
   projectId,
+  collabType,
+  isConnected,
+  isSynced,
 }: CollaboratorIndicatorProps) {
   const { userId } = useAuth();
   const { users } = useMouseStore();
@@ -87,13 +94,13 @@ export default function CollaboratorIndicator({
         >
           <Users className="h-4 w-4" />
           <span className="hidden sm:inline">
-            {hasOnlineUsers ? `${onlineCount} online` : "No one online"}
+            {hasOnlineUsers ? `${onlineCount} ` : "No one online"}
           </span>
-          {hasOnlineUsers && (
-            <Badge variant="secondary" className="ml-1 text-xs">
-              Live
-            </Badge>
-          )}
+          <CollaborationStatus
+            isConnected={isConnected}
+            isSynced={isSynced}
+            collabType={collabType}
+          />
         </Button>
       </PopoverTrigger>
 

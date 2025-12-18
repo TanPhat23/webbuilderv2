@@ -33,6 +33,8 @@ const InputComponent = ({ element }: EditorComponentProps) => {
   return (
     <input
       ref={elementRef as React.RefObject<HTMLInputElement>}
+      data-element-id={element.id}
+      data-element-type={element.type}
       type="text"
       placeholder={inputElement.content || "Input field"}
       {...commonProps}

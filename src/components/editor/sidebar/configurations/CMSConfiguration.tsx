@@ -15,16 +15,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useElementStore } from "@/globalstore/elementstore";
+import { useSelectionStore } from "@/globalstore/selectionstore";
 import { CMSContentSettings } from "@/interfaces/elements.interface";
 import { useCMSContentTypes, useCMSContent } from "@/hooks";
 
-interface CMSConfigurationProps {
-  elementId: string;
-}
-
-const CMSConfiguration: React.FC<CMSConfigurationProps> = ({ elementId }) => {
-  const { elements, updateElement } = useElementStore();
-  const element = elements.find((el) => el.id === elementId);
+const CMSConfiguration: React.FC = () => {
+  const { selectedElement } = useSelectionStore();
+  const { updateElement } = useElementStore();
+  const element = selectedElement;
 
   if (!element) return null;
 
@@ -42,8 +40,7 @@ const CMSConfiguration: React.FC<CMSConfigurationProps> = ({ elementId }) => {
   });
 
   const updateSettings = (newSettings: Partial<CMSContentSettings>) => {
-    updateElement(elementId, {
-      ...element,
+    updateElement(element.id, {
       settings: { ...settings, ...newSettings },
     });
   };

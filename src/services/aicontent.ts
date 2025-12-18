@@ -11,6 +11,13 @@ interface GenerateContentParams {
 interface GenerateContentResponse {
   content?: string;
   html?: string;
+  streaming?: boolean;
+}
+
+interface StreamCallback {
+  onChunk?: (chunk: string) => void;
+  onComplete?: (fullContent: string) => void;
+  onError?: (error: Error) => void;
 }
 
 export const aiContentService = {
@@ -22,6 +29,34 @@ export const aiContentService = {
       return await apiClient.post<GenerateContentResponse>(url, params);
     } catch (error) {
       console.error("Failed to generate AI content:", error);
+      throw error;
+    }
+  },
+
+  async generateContentStream(
+    params: GenerateContentParams,
+    callbacks: StreamCallback,
+  ): Promise<void> {
+    try {
+      const url = GetAIUrl(API_ENDPOINTS.AI.GENERATE_CONTENT);
+      const response = await apiClient.post<GenerateContentResponse>(url, params);
+
+      if (response.content) {
+        const content = response.content;
+        let streamedContent = "";
+
+        for (let i = 0; i < content.length; i++) {
+          streamedContent += content[i];
+          callbacks.onChunk?.(streamedContent);
+
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        callbacks.onComplete?.(content);
+      }
+    } catch (error) {
+      console.error("Failed to generate AI content:", error);
+      callbacks.onError?.(error as Error);
       throw error;
     }
   },
