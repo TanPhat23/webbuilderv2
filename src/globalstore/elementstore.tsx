@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import { ContainerElement, EditorElement } from "@/types/global.type";
-import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { cloneDeep } from "lodash";
 import { SelectionStore } from "./selectionstore";
+import { ContainerElement, EditorElement } from "@/types/global.type";
+import { elementHelper } from "@/lib/utils/element/elementhelper";
 
 type ElementStore<TElement extends EditorElement> = {
   elements: TElement[];

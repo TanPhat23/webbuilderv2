@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { EditorSideBar } from "@/components/editor/sidebar/EditorSideBar";
 import LayoutSideBar from "@/components/editor/sidebar/LayoutSideBar";
@@ -8,6 +8,11 @@ import AIChatProvider from "./aiprovider";
 import AIChatPanel from "@/components/editor/ai/AiChatPanel";
 import { useAiChat } from "./aiprovider";
 import { ElementCommentsPanel } from "@/components/editor/comments/ElementCommentsPanel";
+import { useEditor } from "@/hooks";
+import { useSearchParams } from "next/navigation";
+import WireframeManager from "@/components/editor/wireframe/WireframeManager";
+import { Button } from "@/components/ui/button";
+import { LayoutTemplate, PenTool } from "lucide-react";
 
 interface EditorProviderProps {
   children: React.ReactNode;
@@ -15,9 +20,16 @@ interface EditorProviderProps {
   userId?: string;
 }
 
+// Define the type for the data returned by useEditor
+type EditorHookReturnType = ReturnType<typeof useEditor>;
+
 interface EditorContextType {
   projectId: string | null;
   userId: string | null;
+  editor: EditorHookReturnType;
+  mode: "editor" | "wireframe";
+  setMode: (mode: "editor" | "wireframe") => void;
+  pageId: string;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -86,17 +98,76 @@ function EditorLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ModeToggle({
+  mode,
+  setMode,
+}: {
+  mode: "editor" | "wireframe";
+  setMode: (mode: "editor" | "wireframe") => void;
+}) {
+  return (
+    <div className="fixed top-2 left-1/2 -translate-x-1/2 z-50 flex items-center bg-background/80 p-1 rounded-lg border border-border backdrop-blur-sm shadow-sm">
+      <Button
+        variant={mode === "wireframe" ? "secondary" : "ghost"}
+        size="sm"
+        onClick={() => setMode("wireframe")}
+        className="h-7 text-xs gap-2"
+      >
+        <LayoutTemplate className="h-3.5 w-3.5" />
+        Wireframe
+      </Button>
+      <Button
+        variant={mode === "editor" ? "secondary" : "ghost"}
+        size="sm"
+        onClick={() => setMode("editor")}
+        className="h-7 text-xs gap-2"
+      >
+        <PenTool className="h-3.5 w-3.5" />
+        Editor
+      </Button>
+    </div>
+  );
+}
+
 export default function EditorProvider({
   children,
   projectId,
   userId,
 }: EditorProviderProps) {
+  const searchParams = useSearchParams();
+  const pageId = searchParams.get("page") || "";
+  const [isMounted, setIsMounted] = useState(false);
+  const [mode, setMode] = useState<"editor" | "wireframe">("editor");
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const editorData = useEditor(projectId || "", pageId, {
+    enableCollab: isMounted && !!userId,
+    userId: userId || "guest",
+  });
+
+  const contextValue: EditorContextType = {
+    projectId: projectId || null,
+    userId: userId || null,
+    editor: editorData,
+    mode,
+    setMode,
+    pageId,
+  };
+
   return (
-    <EditorContext.Provider
-      value={{ projectId: projectId || null, userId: userId || null }}
-    >
+    <EditorContext.Provider value={contextValue}>
       <AIChatProvider>
-        <EditorLayout>{children}</EditorLayout>
+        <ModeToggle mode={mode} setMode={setMode} />
+        {mode === "wireframe" ? (
+          <div className="flex h-screen w-screen overflow-hidden pt-12 bg-background">
+            <WireframeManager pageId={pageId} />
+          </div>
+        ) : (
+          <EditorLayout>{children}</EditorLayout>
+        )}
       </AIChatProvider>
     </EditorContext.Provider>
   );

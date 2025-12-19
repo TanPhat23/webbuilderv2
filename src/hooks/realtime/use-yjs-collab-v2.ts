@@ -8,7 +8,11 @@ import { IndexeddbPersistence } from "y-indexeddb";
 import { useElementStore, ElementStore } from "@/globalstore/elementstore";
 import { useMouseStore } from "@/globalstore/mousestore";
 import type { EditorElement } from "@/types/global.type";
-import { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
+import type { Page } from "@/interfaces/page.interface";
+import {
+  CustomYjsProviderV2,
+  parseElementsJson,
+} from "@/lib/yjs/yjs-provider-v2";
 import {
   createSyncAwarenessToStore,
   createAwarenessChangeObserver,
@@ -20,6 +24,7 @@ import type {
   RoomState,
   UpdateType,
   ElementOperationSuccess,
+  PageOperationSuccess,
   UserInfo,
   ConflictMessage,
   ErrorMessage,
@@ -77,15 +82,6 @@ const validateIds = (
     return { valid: false, error: "Invalid project ID" };
   }
   return { valid: true };
-};
-
-const parseElementsJson = (json: string): EditorElement[] => {
-  try {
-    return json ? JSON.parse(json) : [];
-  } catch (err) {
-    console.warn("[useYjsCollabV2] Failed to parse elements JSON:", err);
-    return [];
-  }
 };
 
 const extractErrorMessage = (error: ErrorMessage): string => {
@@ -609,6 +605,63 @@ export function useYjsCollabV2({
     [onError],
   );
 
+  const createPage = useCallback(
+    async (page: Page): Promise<PageOperationSuccess> => {
+      const provider = providerRef.current;
+      if (!provider) {
+        throw new Error("Provider not initialized");
+      }
+
+      try {
+        return await provider.createPage(page);
+      } catch (err) {
+        console.error("[useYjsCollabV2] Failed to create page:", err);
+        onError?.(err as Error);
+        throw err;
+      }
+    },
+    [onError],
+  );
+
+  const updatePage = useCallback(
+    async (
+      pageId: string,
+      updates: Partial<Page>,
+    ): Promise<PageOperationSuccess> => {
+      const provider = providerRef.current;
+      if (!provider) {
+        throw new Error("Provider not initialized");
+      }
+
+      try {
+        return await provider.updatePage(pageId, updates);
+      } catch (err) {
+        console.error("[useYjsCollabV2] Failed to update page:", err);
+        onError?.(err as Error);
+        throw err;
+      }
+    },
+    [onError],
+  );
+
+  const deletePage = useCallback(
+    async (pageId: string): Promise<PageOperationSuccess> => {
+      const provider = providerRef.current;
+      if (!provider) {
+        throw new Error("Provider not initialized");
+      }
+
+      try {
+        return await provider.deletePage(pageId);
+      } catch (err) {
+        console.error("[useYjsCollabV2] Failed to delete page:", err);
+        onError?.(err as Error);
+        throw err;
+      }
+    },
+    [onError],
+  );
+
   const reconnect = useCallback(async () => {
     const provider = providerRef.current;
     if (!provider) {
@@ -637,6 +690,9 @@ export function useYjsCollabV2({
     updateElement,
     deleteElement,
     moveElement,
+    createPage,
+    updatePage,
+    deletePage,
     reconnect,
   };
 }

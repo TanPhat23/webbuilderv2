@@ -1,25 +1,18 @@
 import { Accordion } from "@/components/ui/accordion";
-import { AppearanceAccordion } from "./AppearanceAccordion";
 import { ElementType } from "@/types/global.type";
-import React, { useState } from "react";
-import { TypographyAccordion } from "./TypographyAccordion";
+import React from "react";
 import { LinkConfigurationAccordion } from "./LinkConfiguration";
 import { FormConfigurationAccordion } from "./FormConfiguration";
 import InputConfiguration from "./InputConfiguration";
 import { useSelectionStore } from "@/globalstore/selectionstore";
 import CarouselConfigurationAccordion from "./CarouselConfiguration";
-import TailwindAccordion from "./TailwindAccordion";
 import DataLoaderConfiguration from "./DataLoaderConfiguration";
-import { BreakpointSelector } from "./BreakpointSelector";
 import CMSConfiguration from "./CMSConfiguration";
 import { ImageConfiguration } from "./ImageConfiguration";
 import { SelectConfigurationAccordion } from "./SelectConfiguration";
 
-export default function Configurations() {
+export default function Settings() {
   const { selectedElement } = useSelectionStore();
-  const [currentBreakpoint, setCurrentBreakpoint] = useState<
-    "default" | "sm" | "md" | "lg" | "xl"
-  >("default");
 
   const renderChildElement = (type: ElementType): React.ReactNode => {
     if (!type) {
@@ -27,8 +20,6 @@ export default function Configurations() {
     }
 
     switch (type) {
-      case "Text":
-        return <TypographyAccordion currentBreakpoint={currentBreakpoint} />;
       case "Link":
         return <LinkConfigurationAccordion />;
       case "Form":
@@ -44,9 +35,7 @@ export default function Configurations() {
       case "DataLoader":
         return <DataLoaderConfiguration />;
       case "CMSContentList":
-        return selectedElement ? <CMSConfiguration /> : null;
       case "CMSContentItem":
-        return selectedElement ? <CMSConfiguration /> : null;
       case "CMSContentGrid":
         return selectedElement ? <CMSConfiguration /> : null;
       default:
@@ -57,16 +46,21 @@ export default function Configurations() {
   if (!selectedElement) {
     return null;
   }
+
+  const content = renderChildElement(selectedElement.type);
+
+  if (!content) {
+    return (
+      <div className="p-4 text-center text-sm text-muted-foreground">
+        No configurations available for this element.
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
-      <BreakpointSelector
-        currentBreakpoint={currentBreakpoint}
-        onBreakpointChange={setCurrentBreakpoint}
-      />
       <Accordion type="multiple" className="w-full">
-        <AppearanceAccordion currentBreakpoint={currentBreakpoint} />
-        {renderChildElement(selectedElement.type)}
-        <TailwindAccordion />
+        {content}
       </Accordion>
     </div>
   );

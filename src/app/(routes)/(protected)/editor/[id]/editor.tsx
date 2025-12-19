@@ -1,10 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import EditorHeader from "@/components/editor/editor/EditorHeader";
 import PreviewContainer from "@/components/editor/editor/PreviewContainer";
 import EditorCanvas from "@/components/editor/editor/EditorCanvas";
-import { useEditor } from "@/hooks";
-import { useAuth } from "@clerk/nextjs";
+import { useEditorContext } from "@/providers/editorprovider";
 import * as Y from "yjs";
 
 type EditorProps = {
@@ -12,14 +11,8 @@ type EditorProps = {
   pageId: string;
 };
 
-export default function Editor({ id, pageId }: EditorProps) {
-  const { userId } = useAuth();
-  const [isMounted, setIsMounted] = useState(false);
-  const effectiveUserId = userId || "guest";
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+export default function Editor({ id }: EditorProps) {
+  const { editor, userId } = useEditorContext();
 
   const {
     currentView,
@@ -34,14 +27,11 @@ export default function Editor({ id, pageId }: EditorProps) {
     isReadOnly,
     isLocked,
     collab,
-  } = useEditor(id, pageId, {
-    enableCollab: isMounted && !!effectiveUserId,
-    userId: effectiveUserId,
-  });
+  } = editor;
 
-  // Extract Yjs-specific properties
   const ydoc = collab.ydoc as Y.Doc | null;
   const provider = collab.provider;
+  const effectiveUserId = userId || "guest";
 
   return (
     <div className="flex-1 w-full h-full flex flex-col bg-background text-foreground relative">

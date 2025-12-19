@@ -1,4 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
+import type { Page } from "./page.interface";
 import type { Awareness } from "y-protocols/awareness";
 import type * as Y from "yjs";
 import type React from "react";
@@ -11,6 +12,8 @@ import type { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
 export type MessageType =
   | "elementOperation"
   | "elementOperationSuccess"
+  | "pageOperation"
+  | "pageOperationSuccess"
   | "initialSync"
   | "error"
   | "mouseMove"
@@ -66,6 +69,31 @@ export interface ElementOperationSuccess extends BaseMessage {
   newParentId?: string | null;
   oldPosition?: number;
   newPosition?: number;
+  version: number;
+  timestamp: number;
+}
+
+// ============================================================================
+// Page Operation Messages
+// ============================================================================
+
+export interface PageOperationRequest extends BaseMessage {
+  type: "pageOperation";
+  operationType: OperationType;
+  requestId: string;
+  userId: string;
+  pageId?: string;
+  page?: Page;
+  updates?: Partial<Page>;
+}
+
+export interface PageOperationSuccess extends BaseMessage {
+  type: "pageOperationSuccess";
+  requestId: string;
+  operationType: string;
+  page?: Page;
+  pageId?: string;
+  deletedPageId?: string;
   version: number;
   timestamp: number;
 }
@@ -159,7 +187,10 @@ export interface UserDisconnectMessage extends BaseMessage {
 // ============================================================================
 
 export type V2Message =
+  | ElementOperationRequest
   | ElementOperationSuccess
+  | PageOperationRequest
+  | PageOperationSuccess
   | InitialSyncMessage
   | ErrorMessage
   | MouseMoveMessage
@@ -173,7 +204,7 @@ export type V2Message =
 // ============================================================================
 
 export interface PendingRequest {
-  resolve: (value: ElementOperationSuccess) => void;
+  resolve: (value: any) => void;
   reject: (error: Error) => void;
   timeout: NodeJS.Timeout;
 }
@@ -267,5 +298,11 @@ export interface UseYjsCollabV2Return {
     newParentId?: string | null,
     newPosition?: number,
   ) => Promise<ElementOperationSuccess>;
+  createPage: (page: Page) => Promise<PageOperationSuccess>;
+  updatePage: (
+    pageId: string,
+    updates: Partial<Page>,
+  ) => Promise<PageOperationSuccess>;
+  deletePage: (pageId: string) => Promise<PageOperationSuccess>;
   reconnect: () => Promise<void>;
 }

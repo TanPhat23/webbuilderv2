@@ -1,7 +1,9 @@
 import * as Y from "yjs";
 import { EditorElement } from "@/types/global.type";
-import { CustomYjsProvider } from "@/lib/yjs/yjs-provider";
-import { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
+import {
+  CustomYjsProviderV2,
+  parseElementsJson,
+} from "@/lib/yjs/yjs-provider-v2";
 
 export const sanitizeElements = (
   elements: EditorElement[],
@@ -69,7 +71,7 @@ export const createElementsObserver = (
 };
 
 export const createSyncAwarenessToStore = (
-  provider: CustomYjsProvider | CustomYjsProviderV2,
+  provider: CustomYjsProviderV2,
   mouseStore: any,
   internalStateRef: { current: { lastAwarenessHash: string } },
 ) => {

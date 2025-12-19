@@ -207,10 +207,11 @@ export const AppearanceAccordion = ({
   }
 
   return (
-    <AccordionItem value="appearance">
+    <AccordionItem value="appearance" >
       <AccordionTrigger className="text-sm">Appearance</AccordionTrigger>
-      <AccordionContent>
+      <AccordionContent >
         <Accordion
+      
           type="multiple"
           defaultValue={[
             "size",

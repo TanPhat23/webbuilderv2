@@ -10,6 +10,11 @@ type PageStore = {
   pages: Page[];
 
   currentPage: Page | null;
+
+  collaborativeCallback:
+    | ((type: "update" | "delete" | "create", id?: string, data?: any) => void)
+    | null;
+
   /**
    * Update a page by its ID with new styles/data.
    * @param updatedPage The updated Page object.
@@ -32,50 +37,85 @@ type PageStore = {
   loadPages: (pages: Page[]) => void;
 
   setCurrentPage: (page: Page | null) => void;
+
+  setCollaborativeCallback: (
+    callback:
+      | ((
+          type: "update" | "delete" | "create",
+          id?: string,
+          data?: any,
+        ) => void)
+      | null,
+  ) => void;
 };
 
-export const usePageStore = create<PageStore>((set, get) => ({
-  pages: [], // initial state
-  currentPage: null,
-  updatePage: (updatedPage, id) => {
-    set((state) => ({
-      pages: state.pages.map((page) =>
-        page.Id === id ? { ...page, ...updatedPage } : page
-      ),
-    }));
-    // TODO: Optionally, call an API to persist the update
-  },
-  addPage: (newPage) => {
-    set((state) => ({
-      pages: [...state.pages, newPage],
-    }));
-  },
-
-  deletePage: async (id) => {
-    const pagesCopy = get().pages;
-    const pageToDelete = pagesCopy.find((page) => page.Id === id);
-    set((state) => ({
-      pages: state.pages.filter((page) => page.Id !== id),
-    }));
-    if (pageToDelete) {
-      const result = await projectService.deleteProjectPage(
-        pageToDelete?.ProjectId,
-        id
-      );
-      if (!result) set({ pages: pagesCopy });
+export const usePageStore = create<PageStore>((set, get) => {
+  const triggerCollaborativeCallback = (
+    type: "update" | "delete" | "create",
+    id?: string,
+    data?: any,
+  ) => {
+    const { collaborativeCallback } = get();
+    if (collaborativeCallback && typeof collaborativeCallback === "function") {
+      collaborativeCallback(type, id, data);
     }
-  },
+  };
 
-  resetPage: () => {
-    set({ pages: [] });
-    // TODO: Optionally, call an API to reset pages on the backend
-  },
-  loadPages: (pages) => {
-    set({ pages });
-    // TODO: Optionally, call an API to fetch pages if needed
-  },
+  return {
+    pages: [], // initial state
+    currentPage: null,
+    collaborativeCallback: null,
 
-  setCurrentPage: (page) => {
-    set({ currentPage: page });
-  },
-}));
+    updatePage: (updatedPage, id) => {
+      set((state) => ({
+        pages: state.pages.map((page) =>
+          page.Id === id ? { ...page, ...updatedPage } : page,
+        ),
+      }));
+      // TODO: Optionally, call an API to persist the update
+      triggerCollaborativeCallback("update", id, updatedPage);
+    },
+    addPage: (newPage) => {
+      set((state) => ({
+        pages: [...state.pages, newPage],
+      }));
+      triggerCollaborativeCallback("create", newPage.Id, newPage);
+    },
+
+    deletePage: async (id) => {
+      const pagesCopy = get().pages;
+      const pageToDelete = pagesCopy.find((page) => page.Id === id);
+      set((state) => ({
+        pages: state.pages.filter((page) => page.Id !== id),
+      }));
+      if (pageToDelete) {
+        const result = await projectService.deleteProjectPage(
+          pageToDelete?.ProjectId,
+          id,
+        );
+        if (!result) {
+          set({ pages: pagesCopy });
+        } else {
+          triggerCollaborativeCallback("delete", id);
+        }
+      }
+    },
+
+    resetPage: () => {
+      set({ pages: [] });
+      // TODO: Optionally, call an API to reset pages on the backend
+    },
+    loadPages: (pages) => {
+      set({ pages });
+      // TODO: Optionally, call an API to fetch pages if needed
+    },
+
+    setCurrentPage: (page) => {
+      set({ currentPage: page });
+    },
+
+    setCollaborativeCallback: (callback) => {
+      set({ collaborativeCallback: callback });
+    },
+  };
+});

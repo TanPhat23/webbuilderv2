@@ -1,9 +1,12 @@
 import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
 import type { EditorElement } from "@/types/global.type";
+import type { Page } from "@/interfaces/page.interface";
 import type {
   ElementOperationRequest,
   ElementOperationSuccess,
+  PageOperationRequest,
+  PageOperationSuccess,
   V2Message,
   YjsProviderV2Options,
   PendingRequest,
@@ -25,6 +28,16 @@ import type {
   UserDisconnectMessage,
 } from "@/interfaces/yjs-v2.interface";
 import { ElementTreeHelper } from "@/lib/utils/element-tree-helper";
+
+export const parseElementsJson = (json: string): EditorElement[] => {
+  if (!json) return [];
+  try {
+    return JSON.parse(json);
+  } catch (err) {
+    console.error("[YjsProvider] Failed to parse elements JSON:", err);
+    return [];
+  }
+};
 
 export class CustomYjsProviderV2 {
   // Public properties
@@ -341,6 +354,9 @@ export class CustomYjsProviderV2 {
       case "elementOperationSuccess":
         this.handleElementOperationSuccess(message);
         break;
+      case "pageOperationSuccess":
+        this.handlePageOperationSuccess(message as PageOperationSuccess);
+        break;
       case "mouseMove":
         this.handleMouseMove(message);
         break;
@@ -417,10 +433,58 @@ export class CustomYjsProviderV2 {
     }
   }
 
+  private handlePageOperationSuccess(message: PageOperationSuccess): void {
+    try {
+      const currentPages = this.getCurrentPages();
+      this.updateVersionTracking(message.version);
+
+      let updatedPages = [...currentPages];
+      if (message.operationType === "create" && message.page) {
+        updatedPages.push(message.page);
+      } else if (
+        message.operationType === "update" &&
+        message.pageId &&
+        message.page
+      ) {
+        updatedPages = updatedPages.map((p) =>
+          p.Id === message.pageId ? { ...p, ...message.page! } : p,
+        );
+      } else if (message.operationType === "delete" && message.pageId) {
+        updatedPages = updatedPages.filter((p) => p.Id !== message.pageId);
+      }
+
+      this.updatePagesInDoc(updatedPages);
+    } catch (err) {
+      console.error(
+        "[YjsProviderV2] Error handling pageOperationSuccess:",
+        err,
+      );
+    }
+  }
+
   private getCurrentElements(): EditorElement[] {
     const yElementsText = this.doc.getText("elementsJson");
     const elementsJson = yElementsText.toString();
-    return elementsJson ? JSON.parse(elementsJson) : [];
+    return parseElementsJson(elementsJson);
+  }
+
+  private getCurrentPages(): Page[] {
+    const yPagesText = this.doc.getText("pagesJson");
+    const pagesJson = yPagesText.toString();
+    try {
+      return pagesJson ? JSON.parse(pagesJson) : [];
+    } catch (err) {
+      console.error("[YjsProviderV2] Failed to parse pages JSON:", err);
+      return [];
+    }
+  }
+
+  private updatePagesInDoc(pages: Page[]): void {
+    this.doc.transact(() => {
+      const yPagesText = this.doc.getText("pagesJson");
+      yPagesText.delete(0, yPagesText.length);
+      yPagesText.insert(0, JSON.stringify(pages));
+    }, "v2-page-update");
   }
 
   private updateVersionTracking(version: number): void {
@@ -835,31 +899,33 @@ export class CustomYjsProviderV2 {
     return false;
   }
 
-  private sendMessage(
-    message: ElementOperationRequest | MouseMoveMessage | ElementSelectMessage,
-  ): Promise<ElementOperationSuccess> | void;
-  private sendMessage(
-    message: ElementOperationRequest | MouseMoveMessage | ElementSelectMessage,
+  private sendMessage<T = any>(message: V2Message): Promise<T> | void;
+  private sendMessage<T = any>(
+    message: V2Message,
     requireResponse: true,
-  ): Promise<ElementOperationSuccess>;
-  private sendMessage(
-    message: ElementOperationRequest | MouseMoveMessage | ElementSelectMessage,
-    requireResponse: false,
-  ): void;
-  private sendMessage(
-    message: ElementOperationRequest | MouseMoveMessage | ElementSelectMessage,
+  ): Promise<T>;
+  private sendMessage(message: V2Message, requireResponse: false): void;
+  private sendMessage<T = any>(
+    message: V2Message,
     requireResponse = false,
-  ): Promise<ElementOperationSuccess> | void {
+  ): Promise<T> | void {
     if (!this.connected || !this.ws) {
-      if (message.type === "elementOperation") {
-        this.messageQueue.push(message);
+      if (
+        message.type === "elementOperation" ||
+        message.type === "pageOperation"
+      ) {
+        this.messageQueue.push(message as any);
       }
       return requireResponse
         ? Promise.reject(new Error("Not connected"))
         : undefined;
     }
 
-    if (message.type === "elementOperation" && !this.checkRateLimit()) {
+    if (
+      (message.type === "elementOperation" ||
+        message.type === "pageOperation") &&
+      !this.checkRateLimit()
+    ) {
       return requireResponse
         ? Promise.reject(new Error("Rate limit exceeded"))
         : undefined;
@@ -869,7 +935,7 @@ export class CustomYjsProviderV2 {
       this.ws.send(JSON.stringify(message));
 
       if (requireResponse && "requestId" in message && message.requestId) {
-        return this.createPendingRequest(message.requestId);
+        return this.createPendingRequest<T>(message.requestId);
       }
     } catch (err) {
       console.error("[YjsProviderV2] Failed to send message:", err);
@@ -879,10 +945,8 @@ export class CustomYjsProviderV2 {
     }
   }
 
-  private createPendingRequest(
-    requestId: string,
-  ): Promise<ElementOperationSuccess> {
-    return new Promise((resolve, reject) => {
+  private createPendingRequest<T = any>(requestId: string): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingRequests.delete(requestId);
         reject(new Error("Request timeout"));
@@ -908,7 +972,7 @@ export class CustomYjsProviderV2 {
       position,
     };
 
-    return this.sendMessage(message, true);
+    return this.sendMessage<ElementOperationSuccess>(message, true);
   }
 
   async updateElement(
@@ -927,7 +991,7 @@ export class CustomYjsProviderV2 {
       updateType,
     };
 
-    return this.sendMessage(message, true);
+    return this.sendMessage<ElementOperationSuccess>(message, true);
   }
 
   async deleteElement(
@@ -946,7 +1010,7 @@ export class CustomYjsProviderV2 {
       preserveStructure,
     };
 
-    return this.sendMessage(message, true);
+    return this.sendMessage<ElementOperationSuccess>(message, true);
   }
 
   async moveElement(
@@ -965,7 +1029,7 @@ export class CustomYjsProviderV2 {
       newPosition,
     };
 
-    return this.sendMessage(message, true);
+    return this.sendMessage<ElementOperationSuccess>(message, true);
   }
 
   sendMousePosition(x: number, y: number): void {
@@ -1055,6 +1119,49 @@ export class CustomYjsProviderV2 {
 
   public isSynced(): boolean {
     return this.synched;
+  }
+
+  async createPage(page: Page): Promise<PageOperationSuccess> {
+    const requestId = this.generateRequestId();
+    const message: PageOperationRequest = {
+      type: "pageOperation",
+      operationType: "create",
+      requestId,
+      userId: this.userId,
+      page,
+    };
+
+    return this.sendMessage<PageOperationSuccess>(message, true);
+  }
+
+  async updatePage(
+    pageId: string,
+    updates: Partial<Page>,
+  ): Promise<PageOperationSuccess> {
+    const requestId = this.generateRequestId();
+    const message: PageOperationRequest = {
+      type: "pageOperation",
+      operationType: "update",
+      requestId,
+      userId: this.userId,
+      pageId,
+      updates,
+    };
+
+    return this.sendMessage<PageOperationSuccess>(message, true);
+  }
+
+  async deletePage(pageId: string): Promise<PageOperationSuccess> {
+    const requestId = this.generateRequestId();
+    const message: PageOperationRequest = {
+      type: "pageOperation",
+      operationType: "delete",
+      requestId,
+      userId: this.userId,
+      pageId,
+    };
+
+    return this.sendMessage<PageOperationSuccess>(message, true);
   }
 
   public destroy(): void {
