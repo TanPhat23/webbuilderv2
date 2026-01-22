@@ -271,13 +271,7 @@ export function EditorSideBar() {
           </div>
         ) : (
           <div className="h-full flex flex-col">
-            {activeTab === "components" && (
-              <ScrollArea className="h-full">
-                <div className="p-4">
-                  <ElementSelector />
-                </div>
-              </ScrollArea>
-            )}
+            {activeTab === "components" && <ElementSelector />}
             {activeTab === "layers" && (
               <ScrollArea className="h-full">
                 <div className="p-4">
