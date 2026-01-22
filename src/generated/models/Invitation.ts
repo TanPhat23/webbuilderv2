@@ -31,9 +31,9 @@ export type InvitationMinAggregateOutputType = {
   Role: $Enums.CollaboratorRole | null
   Token: string | null
   ExpiresAt: Date | null
-  Status: string | null
   CreatedAt: Date | null
   AcceptedAt: Date | null
+  Status: string | null
 }
 
 export type InvitationMaxAggregateOutputType = {
@@ -43,9 +43,9 @@ export type InvitationMaxAggregateOutputType = {
   Role: $Enums.CollaboratorRole | null
   Token: string | null
   ExpiresAt: Date | null
-  Status: string | null
   CreatedAt: Date | null
   AcceptedAt: Date | null
+  Status: string | null
 }
 
 export type InvitationCountAggregateOutputType = {
@@ -55,9 +55,9 @@ export type InvitationCountAggregateOutputType = {
   Role: number
   Token: number
   ExpiresAt: number
-  Status: number
   CreatedAt: number
   AcceptedAt: number
+  Status: number
   _all: number
 }
 
@@ -69,9 +69,9 @@ export type InvitationMinAggregateInputType = {
   Role?: true
   Token?: true
   ExpiresAt?: true
-  Status?: true
   CreatedAt?: true
   AcceptedAt?: true
+  Status?: true
 }
 
 export type InvitationMaxAggregateInputType = {
@@ -81,9 +81,9 @@ export type InvitationMaxAggregateInputType = {
   Role?: true
   Token?: true
   ExpiresAt?: true
-  Status?: true
   CreatedAt?: true
   AcceptedAt?: true
+  Status?: true
 }
 
 export type InvitationCountAggregateInputType = {
@@ -93,9 +93,9 @@ export type InvitationCountAggregateInputType = {
   Role?: true
   Token?: true
   ExpiresAt?: true
-  Status?: true
   CreatedAt?: true
   AcceptedAt?: true
+  Status?: true
   _all?: true
 }
 
@@ -178,9 +178,9 @@ export type InvitationGroupByOutputType = {
   Role: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date
-  Status: string
   CreatedAt: Date
   AcceptedAt: Date | null
+  Status: string
   _count: InvitationCountAggregateOutputType | null
   _min: InvitationMinAggregateOutputType | null
   _max: InvitationMaxAggregateOutputType | null
@@ -211,9 +211,9 @@ export type InvitationWhereInput = {
   Role?: Prisma.EnumCollaboratorRoleFilter<"Invitation"> | $Enums.CollaboratorRole
   Token?: Prisma.StringFilter<"Invitation"> | string
   ExpiresAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
-  Status?: Prisma.StringFilter<"Invitation"> | string
   CreatedAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   AcceptedAt?: Prisma.DateTimeNullableFilter<"Invitation"> | Date | string | null
+  Status?: Prisma.StringFilter<"Invitation"> | string
   Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
 }
 
@@ -224,9 +224,9 @@ export type InvitationOrderByWithRelationInput = {
   Role?: Prisma.SortOrder
   Token?: Prisma.SortOrder
   ExpiresAt?: Prisma.SortOrder
-  Status?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   AcceptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  Status?: Prisma.SortOrder
   Project?: Prisma.ProjectOrderByWithRelationInput
 }
 
@@ -240,9 +240,9 @@ export type InvitationWhereUniqueInput = Prisma.AtLeast<{
   ProjectId?: Prisma.StringFilter<"Invitation"> | string
   Role?: Prisma.EnumCollaboratorRoleFilter<"Invitation"> | $Enums.CollaboratorRole
   ExpiresAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
-  Status?: Prisma.StringFilter<"Invitation"> | string
   CreatedAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   AcceptedAt?: Prisma.DateTimeNullableFilter<"Invitation"> | Date | string | null
+  Status?: Prisma.StringFilter<"Invitation"> | string
   Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
 }, "Id" | "Token">
 
@@ -253,9 +253,9 @@ export type InvitationOrderByWithAggregationInput = {
   Role?: Prisma.SortOrder
   Token?: Prisma.SortOrder
   ExpiresAt?: Prisma.SortOrder
-  Status?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   AcceptedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  Status?: Prisma.SortOrder
   _count?: Prisma.InvitationCountOrderByAggregateInput
   _max?: Prisma.InvitationMaxOrderByAggregateInput
   _min?: Prisma.InvitationMinOrderByAggregateInput
@@ -271,9 +271,9 @@ export type InvitationScalarWhereWithAggregatesInput = {
   Role?: Prisma.EnumCollaboratorRoleWithAggregatesFilter<"Invitation"> | $Enums.CollaboratorRole
   Token?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
   ExpiresAt?: Prisma.DateTimeWithAggregatesFilter<"Invitation"> | Date | string
-  Status?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
   CreatedAt?: Prisma.DateTimeWithAggregatesFilter<"Invitation"> | Date | string
   AcceptedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Invitation"> | Date | string | null
+  Status?: Prisma.StringWithAggregatesFilter<"Invitation"> | string
 }
 
 export type InvitationCreateInput = {
@@ -282,9 +282,9 @@ export type InvitationCreateInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
   Project: Prisma.ProjectCreateNestedOneWithoutInvitationsInput
 }
 
@@ -295,9 +295,9 @@ export type InvitationUncheckedCreateInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
 }
 
 export type InvitationUpdateInput = {
@@ -306,9 +306,9 @@ export type InvitationUpdateInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
   Project?: Prisma.ProjectUpdateOneRequiredWithoutInvitationsNestedInput
 }
 
@@ -319,9 +319,9 @@ export type InvitationUncheckedUpdateInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type InvitationCreateManyInput = {
@@ -331,9 +331,9 @@ export type InvitationCreateManyInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
 }
 
 export type InvitationUpdateManyMutationInput = {
@@ -342,9 +342,9 @@ export type InvitationUpdateManyMutationInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type InvitationUncheckedUpdateManyInput = {
@@ -354,9 +354,9 @@ export type InvitationUncheckedUpdateManyInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type InvitationListRelationFilter = {
@@ -376,9 +376,9 @@ export type InvitationCountOrderByAggregateInput = {
   Role?: Prisma.SortOrder
   Token?: Prisma.SortOrder
   ExpiresAt?: Prisma.SortOrder
-  Status?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   AcceptedAt?: Prisma.SortOrder
+  Status?: Prisma.SortOrder
 }
 
 export type InvitationMaxOrderByAggregateInput = {
@@ -388,9 +388,9 @@ export type InvitationMaxOrderByAggregateInput = {
   Role?: Prisma.SortOrder
   Token?: Prisma.SortOrder
   ExpiresAt?: Prisma.SortOrder
-  Status?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   AcceptedAt?: Prisma.SortOrder
+  Status?: Prisma.SortOrder
 }
 
 export type InvitationMinOrderByAggregateInput = {
@@ -400,9 +400,9 @@ export type InvitationMinOrderByAggregateInput = {
   Role?: Prisma.SortOrder
   Token?: Prisma.SortOrder
   ExpiresAt?: Prisma.SortOrder
-  Status?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   AcceptedAt?: Prisma.SortOrder
+  Status?: Prisma.SortOrder
 }
 
 export type InvitationCreateNestedManyWithoutProjectInput = {
@@ -457,9 +457,9 @@ export type InvitationCreateWithoutProjectInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
 }
 
 export type InvitationUncheckedCreateWithoutProjectInput = {
@@ -468,9 +468,9 @@ export type InvitationUncheckedCreateWithoutProjectInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
 }
 
 export type InvitationCreateOrConnectWithoutProjectInput = {
@@ -509,9 +509,9 @@ export type InvitationScalarWhereInput = {
   Role?: Prisma.EnumCollaboratorRoleFilter<"Invitation"> | $Enums.CollaboratorRole
   Token?: Prisma.StringFilter<"Invitation"> | string
   ExpiresAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
-  Status?: Prisma.StringFilter<"Invitation"> | string
   CreatedAt?: Prisma.DateTimeFilter<"Invitation"> | Date | string
   AcceptedAt?: Prisma.DateTimeNullableFilter<"Invitation"> | Date | string | null
+  Status?: Prisma.StringFilter<"Invitation"> | string
 }
 
 export type InvitationCreateManyProjectInput = {
@@ -520,9 +520,9 @@ export type InvitationCreateManyProjectInput = {
   Role?: $Enums.CollaboratorRole
   Token: string
   ExpiresAt: Date | string
-  Status?: string
   CreatedAt?: Date | string
   AcceptedAt?: Date | string | null
+  Status?: string
 }
 
 export type InvitationUpdateWithoutProjectInput = {
@@ -531,9 +531,9 @@ export type InvitationUpdateWithoutProjectInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type InvitationUncheckedUpdateWithoutProjectInput = {
@@ -542,9 +542,9 @@ export type InvitationUncheckedUpdateWithoutProjectInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 export type InvitationUncheckedUpdateManyWithoutProjectInput = {
@@ -553,9 +553,9 @@ export type InvitationUncheckedUpdateManyWithoutProjectInput = {
   Role?: Prisma.EnumCollaboratorRoleFieldUpdateOperationsInput | $Enums.CollaboratorRole
   Token?: Prisma.StringFieldUpdateOperationsInput | string
   ExpiresAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Status?: Prisma.StringFieldUpdateOperationsInput | string
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   AcceptedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Status?: Prisma.StringFieldUpdateOperationsInput | string
 }
 
 
@@ -567,9 +567,9 @@ export type InvitationSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   Role?: boolean
   Token?: boolean
   ExpiresAt?: boolean
-  Status?: boolean
   CreatedAt?: boolean
   AcceptedAt?: boolean
+  Status?: boolean
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
 
@@ -580,9 +580,9 @@ export type InvitationSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   Role?: boolean
   Token?: boolean
   ExpiresAt?: boolean
-  Status?: boolean
   CreatedAt?: boolean
   AcceptedAt?: boolean
+  Status?: boolean
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
 
@@ -593,9 +593,9 @@ export type InvitationSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   Role?: boolean
   Token?: boolean
   ExpiresAt?: boolean
-  Status?: boolean
   CreatedAt?: boolean
   AcceptedAt?: boolean
+  Status?: boolean
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["invitation"]>
 
@@ -606,12 +606,12 @@ export type InvitationSelectScalar = {
   Role?: boolean
   Token?: boolean
   ExpiresAt?: boolean
-  Status?: boolean
   CreatedAt?: boolean
   AcceptedAt?: boolean
+  Status?: boolean
 }
 
-export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Email" | "ProjectId" | "Role" | "Token" | "ExpiresAt" | "Status" | "CreatedAt" | "AcceptedAt", ExtArgs["result"]["invitation"]>
+export type InvitationOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Email" | "ProjectId" | "Role" | "Token" | "ExpiresAt" | "CreatedAt" | "AcceptedAt" | "Status", ExtArgs["result"]["invitation"]>
 export type InvitationInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }
@@ -634,9 +634,9 @@ export type $InvitationPayload<ExtArgs extends runtime.Types.Extensions.Internal
     Role: $Enums.CollaboratorRole
     Token: string
     ExpiresAt: Date
-    Status: string
     CreatedAt: Date
     AcceptedAt: Date | null
+    Status: string
   }, ExtArgs["result"]["invitation"]>
   composites: {}
 }
@@ -1067,9 +1067,9 @@ export interface InvitationFieldRefs {
   readonly Role: Prisma.FieldRef<"Invitation", 'CollaboratorRole'>
   readonly Token: Prisma.FieldRef<"Invitation", 'String'>
   readonly ExpiresAt: Prisma.FieldRef<"Invitation", 'DateTime'>
-  readonly Status: Prisma.FieldRef<"Invitation", 'String'>
   readonly CreatedAt: Prisma.FieldRef<"Invitation", 'DateTime'>
   readonly AcceptedAt: Prisma.FieldRef<"Invitation", 'DateTime'>
+  readonly Status: Prisma.FieldRef<"Invitation", 'String'>
 }
     
 

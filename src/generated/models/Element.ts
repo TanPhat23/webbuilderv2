@@ -40,12 +40,12 @@ export type ElementMinAggregateOutputType = {
   Id: string | null
   Name: string | null
   Order: number | null
-  IsLocked: boolean | null
   ParentId: string | null
   Src: string | null
   TailwindStyles: string | null
   Type: string | null
   PageId: string | null
+  IsLocked: boolean | null
 }
 
 export type ElementMaxAggregateOutputType = {
@@ -54,12 +54,12 @@ export type ElementMaxAggregateOutputType = {
   Id: string | null
   Name: string | null
   Order: number | null
-  IsLocked: boolean | null
   ParentId: string | null
   Src: string | null
   TailwindStyles: string | null
   Type: string | null
   PageId: string | null
+  IsLocked: boolean | null
 }
 
 export type ElementCountAggregateOutputType = {
@@ -68,13 +68,13 @@ export type ElementCountAggregateOutputType = {
   Id: number
   Name: number
   Order: number
-  IsLocked: number
   ParentId: number
   Src: number
   Styles: number
   TailwindStyles: number
   Type: number
   PageId: number
+  IsLocked: number
   _all: number
 }
 
@@ -93,12 +93,12 @@ export type ElementMinAggregateInputType = {
   Id?: true
   Name?: true
   Order?: true
-  IsLocked?: true
   ParentId?: true
   Src?: true
   TailwindStyles?: true
   Type?: true
   PageId?: true
+  IsLocked?: true
 }
 
 export type ElementMaxAggregateInputType = {
@@ -107,12 +107,12 @@ export type ElementMaxAggregateInputType = {
   Id?: true
   Name?: true
   Order?: true
-  IsLocked?: true
   ParentId?: true
   Src?: true
   TailwindStyles?: true
   Type?: true
   PageId?: true
+  IsLocked?: true
 }
 
 export type ElementCountAggregateInputType = {
@@ -121,13 +121,13 @@ export type ElementCountAggregateInputType = {
   Id?: true
   Name?: true
   Order?: true
-  IsLocked?: true
   ParentId?: true
   Src?: true
   Styles?: true
   TailwindStyles?: true
   Type?: true
   PageId?: true
+  IsLocked?: true
   _all?: true
 }
 
@@ -223,13 +223,13 @@ export type ElementGroupByOutputType = {
   Id: string
   Name: string | null
   Order: number
-  IsLocked: boolean
   ParentId: string | null
   Src: string | null
   Styles: runtime.JsonValue | null
   TailwindStyles: string | null
   Type: string
   PageId: string | null
+  IsLocked: boolean
   _count: ElementCountAggregateOutputType | null
   _avg: ElementAvgAggregateOutputType | null
   _sum: ElementSumAggregateOutputType | null
@@ -261,19 +261,19 @@ export type ElementWhereInput = {
   Id?: Prisma.StringFilter<"Element"> | string
   Name?: Prisma.StringNullableFilter<"Element"> | string | null
   Order?: Prisma.IntFilter<"Element"> | number
-  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
   ParentId?: Prisma.StringNullableFilter<"Element"> | string | null
   Src?: Prisma.StringNullableFilter<"Element"> | string | null
   Styles?: Prisma.JsonNullableFilter<"Element">
   TailwindStyles?: Prisma.StringNullableFilter<"Element"> | string | null
   Type?: Prisma.StringFilter<"Element"> | string
   PageId?: Prisma.StringNullableFilter<"Element"> | string | null
+  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
   Page?: Prisma.XOR<Prisma.PageNullableScalarRelationFilter, Prisma.PageWhereInput> | null
   Parent?: Prisma.XOR<Prisma.ElementNullableScalarRelationFilter, Prisma.ElementWhereInput> | null
   Elements?: Prisma.ElementListRelationFilter
-  Settings?: Prisma.XOR<Prisma.SettingNullableScalarRelationFilter, Prisma.SettingWhereInput> | null
-  EventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
   Comments?: Prisma.ElementCommentListRelationFilter
+  EventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
+  Settings?: Prisma.XOR<Prisma.SettingNullableScalarRelationFilter, Prisma.SettingWhereInput> | null
 }
 
 export type ElementOrderByWithRelationInput = {
@@ -282,19 +282,19 @@ export type ElementOrderByWithRelationInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrderInput | Prisma.SortOrder
   Order?: Prisma.SortOrder
-  IsLocked?: Prisma.SortOrder
   ParentId?: Prisma.SortOrderInput | Prisma.SortOrder
   Src?: Prisma.SortOrderInput | Prisma.SortOrder
   Styles?: Prisma.SortOrderInput | Prisma.SortOrder
   TailwindStyles?: Prisma.SortOrderInput | Prisma.SortOrder
   Type?: Prisma.SortOrder
   PageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  IsLocked?: Prisma.SortOrder
   Page?: Prisma.PageOrderByWithRelationInput
   Parent?: Prisma.ElementOrderByWithRelationInput
   Elements?: Prisma.ElementOrderByRelationAggregateInput
-  Settings?: Prisma.SettingOrderByWithRelationInput
-  EventWorkflows?: Prisma.ElementEventWorkflowOrderByRelationAggregateInput
   Comments?: Prisma.ElementCommentOrderByRelationAggregateInput
+  EventWorkflows?: Prisma.ElementEventWorkflowOrderByRelationAggregateInput
+  Settings?: Prisma.SettingOrderByWithRelationInput
 }
 
 export type ElementWhereUniqueInput = Prisma.AtLeast<{
@@ -306,19 +306,19 @@ export type ElementWhereUniqueInput = Prisma.AtLeast<{
   Href?: Prisma.StringNullableFilter<"Element"> | string | null
   Name?: Prisma.StringNullableFilter<"Element"> | string | null
   Order?: Prisma.IntFilter<"Element"> | number
-  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
   ParentId?: Prisma.StringNullableFilter<"Element"> | string | null
   Src?: Prisma.StringNullableFilter<"Element"> | string | null
   Styles?: Prisma.JsonNullableFilter<"Element">
   TailwindStyles?: Prisma.StringNullableFilter<"Element"> | string | null
   Type?: Prisma.StringFilter<"Element"> | string
   PageId?: Prisma.StringNullableFilter<"Element"> | string | null
+  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
   Page?: Prisma.XOR<Prisma.PageNullableScalarRelationFilter, Prisma.PageWhereInput> | null
   Parent?: Prisma.XOR<Prisma.ElementNullableScalarRelationFilter, Prisma.ElementWhereInput> | null
   Elements?: Prisma.ElementListRelationFilter
-  Settings?: Prisma.XOR<Prisma.SettingNullableScalarRelationFilter, Prisma.SettingWhereInput> | null
-  EventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
   Comments?: Prisma.ElementCommentListRelationFilter
+  EventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
+  Settings?: Prisma.XOR<Prisma.SettingNullableScalarRelationFilter, Prisma.SettingWhereInput> | null
 }, "Id">
 
 export type ElementOrderByWithAggregationInput = {
@@ -327,13 +327,13 @@ export type ElementOrderByWithAggregationInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrderInput | Prisma.SortOrder
   Order?: Prisma.SortOrder
-  IsLocked?: Prisma.SortOrder
   ParentId?: Prisma.SortOrderInput | Prisma.SortOrder
   Src?: Prisma.SortOrderInput | Prisma.SortOrder
   Styles?: Prisma.SortOrderInput | Prisma.SortOrder
   TailwindStyles?: Prisma.SortOrderInput | Prisma.SortOrder
   Type?: Prisma.SortOrder
   PageId?: Prisma.SortOrderInput | Prisma.SortOrder
+  IsLocked?: Prisma.SortOrder
   _count?: Prisma.ElementCountOrderByAggregateInput
   _avg?: Prisma.ElementAvgOrderByAggregateInput
   _max?: Prisma.ElementMaxOrderByAggregateInput
@@ -350,13 +350,13 @@ export type ElementScalarWhereWithAggregatesInput = {
   Id?: Prisma.StringWithAggregatesFilter<"Element"> | string
   Name?: Prisma.StringNullableWithAggregatesFilter<"Element"> | string | null
   Order?: Prisma.IntWithAggregatesFilter<"Element"> | number
-  IsLocked?: Prisma.BoolWithAggregatesFilter<"Element"> | boolean
   ParentId?: Prisma.StringNullableWithAggregatesFilter<"Element"> | string | null
   Src?: Prisma.StringNullableWithAggregatesFilter<"Element"> | string | null
   Styles?: Prisma.JsonNullableWithAggregatesFilter<"Element">
   TailwindStyles?: Prisma.StringNullableWithAggregatesFilter<"Element"> | string | null
   Type?: Prisma.StringWithAggregatesFilter<"Element"> | string
   PageId?: Prisma.StringNullableWithAggregatesFilter<"Element"> | string | null
+  IsLocked?: Prisma.BoolWithAggregatesFilter<"Element"> | boolean
 }
 
 export type ElementCreateInput = {
@@ -365,17 +365,17 @@ export type ElementCreateInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateInput = {
@@ -384,17 +384,17 @@ export type ElementUncheckedCreateInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementUpdateInput = {
@@ -403,17 +403,17 @@ export type ElementUpdateInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateInput = {
@@ -422,17 +422,17 @@ export type ElementUncheckedUpdateInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementCreateManyInput = {
@@ -441,13 +441,13 @@ export type ElementCreateManyInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
 }
 
 export type ElementUpdateManyMutationInput = {
@@ -456,11 +456,11 @@ export type ElementUpdateManyMutationInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type ElementUncheckedUpdateManyInput = {
@@ -469,13 +469,13 @@ export type ElementUncheckedUpdateManyInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type ElementNullableScalarRelationFilter = {
@@ -499,13 +499,13 @@ export type ElementCountOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Order?: Prisma.SortOrder
-  IsLocked?: Prisma.SortOrder
   ParentId?: Prisma.SortOrder
   Src?: Prisma.SortOrder
   Styles?: Prisma.SortOrder
   TailwindStyles?: Prisma.SortOrder
   Type?: Prisma.SortOrder
   PageId?: Prisma.SortOrder
+  IsLocked?: Prisma.SortOrder
 }
 
 export type ElementAvgOrderByAggregateInput = {
@@ -518,12 +518,12 @@ export type ElementMaxOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Order?: Prisma.SortOrder
-  IsLocked?: Prisma.SortOrder
   ParentId?: Prisma.SortOrder
   Src?: Prisma.SortOrder
   TailwindStyles?: Prisma.SortOrder
   Type?: Prisma.SortOrder
   PageId?: Prisma.SortOrder
+  IsLocked?: Prisma.SortOrder
 }
 
 export type ElementMinOrderByAggregateInput = {
@@ -532,12 +532,12 @@ export type ElementMinOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Order?: Prisma.SortOrder
-  IsLocked?: Prisma.SortOrder
   ParentId?: Prisma.SortOrder
   Src?: Prisma.SortOrder
   TailwindStyles?: Prisma.SortOrder
   Type?: Prisma.SortOrder
   PageId?: Prisma.SortOrder
+  IsLocked?: Prisma.SortOrder
 }
 
 export type ElementSumOrderByAggregateInput = {
@@ -717,16 +717,16 @@ export type ElementCreateWithoutElementsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutElementsInput = {
@@ -735,16 +735,16 @@ export type ElementUncheckedCreateWithoutElementsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  IsLocked?: boolean
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutElementsInput = {
@@ -758,16 +758,16 @@ export type ElementCreateWithoutParentInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutParentInput = {
@@ -776,16 +776,16 @@ export type ElementUncheckedCreateWithoutParentInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutParentInput = {
@@ -815,16 +815,16 @@ export type ElementUpdateWithoutElementsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutElementsInput = {
@@ -833,16 +833,16 @@ export type ElementUncheckedUpdateWithoutElementsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUpsertWithWhereUniqueWithoutParentInput = {
@@ -870,13 +870,13 @@ export type ElementScalarWhereInput = {
   Id?: Prisma.StringFilter<"Element"> | string
   Name?: Prisma.StringNullableFilter<"Element"> | string | null
   Order?: Prisma.IntFilter<"Element"> | number
-  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
   ParentId?: Prisma.StringNullableFilter<"Element"> | string | null
   Src?: Prisma.StringNullableFilter<"Element"> | string | null
   Styles?: Prisma.JsonNullableFilter<"Element">
   TailwindStyles?: Prisma.StringNullableFilter<"Element"> | string | null
   Type?: Prisma.StringFilter<"Element"> | string
   PageId?: Prisma.StringNullableFilter<"Element"> | string | null
+  IsLocked?: Prisma.BoolFilter<"Element"> | boolean
 }
 
 export type ElementCreateWithoutPageInput = {
@@ -885,16 +885,16 @@ export type ElementCreateWithoutPageInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutPageInput = {
@@ -903,16 +903,16 @@ export type ElementUncheckedCreateWithoutPageInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutPageInput = {
@@ -947,16 +947,16 @@ export type ElementCreateWithoutSettingsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutSettingsInput = {
@@ -965,16 +965,16 @@ export type ElementUncheckedCreateWithoutSettingsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutSettingsInput = {
@@ -999,16 +999,16 @@ export type ElementUpdateWithoutSettingsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutSettingsInput = {
@@ -1017,16 +1017,16 @@ export type ElementUncheckedUpdateWithoutSettingsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
 }
 
 export type ElementCreateWithoutCommentsInput = {
@@ -1035,16 +1035,16 @@ export type ElementCreateWithoutCommentsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
   EventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutCommentsInput = {
@@ -1053,16 +1053,16 @@ export type ElementUncheckedCreateWithoutCommentsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
   EventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutCommentsInput = {
@@ -1087,16 +1087,16 @@ export type ElementUpdateWithoutCommentsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
   EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutCommentsInput = {
@@ -1105,16 +1105,16 @@ export type ElementUncheckedUpdateWithoutCommentsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
   EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementCreateWithoutEventWorkflowsInput = {
@@ -1123,16 +1123,16 @@ export type ElementCreateWithoutEventWorkflowsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
   Page?: Prisma.PageCreateNestedOneWithoutElementsInput
   Parent?: Prisma.ElementCreateNestedOneWithoutElementsInput
   Elements?: Prisma.ElementCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
   Comments?: Prisma.ElementCommentCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingCreateNestedOneWithoutElementInput
 }
 
 export type ElementUncheckedCreateWithoutEventWorkflowsInput = {
@@ -1141,16 +1141,16 @@ export type ElementUncheckedCreateWithoutEventWorkflowsInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
   Elements?: Prisma.ElementUncheckedCreateNestedManyWithoutParentInput
-  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
   Comments?: Prisma.ElementCommentUncheckedCreateNestedManyWithoutElementInput
+  Settings?: Prisma.SettingUncheckedCreateNestedOneWithoutElementInput
 }
 
 export type ElementCreateOrConnectWithoutEventWorkflowsInput = {
@@ -1175,16 +1175,16 @@ export type ElementUpdateWithoutEventWorkflowsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutEventWorkflowsInput = {
@@ -1193,16 +1193,16 @@ export type ElementUncheckedUpdateWithoutEventWorkflowsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementCreateManyParentInput = {
@@ -1211,12 +1211,12 @@ export type ElementCreateManyParentInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
   PageId?: string | null
+  IsLocked?: boolean
 }
 
 export type ElementUpdateWithoutParentInput = {
@@ -1225,16 +1225,16 @@ export type ElementUpdateWithoutParentInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Page?: Prisma.PageUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutParentInput = {
@@ -1243,16 +1243,16 @@ export type ElementUncheckedUpdateWithoutParentInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateManyWithoutParentInput = {
@@ -1261,12 +1261,12 @@ export type ElementUncheckedUpdateManyWithoutParentInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
   PageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type ElementCreateManyPageInput = {
@@ -1275,12 +1275,12 @@ export type ElementCreateManyPageInput = {
   Id: string
   Name?: string | null
   Order?: number
-  IsLocked?: boolean
   ParentId?: string | null
   Src?: string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: string | null
   Type: string
+  IsLocked?: boolean
 }
 
 export type ElementUpdateWithoutPageInput = {
@@ -1289,16 +1289,16 @@ export type ElementUpdateWithoutPageInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Parent?: Prisma.ElementUpdateOneWithoutElementsNestedInput
   Elements?: Prisma.ElementUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateWithoutPageInput = {
@@ -1307,16 +1307,16 @@ export type ElementUncheckedUpdateWithoutPageInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   Elements?: Prisma.ElementUncheckedUpdateManyWithoutParentNestedInput
-  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
-  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
   Comments?: Prisma.ElementCommentUncheckedUpdateManyWithoutElementNestedInput
+  EventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutElementNestedInput
+  Settings?: Prisma.SettingUncheckedUpdateOneWithoutElementNestedInput
 }
 
 export type ElementUncheckedUpdateManyWithoutPageInput = {
@@ -1325,12 +1325,12 @@ export type ElementUncheckedUpdateManyWithoutPageInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Order?: Prisma.IntFieldUpdateOperationsInput | number
-  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
   ParentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Src?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   TailwindStyles?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   Type?: Prisma.StringFieldUpdateOperationsInput | string
+  IsLocked?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
@@ -1340,14 +1340,14 @@ export type ElementUncheckedUpdateManyWithoutPageInput = {
 
 export type ElementCountOutputType = {
   Elements: number
-  EventWorkflows: number
   Comments: number
+  EventWorkflows: number
 }
 
 export type ElementCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Elements?: boolean | ElementCountOutputTypeCountElementsArgs
-  EventWorkflows?: boolean | ElementCountOutputTypeCountEventWorkflowsArgs
   Comments?: boolean | ElementCountOutputTypeCountCommentsArgs
+  EventWorkflows?: boolean | ElementCountOutputTypeCountEventWorkflowsArgs
 }
 
 /**
@@ -1370,15 +1370,15 @@ export type ElementCountOutputTypeCountElementsArgs<ExtArgs extends runtime.Type
 /**
  * ElementCountOutputType without action
  */
-export type ElementCountOutputTypeCountEventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ElementEventWorkflowWhereInput
+export type ElementCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ElementCommentWhereInput
 }
 
 /**
  * ElementCountOutputType without action
  */
-export type ElementCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ElementCommentWhereInput
+export type ElementCountOutputTypeCountEventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ElementEventWorkflowWhereInput
 }
 
 
@@ -1388,19 +1388,19 @@ export type ElementSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   Id?: boolean
   Name?: boolean
   Order?: boolean
-  IsLocked?: boolean
   ParentId?: boolean
   Src?: boolean
   Styles?: boolean
   TailwindStyles?: boolean
   Type?: boolean
   PageId?: boolean
+  IsLocked?: boolean
   Page?: boolean | Prisma.Element$PageArgs<ExtArgs>
   Parent?: boolean | Prisma.Element$ParentArgs<ExtArgs>
   Elements?: boolean | Prisma.Element$ElementsArgs<ExtArgs>
-  Settings?: boolean | Prisma.Element$SettingsArgs<ExtArgs>
-  EventWorkflows?: boolean | Prisma.Element$EventWorkflowsArgs<ExtArgs>
   Comments?: boolean | Prisma.Element$CommentsArgs<ExtArgs>
+  EventWorkflows?: boolean | Prisma.Element$EventWorkflowsArgs<ExtArgs>
+  Settings?: boolean | Prisma.Element$SettingsArgs<ExtArgs>
   _count?: boolean | Prisma.ElementCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["element"]>
 
@@ -1410,13 +1410,13 @@ export type ElementSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   Id?: boolean
   Name?: boolean
   Order?: boolean
-  IsLocked?: boolean
   ParentId?: boolean
   Src?: boolean
   Styles?: boolean
   TailwindStyles?: boolean
   Type?: boolean
   PageId?: boolean
+  IsLocked?: boolean
   Page?: boolean | Prisma.Element$PageArgs<ExtArgs>
   Parent?: boolean | Prisma.Element$ParentArgs<ExtArgs>
 }, ExtArgs["result"]["element"]>
@@ -1427,13 +1427,13 @@ export type ElementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   Id?: boolean
   Name?: boolean
   Order?: boolean
-  IsLocked?: boolean
   ParentId?: boolean
   Src?: boolean
   Styles?: boolean
   TailwindStyles?: boolean
   Type?: boolean
   PageId?: boolean
+  IsLocked?: boolean
   Page?: boolean | Prisma.Element$PageArgs<ExtArgs>
   Parent?: boolean | Prisma.Element$ParentArgs<ExtArgs>
 }, ExtArgs["result"]["element"]>
@@ -1444,23 +1444,23 @@ export type ElementSelectScalar = {
   Id?: boolean
   Name?: boolean
   Order?: boolean
-  IsLocked?: boolean
   ParentId?: boolean
   Src?: boolean
   Styles?: boolean
   TailwindStyles?: boolean
   Type?: boolean
   PageId?: boolean
+  IsLocked?: boolean
 }
 
-export type ElementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Content" | "Href" | "Id" | "Name" | "Order" | "IsLocked" | "ParentId" | "Src" | "Styles" | "TailwindStyles" | "Type" | "PageId", ExtArgs["result"]["element"]>
+export type ElementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Content" | "Href" | "Id" | "Name" | "Order" | "ParentId" | "Src" | "Styles" | "TailwindStyles" | "Type" | "PageId" | "IsLocked", ExtArgs["result"]["element"]>
 export type ElementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Page?: boolean | Prisma.Element$PageArgs<ExtArgs>
   Parent?: boolean | Prisma.Element$ParentArgs<ExtArgs>
   Elements?: boolean | Prisma.Element$ElementsArgs<ExtArgs>
-  Settings?: boolean | Prisma.Element$SettingsArgs<ExtArgs>
-  EventWorkflows?: boolean | Prisma.Element$EventWorkflowsArgs<ExtArgs>
   Comments?: boolean | Prisma.Element$CommentsArgs<ExtArgs>
+  EventWorkflows?: boolean | Prisma.Element$EventWorkflowsArgs<ExtArgs>
+  Settings?: boolean | Prisma.Element$SettingsArgs<ExtArgs>
   _count?: boolean | Prisma.ElementCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ElementIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1478,9 +1478,9 @@ export type $ElementPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     Page: Prisma.$PagePayload<ExtArgs> | null
     Parent: Prisma.$ElementPayload<ExtArgs> | null
     Elements: Prisma.$ElementPayload<ExtArgs>[]
-    Settings: Prisma.$SettingPayload<ExtArgs> | null
-    EventWorkflows: Prisma.$ElementEventWorkflowPayload<ExtArgs>[]
     Comments: Prisma.$ElementCommentPayload<ExtArgs>[]
+    EventWorkflows: Prisma.$ElementEventWorkflowPayload<ExtArgs>[]
+    Settings: Prisma.$SettingPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     Content: string | null
@@ -1488,13 +1488,13 @@ export type $ElementPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     Id: string
     Name: string | null
     Order: number
-    IsLocked: boolean
     ParentId: string | null
     Src: string | null
     Styles: runtime.JsonValue | null
     TailwindStyles: string | null
     Type: string
     PageId: string | null
+    IsLocked: boolean
   }, ExtArgs["result"]["element"]>
   composites: {}
 }
@@ -1892,9 +1892,9 @@ export interface Prisma__ElementClient<T, Null = never, ExtArgs extends runtime.
   Page<T extends Prisma.Element$PageArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$PageArgs<ExtArgs>>): Prisma.Prisma__PageClient<runtime.Types.Result.GetResult<Prisma.$PagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   Parent<T extends Prisma.Element$ParentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$ParentArgs<ExtArgs>>): Prisma.Prisma__ElementClient<runtime.Types.Result.GetResult<Prisma.$ElementPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   Elements<T extends Prisma.Element$ElementsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$ElementsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ElementPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  Settings<T extends Prisma.Element$SettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$SettingsArgs<ExtArgs>>): Prisma.Prisma__SettingClient<runtime.Types.Result.GetResult<Prisma.$SettingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  EventWorkflows<T extends Prisma.Element$EventWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$EventWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ElementEventWorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   Comments<T extends Prisma.Element$CommentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$CommentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ElementCommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  EventWorkflows<T extends Prisma.Element$EventWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$EventWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ElementEventWorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  Settings<T extends Prisma.Element$SettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Element$SettingsArgs<ExtArgs>>): Prisma.Prisma__SettingClient<runtime.Types.Result.GetResult<Prisma.$SettingPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1929,13 +1929,13 @@ export interface ElementFieldRefs {
   readonly Id: Prisma.FieldRef<"Element", 'String'>
   readonly Name: Prisma.FieldRef<"Element", 'String'>
   readonly Order: Prisma.FieldRef<"Element", 'Int'>
-  readonly IsLocked: Prisma.FieldRef<"Element", 'Boolean'>
   readonly ParentId: Prisma.FieldRef<"Element", 'String'>
   readonly Src: Prisma.FieldRef<"Element", 'String'>
   readonly Styles: Prisma.FieldRef<"Element", 'Json'>
   readonly TailwindStyles: Prisma.FieldRef<"Element", 'String'>
   readonly Type: Prisma.FieldRef<"Element", 'String'>
   readonly PageId: Prisma.FieldRef<"Element", 'String'>
+  readonly IsLocked: Prisma.FieldRef<"Element", 'Boolean'>
 }
     
 
@@ -2394,22 +2394,27 @@ export type Element$ElementsArgs<ExtArgs extends runtime.Types.Extensions.Intern
 }
 
 /**
- * Element.Settings
+ * Element.Comments
  */
-export type Element$SettingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Element$CommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the Setting
+   * Select specific fields to fetch from the ElementComment
    */
-  select?: Prisma.SettingSelect<ExtArgs> | null
+  select?: Prisma.ElementCommentSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the Setting
+   * Omit specific fields from the ElementComment
    */
-  omit?: Prisma.SettingOmit<ExtArgs> | null
+  omit?: Prisma.ElementCommentOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.SettingInclude<ExtArgs> | null
-  where?: Prisma.SettingWhereInput
+  include?: Prisma.ElementCommentInclude<ExtArgs> | null
+  where?: Prisma.ElementCommentWhereInput
+  orderBy?: Prisma.ElementCommentOrderByWithRelationInput | Prisma.ElementCommentOrderByWithRelationInput[]
+  cursor?: Prisma.ElementCommentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ElementCommentScalarFieldEnum | Prisma.ElementCommentScalarFieldEnum[]
 }
 
 /**
@@ -2437,27 +2442,22 @@ export type Element$EventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.
 }
 
 /**
- * Element.Comments
+ * Element.Settings
  */
-export type Element$CommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+export type Element$SettingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
-   * Select specific fields to fetch from the ElementComment
+   * Select specific fields to fetch from the Setting
    */
-  select?: Prisma.ElementCommentSelect<ExtArgs> | null
+  select?: Prisma.SettingSelect<ExtArgs> | null
   /**
-   * Omit specific fields from the ElementComment
+   * Omit specific fields from the Setting
    */
-  omit?: Prisma.ElementCommentOmit<ExtArgs> | null
+  omit?: Prisma.SettingOmit<ExtArgs> | null
   /**
    * Choose, which related nodes to fetch as well
    */
-  include?: Prisma.ElementCommentInclude<ExtArgs> | null
-  where?: Prisma.ElementCommentWhereInput
-  orderBy?: Prisma.ElementCommentOrderByWithRelationInput | Prisma.ElementCommentOrderByWithRelationInput[]
-  cursor?: Prisma.ElementCommentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ElementCommentScalarFieldEnum | Prisma.ElementCommentScalarFieldEnum[]
+  include?: Prisma.SettingInclude<ExtArgs> | null
+  where?: Prisma.SettingWhereInput
 }
 
 /**

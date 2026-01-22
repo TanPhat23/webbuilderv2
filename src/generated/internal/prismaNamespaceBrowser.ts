@@ -102,13 +102,13 @@ export const ElementScalarFieldEnum = {
   Id: 'Id',
   Name: 'Name',
   Order: 'Order',
-  IsLocked: 'IsLocked',
   ParentId: 'ParentId',
   Src: 'Src',
   Styles: 'Styles',
   TailwindStyles: 'TailwindStyles',
   Type: 'Type',
-  PageId: 'PageId'
+  PageId: 'PageId',
+  IsLocked: 'IsLocked'
 } as const
 
 export type ElementScalarFieldEnum = (typeof ElementScalarFieldEnum)[keyof typeof ElementScalarFieldEnum]
@@ -163,10 +163,11 @@ export const EventWorkflowScalarFieldEnum = {
   ProjectId: 'ProjectId',
   Name: 'Name',
   Description: 'Description',
-  CanvasData: 'CanvasData',
+  Handlers: 'Handlers',
   Enabled: 'Enabled',
   CreatedAt: 'CreatedAt',
-  UpdatedAt: 'UpdatedAt'
+  UpdatedAt: 'UpdatedAt',
+  CanvasData: 'CanvasData'
 } as const
 
 export type EventWorkflowScalarFieldEnum = (typeof EventWorkflowScalarFieldEnum)[keyof typeof EventWorkflowScalarFieldEnum]
@@ -286,14 +287,14 @@ export const MarketplaceItemScalarFieldEnum = {
   PageCount: 'PageCount',
   Downloads: 'Downloads',
   Likes: 'Likes',
-  Views: 'Views',
   AuthorId: 'AuthorId',
   AuthorName: 'AuthorName',
   Verified: 'Verified',
   CreatedAt: 'CreatedAt',
   UpdatedAt: 'UpdatedAt',
   DeletedAt: 'DeletedAt',
-  ProjectId: 'ProjectId'
+  ProjectId: 'ProjectId',
+  Views: 'Views'
 } as const
 
 export type MarketplaceItemScalarFieldEnum = (typeof MarketplaceItemScalarFieldEnum)[keyof typeof MarketplaceItemScalarFieldEnum]
@@ -372,9 +373,9 @@ export const InvitationScalarFieldEnum = {
   Role: 'Role',
   Token: 'Token',
   ExpiresAt: 'ExpiresAt',
-  Status: 'Status',
   CreatedAt: 'CreatedAt',
-  AcceptedAt: 'AcceptedAt'
+  AcceptedAt: 'AcceptedAt',
+  Status: 'Status'
 } as const
 
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]

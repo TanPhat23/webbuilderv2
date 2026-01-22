@@ -49,10 +49,11 @@ export type EventWorkflowCountAggregateOutputType = {
   ProjectId: number
   Name: number
   Description: number
-  CanvasData: number
+  Handlers: number
   Enabled: number
   CreatedAt: number
   UpdatedAt: number
+  CanvasData: number
   _all: number
 }
 
@@ -82,10 +83,11 @@ export type EventWorkflowCountAggregateInputType = {
   ProjectId?: true
   Name?: true
   Description?: true
-  CanvasData?: true
+  Handlers?: true
   Enabled?: true
   CreatedAt?: true
   UpdatedAt?: true
+  CanvasData?: true
   _all?: true
 }
 
@@ -166,10 +168,11 @@ export type EventWorkflowGroupByOutputType = {
   ProjectId: string
   Name: string
   Description: string | null
-  CanvasData: runtime.JsonValue | null
+  Handlers: runtime.JsonValue
   Enabled: boolean
   CreatedAt: Date
   UpdatedAt: Date
+  CanvasData: runtime.JsonValue | null
   _count: EventWorkflowCountAggregateOutputType | null
   _min: EventWorkflowMinAggregateOutputType | null
   _max: EventWorkflowMaxAggregateOutputType | null
@@ -198,12 +201,13 @@ export type EventWorkflowWhereInput = {
   ProjectId?: Prisma.StringFilter<"EventWorkflow"> | string
   Name?: Prisma.StringFilter<"EventWorkflow"> | string
   Description?: Prisma.StringNullableFilter<"EventWorkflow"> | string | null
-  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
+  Handlers?: Prisma.JsonFilter<"EventWorkflow">
   Enabled?: Prisma.BoolFilter<"EventWorkflow"> | boolean
   CreatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
   UpdatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
-  Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
+  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
   ElementEventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
+  Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
 }
 
 export type EventWorkflowOrderByWithRelationInput = {
@@ -211,12 +215,13 @@ export type EventWorkflowOrderByWithRelationInput = {
   ProjectId?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Description?: Prisma.SortOrderInput | Prisma.SortOrder
-  CanvasData?: Prisma.SortOrderInput | Prisma.SortOrder
+  Handlers?: Prisma.SortOrder
   Enabled?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   UpdatedAt?: Prisma.SortOrder
-  Project?: Prisma.ProjectOrderByWithRelationInput
+  CanvasData?: Prisma.SortOrderInput | Prisma.SortOrder
   ElementEventWorkflows?: Prisma.ElementEventWorkflowOrderByRelationAggregateInput
+  Project?: Prisma.ProjectOrderByWithRelationInput
 }
 
 export type EventWorkflowWhereUniqueInput = Prisma.AtLeast<{
@@ -228,12 +233,13 @@ export type EventWorkflowWhereUniqueInput = Prisma.AtLeast<{
   ProjectId?: Prisma.StringFilter<"EventWorkflow"> | string
   Name?: Prisma.StringFilter<"EventWorkflow"> | string
   Description?: Prisma.StringNullableFilter<"EventWorkflow"> | string | null
-  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
+  Handlers?: Prisma.JsonFilter<"EventWorkflow">
   Enabled?: Prisma.BoolFilter<"EventWorkflow"> | boolean
   CreatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
   UpdatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
-  Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
+  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
   ElementEventWorkflows?: Prisma.ElementEventWorkflowListRelationFilter
+  Project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
 }, "Id" | "ProjectId_Name">
 
 export type EventWorkflowOrderByWithAggregationInput = {
@@ -241,10 +247,11 @@ export type EventWorkflowOrderByWithAggregationInput = {
   ProjectId?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Description?: Prisma.SortOrderInput | Prisma.SortOrder
-  CanvasData?: Prisma.SortOrderInput | Prisma.SortOrder
+  Handlers?: Prisma.SortOrder
   Enabled?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   UpdatedAt?: Prisma.SortOrder
+  CanvasData?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.EventWorkflowCountOrderByAggregateInput
   _max?: Prisma.EventWorkflowMaxOrderByAggregateInput
   _min?: Prisma.EventWorkflowMinOrderByAggregateInput
@@ -258,22 +265,24 @@ export type EventWorkflowScalarWhereWithAggregatesInput = {
   ProjectId?: Prisma.StringWithAggregatesFilter<"EventWorkflow"> | string
   Name?: Prisma.StringWithAggregatesFilter<"EventWorkflow"> | string
   Description?: Prisma.StringNullableWithAggregatesFilter<"EventWorkflow"> | string | null
-  CanvasData?: Prisma.JsonNullableWithAggregatesFilter<"EventWorkflow">
+  Handlers?: Prisma.JsonWithAggregatesFilter<"EventWorkflow">
   Enabled?: Prisma.BoolWithAggregatesFilter<"EventWorkflow"> | boolean
   CreatedAt?: Prisma.DateTimeWithAggregatesFilter<"EventWorkflow"> | Date | string
   UpdatedAt?: Prisma.DateTimeWithAggregatesFilter<"EventWorkflow"> | Date | string
+  CanvasData?: Prisma.JsonNullableWithAggregatesFilter<"EventWorkflow">
 }
 
 export type EventWorkflowCreateInput = {
   Id?: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
-  Project: Prisma.ProjectCreateNestedOneWithoutEventWorkflowsInput
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutWorkflowInput
+  Project: Prisma.ProjectCreateNestedOneWithoutEventWorkflowsInput
 }
 
 export type EventWorkflowUncheckedCreateInput = {
@@ -281,10 +290,11 @@ export type EventWorkflowUncheckedCreateInput = {
   ProjectId: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutWorkflowInput
 }
 
@@ -292,12 +302,13 @@ export type EventWorkflowUpdateInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  Project?: Prisma.ProjectUpdateOneRequiredWithoutEventWorkflowsNestedInput
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutWorkflowNestedInput
+  Project?: Prisma.ProjectUpdateOneRequiredWithoutEventWorkflowsNestedInput
 }
 
 export type EventWorkflowUncheckedUpdateInput = {
@@ -305,10 +316,11 @@ export type EventWorkflowUncheckedUpdateInput = {
   ProjectId?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutWorkflowNestedInput
 }
 
@@ -317,20 +329,22 @@ export type EventWorkflowCreateManyInput = {
   ProjectId: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowUpdateManyMutationInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowUncheckedUpdateManyInput = {
@@ -338,10 +352,11 @@ export type EventWorkflowUncheckedUpdateManyInput = {
   ProjectId?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowListRelationFilter = {
@@ -364,10 +379,11 @@ export type EventWorkflowCountOrderByAggregateInput = {
   ProjectId?: Prisma.SortOrder
   Name?: Prisma.SortOrder
   Description?: Prisma.SortOrder
-  CanvasData?: Prisma.SortOrder
+  Handlers?: Prisma.SortOrder
   Enabled?: Prisma.SortOrder
   CreatedAt?: Prisma.SortOrder
   UpdatedAt?: Prisma.SortOrder
+  CanvasData?: Prisma.SortOrder
 }
 
 export type EventWorkflowMaxOrderByAggregateInput = {
@@ -455,10 +471,11 @@ export type EventWorkflowCreateWithoutProjectInput = {
   Id?: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowCreateNestedManyWithoutWorkflowInput
 }
 
@@ -466,10 +483,11 @@ export type EventWorkflowUncheckedCreateWithoutProjectInput = {
   Id?: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUncheckedCreateNestedManyWithoutWorkflowInput
 }
 
@@ -507,20 +525,22 @@ export type EventWorkflowScalarWhereInput = {
   ProjectId?: Prisma.StringFilter<"EventWorkflow"> | string
   Name?: Prisma.StringFilter<"EventWorkflow"> | string
   Description?: Prisma.StringNullableFilter<"EventWorkflow"> | string | null
-  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
+  Handlers?: Prisma.JsonFilter<"EventWorkflow">
   Enabled?: Prisma.BoolFilter<"EventWorkflow"> | boolean
   CreatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
   UpdatedAt?: Prisma.DateTimeFilter<"EventWorkflow"> | Date | string
+  CanvasData?: Prisma.JsonNullableFilter<"EventWorkflow">
 }
 
 export type EventWorkflowCreateWithoutElementEventWorkflowsInput = {
   Id?: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Project: Prisma.ProjectCreateNestedOneWithoutEventWorkflowsInput
 }
 
@@ -529,10 +549,11 @@ export type EventWorkflowUncheckedCreateWithoutElementEventWorkflowsInput = {
   ProjectId: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowCreateOrConnectWithoutElementEventWorkflowsInput = {
@@ -555,10 +576,11 @@ export type EventWorkflowUpdateWithoutElementEventWorkflowsInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Project?: Prisma.ProjectUpdateOneRequiredWithoutEventWorkflowsNestedInput
 }
 
@@ -567,30 +589,33 @@ export type EventWorkflowUncheckedUpdateWithoutElementEventWorkflowsInput = {
   ProjectId?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowCreateManyProjectInput = {
   Id?: string
   Name: string
   Description?: string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type EventWorkflowUpdateWithoutProjectInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUpdateManyWithoutWorkflowNestedInput
 }
 
@@ -598,10 +623,11 @@ export type EventWorkflowUncheckedUpdateWithoutProjectInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ElementEventWorkflows?: Prisma.ElementEventWorkflowUncheckedUpdateManyWithoutWorkflowNestedInput
 }
 
@@ -609,10 +635,11 @@ export type EventWorkflowUncheckedUpdateManyWithoutProjectInput = {
   Id?: Prisma.StringFieldUpdateOperationsInput | string
   Name?: Prisma.StringFieldUpdateOperationsInput | string
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  Handlers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   Enabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  CanvasData?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -651,12 +678,13 @@ export type EventWorkflowSelect<ExtArgs extends runtime.Types.Extensions.Interna
   ProjectId?: boolean
   Name?: boolean
   Description?: boolean
-  CanvasData?: boolean
+  Handlers?: boolean
   Enabled?: boolean
   CreatedAt?: boolean
   UpdatedAt?: boolean
-  Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
+  CanvasData?: boolean
   ElementEventWorkflows?: boolean | Prisma.EventWorkflow$ElementEventWorkflowsArgs<ExtArgs>
+  Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.EventWorkflowCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["eventWorkflow"]>
 
@@ -665,10 +693,11 @@ export type EventWorkflowSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   ProjectId?: boolean
   Name?: boolean
   Description?: boolean
-  CanvasData?: boolean
+  Handlers?: boolean
   Enabled?: boolean
   CreatedAt?: boolean
   UpdatedAt?: boolean
+  CanvasData?: boolean
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["eventWorkflow"]>
 
@@ -677,10 +706,11 @@ export type EventWorkflowSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   ProjectId?: boolean
   Name?: boolean
   Description?: boolean
-  CanvasData?: boolean
+  Handlers?: boolean
   Enabled?: boolean
   CreatedAt?: boolean
   UpdatedAt?: boolean
+  CanvasData?: boolean
   Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["eventWorkflow"]>
 
@@ -689,16 +719,17 @@ export type EventWorkflowSelectScalar = {
   ProjectId?: boolean
   Name?: boolean
   Description?: boolean
-  CanvasData?: boolean
+  Handlers?: boolean
   Enabled?: boolean
   CreatedAt?: boolean
   UpdatedAt?: boolean
+  CanvasData?: boolean
 }
 
-export type EventWorkflowOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "ProjectId" | "Name" | "Description" | "CanvasData" | "Enabled" | "CreatedAt" | "UpdatedAt", ExtArgs["result"]["eventWorkflow"]>
+export type EventWorkflowOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "ProjectId" | "Name" | "Description" | "Handlers" | "Enabled" | "CreatedAt" | "UpdatedAt" | "CanvasData", ExtArgs["result"]["eventWorkflow"]>
 export type EventWorkflowInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   ElementEventWorkflows?: boolean | Prisma.EventWorkflow$ElementEventWorkflowsArgs<ExtArgs>
+  Project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   _count?: boolean | Prisma.EventWorkflowCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type EventWorkflowIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -711,18 +742,19 @@ export type EventWorkflowIncludeUpdateManyAndReturn<ExtArgs extends runtime.Type
 export type $EventWorkflowPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "EventWorkflow"
   objects: {
-    Project: Prisma.$ProjectPayload<ExtArgs>
     ElementEventWorkflows: Prisma.$ElementEventWorkflowPayload<ExtArgs>[]
+    Project: Prisma.$ProjectPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     Id: string
     ProjectId: string
     Name: string
     Description: string | null
-    CanvasData: runtime.JsonValue | null
+    Handlers: runtime.JsonValue
     Enabled: boolean
     CreatedAt: Date
     UpdatedAt: Date
+    CanvasData: runtime.JsonValue | null
   }, ExtArgs["result"]["eventWorkflow"]>
   composites: {}
 }
@@ -1117,8 +1149,8 @@ readonly fields: EventWorkflowFieldRefs;
  */
 export interface Prisma__EventWorkflowClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  Project<T extends Prisma.ProjectDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProjectDefaultArgs<ExtArgs>>): Prisma.Prisma__ProjectClient<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   ElementEventWorkflows<T extends Prisma.EventWorkflow$ElementEventWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.EventWorkflow$ElementEventWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ElementEventWorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  Project<T extends Prisma.ProjectDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProjectDefaultArgs<ExtArgs>>): Prisma.Prisma__ProjectClient<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1152,10 +1184,11 @@ export interface EventWorkflowFieldRefs {
   readonly ProjectId: Prisma.FieldRef<"EventWorkflow", 'String'>
   readonly Name: Prisma.FieldRef<"EventWorkflow", 'String'>
   readonly Description: Prisma.FieldRef<"EventWorkflow", 'String'>
-  readonly CanvasData: Prisma.FieldRef<"EventWorkflow", 'Json'>
+  readonly Handlers: Prisma.FieldRef<"EventWorkflow", 'Json'>
   readonly Enabled: Prisma.FieldRef<"EventWorkflow", 'Boolean'>
   readonly CreatedAt: Prisma.FieldRef<"EventWorkflow", 'DateTime'>
   readonly UpdatedAt: Prisma.FieldRef<"EventWorkflow", 'DateTime'>
+  readonly CanvasData: Prisma.FieldRef<"EventWorkflow", 'Json'>
 }
     
 
