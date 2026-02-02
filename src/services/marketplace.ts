@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import {
   MarketplaceItem,
   CreateMarketplaceItemRequest,
@@ -46,7 +46,9 @@ export const marketplaceService: IMarketplaceService = {
     data: CreateMarketplaceItemRequest,
   ): Promise<MarketplaceItem> => {
     return apiClient.post<MarketplaceItem>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.CREATE),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.CREATE)
+        .build(),
       data,
     );
   },
@@ -54,25 +56,23 @@ export const marketplaceService: IMarketplaceService = {
   getMarketplaceItems: async (
     filters?: MarketplaceFilters,
   ): Promise<MarketplaceItemWithRelations[]> => {
-    const queryParams = new URLSearchParams();
+    const builder = new URLBuilder("api").setPath(
+      API_ENDPOINTS.MARKETPLACE.ITEMS.GET_ALL,
+    );
     if (filters) {
       if (filters.templateType)
-        queryParams.append("templateType", filters.templateType);
+        builder.addQueryParam("templateType", filters.templateType);
       if (filters.featured !== undefined)
-        queryParams.append("featured", String(filters.featured));
+        builder.addQueryParam("featured", String(filters.featured));
       if (filters.categoryId)
-        queryParams.append("categoryId", filters.categoryId);
+        builder.addQueryParam("categoryId", filters.categoryId);
       if (filters.tags && filters.tags.length > 0)
-        queryParams.append("tags", filters.tags.join(","));
-      if (filters.search) queryParams.append("search", filters.search);
-      if (filters.authorId) queryParams.append("authorId", filters.authorId);
+        builder.addQueryParam("tags", filters.tags.join(","));
+      if (filters.search) builder.addQueryParam("search", filters.search);
+      if (filters.authorId) builder.addQueryParam("authorId", filters.authorId);
     }
 
-    const url = queryParams.toString()
-      ? `${GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.GET_ALL)}?${queryParams.toString()}`
-      : GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.GET_ALL);
-
-    const response = await apiClient.get<any>(url);
+    const response = await apiClient.get<any>(builder.build());
 
     // Handle potential response wrapping
     // Backend might return { data: [...] } or just [...]
@@ -95,7 +95,9 @@ export const marketplaceService: IMarketplaceService = {
     id: string,
   ): Promise<MarketplaceItemWithRelations> => {
     return apiClient.get<MarketplaceItemWithRelations>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.GET_BY_ID(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.GET_BY_ID(id))
+        .build(),
     );
   },
 
@@ -104,40 +106,53 @@ export const marketplaceService: IMarketplaceService = {
     data: UpdateMarketplaceItemRequest,
   ): Promise<MarketplaceItem> => {
     return apiClient.patch<MarketplaceItem>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.UPDATE(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.UPDATE(id))
+        .build(),
       data,
     );
   },
 
   deleteMarketplaceItem: async (id: string): Promise<boolean> => {
-    return apiClient.delete(GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.DELETE(id)));
+    return apiClient.delete(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.DELETE(id))
+        .build(),
+    );
   },
 
   incrementDownloads: async (id: string): Promise<boolean> => {
     return apiClient.post<boolean>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.INCREMENT_DOWNLOADS(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.INCREMENT_DOWNLOADS(id))
+        .build(),
       {},
     );
   },
 
   incrementLikes: async (id: string): Promise<boolean> => {
     return apiClient.post<boolean>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.INCREMENT_LIKES(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.INCREMENT_LIKES(id))
+        .build(),
       {},
     );
   },
 
-
   createCategory: async (name: string): Promise<Category> => {
     return apiClient.post<Category>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.CATEGORIES.CREATE),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.CATEGORIES.CREATE)
+        .build(),
       { name },
     );
   },
 
   getCategories: async (): Promise<Category[]> => {
     const response = await apiClient.get<any>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.CATEGORIES.GET_ALL),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.CATEGORIES.GET_ALL)
+        .build(),
     );
 
     if (response && typeof response === "object") {
@@ -155,19 +170,28 @@ export const marketplaceService: IMarketplaceService = {
 
   deleteCategory: async (id: string): Promise<boolean> => {
     return apiClient.delete(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.CATEGORIES.DELETE(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.CATEGORIES.DELETE(id))
+        .build(),
     );
   },
 
   createTag: async (name: string): Promise<Tag> => {
-    return apiClient.post<Tag>(GetUrl(API_ENDPOINTS.MARKETPLACE.TAGS.CREATE), {
-      name,
-    });
+    return apiClient.post<Tag>(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.TAGS.CREATE)
+        .build(),
+      {
+        name,
+      },
+    );
   },
 
   getTags: async (): Promise<Tag[]> => {
     const response = await apiClient.get<any>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.TAGS.GET_ALL),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.TAGS.GET_ALL)
+        .build(),
     );
 
     if (response && typeof response === "object") {
@@ -184,12 +208,20 @@ export const marketplaceService: IMarketplaceService = {
   },
 
   deleteTag: async (id: string): Promise<boolean> => {
-    return apiClient.delete(GetUrl(API_ENDPOINTS.MARKETPLACE.TAGS.DELETE(id)));
+    return apiClient.delete(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.TAGS.DELETE(id))
+        .build(),
+    );
   },
 
-  downloadMarketplaceItem: async (marketplaceItemId: string): Promise<Project> => {
+  downloadMarketplaceItem: async (
+    marketplaceItemId: string,
+  ): Promise<Project> => {
     const response = await apiClient.post<{ project: Project }>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.ITEMS.DOWNLOAD(marketplaceItemId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.ITEMS.DOWNLOAD(marketplaceItemId))
+        .build(),
       {},
     );
     return response.project;

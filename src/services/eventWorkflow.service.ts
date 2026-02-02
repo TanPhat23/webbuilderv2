@@ -5,7 +5,7 @@ import {
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
 } from "@/interfaces/eventWorkflow.interface";
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 
 interface IEventWorkflowService {
   getEventWorkflows(projectId: string): Promise<EventWorkflow[]>;
@@ -27,23 +27,30 @@ interface IEventWorkflowService {
 
 export const eventWorkflowService: IEventWorkflowService = {
   getEventWorkflows: async (projectId: string): Promise<EventWorkflow[]> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.GET_BY_PROJECT(projectId))
+      .build();
     const response = await apiClient.get<
       { data: EventWorkflow[] } | EventWorkflow[]
-    >(GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.GET_BY_PROJECT(projectId)));
+    >(url);
     return Array.isArray(response) ? response : response?.data || [];
   },
 
   getEventWorkflowById: async (workflowId: string): Promise<EventWorkflow> => {
-    return apiClient.get(
-      GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.GET_BY_ID(workflowId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.GET_BY_ID(workflowId))
+      .build();
+    return apiClient.get(url);
   },
 
   createEventWorkflow: async (
     projectId: string,
     data: CreateEventWorkflowInput,
   ): Promise<EventWorkflow> => {
-    return apiClient.post(GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.CREATE), {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.CREATE)
+      .build();
+    return apiClient.post(url, {
       ...data,
       projectId,
     });
@@ -53,32 +60,26 @@ export const eventWorkflowService: IEventWorkflowService = {
     workflowId: string,
     data: UpdateEventWorkflowInput,
   ): Promise<EventWorkflow> => {
-    console.log("Updating workflow with data:", {
-      name: data.name,
-      hasCanvasData: !!data.canvasData,
-      canvasNodeCount: data.canvasData?.nodes?.length || 0,
-      canvasConnectionCount: data.canvasData?.connections?.length || 0,
-    });
-    console.log(data);
-    return apiClient.patch(
-      GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.UPDATE(workflowId)),
-      data as any,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.UPDATE(workflowId))
+      .build();
+    return apiClient.patch(url, data as any);
   },
 
   updateEventWorkflowEnabled: async (
     workflowId: string,
     enabled: boolean,
   ): Promise<EventWorkflow> => {
-    return apiClient.patch(
-      GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.UPDATE_ENABLED(workflowId)),
-      { enabled } as any,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.UPDATE_ENABLED(workflowId))
+      .build();
+    return apiClient.patch(url, { enabled } as any);
   },
 
   deleteEventWorkflow: async (workflowId: string): Promise<boolean> => {
-    return apiClient.delete(
-      GetUrl(API_ENDPOINTS.EVENT_WORKFLOWS.DELETE(workflowId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.EVENT_WORKFLOWS.DELETE(workflowId))
+      .build();
+    return apiClient.delete(url);
   },
 };

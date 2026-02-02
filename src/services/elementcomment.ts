@@ -1,10 +1,9 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import {
   ElementComment,
   ElementCommentResponse,
   CreateElementCommentRequest,
   UpdateElementCommentRequest,
-  ElementCommentFilter,
 } from "@/interfaces/elementcomment.interface";
 import apiClient from "./apiclient";
 import { API_ENDPOINTS } from "@/constants/endpoints";
@@ -32,7 +31,9 @@ export const elementCommentService: IElementCommentService = {
     data: CreateElementCommentRequest,
   ): Promise<ElementComment> => {
     return apiClient.post<ElementComment>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.CREATE),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.CREATE)
+        .build(),
       data,
     );
   },
@@ -40,7 +41,9 @@ export const elementCommentService: IElementCommentService = {
   // Get element comment by ID
   getElementCommentById: async (commentId: string): Promise<ElementComment> => {
     return apiClient.get<ElementComment>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_ID(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_ID(commentId))
+        .build(),
     );
   },
 
@@ -49,7 +52,9 @@ export const elementCommentService: IElementCommentService = {
     elementId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_ELEMENT(elementId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_ELEMENT(elementId))
+        .build(),
     );
   },
 
@@ -58,7 +63,9 @@ export const elementCommentService: IElementCommentService = {
     projectId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_PROJECT(projectId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_PROJECT(projectId))
+        .build(),
     );
   },
 
@@ -67,7 +74,9 @@ export const elementCommentService: IElementCommentService = {
     authorId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_AUTHOR(authorId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.GET_BY_AUTHOR(authorId))
+        .build(),
     );
   },
 
@@ -77,7 +86,9 @@ export const elementCommentService: IElementCommentService = {
     data: UpdateElementCommentRequest,
   ): Promise<ElementComment> => {
     return apiClient.patch<ElementComment>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.UPDATE(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.UPDATE(commentId))
+        .build(),
       data,
     );
   },
@@ -85,14 +96,18 @@ export const elementCommentService: IElementCommentService = {
   // Delete an element comment
   deleteElementComment: async (commentId: string): Promise<boolean> => {
     return apiClient.delete(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.DELETE(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.DELETE(commentId))
+        .build(),
     );
   },
 
   // Toggle resolved status of an element comment
   toggleResolvedStatus: async (commentId: string): Promise<ElementComment> => {
     return apiClient.patch<ElementComment>(
-      GetUrl(API_ENDPOINTS.ELEMENT_COMMENTS.TOGGLE_RESOLVED(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.ELEMENT_COMMENTS.TOGGLE_RESOLVED(commentId))
+        .build(),
       {},
     );
   },

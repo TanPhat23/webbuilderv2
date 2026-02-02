@@ -1,4 +1,4 @@
-import { GetAIUrl } from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import apiClient from "./apiclient";
 
@@ -25,7 +25,9 @@ export const aiContentService = {
     params: GenerateContentParams,
   ): Promise<GenerateContentResponse> {
     try {
-      const url = GetAIUrl(API_ENDPOINTS.AI.GENERATE_CONTENT);
+      const url = new URLBuilder("ai")
+        .setPath(API_ENDPOINTS.AI.GENERATE_CONTENT)
+        .build();
       return await apiClient.post<GenerateContentResponse>(url, params);
     } catch (error) {
       console.error("Failed to generate AI content:", error);
@@ -38,8 +40,13 @@ export const aiContentService = {
     callbacks: StreamCallback,
   ): Promise<void> {
     try {
-      const url = GetAIUrl(API_ENDPOINTS.AI.GENERATE_CONTENT);
-      const response = await apiClient.post<GenerateContentResponse>(url, params);
+      const url = new URLBuilder("ai")
+        .setPath(API_ENDPOINTS.AI.GENERATE_CONTENT)
+        .build();
+      const response = await apiClient.post<GenerateContentResponse>(
+        url,
+        params,
+      );
 
       if (response.content) {
         const content = response.content;
@@ -49,7 +56,7 @@ export const aiContentService = {
           streamedContent += content[i];
           callbacks.onChunk?.(streamedContent);
 
-          await new Promise(resolve => setTimeout(resolve, 300));
+          await new Promise((resolve) => setTimeout(resolve, 300));
         }
 
         callbacks.onComplete?.(content);

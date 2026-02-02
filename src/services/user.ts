@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import apiClient from "./apiclient";
 
@@ -28,9 +28,12 @@ export const userService: IUserService = {
   ): Promise<User[]> => {
     try {
       console.log("User search params:", { query, limit, offset });
-      const url = GetUrl(
-        `${API_ENDPOINTS.USERS.SEARCH}?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`,
-      );
+      const url = new URLBuilder("api")
+        .setPath(API_ENDPOINTS.USERS.SEARCH)
+        .addQueryParam("q", query)
+        .addQueryParam("limit", limit.toString())
+        .addQueryParam("offset", offset.toString())
+        .build();
       console.log("User search URL:", url);
       const response = await apiClient.get<User[]>(url);
       return Array.isArray(response) ? response : [];
@@ -41,12 +44,16 @@ export const userService: IUserService = {
   },
 
   getUserByEmail: async (email: string): Promise<User> => {
-    return apiClient.get<User>(GetUrl(API_ENDPOINTS.USERS.GET_BY_EMAIL(email)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.USERS.GET_BY_EMAIL(email))
+      .build();
+    return apiClient.get<User>(url);
   },
 
   getUserByUsername: async (username: string): Promise<User> => {
-    return apiClient.get<User>(
-      GetUrl(API_ENDPOINTS.USERS.GET_BY_USERNAME(username)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.USERS.GET_BY_USERNAME(username))
+      .build();
+    return apiClient.get<User>(url);
   },
 };

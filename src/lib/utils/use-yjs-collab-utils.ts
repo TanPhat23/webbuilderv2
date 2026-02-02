@@ -1,29 +1,87 @@
 import * as Y from "yjs";
+import _ from "lodash";
+import { z } from "zod";
 import { EditorElement } from "@/types/global.type";
-import {
-  CustomYjsProviderV2,
-  parseElementsJson,
-} from "@/lib/yjs/yjs-provider-v2";
+import { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
+import type { UserInfo } from "@/interfaces/yjs-v2.interface";
 
+// ============================================================================
+// Zod Schemas for Validation
+// ============================================================================
+
+export const RemoteUserSchema = z.object({
+  x: z.number(),
+  y: z.number(),
+  cursor: z.object({ x: z.number(), y: z.number() }).optional(),
+});
+
+export const AwarenessStateSchema = z.object({
+  user: z.custom<UserInfo>().optional(),
+  cursor: z.object({ x: z.number(), y: z.number() }).optional(),
+  remoteUsers: z
+    .record(z.string(), z.object({ x: z.number(), y: z.number() }))
+    .optional(),
+  selectedElement: z.string().optional(),
+  selectedByUser: z.record(z.string(), z.string()).optional(),
+  users: z.record(z.string(), z.custom<UserInfo>()).optional(),
+});
+
+export const OperationDataSchema = z.object({
+  type: z.string(),
+  elementId: z.string().optional(),
+  element: z.custom<EditorElement>().optional(),
+  updates: z.custom<Partial<EditorElement>>().optional(),
+  newParentId: z.string().nullable().optional(),
+  newPosition: z.number().optional(),
+});
+
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
+
+export type RemoteUser = z.infer<typeof RemoteUserSchema>;
+export type AwarenessState = z.infer<typeof AwarenessStateSchema>;
+export type OperationData = z.infer<typeof OperationDataSchema>;
+
+export interface MouseStore {
+  setRemoteUsers: (users: Record<string, RemoteUser>) => void;
+  setSelectedByUser: (selected: Record<string, string>) => void;
+  setUsers: (users: Record<string, UserInfo>) => void;
+}
+
+export interface InternalState {
+  isUpdatingFromElementStore: boolean;
+  lastAwarenessHash: string;
+}
+
+// ============================================================================
+// Element Utilities
+// ============================================================================
+
+/**
+ * Ensures elements have required fields initialized recursively
+ */
 export const sanitizeElements = (
   elements: EditorElement[],
 ): EditorElement[] => {
   const sanitize = (el: EditorElement): EditorElement => {
     const sanitized = { ...el };
-    if (sanitized.settings === null || sanitized.settings === undefined) {
-      sanitized.settings = {};
-    }
-    if (sanitized.styles === null || sanitized.styles === undefined) {
-      sanitized.styles = {};
-    }
-    if ("elements" in sanitized && Array.isArray(sanitized.elements)) {
-      sanitized.elements = sanitized.elements.map(sanitize);
+    sanitized.settings ??= {};
+    sanitized.styles ??= {};
+
+    if ("elements" in sanitized && _.isArray(sanitized.elements)) {
+      sanitized.elements = (sanitized.elements as EditorElement[]).map(
+        sanitize,
+      );
     }
     return sanitized;
   };
   return elements.map(sanitize);
 };
 
+/**
+ * Computes a string hash for elements to detect structural or content changes
+ */
 export const computeHash = (elements: EditorElement[]): string => {
   try {
     return elements
@@ -34,116 +92,111 @@ export const computeHash = (elements: EditorElement[]): string => {
         return `${el.id}:${el.type}:${styleStr}:${settingsStr}:${contentStr}`;
       })
       .join("|");
-  } catch {
+  } catch (err) {
+    console.warn("[YJS Utils] Hash computation failed:", err);
     return "";
   }
 };
 
+/**
+ * Creates an observer for Y.Text changes
+ */
 export const createElementsObserver = (
   latestHandlers: {
     handleSync: (elements: EditorElement[]) => void;
     handleUpdate: (elements: EditorElement[]) => void;
   },
-  internalStateRef: { current: { isUpdatingFromElementStore: boolean } },
+  internalStateRef: {
+    current: Pick<InternalState, "isUpdatingFromElementStore">;
+  },
 ) => {
   return (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
     try {
-      if (internalStateRef.current.isUpdatingFromElementStore) {
-        return;
-      }
-      const elementsJson = event.target.toString();
-      const parsed = elementsJson ? JSON.parse(elementsJson) : [];
-      const isRemoteUpdate =
-        transaction && transaction.origin === "remote-update";
-      const isV2Sync = transaction && transaction.origin === "v2-sync";
+      if (internalStateRef.current.isUpdatingFromElementStore) return;
 
-      if (isV2Sync) {
+      const elementsJson = event.target.toString();
+      const parsed: EditorElement[] = elementsJson
+        ? JSON.parse(elementsJson)
+        : [];
+
+      const origin = transaction?.origin;
+      if (origin === "v2-sync" || origin !== "remote-update") {
         latestHandlers.handleSync(parsed);
-      } else if (isRemoteUpdate) {
-        latestHandlers.handleUpdate(parsed);
       } else {
-        latestHandlers.handleSync(parsed);
+        latestHandlers.handleUpdate(parsed);
       }
     } catch (err) {
-      console.warn("[useYjsCollab] Elements parse failed:", err);
+      console.warn("[YJS Utils] Elements parse failed:", err);
     }
   };
 };
 
+// ============================================================================
+// Awareness & Sync Utilities
+// ============================================================================
+
+/**
+ * Extracts awareness data and syncs it to the application store
+ */
 export const createSyncAwarenessToStore = (
   provider: CustomYjsProviderV2,
-  mouseStore: any,
-  internalStateRef: { current: { lastAwarenessHash: string } },
+  mouseStore: MouseStore,
+  internalStateRef: { current: Pick<InternalState, "lastAwarenessHash"> },
 ) => {
   return () => {
-    if (!provider.awareness) return;
+    const awareness = provider.awareness;
+    if (!awareness) return;
 
     try {
-      const allStates = provider.awareness.getStates();
-      if (!allStates) return;
+      const allStates = awareness.getStates() as Map<number, AwarenessState>;
+      if (!allStates || allStates.size === 0) return;
 
-      // Generate hash to detect changes
-      const stateKeys: string[] = [];
-      allStates.forEach((state: any, clientId: number) => {
-        if (state?.cursor || state?.remoteUsers || state?.selectedElement) {
-          const cursorStr = state.cursor
+      // 1. Quick Change Detection via Hash
+      const currentHash = Array.from(allStates.entries())
+        .filter(
+          ([_, state]) =>
+            state?.cursor || state?.remoteUsers || state?.selectedElement,
+        )
+        .map(([clientId, state]) => {
+          const cursor = state.cursor
             ? `${state.cursor.x},${state.cursor.y}`
             : "";
-          const remoteUsersStr = state.remoteUsers
+          const remote = state.remoteUsers
             ? JSON.stringify(state.remoteUsers)
             : "";
-          const selectedElementStr = state.selectedElement || "";
-          stateKeys.push(
-            `${clientId}:${cursorStr}:${remoteUsersStr}:${selectedElementStr}`,
-          );
-        }
-      });
+          return `${clientId}:${cursor}:${remote}:${state.selectedElement || ""}`;
+        })
+        .sort()
+        .join("|");
 
-      const currentHash = stateKeys.sort().join("|");
-      if (currentHash === internalStateRef.current.lastAwarenessHash) {
-        return;
-      }
+      if (currentHash === internalStateRef.current.lastAwarenessHash) return;
       internalStateRef.current.lastAwarenessHash = currentHash;
 
-      // Extract awareness data from all states
-      const remoteUsers: Record<
-        string,
-        { x: number; y: number; cursor?: { x: number; y: number } }
-      > = {};
-      const selectedByUser: Record<string, string | null> = {};
-      let users: Record<string, any> = {};
+      // 2. Data Extraction
+      const remoteUsers: Record<string, RemoteUser> = {};
+      const selectedByUser: Record<string, string> = {};
+      let users: Record<string, UserInfo> = {};
 
-      const localClientId = provider.awareness?.clientID?.toString();
+      const localClientId = awareness.clientID.toString();
       let usersMapFound = false;
 
-      allStates.forEach((state: any, clientId: number) => {
+      allStates.forEach((state, clientId) => {
         if (!state) return;
-
         const clientIdStr = clientId.toString();
 
-        // Process local state
         if (clientIdStr === localClientId) {
-          // Extract users map from local state
           if (
             state.users &&
-            typeof state.users === "object" &&
-            Object.keys(state.users).length > 0
+            _.isObject(state.users) &&
+            !_.isEmpty(state.users)
           ) {
             users = { ...state.users };
             usersMapFound = true;
           }
 
-          // Extract remote users positions
-          if (state.remoteUsers && typeof state.remoteUsers === "object") {
-            Object.entries(state.remoteUsers).forEach(([userId, pos]) => {
-              if (
-                pos &&
-                typeof pos === "object" &&
-                "x" in pos &&
-                "y" in pos &&
-                typeof pos.x === "number" &&
-                typeof pos.y === "number"
-              ) {
+          if (state.remoteUsers && _.isObject(state.remoteUsers)) {
+            _.forEach(state.remoteUsers, (pos, userId) => {
+              if (pos?.x != null && pos?.y != null) {
                 remoteUsers[userId] = {
                   x: pos.x,
                   y: pos.y,
@@ -153,48 +206,33 @@ export const createSyncAwarenessToStore = (
             });
           }
 
-          // Extract selected elements
-          if (
-            state.selectedByUser &&
-            typeof state.selectedByUser === "object"
-          ) {
+          if (state.selectedByUser && _.isObject(state.selectedByUser)) {
             Object.assign(selectedByUser, state.selectedByUser);
           }
-
-          return;
-        }
-
-        // Process remote states
-        // Extract cursor position
-        if (state.cursor && typeof state.cursor === "object") {
-          const x = state.cursor.x;
-          const y = state.cursor.y;
-          if (typeof x === "number" && typeof y === "number") {
+        } else {
+          if (state.cursor?.x != null && state.cursor?.y != null) {
             remoteUsers[clientIdStr] = {
-              x,
-              y,
-              cursor: { x, y },
+              x: state.cursor.x,
+              y: state.cursor.y,
+              cursor: { x: state.cursor.x, y: state.cursor.y },
             };
           }
-        }
 
-        // Extract selected element
-        if (state.selectedElement) {
-          selectedByUser[clientIdStr] = state.selectedElement;
-        }
+          if (state.selectedElement) {
+            selectedByUser[clientIdStr] = state.selectedElement;
+          }
 
-        // Extract user info if not found in local state
-        if (!usersMapFound && state.user && typeof state.user === "object") {
-          users[clientIdStr] = state.user;
+          if (!usersMapFound && state.user) {
+            users[clientIdStr] = state.user;
+          }
         }
       });
 
-      // Update mouse store with extracted data
       mouseStore.setRemoteUsers(remoteUsers);
-      mouseStore.setSelectedByUser(selectedByUser as any);
-      mouseStore.setUsers(users as any);
+      mouseStore.setSelectedByUser(selectedByUser);
+      mouseStore.setUsers(users);
     } catch (err) {
-      console.error("[useYjsCollab] Error syncing awareness to store:", err);
+      console.error("[YJS Utils] Awareness sync error:", err);
     }
   };
 };
@@ -202,134 +240,98 @@ export const createSyncAwarenessToStore = (
 export const createAwarenessChangeObserver = (
   syncAwarenessToStore: () => void,
 ) => {
-  return ({
-    added,
-    updated,
-    removed,
-  }: {
-    added: number[];
-    updated: number[];
-    removed: number[];
-  }) => {
-    // Sync on any awareness change (add, update, or remove)
-    syncAwarenessToStore();
-  };
+  return () => syncAwarenessToStore();
 };
 
+// ============================================================================
+// Conflict Resolution & Operations
+// ============================================================================
+
 /**
- * Validate and merge element updates for conflict resolution
- * Used to intelligently merge concurrent updates
+ * Merges concurrent element updates using lodash deep merging for settings/styles
  */
 export const mergeElementUpdates = (
   baseElement: EditorElement,
   update1: Partial<EditorElement>,
   update2: Partial<EditorElement>,
 ): EditorElement => {
-  const merged: any = { ...baseElement };
+  const merged = _.cloneDeep(baseElement);
 
-  // Fields that should use last-write-wins
-  const lwwFields = ["content", "type"];
-
-  // Fields that can be merged at deeper level
-  const mergeableFields = ["styles", "settings"];
-
-  // Apply first update
-  Object.entries(update1).forEach(([key, value]) => {
-    if (lwwFields.includes(key)) {
-      merged[key] = value;
-    } else if (mergeableFields.includes(key) && typeof value === "object") {
-      merged[key] = {
-        ...(merged[key] || {}),
-        ...(value || {}),
-      };
-    } else {
-      merged[key] = value;
+  const applyUpdate = (upd: Partial<EditorElement>) => {
+    if (upd.styles) {
+      merged.styles = _.merge({}, merged.styles, upd.styles);
     }
-  });
-
-  // Apply second update with last-write-wins for conflicting fields
-  Object.entries(update2).forEach(([key, value]) => {
-    if (mergeableFields.includes(key) && typeof value === "object") {
-      merged[key] = {
-        ...(merged[key] || {}),
-        ...(value || {}),
-      };
-    } else {
-      merged[key] = value;
+    if (upd.settings) {
+      const mergedSettings = _.merge({}, merged.settings || {}, upd.settings);
+      (merged as { settings?: unknown }).settings = mergedSettings;
     }
-  });
 
-  return merged as EditorElement;
+    const rest = _.omit(upd, ["styles", "settings", "id"]);
+    Object.assign(merged, rest);
+  };
+
+  applyUpdate(update1);
+  applyUpdate(update2);
+
+  return merged;
 };
 
-/**
- * Calculate operation timestamp with millisecond precision
- */
-export const getOperationTimestamp = (): number => {
-  return Date.now();
-};
+export const getOperationTimestamp = (): number => Date.now();
 
-/**
- * Generate a unique operation ID
- */
 export const generateOperationId = (
   userId: string,
   timestamp: number,
 ): string => {
-  return `op-${userId}-${timestamp}-${Math.random().toString(36).substr(2, 9)}`;
+  const random = Math.random().toString(36).slice(2, 11);
+  return `op-${userId}-${timestamp}-${random}`;
 };
 
 /**
- * Validate element operation for consistency
+ * Validates element operation using Zod
  */
 export const validateElementOperation = (
-  operation: any,
+  operation: unknown,
 ): { valid: boolean; error?: string } => {
-  if (!operation.type) {
-    return { valid: false, error: "Operation type is required" };
-  }
+  const result = OperationDataSchema.safeParse(operation);
 
-  if (!operation.elementId && operation.type !== "create") {
-    return { valid: false, error: "Element ID is required for this operation" };
-  }
-
-  if (operation.type === "create" && !operation.element) {
+  if (!result.success) {
     return {
       valid: false,
-      error: "Element data is required for create operation",
+      error: result.error.issues
+        .map((e: z.ZodIssue) => `${e.path.join(".")}: ${e.message}`)
+        .join(", "),
     };
   }
 
-  if (operation.type === "update" && !operation.updates) {
-    return { valid: false, error: "Updates are required for update operation" };
+  const op = result.data;
+  if (op.type !== "create" && !op.elementId) {
+    return { valid: false, error: "Element ID is required" };
   }
 
-  if (operation.type === "move") {
-    if (operation.newParentId === undefined) {
-      return {
-        valid: false,
-        error: "New parent ID is required for move operation",
-      };
-    }
+  switch (op.type) {
+    case "create":
+      if (!op.element) return { valid: false, error: "Element data required" };
+      break;
+    case "update":
+      if (!op.updates) return { valid: false, error: "Updates required" };
+      break;
+    case "move":
+      if (op.newParentId === undefined)
+        return { valid: false, error: "New parent ID required" };
+      break;
   }
 
   return { valid: true };
 };
 
-/**
- * Create a debounced awareness sync function
- */
 export const createDebouncedAwarenessSync = (
   syncFn: () => void,
-  delayMs: number = 100,
+  delayMs = 100,
 ) => {
   let timeout: NodeJS.Timeout | null = null;
 
   return () => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-
+    if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
       syncFn();
       timeout = null;
@@ -338,25 +340,29 @@ export const createDebouncedAwarenessSync = (
 };
 
 /**
- * Get remote user color based on user ID
+ * Generates a stable HSL color based on a string
  */
 export const getUserColor = (userId: string): string => {
-  const hue =
-    Array.from(userId).reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360;
+  const hash = _.reduce(
+    Array.from(userId),
+    (acc, char) => acc + char.charCodeAt(0),
+    0,
+  );
+  const hue = hash % 360;
   return `hsl(${hue}, 70%, 50%)`;
 };
 
 /**
- * Format awareness state for debugging
+ * Formats awareness state for debugging
  */
-export const formatAwarenessState = (state: any): string => {
+export const formatAwarenessState = (state: AwarenessState): string => {
   try {
-    const user = state?.user?.name || "unknown";
-    const cursor = state?.cursor
+    const user = state.user?.userName || "unknown";
+    const cursor = state.cursor
       ? `(${state.cursor.x.toFixed(0)}, ${state.cursor.y.toFixed(0)})`
       : "none";
-    const selectedElement = state?.selectedElement || "none";
-    return `User: ${user}, Cursor: ${cursor}, Selected: ${selectedElement}`;
+    const selected = state.selectedElement || "none";
+    return `User: ${user}, Cursor: ${cursor}, Selected: ${selected}`;
   } catch {
     return "Invalid state";
   }

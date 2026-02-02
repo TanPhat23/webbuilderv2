@@ -3,7 +3,6 @@ import type { Page } from "./page.interface";
 import type { Awareness } from "y-protocols/awareness";
 import type * as Y from "yjs";
 import type React from "react";
-import type { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
 
 // ============================================================================
 // Message Types
@@ -228,6 +227,49 @@ export interface AwarenessState {
 export type StatusListener = (data: { status: string }) => void;
 export type SyncedListener = (synced: boolean) => void;
 export type EventType = "status" | "synced";
+
+/**
+ * Interface representing the collaborative provider's public API.
+ * Defined here to break circular dependencies between the provider implementation
+ * and its type definitions.
+ */
+export interface CustomYjsProviderV2 {
+  doc: Y.Doc;
+  awareness: Awareness;
+  connected: boolean;
+  isSynced: boolean;
+  on(event: EventType, callback: StatusListener | SyncedListener): void;
+  off(event: EventType, callback: StatusListener | SyncedListener): void;
+  disconnect(): void;
+  reconnect(): Promise<void>;
+  destroy(): void;
+  createElement(
+    element: EditorElement,
+    parentId?: string | null,
+    position?: number,
+  ): Promise<ElementOperationSuccess>;
+  updateElement(
+    elementId: string,
+    updates: Partial<EditorElement>,
+    updateType?: UpdateType,
+  ): Promise<ElementOperationSuccess>;
+  deleteElement(
+    elementId: string,
+    deleteChildren?: boolean,
+    preserveStructure?: boolean,
+  ): Promise<ElementOperationSuccess>;
+  moveElement(
+    elementId: string,
+    newParentId?: string | null,
+    newPosition?: number,
+  ): Promise<ElementOperationSuccess>;
+  createPage(page: Page): Promise<PageOperationSuccess>;
+  updatePage(
+    pageId: string,
+    updates: Partial<Page>,
+  ): Promise<PageOperationSuccess>;
+  deletePage(pageId: string): Promise<PageOperationSuccess>;
+}
 
 export interface YjsProviderV2Options {
   url: string;

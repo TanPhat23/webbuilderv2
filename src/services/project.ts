@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { Page } from "@/interfaces/page.interface";
 import { Project } from "@/interfaces/project.interface";
 import apiClient from "./apiclient";
@@ -23,58 +23,72 @@ interface IProjectService {
 
 export const projectService: IProjectService = {
   getProjects: async (): Promise<Project[]> => {
-    return apiClient.getPublic<Project[]>(
-      GetUrl(API_ENDPOINTS.PROJECTS.GET_PUBLIC),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC)
+      .build();
+    return apiClient.getPublic<Project[]>(url);
   },
 
   getUserProjects: async (): Promise<Project[]> => {
-    return apiClient.get<Project[]>(GetUrl(API_ENDPOINTS.PROJECTS.GET_USER));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_USER)
+      .build();
+    return apiClient.get<Project[]>(url);
   },
 
   getProjectById: async (id: string): Promise<Project> => {
-    return apiClient.get<Project>(GetUrl(API_ENDPOINTS.PROJECTS.GET_BY_ID(id)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_BY_ID(id))
+      .build();
+    return apiClient.get<Project>(url);
   },
 
   deleteProject: async (id: string): Promise<boolean> => {
-    return apiClient.delete(GetUrl(API_ENDPOINTS.PROJECTS.DELETE(id)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.DELETE(id))
+      .build();
+    return apiClient.delete(url);
   },
 
   createProject: async (project: Project) => {
-    return await apiClient.post<Project>(
-      GetUrl(API_ENDPOINTS.PROJECTS.CREATE),
-      project,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.CREATE)
+      .build();
+    return await apiClient.post<Project>(url, project);
   },
 
   updateProject: async (project: Project) => {
-    return await apiClient.put<Project>(
-      GetUrl(API_ENDPOINTS.PROJECTS.UPDATE(project.id)),
-      project,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.UPDATE(project.id))
+      .build();
+    return await apiClient.put<Project>(url, project);
   },
 
   getProjectPages: async (id: string): Promise<Page[]> => {
-    return apiClient.get<Page[]>(GetUrl(API_ENDPOINTS.PROJECTS.GET_PAGES(id)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id))
+      .build();
+    return apiClient.get<Page[]>(url);
   },
 
   updateProjectPartial: async (
     projectId: string,
     project: Partial<Project>,
   ): Promise<Project> => {
-    return apiClient.patch<Project>(
-      GetUrl(API_ENDPOINTS.PROJECTS.UPDATE(projectId)),
-      project,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.UPDATE(projectId))
+      .build();
+    return apiClient.patch<Project>(url, project);
   },
 
   deleteProjectPage: async (
     projectId: string,
     pageId: string,
   ): Promise<boolean> => {
-    return apiClient.delete(
-      GetUrl(API_ENDPOINTS.PROJECTS.DELETE_PAGE(projectId, pageId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.DELETE_PAGE(projectId, pageId))
+      .build();
+    return apiClient.delete(url);
   },
 
   getFonts: async (): Promise<string[]> => {
@@ -94,9 +108,11 @@ export const projectService: IProjectService = {
     const data = await response.json();
     return data.items.map((font: { family: string }) => font.family);
   },
+
   getProjectPublic: async (id: string): Promise<Project> => {
-    return apiClient.getPublic<Project>(
-      GetUrl(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id))
+      .build();
+    return apiClient.getPublic<Project>(url);
   },
 };

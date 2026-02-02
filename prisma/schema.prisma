@@ -144,7 +144,7 @@ model Snapshot {
 
 model User {
   CreatedAt        DateTime          @db.Timestamptz(6)
-  Email            String            @db.VarChar(255)
+  Email            String            @db.VarChar(255) @unique
   FirstName        String?           @db.VarChar(100)
   Id               String            @id(map: "PK_Users")
   ImageUrl         String?           @db.VarChar(2048)

@@ -1,62 +1,67 @@
-import type { 
-  NotificationResponse, 
+import { URLBuilder } from "@/lib/utils/urlbuilder";
+import type {
+  NotificationResponse,
   UpdateNotificationPayload,
-  NotificationFilters 
-} from '@/interfaces/notification.interface'
+  NotificationFilters,
+} from "@/interfaces/notification.interface";
 
-const API_BASE = '/api/notifications'
+const API_BASE = "/api/notifications";
 
 export const notificationService = {
-  getNotifications: async (filters?: NotificationFilters): Promise<NotificationResponse> => {
-    const params = new URLSearchParams()
-    
+  getNotifications: async (
+    filters?: NotificationFilters,
+  ): Promise<NotificationResponse> => {
+    const builder = new URLBuilder("next").setPath(API_BASE);
+
     if (filters?.filter) {
-      params.append('filter', filters.filter)
-    }
-    
-    if (filters?.search) {
-      params.append('search', filters.search)
+      builder.addQueryParam("filter", filters.filter);
     }
 
-    const url = params.toString() ? `${API_BASE}?${params.toString()}` : API_BASE
-    
-    const response = await fetch(url)
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch notifications')
+    if (filters?.search) {
+      builder.addQueryParam("search", filters.search);
     }
-    
-    return response.json()
+
+    const response = await fetch(builder.build());
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch notifications");
+    }
+
+    return response.json();
   },
 
-  updateNotification: async (payload: UpdateNotificationPayload): Promise<void> => {
-    const response = await fetch(API_BASE, {
-      method: 'PATCH',
+  updateNotification: async (
+    payload: UpdateNotificationPayload,
+  ): Promise<void> => {
+    const url = new URLBuilder("next").setPath(API_BASE).build();
+    const response = await fetch(url, {
+      method: "PATCH",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    })
-    
+    });
+
     if (!response.ok) {
-      throw new Error('Failed to update notification')
+      throw new Error("Failed to update notification");
     }
-    
-    return response.json()
+
+    return response.json();
   },
 
   markAllAsRead: async (): Promise<void> => {
-    const response = await fetch(API_BASE, {
-      method: 'POST',
+    const url = new URLBuilder("next").setPath(API_BASE).build();
+    const response = await fetch(url, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-    })
-    
+    });
+
     if (!response.ok) {
-      throw new Error('Failed to mark all as read')
+      throw new Error("Failed to mark all as read");
     }
-    
-    return response.json()
+
+    return response.json();
   },
-}
+};
