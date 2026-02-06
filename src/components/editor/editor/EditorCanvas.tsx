@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { KeyboardEvent as KeyboardEventClass } from "@/lib/utils/element/keyBoardEvents";
 import { useMouseTracking } from "@/hooks/realtime/use-mouse-tracking";
 import { useMouseStore } from "@/globalstore/mousestore";
-import * as Y from "yjs";
+import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -26,8 +26,6 @@ type EditorCanvasProps = {
   sendMessage?: (message: any) => boolean;
   isReadOnly?: boolean;
   isLocked?: boolean;
-  ydoc?: Y.Doc | null;
-  provider?: any;
   iframeRef?: React.RefObject<HTMLIFrameElement>;
 };
 
@@ -43,10 +41,12 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   sendMessage,
   isReadOnly = false,
   isLocked = false,
-  ydoc,
-  provider,
   iframeRef,
 }) => {
+  const collab = useCollaborationOptional();
+  const ydoc = collab?.ydoc ?? null;
+  const provider = collab?.provider ?? null;
+
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
   const keyboardEvent = new KeyboardEventClass();

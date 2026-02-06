@@ -13,6 +13,8 @@ import { useSearchParams } from "next/navigation";
 import WireframeManager from "@/components/editor/wireframe/WireframeManager";
 import { Button } from "@/components/ui/button";
 import { LayoutTemplate, PenTool } from "lucide-react";
+import CollaborationProvider from "./collaborationprovider";
+import { toast } from "sonner";
 
 interface EditorProviderProps {
   children: React.ReactNode;
@@ -143,8 +145,10 @@ export default function EditorProvider({
     setIsMounted(true);
   }, []);
 
+  const collabEnabled = isMounted && !!userId;
+
   const editorData = useEditor(projectId || "", pageId, {
-    enableCollab: isMounted && !!userId,
+    enableCollab: false, // Collab is now managed by CollaborationProvider
     userId: userId || "guest",
   });
 
@@ -159,16 +163,37 @@ export default function EditorProvider({
 
   return (
     <EditorContext.Provider value={contextValue}>
-      <AIChatProvider>
-        <ModeToggle mode={mode} setMode={setMode} />
-        {mode === "wireframe" ? (
-          <div className="flex h-screen w-screen overflow-hidden pt-12 bg-background">
-            <WireframeManager pageId={pageId} />
-          </div>
-        ) : (
-          <EditorLayout>{children}</EditorLayout>
-        )}
-      </AIChatProvider>
+      <CollaborationProvider
+        config={{
+          projectId: projectId || "",
+          pageId,
+          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8082",
+          enabled: collabEnabled,
+          onSync: () => {
+            toast.success("Live collaboration connected", {
+              duration: 3000,
+            });
+          },
+          onError: (error) => {
+            toast.info("Working in offline mode", {
+              description:
+                "Collaboration server unavailable. Changes will be saved locally.",
+              duration: 5000,
+            });
+          },
+        }}
+      >
+        <AIChatProvider>
+          <ModeToggle mode={mode} setMode={setMode} />
+          {mode === "wireframe" ? (
+            <div className="flex h-screen w-screen overflow-hidden pt-12 bg-background">
+              <WireframeManager pageId={pageId} />
+            </div>
+          ) : (
+            <EditorLayout>{children}</EditorLayout>
+          )}
+        </AIChatProvider>
+      </CollaborationProvider>
     </EditorContext.Provider>
   );
 }

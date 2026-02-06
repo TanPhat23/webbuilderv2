@@ -14,7 +14,6 @@ import type { Project } from "@/interfaces/project.interface";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/hooks";
 import { toast } from "sonner";
-import { useYjsCollabV2 } from "../realtime/use-yjs-collab-v2";
 
 export type Viewport = "mobile" | "tablet" | "desktop";
 
@@ -50,29 +49,6 @@ export const useEditor = (
 
   const { data: projectPages, isLoading: isLoadingPages } = useProjectPages(id);
   const { data: project, isLoading: isLoadingProject } = useProject(id);
-
-  // Use Yjs collaboration
-  const yjsCollab = useYjsCollabV2({
-    pageId: pageId,
-    projectId: id,
-    wsUrl:
-      options?.collabWsUrl ||
-      process.env.NEXT_PUBLIC_COLLAB_WS_URL ||
-      "ws://localhost:8082",
-    enabled: options?.enableCollab !== false,
-    onSync: () => {
-      toast.success("Live collaboration connected", {
-        duration: 3000,
-      });
-    },
-    onError: (error) => {
-      toast.info("Working in offline mode", {
-        description:
-          "Collaboration server unavailable. Changes will be saved locally.",
-        duration: 5000,
-      });
-    },
-  });
 
   useEffect(() => {
     if (projectPages && projectPages.length > 0) {
@@ -197,15 +173,6 @@ export const useEditor = (
       canEditElements: permissions.canEditElements,
       canDeleteElements: permissions.canDeleteElements,
       canReorderElements: permissions.canReorderElements,
-    },
-    collab: {
-      isConnected: yjsCollab.isConnected,
-      connectionState: yjsCollab.roomState,
-      isSynced: yjsCollab.isSynced,
-      error: yjsCollab.error,
-      ydoc: yjsCollab.ydoc,
-      provider: yjsCollab.provider,
-      type: "yjs" as const,
     },
     userId,
   };

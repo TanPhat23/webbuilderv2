@@ -2,7 +2,7 @@ import * as Y from "yjs";
 import _ from "lodash";
 import { z } from "zod";
 import { EditorElement } from "@/types/global.type";
-import { CustomYjsProviderV2 } from "@/lib/yjs/yjs-provider-v2";
+import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
 import type { UserInfo } from "@/interfaces/yjs-v2.interface";
 
 // ============================================================================

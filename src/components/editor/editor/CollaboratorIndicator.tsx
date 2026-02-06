@@ -27,9 +27,6 @@ const getAvatarInitial = (user: { userName: string; email: string }) => {
 
 interface CollaboratorIndicatorProps {
   projectId: string;
-  isConnected?: boolean;
-  isSynced?: boolean;
-  collabType?: "yjs" | "websocket";
 }
 
 interface OnlineUserItemProps {
@@ -66,9 +63,6 @@ function OnlineUserItem({ user, isCurrentUser = false }: OnlineUserItemProps) {
 
 export default function CollaboratorIndicator({
   projectId,
-  collabType,
-  isConnected,
-  isSynced,
 }: CollaboratorIndicatorProps) {
   const { userId } = useAuth();
   const { users } = useMouseStore();
@@ -96,11 +90,7 @@ export default function CollaboratorIndicator({
           <span className="hidden sm:inline">
             {hasOnlineUsers ? `${onlineCount} ` : "No one online"}
           </span>
-          <CollaborationStatus
-            isConnected={isConnected}
-            isSynced={isSynced}
-            collabType={collabType}
-          />
+          <CollaborationStatus />
         </Button>
       </PopoverTrigger>
 

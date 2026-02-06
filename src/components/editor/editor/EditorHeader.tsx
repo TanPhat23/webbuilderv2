@@ -14,7 +14,6 @@ import {
 
 // Types
 import { Viewport } from "@/hooks";
-import * as Y from "yjs";
 
 // Components
 import { Button } from "@/components/ui/button";
@@ -43,10 +42,6 @@ type EditorHeaderProps = {
   currentView: Viewport;
   setCurrentView: (view: Viewport) => void;
   projectId: string;
-  isConnected?: boolean;
-  isSynced?: boolean;
-  ydoc?: Y.Doc | null;
-  collabType?: "yjs" | "websocket";
 };
 
 const VIEWPORT_OPTIONS = [
@@ -127,9 +122,6 @@ export default function EditorHeader({
   currentView,
   setCurrentView,
   projectId,
-  isConnected = false,
-  isSynced = false,
-  collabType = "websocket",
 }: EditorHeaderProps) {
   const [navigationCommandOpen, setNavigationCommandOpen] = useState(false);
   const { showCommentButtons, toggleCommentButtons } = useElementCommentStore();
@@ -161,12 +153,7 @@ export default function EditorHeader({
             Navigate... (Cmd+K)
           </Button>
           <div className="h-6 w-px bg-border" aria-hidden="true" />
-          <CollaboratorIndicator
-            projectId={projectId}
-            isConnected={isConnected}
-            isSynced={isSynced}
-            collabType={collabType}
-          />
+          <CollaboratorIndicator projectId={projectId} />
           <CollaborationButton projectId={projectId} />
         </div>
 
@@ -196,11 +183,7 @@ export default function EditorHeader({
 
         {/* Mobile Collaboration Status */}
         <div className="md:hidden">
-          <CollaborationStatus
-            isConnected={isConnected}
-            isSynced={isSynced}
-            collabType={collabType}
-          />
+          <CollaborationStatus />
         </div>
       </header>
 

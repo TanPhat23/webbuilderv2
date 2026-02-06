@@ -4,7 +4,7 @@ import EditorHeader from "@/components/editor/editor/EditorHeader";
 import PreviewContainer from "@/components/editor/editor/PreviewContainer";
 import EditorCanvas from "@/components/editor/editor/EditorCanvas";
 import { useEditorContext } from "@/providers/editorprovider";
-import * as Y from "yjs";
+import { useCollaboration } from "@/providers/collaborationprovider";
 
 type EditorProps = {
   id: string;
@@ -13,6 +13,7 @@ type EditorProps = {
 
 export default function Editor({ id }: EditorProps) {
   const { editor, userId } = useEditorContext();
+  const collab = useCollaboration();
 
   const {
     currentView,
@@ -26,11 +27,8 @@ export default function Editor({ id }: EditorProps) {
     addNewSection,
     isReadOnly,
     isLocked,
-    collab,
   } = editor;
 
-  const ydoc = collab.ydoc as Y.Doc | null;
-  const provider = collab.provider;
   const effectiveUserId = userId || "guest";
 
   return (
@@ -39,10 +37,6 @@ export default function Editor({ id }: EditorProps) {
         currentView={currentView}
         setCurrentView={setCurrentView}
         projectId={id}
-        isConnected={collab.isConnected}
-        isSynced={collab.isSynced}
-        ydoc={ydoc}
-        collabType={collab.type}
       />
       <PreviewContainer currentView={currentView} isLoading={isLoading}>
         <EditorCanvas
@@ -56,8 +50,6 @@ export default function Editor({ id }: EditorProps) {
           userId={effectiveUserId}
           isReadOnly={isReadOnly}
           isLocked={isLocked}
-          ydoc={ydoc}
-          provider={provider}
         />
       </PreviewContainer>
     </div>

@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+} from "react";
 import { useAuth } from "@clerk/nextjs";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
@@ -11,32 +19,158 @@ import {
   createSyncAwarenessToStore,
   createAwarenessChangeObserver,
 } from "@/lib/utils/use-yjs-collab-utils";
+import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
 import type {
-  UseYjsCollabV2Options,
-  UseYjsCollabV2Return,
   CollabState,
   RoomState,
-  UpdateType,
   ErrorMessage,
+  ConflictMessage,
+  UpdateType,
   CustomYjsProviderV2 as CustomYjsProviderV2Type,
+  ElementOperationSuccess,
+  PageOperationSuccess,
 } from "@/interfaces/yjs-v2.interface";
-import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
+import type { EditorElement } from "@/types/global.type";
+import type { Page } from "@/interfaces/page.interface";
+
+// ============================================================================
+// Constants
+// ============================================================================
 
 const DEFAULT_WS_URL = "ws://localhost:8082";
 const AWARENESS_POLL_INTERVAL = 150;
 const ELEMENT_STORE_UPDATE_DELAY = 50;
 
-export function useYjsCollabV2({
-  pageId,
-  projectId,
-  wsUrl = DEFAULT_WS_URL,
-  enabled = true,
-  onSync,
-  onError,
-  onConflict,
-  onDisconnect,
-  onReconnect,
-}: UseYjsCollabV2Options): UseYjsCollabV2Return {
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface CollaborationConfig {
+  projectId: string;
+  pageId: string;
+  wsUrl?: string;
+  enabled?: boolean;
+  onSync?: () => void;
+  onError?: (error: Error) => void;
+  onConflict?: (conflict: ConflictMessage) => void;
+  onDisconnect?: () => void;
+  onReconnect?: () => void;
+}
+
+export interface CollaborationContextValue {
+  // Connection state
+  isConnected: boolean;
+  isSynced: boolean;
+  roomState: RoomState;
+  error: string | null;
+  pendingUpdates: number;
+  collabType: "yjs";
+
+  // Yjs instances
+  ydoc: Y.Doc | null;
+  provider: CustomYjsProviderV2Type | null;
+
+  // Canvas ref for mouse tracking
+  canvasRef: React.RefObject<HTMLElement | null>;
+
+  // Element operations
+  createElement: (
+    element: EditorElement,
+    parentId?: string | null,
+    position?: number,
+  ) => Promise<ElementOperationSuccess>;
+  updateElement: (
+    elementId: string,
+    updates: Partial<EditorElement>,
+    updateType?: UpdateType,
+  ) => Promise<ElementOperationSuccess>;
+  deleteElement: (
+    elementId: string,
+    deleteChildren?: boolean,
+    preserveStructure?: boolean,
+  ) => Promise<ElementOperationSuccess>;
+  moveElement: (
+    elementId: string,
+    newParentId?: string | null,
+    newPosition?: number,
+  ) => Promise<ElementOperationSuccess>;
+
+  // Page operations
+  createPage: (page: Page) => Promise<PageOperationSuccess>;
+  updatePage: (
+    pageId: string,
+    updates: Partial<Page>,
+  ) => Promise<PageOperationSuccess>;
+  deletePage: (pageId: string) => Promise<PageOperationSuccess>;
+
+  // Control
+  reconnect: () => Promise<void>;
+}
+
+// ============================================================================
+// Context
+// ============================================================================
+
+const CollaborationContext = createContext<CollaborationContextValue | null>(
+  null,
+);
+
+// ============================================================================
+// Hook
+// ============================================================================
+
+/**
+ * Hook to consume the collaboration context.
+ * Must be used within a `<CollaborationProvider>`.
+ *
+ * @example
+ * ```tsx
+ * const { isConnected, isSynced, ydoc, provider } = useCollaboration();
+ * ```
+ */
+export function useCollaboration(): CollaborationContextValue {
+  const context = useContext(CollaborationContext);
+  if (!context) {
+    throw new Error(
+      "useCollaboration must be used within a <CollaborationProvider>",
+    );
+  }
+  return context;
+}
+
+/**
+ * Optional hook that returns null when used outside a CollaborationProvider.
+ * Useful for components that may or may not be rendered inside the provider.
+ */
+export function useCollaborationOptional(): CollaborationContextValue | null {
+  return useContext(CollaborationContext);
+}
+
+// ============================================================================
+// Provider Component
+// ============================================================================
+
+interface CollaborationProviderProps {
+  children: React.ReactNode;
+  config: CollaborationConfig;
+}
+
+export default function CollaborationProvider({
+  children,
+  config,
+}: CollaborationProviderProps) {
+  const {
+    projectId,
+    pageId,
+    wsUrl = DEFAULT_WS_URL,
+    enabled = true,
+    onSync,
+    onError,
+    onConflict,
+    onDisconnect,
+    onReconnect,
+  } = config;
+
   const { userId, getToken, isLoaded } = useAuth();
   const { loadElements } = useElementStore();
 
@@ -62,6 +196,7 @@ export function useYjsCollabV2({
     remoteUpdateTimeout: null as NodeJS.Timeout | null,
   });
 
+  // Keep latest callback refs to avoid stale closures
   const latest = useRef({
     onSync,
     onError,
@@ -79,6 +214,9 @@ export function useYjsCollabV2({
     getToken,
   };
 
+  // ---------------------------------------------------------------------------
+  // Core effect: Setup Y.Doc, provider, persistence, observers
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
       return;
@@ -105,6 +243,7 @@ export function useYjsCollabV2({
     providerRef.current = provider;
     persistenceRef.current = persistence;
 
+    // Status listener
     provider.on("status", ({ status }: { status: string }) => {
       const roomState: RoomState =
         status === "connected"
@@ -121,11 +260,13 @@ export function useYjsCollabV2({
       else if (status === "disconnected") latest.current.onDisconnect?.();
     });
 
+    // Synced listener
     provider.on("synced", (synced: boolean) => {
       setState((s) => ({ ...s, isSynced: synced }));
       if (synced) latest.current.onSync?.();
     });
 
+    // Observe Y.Text for remote element updates
     const yElementsText = ydoc.getText("elementsJson");
     const observer = (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
       if (internalRef.current.isUpdatingFromElementStore) return;
@@ -136,13 +277,13 @@ export function useYjsCollabV2({
         if (transaction?.origin === "v2-sync")
           setState((s) => ({ ...s, isSynced: true }));
       } catch (err) {
-        console.warn("[YJS] Failed to parse remote elements", err);
+        console.warn("[CollaborationProvider] Failed to parse remote elements", err);
       }
     };
     yElementsText.observe(observer);
 
+    // Awareness sync
     if (provider.awareness) {
-      // Pass the stable store actions to the awareness utility
       const mouseStoreMock = { setRemoteUsers, setSelectedByUser, setUsers };
       const syncAwareness = createSyncAwarenessToStore(
         provider,
@@ -157,6 +298,7 @@ export function useYjsCollabV2({
       );
     }
 
+    // Wire up element store callbacks for collaborative editing
     ElementStore.getState().setYjsUpdateCallback((elements) => {
       if (!providerRef.current?.isSynced || !elements?.length) return;
       internalRef.current.isUpdatingFromElementStore = true;
@@ -195,6 +337,7 @@ export function useYjsCollabV2({
       }
     });
 
+    // Cleanup
     return () => {
       if (internalRef.current.remoteUpdateTimeout)
         clearInterval(internalRef.current.remoteUpdateTimeout);
@@ -220,6 +363,9 @@ export function useYjsCollabV2({
     setSelectedByUser,
   ]);
 
+  // ---------------------------------------------------------------------------
+  // Mouse tracking on canvas via awareness
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const handleMove = (e: MouseEvent) => {
       if (!providerRef.current?.awareness || !canvasRef.current) return;
@@ -236,40 +382,141 @@ export function useYjsCollabV2({
     }
   }, [state.roomState]);
 
-  return {
-    ...state,
-    isConnected: state.roomState === "connected",
-    ydoc: ydocRef.current,
-    provider: providerRef.current,
-    canvasRef,
-    createElement: async (el, pId, pos) => {
+  // ---------------------------------------------------------------------------
+  // Stable operation callbacks
+  // ---------------------------------------------------------------------------
+  const createElement = useCallback(
+    async (
+      el: EditorElement,
+      pId?: string | null,
+      pos?: number,
+    ): Promise<ElementOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.createElement(el, pId, pos);
     },
-    updateElement: async (id, upd, ty = "partial") => {
+    [],
+  );
+
+  const updateElement = useCallback(
+    async (
+      id: string,
+      upd: Partial<EditorElement>,
+      ty: UpdateType = "partial",
+    ): Promise<ElementOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.updateElement(id, upd, ty);
     },
-    deleteElement: async (id, ch = false, str = true) => {
+    [],
+  );
+
+  const deleteElement = useCallback(
+    async (
+      id: string,
+      ch = false,
+      str = true,
+    ): Promise<ElementOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.deleteElement(id, ch, str);
     },
-    moveElement: async (id, pId, pos) => {
+    [],
+  );
+
+  const moveElement = useCallback(
+    async (
+      id: string,
+      pId?: string | null,
+      pos?: number,
+    ): Promise<ElementOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.moveElement(id, pId, pos);
     },
-    createPage: async (page) => {
+    [],
+  );
+
+  const createPage = useCallback(
+    async (page: Page): Promise<PageOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.createPage(page);
     },
-    updatePage: async (id, upd) => {
+    [],
+  );
+
+  const updatePage = useCallback(
+    async (
+      id: string,
+      upd: Partial<Page>,
+    ): Promise<PageOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.updatePage(id, upd);
     },
-    deletePage: async (id) => {
+    [],
+  );
+
+  const deletePage = useCallback(
+    async (id: string): Promise<PageOperationSuccess> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.deletePage(id);
     },
-    reconnect: async () => providerRef.current?.reconnect(),
-  };
+    [],
+  );
+
+  const reconnect = useCallback(async () => {
+    await providerRef.current?.reconnect();
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // Memoized context value
+  // ---------------------------------------------------------------------------
+  const contextValue = useMemo<CollaborationContextValue>(
+    () => ({
+      // State
+      isConnected: state.roomState === "connected",
+      isSynced: state.isSynced,
+      roomState: state.roomState,
+      error: state.error,
+      pendingUpdates: state.pendingUpdates,
+      collabType: "yjs" as const,
+
+      // Yjs instances
+      ydoc: ydocRef.current,
+      provider: providerRef.current,
+
+      // Canvas ref
+      canvasRef,
+
+      // Element operations
+      createElement,
+      updateElement,
+      deleteElement,
+      moveElement,
+
+      // Page operations
+      createPage,
+      updatePage,
+      deletePage,
+
+      // Control
+      reconnect,
+    }),
+    [
+      state.roomState,
+      state.isSynced,
+      state.error,
+      state.pendingUpdates,
+      createElement,
+      updateElement,
+      deleteElement,
+      moveElement,
+      createPage,
+      updatePage,
+      deletePage,
+      reconnect,
+    ],
+  );
+
+  return (
+    <CollaborationContext.Provider value={contextValue}>
+      {children}
+    </CollaborationContext.Provider>
+  );
 }
