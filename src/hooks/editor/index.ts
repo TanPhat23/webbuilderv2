@@ -21,13 +21,4 @@ export {
   type EditorResource,
 } from "./useEditorPermissions";
 
-export {
-  useCreateEventWorkflow,
-  useDeleteEventWorkflow,
-  useEventWorkflow,
-  useEventWorkflows,
-  useUpdateEventWorkflow,
-  useUpdateEventWorkflowEnabled,
-} from "./eventworkflow/useEventWorkflows";
-
 export { useWorkflowCanvas } from "./eventworkflow/useWorkflowCanvas";

@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
-  useEventWorkflows,
+  useEventWorkflowActions,
   useEventWorkflow,
 } from "@/hooks/editor/eventworkflow/useEventWorkflows";
-import { useElementEventWorkflows } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
+import { useElementEventWorkflowActions } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
 import { useSelectionStore } from "@/globalstore/selectionstore";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +46,7 @@ export const WorkflowConnector = ({
   workflowId,
   onBack,
 }: WorkflowConnectorProps) => {
-  const { data: workflows = [] } = useEventWorkflows(projectId);
+  const { workflows } = useEventWorkflowActions(projectId);
   const { selectedElement } = useSelectionStore();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
@@ -54,7 +54,6 @@ export const WorkflowConnector = ({
   const elementId = element?.id;
 
   const {
-    connections,
     isLoading,
     getConnectedWorkflows,
     isWorkflowConnected,
@@ -62,15 +61,17 @@ export const WorkflowConnector = ({
     isConnectedToEvent,
     handleConnect,
     handleDisconnect,
-  } = useElementEventWorkflows({ elementId });
+  } = useElementEventWorkflowActions(elementId);
 
-  // Fetch the specific workflow if workflowId is provided
-  const { data: targetWorkflow } = useEventWorkflow(workflowId || "");
+  const { data: targetWorkflow } = useEventWorkflow(
+    workflowId || "",
+    !!workflowId,
+  );
 
   const onConnect = async (eventType: string, wId: string) => {
+    if (!elementId) return;
     try {
-      // Create the connection record
-      await handleConnect(elementId, eventType, wId);
+      await handleConnect(eventType, wId);
       setSelectedEvent("");
     } catch (error) {
       console.error("Failed to connect workflow:", error);
@@ -78,7 +79,12 @@ export const WorkflowConnector = ({
   };
 
   const onDisconnect = async (eventType: string, wId: string) => {
-    await handleDisconnect(elementId, eventType, wId);
+    if (!elementId) return;
+    try {
+      await handleDisconnect(eventType, wId);
+    } catch (error) {
+      console.error("Failed to disconnect workflow:", error);
+    }
   };
 
   if (!selectedElement) {
@@ -89,15 +95,15 @@ export const WorkflowConnector = ({
           Back to Workflows
         </Button>
 
-        <Card className="border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-950/20">
+        <Card className="border-accent bg-accent/10 dark:border-accent dark:bg-accent/20">
           <CardContent className="pt-6">
             <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-accent shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold text-sm text-yellow-900 dark:text-yellow-100 mb-1">
+                <p className="font-semibold text-sm text-accent mb-1">
                   No Element Selected
                 </p>
-                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                <p className="text-sm text-muted-foreground">
                   Please select an element from the canvas to connect workflows
                   to its events.
                 </p>
@@ -134,10 +140,10 @@ export const WorkflowConnector = ({
 
       {/* Quick Connect for Specific Workflow */}
       {targetWorkflow && (
-        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+        <Card className="border-primary bg-primary/10 dark:border-primary dark:bg-primary/20">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <Zap className="h-4 w-4 text-primary" />
               {targetWorkflow.name}
             </CardTitle>
             <CardDescription>
@@ -238,7 +244,7 @@ export const WorkflowConnector = ({
                     className={cn(
                       "transition-colors",
                       hasConnections
-                        ? "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
+                        ? "border-primary bg-primary/10 dark:border-primary dark:bg-primary/20"
                         : "border-dashed",
                     )}
                   >
@@ -252,7 +258,7 @@ export const WorkflowConnector = ({
                             {hasConnections && (
                               <Badge
                                 variant="secondary"
-                                className="text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                className="text-xs bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary"
                               >
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 {connectedWorkflows.length}
@@ -267,7 +273,7 @@ export const WorkflowConnector = ({
 
                       {/* Connected Workflows */}
                       {hasConnections && (
-                        <div className="space-y-2 mb-3 pl-3 border-l-2 border-green-300 dark:border-green-700">
+                        <div className="space-y-2 mb-3 pl-3 border-l-2 border-primary dark:border-primary">
                           {connectedWorkflows
                             .filter((workflow) => workflow !== undefined)
                             .map((workflow) => (
@@ -276,7 +282,7 @@ export const WorkflowConnector = ({
                                 className="flex items-center justify-between p-2 bg-background rounded"
                               >
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <Zap className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400 shrink-0" />
+                                  <Zap className="h-3.5 w-3.5 text-accent shrink-0" />
                                   <span className="text-sm truncate">
                                     {workflow.name}
                                   </span>
@@ -318,7 +324,7 @@ export const WorkflowConnector = ({
                             .map((workflow) => (
                               <SelectItem key={workflow.id} value={workflow.id}>
                                 <div className="flex items-center gap-2">
-                                  <Zap className="h-3.5 w-3.5 text-yellow-600 dark:text-yellow-400" />
+                                  <Zap className="h-3.5 w-3.5 text-accent" />
                                   <span>{workflow.name}</span>
                                 </div>
                               </SelectItem>

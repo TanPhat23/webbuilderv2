@@ -1,10 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  useEventWorkflows,
-  useDeleteEventWorkflow,
-} from "@/hooks/editor/eventworkflow/useEventWorkflows";
+import { useEventWorkflowActions } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -59,12 +56,9 @@ export const WorkflowList = ({
   onConnect,
   onCreate,
 }: WorkflowListProps) => {
-  const {
-    data: workflows = [],
-    isLoading,
-    error,
-  } = useEventWorkflows(projectId);
-  const deleteMutation = useDeleteEventWorkflow();
+  const { workflows, isLoading, error, isDeleting, deleteWorkflow } =
+    useEventWorkflowActions(projectId);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -75,19 +69,15 @@ export const WorkflowList = ({
     workflow.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleDelete = (workflowId: string) => {
-    deleteMutation.mutate(
-      { workflowId },
-      {
-        onSuccess: () => {
-          toast.success("Workflow deleted successfully");
-          setDeleteConfirmId(null);
-        },
-        onError: () => {
-          toast.error("Failed to delete workflow");
-        },
-      },
-    );
+  const handleDelete = async (workflowId: string) => {
+    try {
+      await deleteWorkflow(workflowId);
+      toast.success("Workflow deleted successfully");
+      setDeleteConfirmId(null);
+    } catch (error) {
+      console.error("Failed to delete workflow:", error);
+      toast.error("Failed to delete workflow");
+    }
   };
 
   if (isLoading) {
@@ -114,18 +104,16 @@ export const WorkflowList = ({
           </Button>
         </div>
 
-        <Card className="border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20">
+        <Card className="border-destructive bg-destructive/10 dark:border-destructive dark:bg-destructive/20">
           <CardContent className="pt-6">
             <div className="flex gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+              <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                <p className="text-sm font-medium text-destructive">
                   Error Loading Workflows
                 </p>
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  {error instanceof Error
-                    ? error.message
-                    : "Failed to load workflows"}
+                <p className="text-sm text-destructive/80">
+                  {error || "Failed to load workflows"}
                 </p>
               </div>
             </div>
@@ -152,15 +140,13 @@ export const WorkflowList = ({
       </div>
 
       {/* Info Card */}
-      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+      <Card className="border-primary bg-primary/10 dark:border-primary dark:bg-primary/20">
         <CardContent className="pt-6">
           <div className="flex gap-3">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                How it works
-              </p>
-              <p className="text-sm text-blue-700 dark:text-blue-300">
+              <p className="text-sm font-medium text-primary">How it works</p>
+              <p className="text-sm text-muted-foreground">
                 1. Create a workflow with drag-and-drop nodes
                 <br />
                 2. Design your logic visually (triggers, actions, conditions)
@@ -224,7 +210,7 @@ export const WorkflowList = ({
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2">
-                        <Zap className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0" />
+                        <Zap className="h-4 w-4 text-accent shrink-0" />
                         <h3 className="font-semibold truncate">
                           {workflow.name}
                         </h3>
@@ -279,7 +265,7 @@ export const WorkflowList = ({
                               onClick={() => onEdit(workflow.id, workflow.name)}
                               className="h-8 w-8 p-0"
                             >
-                              <Edit2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              <Edit2 className="h-4 w-4 text-primary" />
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>Edit workflow</TooltipContent>
@@ -291,11 +277,10 @@ export const WorkflowList = ({
                               size="sm"
                               variant="ghost"
                               onClick={() => setDeleteConfirmId(workflow.id)}
-                              disabled={deleteMutation.isPending}
+                              disabled={isDeleting}
                               className="h-8 w-8 p-0 hover:text-destructive"
                             >
-                              {deleteMutation.isPending &&
-                              deleteConfirmId === workflow.id ? (
+                              {isDeleting && deleteConfirmId === workflow.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Trash2 className="h-4 w-4" />

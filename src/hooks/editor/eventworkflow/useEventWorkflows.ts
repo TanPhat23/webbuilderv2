@@ -1,124 +1,112 @@
-"use client";
-
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { eventWorkflowService } from "@/services/eventWorkflow.service";
 import {
   EventWorkflow,
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
 } from "@/interfaces/eventWorkflow.interface";
+import {
+  eventWorkflowKeys,
+  useEventWorkflowStore,
+} from "@/globalstore/eventworkflowstore";
+import {
+  useCreateEventWorkflow,
+  useDeleteEventWorkflow,
+  useUpdateEventWorkflow,
+  useUpdateEventWorkflowEnabled,
+} from "./useEventWorkflowMutations";
 
-const QUERY_KEYS = {
-  all: ["eventWorkflows"] as const,
-  lists: () => [...QUERY_KEYS.all, "list"] as const,
-  list: (projectId: string) => [...QUERY_KEYS.lists(), projectId] as const,
-  details: () => [...QUERY_KEYS.all, "detail"] as const,
-  detail: (workflowId: string) =>
-    [...QUERY_KEYS.details(), workflowId] as const,
-};
-
+/**
+ * Fetch all workflows for a project.
+ * Uses React Query cache with 30 s stale time.
+ */
 export function useEventWorkflows(projectId: string) {
   return useQuery({
-    queryKey: QUERY_KEYS.list(projectId),
+    queryKey: eventWorkflowKeys.list(projectId),
     queryFn: async () => {
       const result = await eventWorkflowService.getEventWorkflows(projectId);
-      if (!Array.isArray(result)) {
-        console.error("Expected array from getEventWorkflows, got:", result);
-        return [];
-      }
-      return result;
+      return Array.isArray(result) ? result : [];
     },
     enabled: !!projectId,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
 }
 
-export function useEventWorkflow(workflowId: string, enabled: boolean = true) {
+/**
+ * Fetch a single workflow by ID.
+ * Seeds from the list cache via `initialData` so we can show data
+ * instantly while the detail query refetches in the background.
+ */
+export function useEventWorkflow(workflowId: string, enabled = true) {
+  const queryClient = useQueryClient();
+
   return useQuery({
-    queryKey: QUERY_KEYS.detail(workflowId),
+    queryKey: eventWorkflowKeys.detail(workflowId),
     queryFn: () => eventWorkflowService.getEventWorkflowById(workflowId),
     enabled: enabled && !!workflowId,
-  });
-}
-
-export function useCreateEventWorkflow() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      projectId,
-      input,
-    }: {
-      projectId: string;
-      input: CreateEventWorkflowInput;
-    }) => eventWorkflowService.createEventWorkflow(projectId, input),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.list(variables.projectId),
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    // Seed from any list cache that already contains this workflow
+    initialData: () => {
+      const lists = queryClient.getQueriesData<EventWorkflow[]>({
+        queryKey: eventWorkflowKeys.lists(),
       });
-    },
-    onError: (error: Error) => {
-      console.error("Failed to create workflow:", error.message);
+      for (const [, data] of lists) {
+        const found = data?.find((w) => w.id === workflowId);
+        if (found) return found;
+      }
+      return undefined;
     },
   });
 }
 
-export function useUpdateEventWorkflow() {
-  const queryClient = useQueryClient();
+/**
+ * Convenience hook that returns workflows + mutation actions in one call.
+ * Designed as a drop-in replacement for components that need both query data
+ * and mutation actions/flags.
+ */
+export function useEventWorkflowActions(projectId: string) {
+  const query = useEventWorkflows(projectId);
+  const store = useEventWorkflowStore();
 
-  return useMutation({
-    mutationFn: ({
-      workflowId,
-      input,
-    }: {
-      workflowId: string;
-      input: UpdateEventWorkflowInput;
-    }) => eventWorkflowService.updateEventWorkflow(workflowId, input),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.workflowId),
-      });
-    },
-    onError: (error: Error) => {
-      console.error("Failed to update workflow:", error.message);
-    },
-  });
-}
+  const createMutation = useCreateEventWorkflow();
+  const updateMutation = useUpdateEventWorkflow();
+  const updateEnabledMutation = useUpdateEventWorkflowEnabled();
+  const deleteMutation = useDeleteEventWorkflow();
 
-export function useUpdateEventWorkflowEnabled() {
-  const queryClient = useQueryClient();
+  return {
+    // React Query data
+    workflows: query.data ?? [],
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error
+      ? query.error instanceof Error
+        ? query.error.message
+        : "Failed to load workflows"
+      : store.mutationError,
 
-  return useMutation({
-    mutationFn: ({
-      workflowId,
-      enabled,
-    }: {
-      workflowId: string;
-      enabled: boolean;
-    }) => eventWorkflowService.updateEventWorkflowEnabled(workflowId, enabled),
-    onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.detail(variables.workflowId),
-      });
-    },
-    onError: (error: Error) => {
-      console.error("Failed to update workflow enabled status:", error.message);
-    },
-  });
-}
+    // Mutation actions
+    createWorkflow: (input: CreateEventWorkflowInput) =>
+      createMutation.mutateAsync({ projectId, input }),
+    updateWorkflow: (workflowId: string, input: UpdateEventWorkflowInput) =>
+      updateMutation.mutateAsync({ workflowId, input }),
+    updateWorkflowEnabled: (workflowId: string, enabled: boolean) =>
+      updateEnabledMutation.mutateAsync({ workflowId, enabled }),
+    deleteWorkflow: (workflowId: string) =>
+      deleteMutation.mutateAsync({ workflowId }),
 
-export function useDeleteEventWorkflow() {
-  const queryClient = useQueryClient();
+    // Mutation flags (from store)
+    isCreating: store.isCreating,
+    isUpdating: store.isUpdating,
+    isDeleting: store.isDeleting,
 
-  return useMutation({
-    mutationFn: ({ workflowId }: { workflowId: string }) =>
-      eventWorkflowService.deleteEventWorkflow(workflowId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEYS.lists(),
-      });
-    },
-    onError: (error: Error) => {
-      console.error("Failed to delete workflow:", error.message);
-    },
-  });
+    // Cache helpers
+    invalidateAll: store.invalidateAll,
+    invalidateList: store.invalidateList,
+    invalidateDetail: store.invalidateDetail,
+
+    // Pass-through for components needing the raw query
+    refetch: query.refetch,
+  };
 }

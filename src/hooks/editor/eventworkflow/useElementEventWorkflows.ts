@@ -1,334 +1,113 @@
-"use client";
-
 import { useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { elementEventWorkflowService } from "@/services/elementEventWorkflow";
-import { EVENT_TYPES } from "@/constants/eventWorkflows";
 import { EventWorkflow } from "@/interfaces/eventWorkflow.interface";
-import { toast } from "sonner";
 import {
-  CreateElementEventWorkflowSchema,
-  DisconnectElementEventWorkflowSchema,
-  getFirstError,
-  validateCreateConnection,
-  validateDisconnectConnection,
-} from "@/schema/elementEventWorkflowSchemas";
+  elementEventWorkflowKeys,
+  useElementEventWorkflowStore,
+  type IElementEventWorkflowConnection,
+  getConnectedWorkflowsForEvent,
+  isWorkflowConnected as isWorkflowConnectedFn,
+  getWorkflowConnections as getWorkflowConnectionsFn,
+  isConnectedToEvent as isConnectedToEventFn,
+} from "@/globalstore/elementeventworkflowstore";
+import {
+  useConnectElementEventWorkflow,
+  useDisconnectElementEventWorkflow,
+} from "./useElementEventWorkflowMutations";
 
 /**
- * Type definition for element-workflow event connections
+ * Fetch element-event-workflow connections for a given element.
+ * React Query handles stale time, gc, deduplication, and background refetch.
  */
-export interface IElementEventWorkflowConnection {
-  id: string;
-  elementId: string;
-  eventName: string;
-  workflowId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-/**
- * Query key factory for consistent cache management
- */
-const QUERY_KEYS = {
-  all: ["elementEventWorkflows"] as const,
-  byElement: (elementId: string) =>
-    [...QUERY_KEYS.all, "byElement", elementId] as const,
-};
-
-/**
- * Hook options
- */
-interface UseElementEventWorkflowsOptions {
-  elementId?: string;
-}
-
-/**
- * Validates connection input using Zod schemas
- * @param elementId - Element ID to validate
- * @param eventType - Event type to validate
- * @param workflowId - Workflow ID to validate
- * @returns Validation result with optional error message
- */
-function validateConnectionInput(
-  elementId: string,
-  eventType: string,
-  workflowId: string,
-): { isValid: boolean; error?: string } {
-  const result = validateCreateConnection({
-    elementId,
-    eventName: eventType,
-    workflowId,
-  });
-
-  if (!result.success) {
-    return {
-      isValid: false,
-      error: getFirstError(result) || "Invalid connection data",
-    };
-  }
-
-  return { isValid: true };
-}
-
-/**
- * Validates disconnect input using Zod schemas
- * @param elementId - Element ID to validate
- * @param eventType - Event type to validate
- * @param workflowId - Workflow ID to validate
- * @returns Validation result with optional error message
- */
-function validateDisconnectInput(
-  elementId: string,
-  eventType: string,
-  workflowId: string,
-): { isValid: boolean; error?: string } {
-  const result = validateDisconnectConnection({
-    elementId,
-    eventName: eventType,
-    workflowId,
-  });
-
-  if (!result.success) {
-    return {
-      isValid: false,
-      error: getFirstError(result) || "Invalid disconnect data",
-    };
-  }
-
-  return { isValid: true };
-}
-
-/**
- * Hook for managing element-to-workflow event connections
- * Provides queries and mutations for connecting/disconnecting workflows to elements
- */
-export function useElementEventWorkflows(
-  options: UseElementEventWorkflowsOptions = {},
-) {
-  const { elementId } = options;
-  const queryClient = useQueryClient();
-
-  /**
-   * Query: Fetch all event workflow connections for the element
-   */
-  const {
-    data: connections = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: QUERY_KEYS.byElement(elementId || ""),
+export function useElementConnections(elementId: string | undefined) {
+  return useQuery({
+    queryKey: elementEventWorkflowKeys.byElement(elementId ?? ""),
     queryFn: async () => {
       if (!elementId) return [];
-      try {
-        const result =
-          await elementEventWorkflowService.getElementEventWorkflowsByElement(
-            elementId,
-          );
-        return Array.isArray(result) ? result : [];
-      } catch (error) {
-        console.error("Failed to fetch element event workflows:", error);
-        return [];
-      }
+      const result =
+        await elementEventWorkflowService.getElementEventWorkflowsByElement(
+          elementId,
+        );
+      return Array.isArray(result)
+        ? (result as IElementEventWorkflowConnection[])
+        : [];
     },
     enabled: !!elementId,
-    staleTime: 30000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
   });
+}
 
-  /**
-   * Invalidate and refetch connection data
-   */
-  const invalidateConnections = useCallback(async () => {
-    if (!elementId) return;
-    await queryClient.invalidateQueries({
-      queryKey: QUERY_KEYS.byElement(elementId),
-    });
-  }, [elementId, queryClient]);
+/**
+ * Convenience hook that returns connections + mutation actions + derived helpers.
+ */
+export function useElementEventWorkflowActions(elementId: string | undefined) {
+  const query = useElementConnections(elementId);
+  const store = useElementEventWorkflowStore();
+  const connections = query.data ?? [];
 
-  /**
-   * Get workflows connected to a specific event
-   * Memoized to avoid unnecessary recalculations
-   */
+  const connectMutation = useConnectElementEventWorkflow();
+  const disconnectMutation = useDisconnectElementEventWorkflow();
+
   const getConnectedWorkflows = useCallback(
-    (eventType: string, workflows: EventWorkflow[]) => {
-      return connections
-        .filter((conn) => conn.eventName === eventType)
-        .map((conn) => workflows.find((w) => w.id === conn.workflowId))
-        .filter(Boolean) as EventWorkflow[];
-    },
+    (eventType: string, workflows: EventWorkflow[]) =>
+      getConnectedWorkflowsForEvent(connections, eventType, workflows),
     [connections],
   );
 
-  /**
-   * Check if a workflow is connected to any event
-   */
   const isWorkflowConnected = useCallback(
-    (workflowId: string) => {
-      return connections.some((conn) => conn.workflowId === workflowId);
-    },
+    (workflowId: string) => isWorkflowConnectedFn(connections, workflowId),
     [connections],
   );
 
-  /**
-   * Get all event types that a workflow is connected to
-   */
   const getWorkflowConnections = useCallback(
-    (workflowId: string) => {
-      return EVENT_TYPES.filter((event) =>
-        connections.some(
-          (conn) =>
-            conn.workflowId === workflowId && conn.eventName === event.value,
-        ),
-      );
-    },
+    (workflowId: string) => getWorkflowConnectionsFn(connections, workflowId),
     [connections],
   );
 
-  /**
-   * Check if a specific workflow is connected to an event
-   */
   const isConnectedToEvent = useCallback(
-    (eventType: string, workflowId: string) => {
-      return connections.some(
-        (conn) =>
-          conn.eventName === eventType && conn.workflowId === workflowId,
-      );
-    },
+    (eventType: string, workflowId: string) =>
+      isConnectedToEventFn(connections, eventType, workflowId),
     [connections],
-  );
-
-  /**
-   * Connect a workflow to an element event
-   */
-  const handleConnect = useCallback(
-    async (elementId: string, eventType: string, workflowId: string) => {
-      // Validate input with Zod
-      const validation = validateConnectionInput(
-        elementId,
-        eventType,
-        workflowId,
-      );
-      if (!validation.isValid) {
-        toast.error(validation.error || "Invalid connection data");
-        return false;
-      }
-
-      // Check for duplicate connection
-      if (isConnectedToEvent(eventType, workflowId)) {
-        toast.info("Workflow already connected to this event");
-        return false;
-      }
-
-      try {
-        // Parse with Zod to get typed data
-        const validatedData = CreateElementEventWorkflowSchema.parse({
-          elementId,
-          eventName: eventType,
-          workflowId,
-        });
-
-        const payload = {
-          elementId: validatedData.elementId,
-          workflowId: validatedData.workflowId,
-          eventName: validatedData.eventName,
-        };
-
-        await elementEventWorkflowService.createElementEventWorkflow(payload);
-
-        // Invalidate related caches
-        await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.byElement(validatedData.elementId),
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["eventWorkflows"],
-        });
-
-        toast.success("Workflow connected successfully!");
-        return true;
-      } catch (error) {
-        console.error("Failed to connect workflow:", error);
-        toast.error("Failed to connect workflow");
-        return false;
-      }
-    },
-    [isConnectedToEvent, queryClient],
-  );
-
-  /**
-   * Disconnect a workflow from an element event
-   */
-  const handleDisconnect = useCallback(
-    async (elementId: string, eventType: string, workflowId: string) => {
-      // Validate input with Zod
-      const validation = validateDisconnectInput(
-        elementId,
-        eventType,
-        workflowId,
-      );
-      if (!validation.isValid) {
-        toast.error(validation.error || "Invalid disconnect data");
-        return false;
-      }
-
-      // Find the connection
-      const connection = connections.find(
-        (conn) =>
-          conn.eventName === eventType && conn.workflowId === workflowId,
-      );
-
-      if (!connection) {
-        toast.error("Connection not found");
-        return false;
-      }
-
-      try {
-        // Parse with Zod to get typed data
-        const validatedData = DisconnectElementEventWorkflowSchema.parse({
-          elementId,
-          eventName: eventType,
-          workflowId,
-        });
-
-        await elementEventWorkflowService.deleteElementEventWorkflow(
-          connection.id,
-        );
-
-        // Invalidate related caches
-        await queryClient.invalidateQueries({
-          queryKey: QUERY_KEYS.byElement(validatedData.elementId),
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ["eventWorkflows"],
-        });
-
-        toast.success("Workflow disconnected");
-        return true;
-      } catch (error) {
-        console.error("Failed to disconnect workflow:", error);
-        toast.error("Failed to disconnect workflow");
-        return false;
-      }
-    },
-    [connections, queryClient],
   );
 
   return {
-    // Data
+    // React Query data
     connections,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error
+      ? query.error instanceof Error
+        ? query.error.message
+        : "Failed to load connections"
+      : store.mutationError,
 
-    // Query helpers
-    invalidateConnections,
-
-    // State checkers
+    // Computed getters
     getConnectedWorkflows,
     isWorkflowConnected,
     getWorkflowConnections,
     isConnectedToEvent,
 
-    // Mutations
-    handleConnect,
-    handleDisconnect,
+    // Mutation actions
+    handleConnect: (eventType: string, workflowId: string) =>
+      elementId
+        ? connectMutation.mutateAsync({ elementId, eventType, workflowId })
+        : Promise.reject(new Error("Missing elementId")),
+    handleDisconnect: (eventType: string, workflowId: string) =>
+      elementId
+        ? disconnectMutation.mutateAsync({ elementId, eventType, workflowId })
+        : Promise.reject(new Error("Missing elementId")),
+
+    // Mutation flags (from store)
+    isConnecting: store.isConnecting,
+    isDisconnecting: store.isDisconnecting,
+
+    // Cache helpers
+    invalidateAll: store.invalidateAll,
+    invalidateElement: store.invalidateElement,
+
+    // Pass-through for components needing the raw query
+    refetch: query.refetch,
   };
 }

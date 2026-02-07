@@ -8,12 +8,12 @@ import { WorkflowCreator } from "./WorkflowCreator";
 import { WorkflowConnector } from "./WorkflowConnector";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowData } from "./types/workflow.types";
-import {
-  useUpdateEventWorkflow,
-  useEventWorkflow,
-} from "@/hooks/editor/eventworkflow/useEventWorkflows";
+import { useEventWorkflowStore } from "@/globalstore/eventworkflowstore";
+import { useEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflows";
+import { useUpdateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
 import { toast } from "sonner";
-import { validateWorkflow } from "@/lib/utils/workflow/workflowTransformer";
+import type { ZodIssue } from "zod";
+import { WorkflowCanvasSchema } from "@/schema/zod/workflowCanvas";
 
 interface EventWorkflowManagerDialogProps {
   projectId: string;
@@ -43,13 +43,14 @@ export const EventWorkflowManagerDialog = ({
     connections: [],
   });
 
-  const updateMutation = useUpdateEventWorkflow();
+  const updateWorkflowMutation = useUpdateEventWorkflow();
 
-  // Query for loading workflow data when editing
-  const workflowQuery = useEventWorkflow(
-    viewState.type === "edit" ? viewState.workflowId : "",
-    viewState.type === "edit",
-  );
+  const editingWorkflowId =
+    viewState.type === "edit" ? viewState.workflowId : "";
+  const isEditView = viewState.type === "edit";
+
+  // React Query hook for fetching single workflow (enabled only in edit mode)
+  const workflowQuery = useEventWorkflow(editingWorkflowId, isEditView);
 
   // Reset to list view when dialog opens
   useEffect(() => {
@@ -58,21 +59,18 @@ export const EventWorkflowManagerDialog = ({
     }
   }, [isOpen]);
 
-  // Load canvas data when workflow is fetched
+  // Load canvas data when workflow query resolves
   useEffect(() => {
     if (
       viewState.type === "edit" &&
       workflowQuery.data?.canvasData &&
       !viewState.initialData
     ) {
-      console.log(
-        "Loading canvas data from API:",
-        workflowQuery.data.canvasData,
+      setViewState((prev) =>
+        prev.type === "edit"
+          ? { ...prev, initialData: workflowQuery.data!.canvasData }
+          : prev,
       );
-      setViewState({
-        ...viewState,
-        initialData: workflowQuery.data.canvasData,
-      });
       setWorkflowData(workflowQuery.data.canvasData);
     }
   }, [workflowQuery.data, viewState]);
@@ -82,7 +80,6 @@ export const EventWorkflowManagerDialog = ({
   };
 
   const handleWorkflowCreated = (workflowId: string) => {
-    // Automatically open editor after creation
     setViewState({
       type: "edit",
       workflowId,
@@ -98,21 +95,23 @@ export const EventWorkflowManagerDialog = ({
       workflowName,
       initialData: undefined,
     });
-    // Data will be loaded via useEffect when query completes
   };
 
   const handleConnectWorkflow = (workflowId?: string) => {
     setViewState({ type: "connect", workflowId });
   };
 
-  const handleSaveWorkflow = (workflow: WorkflowData) => {
+  const handleSaveWorkflow = async (workflow: WorkflowData) => {
     if (viewState.type !== "edit") return;
 
-    const validation = validateWorkflow(workflow);
-    if (!validation.isValid) {
-      const errorMsg = validation.errors.join("\n• ");
+    // Validate using Zod schema (call .safeParse directly to avoid import name issues)
+    const validation = WorkflowCanvasSchema.safeParse(workflow);
+    if (!validation.success) {
+      const errors =
+        validation.error?.issues.map((issue: ZodIssue) => issue.message) ?? [];
+      const errorMsg = errors.join("\n• ");
       toast.error(`Workflow validation failed:\n• ${errorMsg}`);
-      console.error("Validation errors:", validation.errors);
+      console.error("Validation errors:", validation.error);
       return;
     }
 
@@ -121,8 +120,8 @@ export const EventWorkflowManagerDialog = ({
     });
 
     // Save canvas data only
-    updateMutation.mutate(
-      {
+    try {
+      const result = await updateWorkflowMutation.mutateAsync({
         workflowId: viewState.workflowId,
         input: {
           name: workflow.metadata?.name,
@@ -130,35 +129,24 @@ export const EventWorkflowManagerDialog = ({
           canvasData: workflow, // Save the complete canvas state
           enabled: true,
         },
-      },
-      {
-        onSuccess: () => {
-          toast.success("Workflow saved successfully!");
-          console.log("Workflow saved with canvas data");
-        },
-        onError: (error: any) => {
-          console.error("Workflow update error:", error);
-          console.error("Error response:", error?.response?.data);
+      });
 
-          // Format error message from API
-          let errorMessage = "Failed to save workflow";
-          if (error?.response?.data?.details) {
-            const details = error.response.data.details;
-            if (Array.isArray(details)) {
-              errorMessage = details
-                .map((d: any) => `${d.nodeLabel || "Node"}: ${d.message}`)
-                .join("\n");
-            } else {
-              errorMessage = JSON.stringify(details);
-            }
-          } else if (error?.message) {
-            errorMessage = error.message;
-          }
-
-          toast.error(`Error saving workflow:\n${errorMessage}`);
-        },
-      },
-    );
+      if (result) {
+        toast.success("Workflow saved successfully!");
+        console.log("Workflow saved with canvas data");
+      } else {
+        const errorMessage =
+          useEventWorkflowStore.getState().mutationError ||
+          "Failed to save workflow";
+        toast.error(`Error saving workflow:\n${errorMessage}`);
+      }
+    } catch (error) {
+      const errorMessage =
+        useEventWorkflowStore.getState().mutationError ||
+        "Failed to save workflow";
+      console.error("Failed to save workflow:", error);
+      toast.error(`Error saving workflow:\n${errorMessage}`);
+    }
   };
 
   const handleBackToList = () => {
@@ -168,6 +156,13 @@ export const EventWorkflowManagerDialog = ({
   const handleClose = () => {
     setViewState({ type: "list" });
     onOpenChange(false);
+  };
+
+  const handleNameChange = (name: string) => {
+    setWorkflowData((prev) => ({
+      ...prev,
+      metadata: { ...prev.metadata, name },
+    }));
   };
 
   const isFullScreenView = viewState.type === "edit";
@@ -222,12 +217,7 @@ export const EventWorkflowManagerDialog = ({
                   workflowName={viewState.workflowName}
                   initialWorkflow={viewState.initialData || workflowData}
                   onSave={handleSaveWorkflow}
-                  onNameChange={(name) => {
-                    setWorkflowData((prev) => ({
-                      ...prev,
-                      metadata: { ...prev.metadata, name },
-                    }));
-                  }}
+                  onNameChange={handleNameChange}
                   onBack={handleBackToList}
                   className="h-full"
                 />
