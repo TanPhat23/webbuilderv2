@@ -2,7 +2,7 @@
 
 import { MessageSquare, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
 import { EditorElement } from "@/types/global.type";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

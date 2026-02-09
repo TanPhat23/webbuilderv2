@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useImageStore } from "@/globalstore/imagestore";
+import { useImageStore } from "@/globalstore/image-store";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageIcon, Plus, X, GripVertical } from "lucide-react";

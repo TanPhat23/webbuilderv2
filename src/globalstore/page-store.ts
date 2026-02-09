@@ -2,6 +2,8 @@ import { Page } from "@/interfaces/page.interface";
 import { projectService } from "@/services/project";
 import { create } from "zustand";
 
+type PageCollaborativeData = Partial<Page> | Page | undefined;
+
 /**
  * Type definition for the Zustand PageStore.
  */
@@ -12,7 +14,11 @@ type PageStore = {
   currentPage: Page | null;
 
   collaborativeCallback:
-    | ((type: "update" | "delete" | "create", id?: string, data?: any) => void)
+    | ((
+        type: "update" | "delete" | "create",
+        id?: string,
+        data?: PageCollaborativeData,
+      ) => void)
     | null;
 
   /**
@@ -23,9 +29,9 @@ type PageStore = {
   // Actions
   addPage: (newPage: Page) => void;
 
-  updatePage: (updatedPage: Page, id: string) => void;
+  updatePage: (updates: Partial<Page>, id: string) => void;
 
-  deletePage: (id: string) => void;
+  deletePage: (id: string) => Promise<void>;
   /**
    * Reset all pages to an empty array.
    */
@@ -43,7 +49,7 @@ type PageStore = {
       | ((
           type: "update" | "delete" | "create",
           id?: string,
-          data?: any,
+          data?: PageCollaborativeData,
         ) => void)
       | null,
   ) => void;
@@ -53,7 +59,7 @@ export const usePageStore = create<PageStore>((set, get) => {
   const triggerCollaborativeCallback = (
     type: "update" | "delete" | "create",
     id?: string,
-    data?: any,
+    data?: PageCollaborativeData,
   ) => {
     const { collaborativeCallback } = get();
     if (collaborativeCallback && typeof collaborativeCallback === "function") {
@@ -66,14 +72,14 @@ export const usePageStore = create<PageStore>((set, get) => {
     currentPage: null,
     collaborativeCallback: null,
 
-    updatePage: (updatedPage, id) => {
+    updatePage: (updates, id) => {
       set((state) => ({
         pages: state.pages.map((page) =>
-          page.Id === id ? { ...page, ...updatedPage } : page,
+          page.Id === id ? { ...page, ...updates } : page,
         ),
       }));
       // TODO: Optionally, call an API to persist the update
-      triggerCollaborativeCallback("update", id, updatedPage);
+      triggerCollaborativeCallback("update", id, updates);
     },
     addPage: (newPage) => {
       set((state) => ({

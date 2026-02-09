@@ -10,7 +10,7 @@ import {
   isWorkflowConnected as isWorkflowConnectedFn,
   getWorkflowConnections as getWorkflowConnectionsFn,
   isConnectedToEvent as isConnectedToEventFn,
-} from "@/globalstore/elementeventworkflowstore";
+} from "@/globalstore/element-event-workflow-store";
 import {
   useConnectElementEventWorkflow,
   useDisconnectElementEventWorkflow,

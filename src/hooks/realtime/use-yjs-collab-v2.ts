@@ -5,8 +5,13 @@ import { useAuth } from "@clerk/nextjs";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 
-import { useElementStore, ElementStore } from "@/globalstore/elementstore";
-import { useMouseStore } from "@/globalstore/mousestore";
+import {
+  useElementStore,
+  ElementStore,
+  type MoveData,
+} from "@/globalstore/element-store";
+import { EditorElement } from "@/types/global.type";
+import { useMouseStore } from "@/globalstore/mouse-store";
 import {
   createSyncAwarenessToStore,
   createAwarenessChangeObserver,
@@ -173,21 +178,26 @@ export function useYjsCollabV2({
       if (!providerRef.current?.isSynced) return;
       const p = providerRef.current;
       try {
-        if (type === "update" && id) await p.updateElement(id, data, "partial");
-        else if (type === "delete" && id) await p.deleteElement(id);
-        else if (type === "create" && data)
-          await p.createElement(data, data.parentId, data.position);
-        else if (type === "move" && data) {
-          if (internalRef.current.pendingMoves.has(data.elementId)) return;
-          internalRef.current.pendingMoves.add(data.elementId);
+        if (type === "update" && id && data) {
+          await p.updateElement(id, data as Partial<EditorElement>, "partial");
+        } else if (type === "delete" && id) {
+          await p.deleteElement(id);
+        } else if (type === "create" && data) {
+          const el = data as EditorElement;
+          const pos = (data as { position?: number }).position;
+          await p.createElement(el, el.parentId, pos);
+        } else if (type === "move" && data) {
+          const moveData = data as MoveData;
+          if (internalRef.current.pendingMoves.has(moveData.elementId)) return;
+          internalRef.current.pendingMoves.add(moveData.elementId);
           try {
             await p.moveElement(
-              data.elementId,
-              data.newParentId,
-              data.newPosition,
+              moveData.elementId,
+              moveData.newParentId,
+              moveData.newPosition,
             );
           } finally {
-            internalRef.current.pendingMoves.delete(data.elementId);
+            internalRef.current.pendingMoves.delete(moveData.elementId);
           }
         }
       } catch (err) {

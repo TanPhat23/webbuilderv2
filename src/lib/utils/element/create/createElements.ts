@@ -8,7 +8,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { getElementStrategy } from "./elementStrategyMap";
 import { BuilderState } from "./elementCreateStrategy";
-import { SelectionStore } from "@/globalstore/selectionstore";
+import { SelectionStore } from "@/globalstore/selection-store";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 import { useSearchParams } from "next/navigation";
 

@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { viewportSizes } from "@/constants/viewports";
 import { Viewport } from "@/hooks";
 import { cn } from "@/lib/utils";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 import ElementLoading from "@/components/editor/skeleton/ElementLoading";
 
 type PreviewContainerProps = {

@@ -43,7 +43,7 @@ import {
   generateDesignSystemCSS,
   generateColorsCSS,
 } from "../../lib/utils/projectsettings/designSystemUtils";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 
 interface ColorScheme {
   primary: string;

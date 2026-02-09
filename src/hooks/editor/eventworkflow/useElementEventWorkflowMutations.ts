@@ -12,7 +12,7 @@ import {
   elementEventWorkflowKeys,
   useElementEventWorkflowStore,
   type IElementEventWorkflowConnection,
-} from "@/globalstore/elementeventworkflowstore";
+} from "@/globalstore/element-event-workflow-store";
 
 type ConnectVariables = {
   elementId: string;

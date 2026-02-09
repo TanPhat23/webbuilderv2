@@ -6,7 +6,7 @@ import {
   useEventWorkflow,
 } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { useElementEventWorkflowActions } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { Button } from "@/components/ui/button";
 import {
   Card,

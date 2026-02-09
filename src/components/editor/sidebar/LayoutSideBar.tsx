@@ -22,7 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAiChat } from "@/providers/aiprovider";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import {
   Tooltip,
   TooltipContent,

@@ -3,7 +3,7 @@
 import { useRef, useEffect } from "react";
 import { clamp } from "lodash";
 import type { EditorElement } from "@/types/global.type";
-import type { ResizeDirection } from "@/constants/direciton";
+import type { ResizeDirection } from "@/constants/direction";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
 /**

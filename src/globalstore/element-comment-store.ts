@@ -1,8 +1,6 @@
 "use client";
-
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { ElementComment } from "@/interfaces/elementcomment.interface";
 
 interface ElementCommentStore {
   isCommentsVisible: boolean;

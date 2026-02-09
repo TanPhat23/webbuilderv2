@@ -4,7 +4,7 @@ import React from "react";
 import { LinkConfigurationAccordion } from "./LinkConfiguration";
 import { FormConfigurationAccordion } from "./FormConfiguration";
 import InputConfiguration from "./InputConfiguration";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import CarouselConfigurationAccordion from "./CarouselConfiguration";
 import DataLoaderConfiguration from "./DataLoaderConfiguration";
 import CMSConfiguration from "./CMSConfiguration";

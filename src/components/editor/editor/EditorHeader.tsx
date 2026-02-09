@@ -36,7 +36,7 @@ import CollaboratorIndicator from "./CollaboratorIndicator";
 import EventModeToggle from "../eventmode/EventModeToggle";
 import { PageNavigationCommand } from "./PageNavigationCommand";
 import CollaborationStatus from "./CollaborationStatus";
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
 
 type EditorHeaderProps = {
   currentView: Viewport;

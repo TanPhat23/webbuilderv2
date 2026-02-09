@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { ImageElement } from "@/interfaces/elements.interface";
 import React, { ChangeEvent, useState, useRef } from "react";
 import { imageService } from "@/services/image";

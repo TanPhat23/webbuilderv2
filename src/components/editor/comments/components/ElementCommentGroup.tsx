@@ -14,7 +14,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ElementComment } from "@/interfaces/elementcomment.interface";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { CommentCard } from "./CommentCard";
 

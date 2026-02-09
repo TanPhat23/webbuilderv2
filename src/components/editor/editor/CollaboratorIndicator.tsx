@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
-import { useMouseStore } from "@/globalstore/mousestore";
+import { useMouseStore } from "@/globalstore/mouse-store";
 import { useAuth } from "@clerk/nextjs";
 import CollaborationStatus from "./CollaborationStatus";
 

@@ -7,8 +7,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useProjectStore } from "@/globalstore/projectstore";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useProjectStore } from "@/globalstore/project-store";
+import { useElementStore } from "@/globalstore/element-store";
 import { History, Save, RotateCcw } from "lucide-react";
 import { useSnapshots, useSaveSnapshot, useLoadSnapshot } from "@/hooks/editor/useSnapshot";
 import { EditorElement } from "@/types/global.type";

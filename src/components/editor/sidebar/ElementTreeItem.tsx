@@ -4,8 +4,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { cn } from "@/lib/utils";
 import { EditorElement } from "@/types/global.type";
 import {

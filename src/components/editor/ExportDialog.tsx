@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Code } from "lucide-react";
-import { useElementStore } from "@/globalstore/elementstore";
-import { usePageStore } from "@/globalstore/pagestore";
+import { useElementStore } from "@/globalstore/element-store";
+import { usePageStore } from "@/globalstore/page-store";
 import {
   generateCodeFromElements,
   GeneratedCode,

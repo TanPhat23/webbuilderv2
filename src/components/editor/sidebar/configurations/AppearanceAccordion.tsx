@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/select";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import React, { useEffect, useState } from "react";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { cn } from "@/lib/utils";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 

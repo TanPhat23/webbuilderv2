@@ -7,10 +7,10 @@ import { SectionElement } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import ElementLoader from "../ElementLoader";
-import { usePageStore } from "@/globalstore/pagestore";
+import { usePageStore } from "@/globalstore/page-store";
 
 const SectionComponent = ({ element, data }: EditorComponentProps) => {
   const sectionElement = element as SectionElement;

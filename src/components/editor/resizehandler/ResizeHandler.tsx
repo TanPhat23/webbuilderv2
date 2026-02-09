@@ -1,7 +1,7 @@
 "use client";
 
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { useElementHandler } from "@/hooks";
 import { useResizeHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,10 @@ import {
   type ResizeDirection,
   directionalClasses,
   getResizeHandles,
-} from "@/constants/direciton";
+} from "@/constants/direction";
 import ResizeTooltip from "./ResizeTooltip";
 import { ElementCommentButton } from "@/components/editor/comments/ElementCommentButton";
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 
 interface ResizeHandlerProps {

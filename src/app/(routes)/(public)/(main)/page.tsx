@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
-import ThemeSwitcher from "@/components/ThemeSwticher";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import LandingPageHero from "@/components/landingpage/LandingPageHero";
 import LandingPageStats from "@/components/landingpage/LandingPageStats";
 import LandingPageFeature from "@/components/landingpage/LandingPageFeature";

@@ -46,7 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import ElementTreeItem from "./ElementTreeItem";
 
 type TabType = "components" | "layers" | "tools";

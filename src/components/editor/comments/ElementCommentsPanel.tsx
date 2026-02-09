@@ -9,10 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { useElementComments, useProjectComments } from "@/hooks";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 import { useCommentManager } from "@/hooks/useCommentManager";
 
 import { CommentsPanelHeader } from "./components/CommentsPanelHeader";

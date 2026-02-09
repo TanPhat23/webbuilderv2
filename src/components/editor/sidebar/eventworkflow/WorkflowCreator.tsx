@@ -3,7 +3,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEventWorkflowStore } from "@/globalstore/eventworkflowstore";
+import { useEventWorkflowStore } from "@/globalstore/event-workflow-store";
 import { useCreateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
 // Uses React Query mutation hook; Zustand holds mutation state flags
 import {

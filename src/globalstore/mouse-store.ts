@@ -8,6 +8,18 @@ type MousePosition = {
 
 type Collaborator = User;
 
+type AwarenessState = {
+  cursor?: {
+    x?: number;
+    y?: number;
+  };
+  selectedElement?: string;
+};
+
+type Awareness = {
+  getStates?: () => Map<unknown, AwarenessState>;
+};
+
 type MouseStore = {
   mousePositions: Record<string, MousePosition>;
   selectedElements: Record<string, string>;
@@ -23,7 +35,7 @@ type MouseStore = {
   setUsers: (users: Record<string, Collaborator>) => void;
   setRemoteUsers: (remoteUsers: Record<string, MousePosition>) => void;
   setSelectedByUser: (selectedByUser: Record<string, string>) => void;
-  syncFromAwareness: (awareness: any) => void;
+  syncFromAwareness: (awareness?: Awareness | null) => void;
   removeUser: (userId: string) => void;
   clear: () => void;
 };
@@ -100,22 +112,23 @@ export const useMouseStore = create<MouseStore>((set, get) => ({
     set({ selectedByUser });
   },
 
-  syncFromAwareness: (awareness: any) => {
+  syncFromAwareness: (awareness?: Awareness | null) => {
     if (!awareness || !awareness.getStates) return;
 
     const allStates = awareness.getStates();
     const remoteUsers: Record<string, MousePosition> = {};
     const selectedByUser: Record<string, string> = {};
 
-    allStates.forEach((state: any, clientId: any) => {
+    allStates.forEach((state, clientId) => {
+      const clientIdString = String(clientId);
       if (state && state.cursor) {
-        remoteUsers[clientId.toString()] = {
-          x: state.cursor.x || 0,
-          y: state.cursor.y || 0,
+        remoteUsers[clientIdString] = {
+          x: state.cursor.x ?? 0,
+          y: state.cursor.y ?? 0,
         };
       }
       if (state && state.selectedElement) {
-        selectedByUser[clientId.toString()] = state.selectedElement;
+        selectedByUser[clientIdString] = state.selectedElement;
       }
     });
 

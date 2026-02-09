@@ -1,4 +1,4 @@
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import { InputElement } from "@/interfaces/elements.interface";
 import { RuleType, ValidationRule } from "@/interfaces/validate.interface";
 import React, { useState } from "react";
@@ -12,7 +12,7 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   HoverCard,

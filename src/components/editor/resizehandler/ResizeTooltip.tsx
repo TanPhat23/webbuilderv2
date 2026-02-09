@@ -1,7 +1,7 @@
 "use client";
 
 import type { EditorElement } from "@/types/global.type";
-import type { ResizeDirection } from "@/constants/direciton";
+import type { ResizeDirection } from "@/constants/direction";
 import { CSSStyles } from "@/interfaces/elements.interface";
 import {
   Tooltip,

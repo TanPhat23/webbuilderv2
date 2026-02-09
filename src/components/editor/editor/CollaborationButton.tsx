@@ -12,7 +12,7 @@ import {
 import { Users, UserPlus } from "lucide-react";
 import { CollaborationManager } from "@/components/collaboration";
 import { useAuth } from "@clerk/nextjs";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 
 interface CollaborationButtonProps {
   projectId: string;

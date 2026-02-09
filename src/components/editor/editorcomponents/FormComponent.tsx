@@ -7,8 +7,8 @@ import { EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import {
   FormElement,
   InputElement,
@@ -16,7 +16,7 @@ import {
 } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import ElementLoader from "../ElementLoader";
-import { usePageStore } from "@/globalstore/pagestore";
+import { usePageStore } from "@/globalstore/page-store";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 

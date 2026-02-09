@@ -11,7 +11,7 @@ import ElementLoader from "@/components/editor/ElementLoader";
 import { Button } from "@/components/ui/button";
 import { KeyboardEvent as KeyboardEventClass } from "@/lib/utils/element/keyBoardEvents";
 import { useMouseTracking } from "@/hooks/realtime/use-mouse-tracking";
-import { useMouseStore } from "@/globalstore/mousestore";
+import { useMouseStore } from "@/globalstore/mouse-store";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
 type EditorCanvasProps = {

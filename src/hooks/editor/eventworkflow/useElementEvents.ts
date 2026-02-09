@@ -13,7 +13,7 @@ import {
   EventExecutionContext,
 } from "@/interfaces/events.interface";
 import { eventExecutor } from "@/lib/events/eventExecutor";
-import { useEventModeStore } from "@/globalstore/eventmodestore";
+import { useEventModeStore } from "@/globalstore/event-mode-store";
 import { useElementConnections } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
 import { useEventWorkflows } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { transformWorkflowToEventHandlers } from "@/lib/utils/workflow/workflowTransformer";

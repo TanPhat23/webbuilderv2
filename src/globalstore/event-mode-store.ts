@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
+import { persist } from "zustand/middleware";
+import type { PersistStorage, StorageValue } from "zustand/middleware";
 
 interface EventModeState {
   // Event mode state
@@ -16,25 +17,30 @@ interface EventModeState {
   clearDisabledElements: () => void;
 }
 
-const customStorage = {
-  getItem: (name: string) => {
+type PersistedEventModeState = Pick<
+  EventModeState,
+  "isEventModeEnabled" | "disabledElementEvents"
+>;
+
+const customStorage: PersistStorage<EventModeState> = {
+  getItem: (name: string): StorageValue<EventModeState> | null => {
     const item = localStorage.getItem(name);
     if (!item) return null;
 
     try {
-      const parsed = JSON.parse(item);
+      const parsed = JSON.parse(item) as StorageValue<PersistedEventModeState>;
       return {
         state: {
           isEventModeEnabled: parsed.state.isEventModeEnabled,
           disabledElementEvents: new Set(parsed.state.disabledElementEvents),
-        },
+        } as EventModeState,
         version: parsed.version,
       };
     } catch {
       return null;
     }
   },
-  setItem: (name: string, value: any) => {
+  setItem: (name: string, value: StorageValue<EventModeState>) => {
     const serialized = JSON.stringify({
       state: {
         isEventModeEnabled: value.state.isEventModeEnabled,
@@ -102,7 +108,7 @@ export const useEventModeStore = create<EventModeState>()(
     }),
     {
       name: "event-mode-store",
-      storage: customStorage as any,
+      storage: customStorage,
     },
   ),
 );

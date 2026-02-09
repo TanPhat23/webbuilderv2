@@ -8,7 +8,7 @@ import { WorkflowCreator } from "./WorkflowCreator";
 import { WorkflowConnector } from "./WorkflowConnector";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowData } from "./types/workflow.types";
-import { useEventWorkflowStore } from "@/globalstore/eventworkflowstore";
+import { useEventWorkflowStore } from "@/globalstore/event-workflow-store";
 import { useEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { useUpdateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
 import { toast } from "sonner";

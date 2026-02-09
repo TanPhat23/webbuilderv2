@@ -19,12 +19,12 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import { projectService } from "@/services/project";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { cn } from "@/lib/utils";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 

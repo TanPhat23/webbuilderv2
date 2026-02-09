@@ -7,14 +7,18 @@ import React, {
   useRef,
   useState,
   useMemo,
-  useCallback,
 } from "react";
 import { useAuth } from "@clerk/nextjs";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 
-import { useElementStore, ElementStore } from "@/globalstore/elementstore";
-import { useMouseStore } from "@/globalstore/mousestore";
+import {
+  useElementStore,
+  ElementStore,
+  type MoveData,
+} from "@/globalstore/element-store";
+
+import { useMouseStore } from "@/globalstore/mouse-store";
 import {
   createSyncAwarenessToStore,
   createAwarenessChangeObserver,
@@ -277,7 +281,10 @@ export default function CollaborationProvider({
         if (transaction?.origin === "v2-sync")
           setState((s) => ({ ...s, isSynced: true }));
       } catch (err) {
-        console.warn("[CollaborationProvider] Failed to parse remote elements", err);
+        console.warn(
+          "[CollaborationProvider] Failed to parse remote elements",
+          err,
+        );
       }
     };
     yElementsText.observe(observer);
@@ -315,21 +322,26 @@ export default function CollaborationProvider({
       if (!providerRef.current?.isSynced) return;
       const p = providerRef.current;
       try {
-        if (type === "update" && id) await p.updateElement(id, data, "partial");
-        else if (type === "delete" && id) await p.deleteElement(id);
-        else if (type === "create" && data)
-          await p.createElement(data, data.parentId, data.position);
-        else if (type === "move" && data) {
-          if (internalRef.current.pendingMoves.has(data.elementId)) return;
-          internalRef.current.pendingMoves.add(data.elementId);
+        if (type === "update" && id && data) {
+          await p.updateElement(id, data as Partial<EditorElement>, "partial");
+        } else if (type === "delete" && id) {
+          await p.deleteElement(id);
+        } else if (type === "create" && data) {
+          const el = data as EditorElement;
+          const pos = (data as { position?: number }).position;
+          await p.createElement(el, el.parentId, pos);
+        } else if (type === "move" && data) {
+          const moveData = data as MoveData;
+          if (internalRef.current.pendingMoves.has(moveData.elementId)) return;
+          internalRef.current.pendingMoves.add(moveData.elementId);
           try {
             await p.moveElement(
-              data.elementId,
-              data.newParentId,
-              data.newPosition,
+              moveData.elementId,
+              moveData.newParentId,
+              moveData.newPosition,
             );
           } finally {
-            internalRef.current.pendingMoves.delete(data.elementId);
+            internalRef.current.pendingMoves.delete(moveData.elementId);
           }
         }
       } catch (err) {
@@ -385,84 +397,63 @@ export default function CollaborationProvider({
   // ---------------------------------------------------------------------------
   // Stable operation callbacks
   // ---------------------------------------------------------------------------
-  const createElement = useCallback(
-    async (
-      el: EditorElement,
-      pId?: string | null,
-      pos?: number,
-    ): Promise<ElementOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.createElement(el, pId, pos);
-    },
-    [],
-  );
+  const createElement = async (
+    el: EditorElement,
+    pId?: string | null,
+    pos?: number,
+  ): Promise<ElementOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.createElement(el, pId, pos);
+  };
 
-  const updateElement = useCallback(
-    async (
-      id: string,
-      upd: Partial<EditorElement>,
-      ty: UpdateType = "partial",
-    ): Promise<ElementOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.updateElement(id, upd, ty);
-    },
-    [],
-  );
+  const updateElement = async (
+    id: string,
+    upd: Partial<EditorElement>,
+    ty: UpdateType = "partial",
+  ): Promise<ElementOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.updateElement(id, upd, ty);
+  };
 
-  const deleteElement = useCallback(
-    async (
-      id: string,
-      ch = false,
-      str = true,
-    ): Promise<ElementOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.deleteElement(id, ch, str);
-    },
-    [],
-  );
+  const deleteElement = async (
+    id: string,
+    ch = false,
+    str = true,
+  ): Promise<ElementOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.deleteElement(id, ch, str);
+  };
 
-  const moveElement = useCallback(
-    async (
-      id: string,
-      pId?: string | null,
-      pos?: number,
-    ): Promise<ElementOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.moveElement(id, pId, pos);
-    },
-    [],
-  );
+  const moveElement = async (
+    id: string,
+    pId?: string | null,
+    pos?: number,
+  ): Promise<ElementOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.moveElement(id, pId, pos);
+  };
 
-  const createPage = useCallback(
-    async (page: Page): Promise<PageOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.createPage(page);
-    },
-    [],
-  );
+  const createPage = async (page: Page): Promise<PageOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.createPage(page);
+  };
 
-  const updatePage = useCallback(
-    async (
-      id: string,
-      upd: Partial<Page>,
-    ): Promise<PageOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.updatePage(id, upd);
-    },
-    [],
-  );
+  const updatePage = async (
+    id: string,
+    upd: Partial<Page>,
+  ): Promise<PageOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.updatePage(id, upd);
+  };
 
-  const deletePage = useCallback(
-    async (id: string): Promise<PageOperationSuccess> => {
-      if (!providerRef.current) throw new Error("Provider not initialized");
-      return providerRef.current.deletePage(id);
-    },
-    [],
-  );
+  const deletePage = async (id: string): Promise<PageOperationSuccess> => {
+    if (!providerRef.current) throw new Error("Provider not initialized");
+    return providerRef.current.deletePage(id);
+  };
 
-  const reconnect = useCallback(async () => {
+  const reconnect = async () => {
     await providerRef.current?.reconnect();
-  }, []);
+  };
 
   // ---------------------------------------------------------------------------
   // Memoized context value
@@ -498,20 +489,7 @@ export default function CollaborationProvider({
       // Control
       reconnect,
     }),
-    [
-      state.roomState,
-      state.isSynced,
-      state.error,
-      state.pendingUpdates,
-      createElement,
-      updateElement,
-      deleteElement,
-      moveElement,
-      createPage,
-      updatePage,
-      deletePage,
-      reconnect,
-    ],
+    [state.roomState, state.isSynced, state.error, state.pendingUpdates],
   );
 
   return (

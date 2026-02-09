@@ -12,7 +12,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { ImageIcon, Upload } from "lucide-react";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import { ImageDragDataSchema } from "@/schema/zod/imageupload";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";

@@ -8,7 +8,7 @@ import {
   UpdateElementCommentRequest,
 } from "@/interfaces/elementcomment.interface";
 import { useUser } from "@clerk/nextjs";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 import { toast } from "sonner";
 
 export const elementCommentKeys = {

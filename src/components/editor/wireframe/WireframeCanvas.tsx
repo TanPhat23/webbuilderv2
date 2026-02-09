@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { EditorElement } from "@/types/global.type";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 
 interface WireframeCanvasProps {
   pageId: string;

@@ -3,7 +3,7 @@ import { AppearanceAccordion } from "./AppearanceAccordion";
 import { TypographyAccordion } from "./TypographyAccordion";
 import TailwindAccordion from "./TailwindAccordion";
 import { BreakpointSelector } from "./BreakpointSelector";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { useState } from "react";
 
 export default function Styles() {

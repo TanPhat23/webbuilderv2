@@ -19,8 +19,8 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 import { FormElement, FormSettings } from "@/interfaces/elements.interface";
 import React, { ChangeEvent } from "react";
 

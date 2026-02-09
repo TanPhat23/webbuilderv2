@@ -8,7 +8,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { FileText } from "lucide-react";
-import { usePageStore } from "@/globalstore/pagestore";
+import { usePageStore } from "@/globalstore/page-store";
 
 interface PageNavigationCommandProps {
   open: boolean;

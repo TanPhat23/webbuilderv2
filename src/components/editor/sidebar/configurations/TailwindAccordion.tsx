@@ -6,10 +6,10 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElementStore } from "@/globalstore/element-store";
 import type { EditorElement } from "@/types/global.type";
 import { Textarea } from "@/components/ui/textarea";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectionStore } from "@/globalstore/selection-store";
 
 
 export default function TailwindAccordion() {

@@ -8,7 +8,7 @@ import {
 import {
   eventWorkflowKeys,
   useEventWorkflowStore,
-} from "@/globalstore/eventworkflowstore";
+} from "@/globalstore/event-workflow-store";
 
 type CreateWorkflowVariables = {
   projectId: string;

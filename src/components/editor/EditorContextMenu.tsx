@@ -13,8 +13,8 @@ import {
 import { Copy, Trash2, Layers, ArrowUp, ArrowDown, Save } from "lucide-react";
 import { KeyboardEvent as EditorKeyboardEvent } from "@/lib/utils/element/keyBoardEvents";
 import { EditorElement } from "@/types/global.type";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementStore } from "@/globalstore/element-store";
+import { useSelectionStore } from "@/globalstore/selection-store";
 
 import { SaveElementDialog } from "./SaveElementDialog";
 import { toast } from "sonner";
