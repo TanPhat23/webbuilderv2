@@ -10,29 +10,12 @@ import { getElementStrategy } from "./elementStrategyMap";
 import { BuilderState } from "./elementCreateStrategy";
 import { SelectionStore } from "@/globalstore/selection-store";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
-import { useSearchParams } from "next/navigation";
-
-/**
- * Lightweight utilities and improved typings for creating elements.
- *
- * This refactor:
- * - Replaces the class-based builder with small, focused functions.
- * - Improves type-safety and explicit guards for container templates.
- * - Centralizes error handling and logs informative messages.
- *
- * The public API remains compatible:
- * - createElement
- * - createElementFromTemplate
- */
-
-/* Helpers */
 
 const makeId = () => uuidv4();
 
 const isContainerTemplate = (
   t: ElementTemplate,
 ): t is ContainerElementTemplate =>
-  // runtime-check for presence of `elements` makes this safe across builds
   (t as Partial<Record<string, unknown>>).hasOwnProperty("elements");
 
 /**

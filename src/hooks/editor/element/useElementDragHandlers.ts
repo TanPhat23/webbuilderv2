@@ -7,6 +7,7 @@ import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { customComps } from "@/lib/customcomponents/customComponents";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 import type { EditorPermissions } from "@/hooks/editor/useEditorPermissions";
+import { useElementCreator } from "@/hooks/editor/element/useElementCreator";
 import { toast } from "sonner";
 
 /**
@@ -89,7 +90,10 @@ export function useElementDragHandlers({
     elements: allElements,
     insertElement,
     swapElement,
+    addElement,
   } = useElementStore();
+
+  const elementCreator = useElementCreator();
 
   const items = useMemo(() => elements ?? allElements, [elements, allElements]);
 
@@ -111,6 +115,17 @@ export function useElementDragHandlers({
       e.stopPropagation();
 
       if (!canDrag) return;
+
+      // When creating a new element (dragging from palette or an image), only
+      // allow hovering over container elements. Existing-element drags (reorder)
+      // should still allow hover on any element.
+      const isCreating = Boolean(
+        e.dataTransfer.getData("elementType") ||
+        e.dataTransfer.getData("customComponentName") ||
+        e.dataTransfer.getData("application/json"),
+      );
+
+      if (isCreating && !elementHelper.isContainerElement(element)) return;
 
       if (draggedOverElement?.id !== element.id) {
         setDraggedOverElement(element);
@@ -177,7 +192,6 @@ export function useElementDragHandlers({
         return;
       }
 
-      // Insert a new element by type
       if (elementType) {
         if (!canCreate) {
           toast.error("Cannot add elements - editor is in read-only mode", {
@@ -187,15 +201,28 @@ export function useElementDragHandlers({
           return;
         }
 
-        const newElement = elementHelper.createElement.create(
-          elementType as ElementType,
-          element.pageId,
-          undefined,
-        );
-        if (newElement) insertElement(element, newElement);
+        const isContainer = elementHelper.isContainerElement(element);
+
+        if (isContainer) {
+          const newElement = elementCreator.createElementFromDrop(e, element);
+          if (newElement) {
+            elementCreator.completeElementCreation(newElement);
+          }
+        } else {
+          const newElement = elementHelper.createElement.create(
+            elementType as ElementType,
+            element.pageId,
+            undefined,
+          );
+          if (newElement) insertElement(element, newElement);
+        }
+
+        resetDragState();
+        return;
       }
 
-      // Insert a custom component template
+      // 2) Insert a custom component/template. If the target is a container,
+      //    attach the template as a child; otherwise, insert it as a sibling.
       if (customElement) {
         try {
           if (!canCreate) {
@@ -212,12 +239,22 @@ export function useElementDragHandlers({
             customComp,
             element.pageId,
           );
-          if (newElement) insertElement(element, newElement);
+          if (newElement) {
+            if (elementHelper.isContainerElement(element)) {
+              newElement.parentId = element.id;
+              addElement(newElement);
+            } else {
+              insertElement(element, newElement);
+            }
+          }
         } catch (error) {
           // Keep errors silent to avoid interrupting the drag flow.
           // eslint-disable-next-line no-console
           console.warn("Failed to create custom element from template", error);
         }
+
+        resetDragState();
+        return;
       }
 
       resetDragState();
@@ -229,6 +266,8 @@ export function useElementDragHandlers({
       insertElement,
       resetDragState,
       swapElement,
+      elementCreator,
+      addElement,
     ],
   );
 
