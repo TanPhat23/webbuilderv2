@@ -18,6 +18,7 @@ import {
   CMSContentListElement,
   CMSContentItemElement,
   CMSContentGridElement,
+  LinkElement,
 } from "@/interfaces/elements.interface";
 
 type ContainerElement =
@@ -33,6 +34,7 @@ type EditorElement =
   | FrameElement
   | ButtonElement
   | ImageElement
+  | LinkElement
   | ListElement
   | InputElement
   | SelectElement

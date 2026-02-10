@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
-import { EditorElement } from "@/types/global.type";
+/* EditorElement import removed — useElementStore is no longer generic */
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -28,7 +28,7 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
       elementId: element.id,
       projectId: id as string,
     });
-  const { addElement } = useElementStore<EditorElement>();
+  const { addElement } = useElementStore();
   const formElement = element as FormElement;
   const { currentPage } = usePageStore();
 

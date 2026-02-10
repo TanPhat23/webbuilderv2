@@ -6,8 +6,9 @@ import { Trash2, GripVertical, MoveUp, MoveDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
-import { EditorElement } from "@/types/global.type";
+
 import { useElementStore } from "@/globalstore/element-store";
+import { EditorElement } from "@/interfaces/elements.interface";
 
 interface WireframeCanvasProps {
   pageId: string;
@@ -15,7 +16,7 @@ interface WireframeCanvasProps {
 
 export function WireframeCanvas({ pageId }: WireframeCanvasProps) {
   const { elements, addElement, deleteElement, swapElement } =
-    useElementStore<EditorElement>();
+    useElementStore();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(
     null,
@@ -113,7 +114,7 @@ export function WireframeCanvas({ pageId }: WireframeCanvasProps) {
             variant="outline"
             size="sm"
             onClick={() => {
-              elements.forEach((el: EditorElement) => deleteElement(el.id));
+              elements.forEach((el) => deleteElement(el.id));
             }}
             disabled={elements.length === 0}
           >
@@ -133,7 +134,7 @@ export function WireframeCanvas({ pageId }: WireframeCanvasProps) {
               <p className="text-sm">Drop components here</p>
             </div>
           ) : (
-            elements.map((element: EditorElement, index: number) => (
+            elements.map((element, index: number) => (
               <div
                 key={element.id}
                 draggable

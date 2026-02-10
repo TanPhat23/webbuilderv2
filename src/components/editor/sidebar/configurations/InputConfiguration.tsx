@@ -27,14 +27,15 @@ import React, { ChangeEvent } from "react";
 import ValidationConfiguration from "./ValidationConfigration";
 
 export default function InputConfiguration() {
-  const { updateElement } = useElementStore<InputElement>();
-  const { selectedElement } = useSelectionStore<InputElement>();
+  const { updateElement } = useElementStore();
+  const { selectedElement } = useSelectionStore();
 
   if (!selectedElement || selectedElement.type !== "Input") {
     return <AccordionItem value="input-settings"></AccordionItem>;
   }
 
-  const settings: InputSettings = selectedElement.settings ?? {};
+  const settings: InputSettings =
+    (selectedElement as InputElement).settings ?? {};
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

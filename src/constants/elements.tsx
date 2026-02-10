@@ -129,7 +129,6 @@ const ComponentMap = new Map<
   ["Frame", FrameComponent],
   ["Carousel", CarouselComponent],
   ["List", ListComponent],
-  // ["DataLoader", DataLoaderComponent],
   ["CMSContentList", CMSContentListComponent],
   ["CMSContentItem", CMSContentItemComponent],
   ["CMSContentGrid", CMSContentGridComponent],

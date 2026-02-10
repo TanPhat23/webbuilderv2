@@ -43,7 +43,7 @@ interface SelectSettings {
 }
 
 export const SelectConfigurationAccordion = () => {
-  const { updateElement } = useElementStore<SelectElement>();
+  const { updateElement } = useElementStore();
   const { selectedElement } = useSelectionStore();
 
   if (!selectedElement || selectedElement.type !== "Select") {

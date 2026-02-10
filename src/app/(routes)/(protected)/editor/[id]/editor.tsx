@@ -4,7 +4,6 @@ import EditorHeader from "@/components/editor/editor/EditorHeader";
 import PreviewContainer from "@/components/editor/editor/PreviewContainer";
 import EditorCanvas from "@/components/editor/editor/EditorCanvas";
 import { useEditorContext } from "@/providers/editorprovider";
-import { useCollaboration } from "@/providers/collaborationprovider";
 
 type EditorProps = {
   id: string;
@@ -13,7 +12,6 @@ type EditorProps = {
 
 export default function Editor({ id }: EditorProps) {
   const { editor, userId } = useEditorContext();
-  const collab = useCollaboration();
 
   const {
     currentView,

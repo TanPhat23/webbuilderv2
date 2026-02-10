@@ -2,7 +2,7 @@ import { useElementStore } from "@/globalstore/element-store";
 import { useSelectionStore } from "@/globalstore/selection-store";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
-import { useEditorPermissions } from "./useEditorPermissions";
+import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 import { toast } from "sonner";
 import { useParams, useSearchParams } from "next/navigation";
 
@@ -89,7 +89,6 @@ export function useElementCreator() {
 
     return null;
   };
-
 
   const completeElementCreation = (newElement: EditorElement) => {
     addElement(newElement);

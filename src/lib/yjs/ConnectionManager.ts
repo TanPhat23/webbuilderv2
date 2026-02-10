@@ -1,83 +1,96 @@
 import { EventEmitter } from "events";
+import type { ConnectionOptions } from "@/interfaces/websocket";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 
 /**
- * Options for the ConnectionManager
- */
-export interface ConnectionOptions {
-  url: string;
-  pageId: string;
-  projectId: string;
-  getToken: () => Promise<string | null>;
-  reconnectInterval?: number;
-  maxReconnectInterval?: number;
-}
-
-/**
- * Handles the WebSocket connection life cycle, including authentication and reconnection logic.
- * Part of the refactored CustomYjsProviderV2.
+ * Manages the WebSocket connection lifecycle for the Yjs-backed provider.
+ *
+ * Updated to match the new WebSocket API spec:
+ *   - URL pattern: `ws://<host>/ws/:project?token=<jwt>`
+ *   - Exponential backoff with jitter (base 500ms, multiplier 1.5×, max 30s)
+ *   - Auto-sends `join` message after connection opens
+ *
+ * @see WebSocket API Reference — Section 1: Connection
  */
 export class ConnectionManager extends EventEmitter {
   private ws: WebSocket | null = null;
-  private reconnectTimeout: any = null;
+  private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
   private isDestroyed = false;
-  private connected = false;
+  private _connected = false;
 
-  constructor(private options: ConnectionOptions) {
+  private readonly baseInterval: number;
+  private readonly multiplier: number;
+  private readonly maxInterval: number;
+
+  constructor(private readonly options: ConnectionOptions) {
     super();
+    this.baseInterval = options.reconnectBaseInterval ?? 500;
+    this.multiplier = options.reconnectMultiplier ?? 1.5;
+    this.maxInterval = options.maxReconnectInterval ?? 30_000;
   }
 
+  // --------------------------------------------------------------------------
+  // Public API
+  // --------------------------------------------------------------------------
+
   /**
-   * Initializes the connection
+   * Initiate or re-initiate the WebSocket connection.
+   * On success, emits `"open"`. On failure, schedules a reconnect.
    */
   public async connect(): Promise<void> {
-    if (this.isDestroyed || this.connected) return;
+    if (this.isDestroyed || this._connected) return;
 
-    // Clear any existing connection attempt
+    // Tear down any existing socket
     this.disconnect();
 
     try {
-      this.validatePageId();
       const token = await this.getAuthToken();
-      const wsUrl = this.buildWebSocketUrl(token);
+      const wsUrl = this.buildUrl(token);
 
       if (this.isDestroyed) return;
 
       this.ws = new WebSocket(wsUrl);
-      this.setupHandlers();
+      this.attachHandlers();
     } catch (err) {
       if (!this.isDestroyed) {
+        this.emit("error", err instanceof Error ? err : new Error(String(err)));
         this.scheduleReconnect();
       }
     }
   }
 
   /**
-   * Disconnects the current WebSocket and clears reconnection timeouts
+   * Disconnect the current WebSocket and cancel any pending reconnection.
    */
   public disconnect(): void {
-    this.connected = false;
+    this._connected = false;
+
     if (this.ws) {
-      // Remove handlers to prevent recursive calls during close
+      // Detach handlers to prevent recursive close events
+      this.ws.onopen = null;
       this.ws.onclose = null;
       this.ws.onerror = null;
       this.ws.onmessage = null;
-      this.ws.onopen = null;
 
       try {
         this.ws.close();
-      } catch (e) {
-        // Ignore errors during close
+      } catch {
+        /* ignore close errors */
       }
       this.ws = null;
     }
+
     this.clearReconnection();
   }
 
   /**
-   * Sends data through the WebSocket
+   * Send raw string data through the WebSocket.
+   * @returns `true` if the message was sent, `false` if the socket is not open.
    */
-  public send(data: string | ArrayBufferLike | Blob | ArrayBufferView): boolean {
+  public send(
+    data: string | ArrayBufferLike | Blob | ArrayBufferView,
+  ): boolean {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(data);
       return true;
@@ -85,27 +98,26 @@ export class ConnectionManager extends EventEmitter {
     return false;
   }
 
-  /**
-   * Checks if the manager is currently connected
-   */
-  public isConnected(): boolean {
-    return this.connected;
+  /** Whether the WebSocket is currently open. */
+  public get connected(): boolean {
+    return this._connected;
   }
 
-  /**
-   * Cleans up resources
-   */
+  /** Alias kept for backward compat with old Provider code. */
+  public isConnected(): boolean {
+    return this._connected;
+  }
+
+  /** Permanently tear down the manager and release all resources. */
   public destroy(): void {
     this.isDestroyed = true;
     this.disconnect();
     this.removeAllListeners();
   }
 
-  private validatePageId(): void {
-    if (!this.options.pageId || this.options.pageId === "undefined" || this.options.pageId === "") {
-      throw new Error("Invalid pageId for WebSocket connection");
-    }
-  }
+  // --------------------------------------------------------------------------
+  // Internal — Auth & URL
+  // --------------------------------------------------------------------------
 
   private async getAuthToken(): Promise<string> {
     const token = await this.options.getToken();
@@ -117,15 +129,26 @@ export class ConnectionManager extends EventEmitter {
     return token;
   }
 
-  private buildWebSocketUrl(token: string): string {
-    const params = new URLSearchParams({
-      projectId: this.options.projectId,
-      token,
-    });
-    return `${this.options.url}/ws/${this.options.pageId}?${params.toString()}`;
+  /**
+   * Build the WebSocket URL following the new spec:
+   *   `ws://<host>/ws/:project?token=<jwt>`
+   *
+   * Browser WebSocket API cannot set custom headers on the handshake,
+   * so the token is passed as a query parameter.
+   */
+  private buildUrl(token: string): string {
+    const projectId = encodeURIComponent(this.options.projectId);
+    return new URLBuilder(this.options.url)
+      .setPath(`/ws/${projectId}`)
+      .addQueryParam("token", token)
+      .build();
   }
 
-  private setupHandlers(): void {
+  // --------------------------------------------------------------------------
+  // Internal — WebSocket event handlers
+  // --------------------------------------------------------------------------
+
+  private attachHandlers(): void {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
@@ -133,9 +156,12 @@ export class ConnectionManager extends EventEmitter {
         this.ws?.close();
         return;
       }
-      this.connected = true;
+      this._connected = true;
       this.reconnectAttempts = 0;
       this.emit("open");
+
+      // Auto-send `join` message so the server knows which page we want
+      this.sendJoinMessage();
     };
 
     this.ws.onmessage = (event) => {
@@ -143,8 +169,8 @@ export class ConnectionManager extends EventEmitter {
     };
 
     this.ws.onclose = () => {
-      const wasConnected = this.connected;
-      this.connected = false;
+      const wasConnected = this._connected;
+      this._connected = false;
 
       if (wasConnected) {
         this.emit("close");
@@ -155,23 +181,62 @@ export class ConnectionManager extends EventEmitter {
       }
     };
 
-    this.ws.onerror = (error) => {
-      this.emit("error", error);
+    this.ws.onerror = () => {
+      this.emit("error", new Error("WebSocket error"));
     };
   }
 
+  /**
+   * Automatically send a `join` message after connection opens.
+   * The server expects this before any element operations.
+   *
+   * @see WebSocket API Reference — Section 3: Join Page
+   */
+  private sendJoinMessage(): void {
+    const joinEnvelope = JSON.stringify({
+      type: "join",
+      projectId: this.options.projectId,
+      pageId: this.options.pageId,
+      timestamp: Date.now(),
+      payload: {
+        pageId: this.options.pageId,
+      },
+    });
+
+    this.send(joinEnvelope);
+  }
+
+  // --------------------------------------------------------------------------
+  // Internal — Reconnection with exponential backoff + jitter
+  // --------------------------------------------------------------------------
+
+  /**
+   * Schedule a reconnection attempt using exponential backoff with jitter.
+   *
+   * delay = min(baseInterval × multiplier^attempts, maxInterval)
+   * jitter = random(0, delay × 0.5)
+   * total  = delay + jitter
+   *
+   * @see WebSocket API Reference — Reconnection guidance
+   */
   private scheduleReconnect(): void {
     if (this.isDestroyed || this.reconnectTimeout) return;
 
-    const interval = this.options.reconnectInterval || 3000;
-    const maxInterval = this.options.maxReconnectInterval || 30000;
-    const delay = Math.min(interval * Math.pow(2, this.reconnectAttempts), maxInterval);
+    const exponentialDelay = Math.min(
+      this.baseInterval * Math.pow(this.multiplier, this.reconnectAttempts),
+      this.maxInterval,
+    );
+
+    // Add random jitter: 0–50% of the computed delay
+    const jitter = Math.random() * exponentialDelay * 0.5;
+    const totalDelay = Math.round(exponentialDelay + jitter);
 
     this.reconnectAttempts++;
+
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
       void this.connect();
-    }, delay);
+    }, totalDelay);
   }
 
   private clearReconnection(): void {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { SendMessagePayload } from "@/interfaces/realtime.interface";
+import { SendMessagePayload, WS_MESSAGE } from "@/interfaces/websocket";
 
 interface UseMouseTrackingOptions {
   canvasRef: React.RefObject<HTMLElement | null>;
   sendMessage: (message: SendMessagePayload) => boolean;
   userId: string;
+  userName?: string;
   enabled?: boolean;
 }
 
@@ -14,6 +15,7 @@ export function useMouseTracking({
   canvasRef,
   sendMessage,
   userId,
+  userName,
   enabled = true,
 }: UseMouseTrackingOptions) {
   const lastSentRef = useRef<{ x: number; y: number } | null>(null);
@@ -41,11 +43,14 @@ export function useMouseTracking({
 
       lastSentRef.current = { x, y };
 
-      const message = {
-        type: "mouseMove" as const,
-        userId,
-        x,
-        y,
+      const message: SendMessagePayload = {
+        type: WS_MESSAGE.PRESENCE,
+        payload: {
+          userId,
+          userName: userName || userId,
+          cursorX: x,
+          cursorY: y,
+        },
       };
       sendMessage(message);
 
@@ -53,7 +58,7 @@ export function useMouseTracking({
         throttleRef.current = null;
       }, 100);
     },
-    [canvasRef, sendMessage, userId, enabled],
+    [canvasRef, sendMessage, userId, userName, enabled],
   );
 
   useEffect(() => {

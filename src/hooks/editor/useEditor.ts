@@ -86,6 +86,18 @@ export const useEditor = (
   }, [project, loadProject]);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    // If the drop occurs over an existing element in the canvas, allow the
+    // element-level handler to take precedence. Those handlers will call
+    // preventDefault() / stopPropagation() as needed.
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      typeof target.closest === "function" &&
+      target.closest("[data-element-id]")
+    ) {
+      return;
+    }
+
     if (isReadOnly || isLocked || !permissions.canCreateElements) {
       e.preventDefault();
       e.stopPropagation();
@@ -125,6 +137,18 @@ export const useEditor = (
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // If the drag is currently over an existing element in the canvas,
+    // do not treat this as a canvas-level dragOver — allow element-level
+    // handlers to handle the event instead.
+    const target = e.target as HTMLElement | null;
+    if (
+      target &&
+      typeof target.closest === "function" &&
+      target.closest("[data-element-id]")
+    ) {
+      return;
+    }
+
     // Prevent drag over if read-only
     if (isReadOnly || isLocked || !permissions.canCreateElements) {
       return;

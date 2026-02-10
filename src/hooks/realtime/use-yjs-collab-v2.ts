@@ -12,25 +12,33 @@ import {
 } from "@/globalstore/element-store";
 import { EditorElement } from "@/types/global.type";
 import { useMouseStore } from "@/globalstore/mouse-store";
-import {
-  createSyncAwarenessToStore,
-  createAwarenessChangeObserver,
-} from "@/lib/utils/use-yjs-collab-utils";
 import type {
   UseYjsCollabV2Options,
   UseYjsCollabV2Return,
   CollabState,
   RoomState,
-  UpdateType,
   ErrorMessage,
   CustomYjsProviderV2 as CustomYjsProviderV2Type,
-} from "@/interfaces/yjs-v2.interface";
+} from "@/interfaces/websocket";
 import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
 
-const DEFAULT_WS_URL = "ws://localhost:8082";
-const AWARENESS_POLL_INTERVAL = 150;
+const DEFAULT_WS_URL = "ws://localhost:8080";
 const ELEMENT_STORE_UPDATE_DELAY = 50;
 
+/**
+ * React hook for real-time collaboration using the Yjs-backed WebSocket provider.
+ *
+ * Updated to work with the new WebSocket API protocol:
+ *   - URL pattern: `ws://<host>/ws/:project?token=<jwt>`
+ *   - Envelope-based messages: `join`, `sync`, `element:*`, `presence`, `error`
+ *   - Presence via WebSocket messages (not Yjs Awareness polling)
+ *   - Exponential backoff with jitter for reconnection
+ *
+ * The Y.Doc is used as a local cache layer. The server is authoritative;
+ * all incoming broadcasts are applied to the Y.Doc as source of truth.
+ *
+ * @see WebSocket API Reference
+ */
 export function useYjsCollabV2({
   pageId,
   projectId,
@@ -64,9 +72,9 @@ export function useYjsCollabV2({
   const internalRef = useRef({
     isUpdatingFromElementStore: false,
     pendingMoves: new Set<string>(),
-    remoteUpdateTimeout: null as NodeJS.Timeout | null,
   });
 
+  // Keep latest callback refs to avoid stale closures
   const latest = useRef({
     onSync,
     onError,
@@ -84,6 +92,9 @@ export function useYjsCollabV2({
     getToken,
   };
 
+  // ---------------------------------------------------------------------------
+  // Core effect: Setup Y.Doc, provider, IndexedDB persistence
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
       return;
@@ -95,21 +106,48 @@ export function useYjsCollabV2({
       pageId,
       projectId,
       userId,
+      userName: userId,
       getToken: () => latest.current.getToken(),
       doc: ydoc,
       onSyncUsers: (users) => setUsers(users),
       onConflict: (c) => latest.current.onConflict?.(c),
       onError: (e: ErrorMessage) => {
-        const msg = e?.message || e?.error || "Unknown provider error";
+        let msg = "Unknown provider error";
+        if (e && typeof e === "object") {
+          if ("message" in e && typeof e.message === "string" && e.message) {
+            msg = e.message;
+          } else if ("error" in e && typeof e.error === "string" && e.error) {
+            msg = e.error;
+          } else if (
+            "payload" in e &&
+            e.payload &&
+            typeof e.payload === "object" &&
+            "message" in e.payload &&
+            typeof (e.payload as any).message === "string"
+          ) {
+            msg = (e.payload as any).message;
+          } else if (
+            "payload" in e &&
+            e.payload &&
+            typeof e.payload === "object" &&
+            "code" in e.payload
+          ) {
+            msg = String((e.payload as any).code);
+          }
+        }
         latest.current.onError?.(new Error(msg));
         setState((s) => ({ ...s, error: msg }));
       },
+      // Presence updates from other users are handled by the
+      // AwarenessController inside the Provider, which emits "change"
+      // events that trigger onSyncUsers above. No manual polling needed.
     });
 
     ydocRef.current = ydoc;
     providerRef.current = provider;
     persistenceRef.current = persistence;
 
+    // ---- Status listener ----
     provider.on("status", ({ status }: { status: string }) => {
       const roomState: RoomState =
         status === "connected"
@@ -126,11 +164,15 @@ export function useYjsCollabV2({
       else if (status === "disconnected") latest.current.onDisconnect?.();
     });
 
+    // ---- Synced listener ----
     provider.on("synced", (synced: boolean) => {
       setState((s) => ({ ...s, isSynced: synced }));
       if (synced) latest.current.onSync?.();
     });
 
+    // ---- Observe Y.Text for remote element updates ----
+    // When the DocumentSyncer writes to the Y.Doc (from server broadcasts),
+    // this observer picks up the change and loads it into the element store.
     const yElementsText = ydoc.getText("elementsJson");
     const observer = (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
       if (internalRef.current.isUpdatingFromElementStore) return;
@@ -146,22 +188,46 @@ export function useYjsCollabV2({
     };
     yElementsText.observe(observer);
 
+    // ---- Wire awareness change events directly to mouse store ----
+    // The AwarenessController now handles both Yjs Awareness and WS presence
+    // broadcasts internally. It emits normalized "change" events with
+    // { remoteUsers, selectedByUser, users } that we sync to the store.
     if (provider.awareness) {
-      // Pass the stable store actions to the awareness utility
-      const mouseStoreMock = { setRemoteUsers, setSelectedByUser, setUsers };
-      const syncAwareness = createSyncAwarenessToStore(
-        provider,
-        mouseStoreMock,
-        { current: { lastAwarenessHash: "" } } as any,
-      );
-      const awarenessObserver = createAwarenessChangeObserver(syncAwareness);
-      provider.awareness.on("change", awarenessObserver);
-      internalRef.current.remoteUpdateTimeout = setInterval(
-        syncAwareness,
-        AWARENESS_POLL_INTERVAL,
-      );
+      const handleAwarenessChange = () => {
+        // The Provider's AwarenessController already emits events that
+        // are wired to onSyncUsers. For remote cursor positions and
+        // selections, we additionally read from the awareness states.
+        const states = provider.awareness.getStates();
+        const remoteUsers: Record<string, { x: number; y: number }> = {};
+        const selectedByUser: Record<string, string> = {};
+
+        states.forEach((state: any, clientId: number) => {
+          if (!state) return;
+          const clientIdStr = clientId.toString();
+
+          if (state.cursor?.x != null && state.cursor?.y != null) {
+            remoteUsers[clientIdStr] = {
+              x: state.cursor.x,
+              y: state.cursor.y,
+            };
+          }
+
+          if (state.selectedElement) {
+            selectedByUser[clientIdStr] = state.selectedElement;
+          }
+        });
+
+        setRemoteUsers(remoteUsers);
+        setSelectedByUser(selectedByUser);
+      };
+
+      provider.awareness.on("change", handleAwarenessChange);
     }
 
+    // ---- Sync local element store changes into Y.Doc ----
+    // This callback fires when the local user modifies the element store.
+    // We write the full elements array into the Y.Text so the observer
+    // doesn't re-trigger (guarded by isUpdatingFromElementStore).
     ElementStore.getState().setYjsUpdateCallback((elements) => {
       if (!providerRef.current?.isSynced || !elements?.length) return;
       internalRef.current.isUpdatingFromElementStore = true;
@@ -174,6 +240,10 @@ export function useYjsCollabV2({
       }, ELEMENT_STORE_UPDATE_DELAY);
     });
 
+    // ---- Wire collaborative callback for outgoing operations ----
+    // When the local user creates/updates/deletes/moves elements via
+    // the element store, this callback sends the operation to the server
+    // through the Provider (which wraps it in an envelope message).
     ElementStore.getState().setCollaborativeCallback(async (type, id, data) => {
       if (!providerRef.current?.isSynced) return;
       const p = providerRef.current;
@@ -184,8 +254,7 @@ export function useYjsCollabV2({
           await p.deleteElement(id);
         } else if (type === "create" && data) {
           const el = data as EditorElement;
-          const pos = (data as { position?: number }).position;
-          await p.createElement(el, el.parentId, pos);
+          await p.createElement(el, el.parentId ?? null, el.order);
         } else if (type === "move" && data) {
           const moveData = data as MoveData;
           if (internalRef.current.pendingMoves.has(moveData.elementId)) return;
@@ -205,9 +274,8 @@ export function useYjsCollabV2({
       }
     });
 
+    // ---- Cleanup ----
     return () => {
-      if (internalRef.current.remoteUpdateTimeout)
-        clearInterval(internalRef.current.remoteUpdateTimeout);
       ElementStore.getState().setYjsUpdateCallback(null);
       ElementStore.getState().setCollaborativeCallback(null);
       yElementsText.unobserve(observer);
@@ -230,28 +298,67 @@ export function useYjsCollabV2({
     setSelectedByUser,
   ]);
 
+  // ---------------------------------------------------------------------------
+  // Mouse tracking on canvas — sends `presence` envelope messages
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const handleMove = (e: MouseEvent) => {
-      if (!providerRef.current?.awareness || !canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      providerRef.current.awareness.setLocalStateField("cursor", {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
-    };
     const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener("mousemove", handleMove);
-      return () => canvas.removeEventListener("mousemove", handleMove);
-    }
+    if (!canvas || !providerRef.current) return;
+
+    let lastX = -1;
+    let lastY = -1;
+    let lastSendTime = 0;
+    const THROTTLE_MS = 50;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!providerRef.current?.isSynced) return;
+
+      const now = Date.now();
+      if (now - lastSendTime < THROTTLE_MS) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Skip if movement is tiny
+      const deltaX = Math.abs(x - lastX);
+      const deltaY = Math.abs(y - lastY);
+      if (lastX !== -1 && deltaX < 3 && deltaY < 3) return;
+
+      lastX = x;
+      lastY = y;
+      lastSendTime = now;
+
+      // Send presence via the Provider (which creates the envelope)
+      providerRef.current.sendPresence(x, y);
+    };
+
+    const handleMouseLeave = () => {
+      // Send a "hidden" cursor when leaving the canvas
+      if (providerRef.current?.isSynced) {
+        providerRef.current.sendPresence(-1, -1);
+      }
+    };
+
+    canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
+    canvas.addEventListener("mouseleave", handleMouseLeave);
+
+    return () => {
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
+    };
   }, [state.roomState]);
 
+  // ---------------------------------------------------------------------------
+  // Return value
+  // ---------------------------------------------------------------------------
   return {
     ...state,
     isConnected: state.roomState === "connected",
     ydoc: ydocRef.current,
     provider: providerRef.current,
     canvasRef,
+
     createElement: async (el, pId, pos) => {
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.createElement(el, pId, pos);
@@ -280,6 +387,8 @@ export function useYjsCollabV2({
       if (!providerRef.current) throw new Error("Provider not initialized");
       return providerRef.current.deletePage(id);
     },
-    reconnect: async () => providerRef.current?.reconnect(),
+    reconnect: async () => {
+      await providerRef.current?.reconnect();
+    },
   };
 }

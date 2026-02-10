@@ -1,9 +1,7 @@
-import * as Y from "yjs";
 import _ from "lodash";
 import { z } from "zod";
 import { EditorElement } from "@/types/global.type";
-import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
-import type { UserInfo } from "@/interfaces/yjs-v2.interface";
+import type { UserInfo, RemotePresence } from "@/interfaces/websocket";
 
 // ============================================================================
 // Zod Schemas for Validation
@@ -15,15 +13,13 @@ export const RemoteUserSchema = z.object({
   cursor: z.object({ x: z.number(), y: z.number() }).optional(),
 });
 
-export const AwarenessStateSchema = z.object({
-  user: z.custom<UserInfo>().optional(),
-  cursor: z.object({ x: z.number(), y: z.number() }).optional(),
-  remoteUsers: z
-    .record(z.string(), z.object({ x: z.number(), y: z.number() }))
-    .optional(),
-  selectedElement: z.string().optional(),
-  selectedByUser: z.record(z.string(), z.string()).optional(),
-  users: z.record(z.string(), z.custom<UserInfo>()).optional(),
+export const PresenceSchema = z.object({
+  userId: z.string(),
+  userName: z.string(),
+  cursorX: z.number(),
+  cursorY: z.number(),
+  elementId: z.string().nullable().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const OperationDataSchema = z.object({
@@ -40,7 +36,6 @@ export const OperationDataSchema = z.object({
 // ============================================================================
 
 export type RemoteUser = z.infer<typeof RemoteUserSchema>;
-export type AwarenessState = z.infer<typeof AwarenessStateSchema>;
 export type OperationData = z.infer<typeof OperationDataSchema>;
 
 export interface MouseStore {
@@ -59,7 +54,9 @@ export interface InternalState {
 // ============================================================================
 
 /**
- * Ensures elements have required fields initialized recursively
+ * Ensures elements have required fields initialized recursively.
+ * Useful when loading elements from the server to guarantee settings/styles
+ * objects exist before rendering.
  */
 export const sanitizeElements = (
   elements: EditorElement[],
@@ -80,7 +77,8 @@ export const sanitizeElements = (
 };
 
 /**
- * Computes a string hash for elements to detect structural or content changes
+ * Computes a string hash for elements to detect structural or content changes.
+ * Useful for diffing before applying updates.
  */
 export const computeHash = (elements: EditorElement[]): string => {
   try {
@@ -93,154 +91,63 @@ export const computeHash = (elements: EditorElement[]): string => {
       })
       .join("|");
   } catch (err) {
-    console.warn("[YJS Utils] Hash computation failed:", err);
+    console.warn("[Collab Utils] Hash computation failed:", err);
     return "";
   }
 };
 
+// ============================================================================
+// Presence Utilities
+// ============================================================================
+
 /**
- * Creates an observer for Y.Text changes
+ * Converts a Map of RemotePresence entries into the Record shapes
+ * needed by the mouse store.
  */
-export const createElementsObserver = (
-  latestHandlers: {
-    handleSync: (elements: EditorElement[]) => void;
-    handleUpdate: (elements: EditorElement[]) => void;
-  },
-  internalStateRef: {
-    current: Pick<InternalState, "isUpdatingFromElementStore">;
-  },
-) => {
-  return (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
-    try {
-      if (internalStateRef.current.isUpdatingFromElementStore) return;
+export const presencesToMouseStoreData = (
+  presences: Map<string, RemotePresence>,
+): {
+  remoteUsers: Record<string, { x: number; y: number }>;
+  selectedByUser: Record<string, string>;
+  users: Record<string, UserInfo>;
+} => {
+  const remoteUsers: Record<string, { x: number; y: number }> = {};
+  const selectedByUser: Record<string, string> = {};
+  const users: Record<string, UserInfo> = {};
 
-      const elementsJson = event.target.toString();
-      const parsed: EditorElement[] = elementsJson
-        ? JSON.parse(elementsJson)
-        : [];
+  presences.forEach((presence, uid) => {
+    remoteUsers[uid] = {
+      x: presence.cursorX,
+      y: presence.cursorY,
+    };
 
-      const origin = transaction?.origin;
-      if (origin === "v2-sync" || origin !== "remote-update") {
-        latestHandlers.handleSync(parsed);
-      } else {
-        latestHandlers.handleUpdate(parsed);
-      }
-    } catch (err) {
-      console.warn("[YJS Utils] Elements parse failed:", err);
+    if (presence.elementId) {
+      selectedByUser[uid] = presence.elementId;
     }
-  };
+
+    users[uid] = {
+      userId: presence.userId,
+      userName: presence.userName,
+      email: "",
+    };
+  });
+
+  return { remoteUsers, selectedByUser, users };
 };
 
-// ============================================================================
-// Awareness & Sync Utilities
-// ============================================================================
-
 /**
- * Extracts awareness data and syncs it to the application store
+ * Syncs remote presence data into the mouse store.
+ * This is a convenience wrapper around presencesToMouseStoreData.
  */
-export const createSyncAwarenessToStore = (
-  provider: CustomYjsProviderV2,
+export const syncPresencesToStore = (
+  presences: Map<string, RemotePresence>,
   mouseStore: MouseStore,
-  internalStateRef: { current: Pick<InternalState, "lastAwarenessHash"> },
-) => {
-  return () => {
-    const awareness = provider.awareness;
-    if (!awareness) return;
-
-    try {
-      const allStates = awareness.getStates() as Map<number, AwarenessState>;
-      if (!allStates || allStates.size === 0) return;
-
-      // 1. Quick Change Detection via Hash
-      const currentHash = Array.from(allStates.entries())
-        .filter(
-          ([_, state]) =>
-            state?.cursor || state?.remoteUsers || state?.selectedElement,
-        )
-        .map(([clientId, state]) => {
-          const cursor = state.cursor
-            ? `${state.cursor.x},${state.cursor.y}`
-            : "";
-          const remote = state.remoteUsers
-            ? JSON.stringify(state.remoteUsers)
-            : "";
-          return `${clientId}:${cursor}:${remote}:${state.selectedElement || ""}`;
-        })
-        .sort()
-        .join("|");
-
-      if (currentHash === internalStateRef.current.lastAwarenessHash) return;
-      internalStateRef.current.lastAwarenessHash = currentHash;
-
-      // 2. Data Extraction
-      const remoteUsers: Record<string, RemoteUser> = {};
-      const selectedByUser: Record<string, string> = {};
-      let users: Record<string, UserInfo> = {};
-
-      const localClientId = awareness.clientID.toString();
-      let usersMapFound = false;
-
-      allStates.forEach((state, clientId) => {
-        if (!state) return;
-        const clientIdStr = clientId.toString();
-
-        if (clientIdStr === localClientId) {
-          if (
-            state.users &&
-            _.isObject(state.users) &&
-            !_.isEmpty(state.users)
-          ) {
-            users = { ...state.users };
-            usersMapFound = true;
-          }
-
-          if (state.remoteUsers && _.isObject(state.remoteUsers)) {
-            _.forEach(state.remoteUsers, (pos, userId) => {
-              if (pos?.x != null && pos?.y != null) {
-                remoteUsers[userId] = {
-                  x: pos.x,
-                  y: pos.y,
-                  cursor: { x: pos.x, y: pos.y },
-                };
-              }
-            });
-          }
-
-          if (state.selectedByUser && _.isObject(state.selectedByUser)) {
-            Object.assign(selectedByUser, state.selectedByUser);
-          }
-        } else {
-          if (state.cursor?.x != null && state.cursor?.y != null) {
-            remoteUsers[clientIdStr] = {
-              x: state.cursor.x,
-              y: state.cursor.y,
-              cursor: { x: state.cursor.x, y: state.cursor.y },
-            };
-          }
-
-          if (state.selectedElement) {
-            selectedByUser[clientIdStr] = state.selectedElement;
-          }
-
-          if (!usersMapFound && state.user) {
-            users[clientIdStr] = state.user;
-          }
-        }
-      });
-
-      mouseStore.setRemoteUsers(remoteUsers);
-      mouseStore.setSelectedByUser(selectedByUser);
-      mouseStore.setUsers(users);
-    } catch (err) {
-      console.error("[YJS Utils] Awareness sync error:", err);
-    }
-  };
-};
-
-export const createAwarenessChangeObserver = (
-  syncAwarenessToStore: () => void,
-) => {
-  return () => syncAwarenessToStore();
+): void => {
+  const { remoteUsers, selectedByUser, users } =
+    presencesToMouseStoreData(presences);
+  mouseStore.setRemoteUsers(remoteUsers);
+  mouseStore.setSelectedByUser(selectedByUser);
+  mouseStore.setUsers(users);
 };
 
 // ============================================================================
@@ -248,7 +155,12 @@ export const createAwarenessChangeObserver = (
 // ============================================================================
 
 /**
- * Merges concurrent element updates using lodash deep merging for settings/styles
+ * Merges concurrent element updates using lodash deep merging for settings/styles.
+ * Used for client-side optimistic conflict resolution when two users edit
+ * the same element simultaneously.
+ *
+ * Note: The server is authoritative — it handles conflict resolution via
+ * timestamp-based LWW. This utility is for client-side reconciliation only.
  */
 export const mergeElementUpdates = (
   baseElement: EditorElement,
@@ -278,6 +190,10 @@ export const mergeElementUpdates = (
 
 export const getOperationTimestamp = (): number => Date.now();
 
+/**
+ * Generates a unique operation ID for tracking.
+ * Format: `op-<userId>-<timestamp>-<random>`
+ */
 export const generateOperationId = (
   userId: string,
   timestamp: number,
@@ -287,7 +203,17 @@ export const generateOperationId = (
 };
 
 /**
- * Validates element operation using Zod
+ * Generates a unique request ID for WebSocket request/response correlation.
+ * Format: `req-<timestamp>-<random>`
+ */
+export const generateRequestId = (): string => {
+  const random = Math.random().toString(36).slice(2, 11);
+  return `req-${Date.now()}-${random}`;
+};
+
+/**
+ * Validates element operation using Zod.
+ * Returns { valid: true } on success, or { valid: false, error: string } on failure.
  */
 export const validateElementOperation = (
   operation: unknown,
@@ -324,10 +250,14 @@ export const validateElementOperation = (
   return { valid: true };
 };
 
-export const createDebouncedAwarenessSync = (
+/**
+ * Creates a debounced version of a sync function.
+ * Useful for throttling store updates from rapid WebSocket messages.
+ */
+export const createDebouncedSync = (
   syncFn: () => void,
   delayMs = 100,
-) => {
+): (() => void) => {
   let timeout: NodeJS.Timeout | null = null;
 
   return () => {
@@ -339,8 +269,13 @@ export const createDebouncedAwarenessSync = (
   };
 };
 
+// ============================================================================
+// Color Utilities
+// ============================================================================
+
 /**
- * Generates a stable HSL color based on a string
+ * Generates a stable HSL color based on a string (e.g., userId).
+ * Used for remote cursor colors in the editor canvas.
  */
 export const getUserColor = (userId: string): string => {
   const hash = _.reduce(
@@ -352,18 +287,56 @@ export const getUserColor = (userId: string): string => {
   return `hsl(${hue}, 70%, 50%)`;
 };
 
+// ============================================================================
+// Debug Utilities
+// ============================================================================
+
 /**
- * Formats awareness state for debugging
+ * Formats a RemotePresence object for debugging/logging.
  */
-export const formatAwarenessState = (state: AwarenessState): string => {
+export const formatPresenceState = (presence: RemotePresence): string => {
   try {
-    const user = state.user?.userName || "unknown";
-    const cursor = state.cursor
-      ? `(${state.cursor.x.toFixed(0)}, ${state.cursor.y.toFixed(0)})`
-      : "none";
-    const selected = state.selectedElement || "none";
-    return `User: ${user}, Cursor: ${cursor}, Selected: ${selected}`;
+    const cursor = `(${presence.cursorX.toFixed(0)}, ${presence.cursorY.toFixed(0)})`;
+    const selected = presence.elementId || "none";
+    return `User: ${presence.userName}, Cursor: ${cursor}, Selected: ${selected}`;
   } catch {
-    return "Invalid state";
+    return "Invalid presence state";
   }
+};
+
+// ============================================================================
+// Backward Compatibility Aliases
+// ============================================================================
+
+/**
+ * @deprecated Use `createDebouncedSync` instead
+ */
+export const createDebouncedAwarenessSync = createDebouncedSync;
+
+/**
+ * @deprecated Awareness polling is no longer needed.
+ * Presence is now handled via WebSocket `presence` messages.
+ * This function is a no-op kept for backward compatibility.
+ */
+export const createSyncAwarenessToStore = (
+  _provider: unknown,
+  _mouseStore: MouseStore,
+  _internalStateRef: { current: Pick<InternalState, "lastAwarenessHash"> },
+): (() => void) => {
+  return () => {
+    // No-op: Presence is now handled by the WebSocketProvider/AwarenessController
+    // via envelope-based `presence` messages, not by polling Yjs Awareness states.
+  };
+};
+
+/**
+ * @deprecated Awareness change observer is no longer needed.
+ * This function is a no-op kept for backward compatibility.
+ */
+export const createAwarenessChangeObserver = (
+  _syncFn: () => void,
+): (() => void) => {
+  return () => {
+    // No-op: see createSyncAwarenessToStore
+  };
 };

@@ -596,6 +596,7 @@ export default function ResizeHandler({
     e.stopPropagation();
   };
 
+ 
   return (
     <div
       ref={targetRef}

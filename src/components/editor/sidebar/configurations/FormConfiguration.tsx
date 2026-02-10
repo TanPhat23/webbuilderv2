@@ -25,7 +25,7 @@ import { FormElement, FormSettings } from "@/interfaces/elements.interface";
 import React, { ChangeEvent } from "react";
 
 export const FormConfigurationAccordion = () => {
-  const { updateElement } = useElementStore<FormElement>();
+  const { updateElement } = useElementStore();
   const { selectedElement } = useSelectionStore();
 
   if (!selectedElement || selectedElement.type !== "Form") {

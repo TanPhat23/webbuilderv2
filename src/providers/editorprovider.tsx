@@ -22,7 +22,6 @@ interface EditorProviderProps {
   userId?: string;
 }
 
-// Define the type for the data returned by useEditor
 type EditorHookReturnType = ReturnType<typeof useEditor>;
 
 interface EditorContextType {
@@ -167,7 +166,7 @@ export default function EditorProvider({
         config={{
           projectId: projectId || "",
           pageId,
-          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8082",
+          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8080",
           enabled: collabEnabled,
           onSync: () => {
             toast.success("Live collaboration connected", {

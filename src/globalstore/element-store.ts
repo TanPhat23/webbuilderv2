@@ -10,43 +10,49 @@ export type MoveData = {
   newPosition: number;
 };
 
-export type CollaborativeData<T extends EditorElement = EditorElement> =
-  | Partial<T>
-  | T
+export type CollaborativeData =
+  | Partial<EditorElement>
+  | EditorElement
   | MoveData;
 
-export type ElementStore<T extends EditorElement = EditorElement> = {
-  elements: T[];
-  past: T[][];
-  future: T[][];
+export type ElementStore = {
+  elements: EditorElement[];
+  past: EditorElement[][];
+  future: EditorElement[][];
   yjsUpdateCallback: ((elements: EditorElement[]) => void) | null;
   collaborativeCallback:
     | ((
         type: "update" | "delete" | "create" | "move",
         id?: string,
-        data?: CollaborativeData<T>,
+        data?: CollaborativeData,
       ) => void)
     | null;
-  loadElements: (elements: T[], skipSave?: boolean) => ElementStore<T>;
-  updateElement: (id: string, updatedElement: Partial<T>) => ElementStore<T>;
-  deleteElement: (id: string) => ElementStore<T>;
-  addElement: (...newElements: T[]) => ElementStore<T>;
-  updateAllElements: (update: Partial<EditorElement>) => ElementStore<T>;
-  insertElement: (parentElement: T, elementToBeInserted: T) => ElementStore<T>;
-  swapElement: (id1: string, id2: string) => ElementStore<T>;
-  undo: () => ElementStore<T>;
-  redo: () => ElementStore<T>;
-  clearHistory: () => ElementStore<T>;
+  loadElements: (elements: EditorElement[], skipSave?: boolean) => ElementStore;
+  updateElement: (
+    id: string,
+    updatedElement: Partial<EditorElement>,
+  ) => ElementStore;
+  deleteElement: (id: string) => ElementStore;
+  addElement: (...newElements: EditorElement[]) => ElementStore;
+  updateAllElements: (update: Partial<EditorElement>) => ElementStore;
+  insertElement: (
+    parentElement: EditorElement,
+    elementToBeInserted: EditorElement,
+  ) => ElementStore;
+  swapElement: (id1: string, id2: string) => ElementStore;
+  undo: () => ElementStore;
+  redo: () => ElementStore;
+  clearHistory: () => ElementStore;
   setYjsUpdateCallback: (
     callback: ((elements: EditorElement[]) => void) | null,
   ) => void;
   setCollaborativeCallback: (
-    callback: ElementStore<T>["collaborativeCallback"],
+    callback: ElementStore["collaborativeCallback"],
   ) => void;
 };
 
-const createElementStore = <T extends EditorElement>() => {
-  return create<ElementStore<T>>((set, get) => {
+const createElementStore = () => {
+  return create<ElementStore>((set, get) => {
     const takeSnapshot = () => {
       const { elements, past } = get();
       set({
@@ -65,7 +71,7 @@ const createElementStore = <T extends EditorElement>() => {
     const triggerCollaborativeCallback = (
       type: "update" | "delete" | "create" | "move",
       id?: string,
-      data?: CollaborativeData<T>,
+      data?: CollaborativeData,
     ) => {
       const { collaborativeCallback } = get();
       if (
@@ -83,7 +89,7 @@ const createElementStore = <T extends EditorElement>() => {
       yjsUpdateCallback: null,
       collaborativeCallback: null,
 
-      loadElements: (elements: T[], skipSave?: boolean) => {
+      loadElements: (elements: EditorElement[], skipSave?: boolean) => {
         set({ elements });
         if (!skipSave) {
           triggerYjsCallback();
@@ -91,17 +97,18 @@ const createElementStore = <T extends EditorElement>() => {
         return get();
       },
 
-      updateElement: (id: string, updatedElement: Partial<T>) => {
+      updateElement: (id: string, updatedElement: Partial<EditorElement>) => {
         takeSnapshot();
         const { elements } = get();
         const updatedTree = elementHelper.mapUpdateById(
           elements as EditorElement[],
           id,
-          (el) => ({
-            ...el,
-            ...updatedElement,
-          }),
-        ) as T[];
+          (el) =>
+            ({
+              ...el,
+              ...updatedElement,
+            }) as EditorElement,
+        ) as EditorElement[];
 
         set({ elements: updatedTree });
 
@@ -129,7 +136,7 @@ const createElementStore = <T extends EditorElement>() => {
         const updatedTree = elementHelper.mapDeleteById(
           elements as EditorElement[],
           id,
-        ) as T[];
+        ) as EditorElement[];
         set({
           elements: updatedTree,
         });
@@ -138,14 +145,17 @@ const createElementStore = <T extends EditorElement>() => {
         return get();
       },
 
-      insertElement: (parentElement: T, elementToBeInserted: T) => {
+      insertElement: (
+        parentElement: EditorElement,
+        elementToBeInserted: EditorElement,
+      ) => {
         takeSnapshot();
         const { elements } = get();
         const updated = elementHelper.mapInsertAfterId(
           elements as EditorElement[],
           parentElement.id,
           elementToBeInserted,
-        ) as T[];
+        ) as EditorElement[];
 
         set({ elements: updated });
         triggerYjsCallback();
@@ -157,12 +167,12 @@ const createElementStore = <T extends EditorElement>() => {
         return get();
       },
 
-      addElement: (...newElements: T[]) => {
+      addElement: (...newElements: EditorElement[]) => {
         takeSnapshot();
         const { elements } = get();
         const insertOne = (
           tree: EditorElement[],
-          newEl: T,
+          newEl: EditorElement,
         ): EditorElement[] => {
           if (!newEl.parentId) return [...tree, newEl];
           let parentFound = false;
@@ -196,7 +206,7 @@ const createElementStore = <T extends EditorElement>() => {
         const updatedTree = newElements.reduce<EditorElement[]>(
           (acc, newEl) => insertOne(acc, newEl),
           elements as EditorElement[],
-        ) as T[];
+        ) as EditorElement[];
 
         set({
           elements: updatedTree,
@@ -232,7 +242,7 @@ const createElementStore = <T extends EditorElement>() => {
           return updated;
         };
         const updated = elements.map(
-          (e) => recursivelyUpdate(e as EditorElement) as T,
+          (e) => recursivelyUpdate(e as EditorElement) as EditorElement,
         );
         set({ elements: updated });
         triggerYjsCallback();
@@ -308,7 +318,7 @@ const createElementStore = <T extends EditorElement>() => {
             elements as EditorElement[],
             parentId,
             () => updatedParent,
-          ) as T[];
+          ) as EditorElement[];
 
           set({ elements: updatedTree });
 
@@ -360,7 +370,7 @@ const createElementStore = <T extends EditorElement>() => {
       },
 
       setCollaborativeCallback: (
-        callback: ElementStore<T>["collaborativeCallback"],
+        callback: ElementStore["collaborativeCallback"],
       ) => {
         set({ collaborativeCallback: callback });
       },
@@ -368,13 +378,11 @@ const createElementStore = <T extends EditorElement>() => {
   });
 };
 
-const elementStoreInstance = createElementStore<EditorElement>();
+const elementStoreInstance = createElementStore();
 
 export const useElementStore = elementStoreInstance as {
-  <T extends EditorElement = EditorElement>(): ElementStore<T>;
-  <U, T extends EditorElement = EditorElement>(
-    selector: (state: ElementStore<T>) => U,
-  ): U;
+  (): ElementStore;
+  <U>(selector: (state: ElementStore) => U): U;
 };
 
 export const ElementStore = elementStoreInstance;

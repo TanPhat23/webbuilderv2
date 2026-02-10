@@ -11,9 +11,8 @@ import type { EditorElement } from "@/types/global.type";
 import { Textarea } from "@/components/ui/textarea";
 import { useSelectionStore } from "@/globalstore/selection-store";
 
-
 export default function TailwindAccordion() {
-  const { updateElement } = useElementStore<EditorElement>();
+  const { updateElement } = useElementStore();
   const { selectedElement } = useSelectionStore();
   const [value, setValue] = useState<string>(
     selectedElement?.tailwindStyles ?? "",

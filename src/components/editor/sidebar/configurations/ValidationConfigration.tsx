@@ -29,12 +29,12 @@ const ALL_RULES: RuleType[] = [
 ];
 
 export default function ValidationConfiguration() {
-  const { updateElement } = useElementStore<InputElement>();
-  const { selectedElement } = useSelectionStore<InputElement>();
+  const { updateElement } = useElementStore();
+  const { selectedElement } = useSelectionStore();
   const [newRule, setNewRule] = React.useState<RuleType>("required");
 
-  // Local state for validation rules
-  const validateRules = selectedElement?.settings?.validateRules ?? [];
+  const validateRules =
+    (selectedElement as InputElement)?.settings?.validateRules ?? [];
   const updateValidationRule = <T extends ValidationRule>(
     updateRule: T,
   ): void => {
