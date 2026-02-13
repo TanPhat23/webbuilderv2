@@ -1,3 +1,11 @@
+/**
+ * useEventWorkflowMutations.ts
+ *
+ * React Query mutations for creating, updating, toggling, and deleting
+ * event workflows. Uses the centralized `getErrorMessage` utility for
+ * consistent error extraction and stores mutation state in Zustand.
+ */
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { eventWorkflowService } from "@/services/eventWorkflow.service";
 import {
@@ -9,6 +17,7 @@ import {
   eventWorkflowKeys,
   useEventWorkflowStore,
 } from "@/globalstore/event-workflow-store";
+import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
 
 type CreateWorkflowVariables = {
   projectId: string;
@@ -29,6 +38,7 @@ type DeleteWorkflowVariables = {
   workflowId: string;
 };
 
+/** Hook to create a new event workflow for a project. */
 export const useCreateEventWorkflow = () => {
   const queryClient = useQueryClient();
   const setIsCreating = useEventWorkflowStore((s) => s.setIsCreating);
@@ -48,9 +58,9 @@ export const useCreateEventWorkflow = () => {
       queryClient.setQueryData(eventWorkflowKeys.detail(created.id), created);
     },
     onError: (error) => {
-      const msg =
-        error instanceof Error ? error.message : "Failed to create workflow";
+      const msg = getErrorMessage(error, "Failed to create workflow");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to create workflow:", error);
     },
     onSettled: () => {
@@ -63,6 +73,7 @@ export const useCreateEventWorkflow = () => {
   });
 };
 
+/** Hook to update an existing event workflow. */
 export const useUpdateEventWorkflow = () => {
   const queryClient = useQueryClient();
   const setIsUpdating = useEventWorkflowStore((s) => s.setIsUpdating);
@@ -83,9 +94,9 @@ export const useUpdateEventWorkflow = () => {
       );
     },
     onError: (error) => {
-      const msg =
-        error instanceof Error ? error.message : "Failed to update workflow";
+      const msg = getErrorMessage(error, "Failed to update workflow");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to update workflow:", error);
     },
     onSettled: () => {
@@ -98,6 +109,7 @@ export const useUpdateEventWorkflow = () => {
   });
 };
 
+/** Hook to toggle the enabled/disabled state of a workflow. */
 export const useUpdateEventWorkflowEnabled = () => {
   const queryClient = useQueryClient();
   const setIsUpdating = useEventWorkflowStore((s) => s.setIsUpdating);
@@ -121,11 +133,9 @@ export const useUpdateEventWorkflowEnabled = () => {
       );
     },
     onError: (error) => {
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Failed to update workflow status";
+      const msg = getErrorMessage(error, "Failed to update workflow status");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to update workflow status:", error);
     },
     onSettled: () => {
@@ -138,6 +148,7 @@ export const useUpdateEventWorkflowEnabled = () => {
   });
 };
 
+/** Hook to delete an event workflow. */
 export const useDeleteEventWorkflow = () => {
   const queryClient = useQueryClient();
   const setIsDeleting = useEventWorkflowStore((s) => s.setIsDeleting);
@@ -161,9 +172,9 @@ export const useDeleteEventWorkflow = () => {
       );
     },
     onError: (error) => {
-      const msg =
-        error instanceof Error ? error.message : "Failed to delete workflow";
+      const msg = getErrorMessage(error, "Failed to delete workflow");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to delete workflow:", error);
     },
     onSettled: () => {

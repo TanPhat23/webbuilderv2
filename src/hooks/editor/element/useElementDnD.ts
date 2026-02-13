@@ -8,12 +8,15 @@
 
 import { useCallback } from "react";
 import type { EditorElement } from "@/types/global.type";
-import { useSelectionStore } from "@/globalstore/selection-store";
-import { useElementStore } from "@/globalstore/element-store";
+import { useFullDragContext } from "@/globalstore/selectors/selection-selectors";
+import { useSwapElement } from "@/globalstore/selectors/element-selectors";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 import { useElementCreator } from "./useElementCreator";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  PERMISSION_ERRORS,
+} from "@/lib/utils/errors/errorToast";
 
 export interface UseElementDnDOptions {
   /**
@@ -63,7 +66,7 @@ export function useElementDnD({
 }: UseElementDnDOptions = {}): UseElementDnDReturn {
   const permissions = useEditorPermissions(projectId);
   const elementCreator = useElementCreator();
-  const { swapElement } = useElementStore();
+  const swapElement = useSwapElement();
 
   const {
     selectedElement,
@@ -73,7 +76,7 @@ export function useElementDnD({
     draggedOverElement,
     setDraggedOverElement,
     setHoveredElement,
-  } = useSelectionStore();
+  } = useFullDragContext();
 
   const canDrag = !isReadOnly && !isLocked && permissions.canEditElements;
   const canReorder = !isReadOnly && !isLocked && permissions.canReorderElements;
@@ -92,12 +95,7 @@ export function useElementDnD({
 
       // Guard: cannot drop if all operations are disallowed.
       if (!canDrag && !elementCreator.canCreate && !canReorder) {
-        toast.error(
-          "Cannot perform this action - editor is in read-only mode",
-          {
-            duration: 2000,
-          },
-        );
+        showErrorToast(PERMISSION_ERRORS.cannotPerformAction);
         return;
       }
 
@@ -107,9 +105,7 @@ export function useElementDnD({
       // 1) Existing element is being moved — perform swap
       if (draggingElement) {
         if (!canReorder) {
-          toast.error("Cannot reorder elements - editor is in read-only mode", {
-            duration: 2000,
-          });
+          showErrorToast(PERMISSION_ERRORS.cannotReorder);
           return;
         }
 

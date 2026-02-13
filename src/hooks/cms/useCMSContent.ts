@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { cmsService } from "@/services/cms";
 import { ContentItem, ContentType } from "@/interfaces/cms.interface";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
 
 export interface UseCMSContentOptions {
   contentTypeId?: string;
@@ -14,7 +15,7 @@ export interface UseCMSContentResult {
   contentItems: ContentItem[];
   contentTypes: ContentType[];
   isLoading: boolean;
-  error: any;
+  error: Error | null;
   refetch: () => void;
 }
 
@@ -38,8 +39,7 @@ export const useCMSContent = (
         sortOrder,
       }),
     enabled: enabled && !!contentTypeId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
   const contentItems = contentItemsData ?? [];
 
@@ -55,7 +55,7 @@ export const useCMSContent = (
 export interface UseCMSContentItemResult {
   contentItem: ContentItem | undefined;
   isLoading: boolean;
-  error: any;
+  error: Error | null;
   refetch: () => void;
 }
 
@@ -72,8 +72,7 @@ export const useCMSContentItem = (
     queryKey: ["cms-public-content-item", contentTypeId, slug],
     queryFn: () => cmsService.getPublicContentItem(contentTypeId, slug),
     enabled: !!contentTypeId && !!slug,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
 
   return {
@@ -85,17 +84,26 @@ export const useCMSContentItem = (
 };
 
 /**
- * Helper function to get a specific field value from a content item
- * Handles both direct properties and fieldValues structure
+ * Helper function to get a specific field value from a content item.
+ * Handles both direct properties and fieldValues structure.
+ *
+ * @param contentItem - The content item to extract the field from.
+ * @param fieldName   - The name of the field to retrieve.
+ * @returns The field value, or `undefined` if not found.
  */
 export const getFieldValue = (
   contentItem: ContentItem,
   fieldName: string,
-): any => {
-  if (contentItem.hasOwnProperty(fieldName)) {
-    return (contentItem as any)[fieldName];
+): string | undefined => {
+  // Check direct properties first
+  if (fieldName in contentItem) {
+    const value = (contentItem as unknown as Record<string, unknown>)[
+      fieldName
+    ];
+    return value != null ? String(value) : undefined;
   }
 
+  // Fall back to fieldValues array
   if (contentItem.fieldValues) {
     const fieldValue = contentItem.fieldValues.find(
       (fv) => fv.field?.name === fieldName,
@@ -107,20 +115,23 @@ export const getFieldValue = (
 };
 
 /**
- * Helper function to get all field values as a simple object
- * Useful for spreading into components or easy access
+ * Helper function to get all field values as a simple object.
+ * Useful for spreading into components or easy access.
+ *
+ * @param contentItem - The content item to extract fields from.
+ * @returns A flat record of field names to their values.
  */
 export const getFieldValues = (
   contentItem: ContentItem,
-): Record<string, any> => {
-  const values: Record<string, any> = {};
+): Record<string, unknown> => {
+  const values: Record<string, unknown> = {};
 
   // Add direct properties
-  Object.keys(contentItem).forEach((key) => {
+  for (const key of Object.keys(contentItem)) {
     if (key !== "fieldValues") {
-      values[key] = (contentItem as any)[key];
+      values[key] = (contentItem as unknown as Record<string, unknown>)[key];
     }
-  });
+  }
 
   // Add field values
   if (contentItem.fieldValues) {
@@ -135,13 +146,12 @@ export const getFieldValues = (
 };
 
 /**
- * Hook for fetching content types (useful for dynamic content type selection)
+ * Hook for fetching content types (useful for dynamic content type selection).
  */
 export const useCMSContentTypes = () => {
   return useQuery<ContentType[]>({
     queryKey: ["cms-content-types"],
     queryFn: () => cmsService.getContentTypes(),
-    staleTime: 1000 * 60 * 15, // 15 minutes - content types don't change often
-    gcTime: 1000 * 60 * 60, // 1 hour
+    ...QUERY_CONFIG.LONG,
   });
 };

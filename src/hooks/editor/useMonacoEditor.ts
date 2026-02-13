@@ -9,7 +9,7 @@ import {
 import { registerPrettierFormatter } from "@/lib/monaco/format";
 import { loadMonacoTypes } from "@/lib/monaco/types";
 import { contentChange } from "@/lib/monaco/content-change";
-import { useElementStore } from "@/globalstore/element-store";
+import { useElements } from "@/globalstore/selectors/element-selectors";
 import { elementService } from "@/services/element";
 
 function useDebouncedValue<T>(value: T, delay = 50) {
@@ -23,7 +23,7 @@ function useDebouncedValue<T>(value: T, delay = 50) {
 
 export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
   const monaco = useMonaco();
-  const elements = useElementStore((state) => state.elements);
+  const elements = useElements();
   const [value, setValue] = useState<string>(initialValue);
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(
     null,

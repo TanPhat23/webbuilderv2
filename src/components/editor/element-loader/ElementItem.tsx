@@ -6,29 +6,15 @@ import EditorContextMenu from "@/components/editor/EditorContextMenu";
 import ElementDropIndicator from "./ElementDropIndicator";
 import { cn } from "@/lib/utils";
 import { CollaboratorRole } from "@/interfaces/collaboration.interface";
+import { useEditorFlags } from "@/components/editor/context/EditorFlagsContext";
+import { useDragContext } from "@/components/editor/context/DragContext";
 
 interface ElementItemProps {
   element: EditorElement;
-  data?: any;
-  isReadOnly?: boolean;
-  isLocked?: boolean;
-  iframeRef?: React.RefObject<HTMLIFrameElement>;
+  data?: Record<string, unknown>;
 
-  // Render function for element body (keeps this file render-agnostic).
+  /** Render function for element body (keeps this file render-agnostic). */
   renderElement: (element: EditorElement) => React.ReactNode;
-
-  // Permissions & drag state / handlers coming from the hook or parent.
-  canDrag: boolean;
-  isDraggingLocal: string | null;
-  draggingElement?: EditorElement | undefined;
-  draggedOverElement?: EditorElement | undefined;
-
-  handleDragStart: (e: React.DragEvent, element: EditorElement) => void;
-  handleDragEnd: () => void;
-  handleHover: (e: React.DragEvent, element: EditorElement) => void;
-  handleDrop: (e: React.DragEvent, element: EditorElement) => void;
-
-  permissionsRole?: CollaboratorRole | null;
 }
 
 /**
@@ -37,26 +23,26 @@ interface ElementItemProps {
  * - EditorContextMenu (unless viewer)
  * - Drag & drop markup (draggable + drop indicator)
  *
- * Kept small and focused to make the parent component (ElementLoader) concise
- * and to make the unit easier to test.
+ * Editor flags (`isReadOnly`, `isLocked`, `permissionsRole`, `iframeRef`) and
+ * drag state/handlers are consumed from context providers set up by
+ * `ElementLoader`, eliminating the need for explicit prop drilling.
+ *
+ * @see {@link EditorFlagsProvider} — provides isReadOnly, isLocked, permissionsRole, iframeRef
+ * @see {@link DragProvider} — provides canDrag, isDraggingLocal, draggingElement, draggedOverElement, handlers
  */
-function ElementItem({
-  element,
-  data,
-  isReadOnly = false,
-  isLocked = false,
-  iframeRef,
-  renderElement,
-  canDrag,
-  isDraggingLocal,
-  draggingElement,
-  draggedOverElement,
-  handleDragStart,
-  handleDragEnd,
-  handleHover,
-  handleDrop,
-  permissionsRole,
-}: ElementItemProps) {
+function ElementItem({ element, data, renderElement }: ElementItemProps) {
+  const { isReadOnly, isLocked, permissionsRole, iframeRef } = useEditorFlags();
+  const {
+    canDrag,
+    isDraggingLocal,
+    draggingElement,
+    draggedOverElement,
+    handleDragStart,
+    handleDragEnd,
+    handleHover,
+    handleDrop,
+  } = useDragContext();
+
   const isBeingDragged = isDraggingLocal === element.id;
   const isDropTarget = draggedOverElement?.id === element.id && !isBeingDragged;
 

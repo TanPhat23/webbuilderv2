@@ -339,25 +339,6 @@ export class CarouselGenerateStrategy implements GenerateStrategy {
   }
 }
 
-export class DataLoaderGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "DataLoader") return null;
-    const attrs = [
-      ...handleAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const children = handleChildren(element);
-    // Basic structure; consumer can wire up data fetching around this container
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
 export class CMSContentListGenerateStrategy implements GenerateStrategy {
   generate(element: EditorElement): t.JSXElement | null {
     if (element.type !== "CMSContentList") return null;
@@ -425,7 +406,7 @@ export const generateStrategies: Record<string, GenerateStrategy> = {
   Frame: new FrameGenerateStrategy(),
   Form: new FormGenerateStrategy(),
   Carousel: new CarouselGenerateStrategy(),
-  DataLoader: new DataLoaderGenerateStrategy(),
+
   CMSContentList: new CMSContentListGenerateStrategy(),
   CMSContentItem: new CMSContentItemGenerateStrategy(),
   CMSContentGrid: new CMSContentGridGenerateStrategy(),

@@ -1,4 +1,4 @@
-import { useElementStore } from "@/globalstore/element-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { InputElement } from "@/interfaces/elements.interface";
 import { RuleType, ValidationRule } from "@/interfaces/validate.interface";
 import React, { useState } from "react";
@@ -12,7 +12,7 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   HoverCard,
@@ -29,8 +29,8 @@ const ALL_RULES: RuleType[] = [
 ];
 
 export default function ValidationConfiguration() {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
   const [newRule, setNewRule] = React.useState<RuleType>("required");
 
   const validateRules =

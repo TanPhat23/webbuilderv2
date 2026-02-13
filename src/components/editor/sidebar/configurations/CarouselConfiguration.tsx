@@ -13,14 +13,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
-import { CarouselElement, CarouselSettings } from "@/interfaces/elements.interface";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
+import {
+  CarouselElement,
+  CarouselSettings,
+} from "@/interfaces/elements.interface";
 import { Label } from "@radix-ui/react-label";
 
 export default function CarouselConfigurationAccordion() {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
 
   if (!selectedElement || selectedElement.type !== "Carousel") {
     return null;

@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/select";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import React, { useEffect, useState } from "react";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { cn } from "@/lib/utils";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
@@ -128,8 +128,8 @@ interface AppearanceAccordionProps {
 export const AppearanceAccordion = ({
   currentBreakpoint,
 }: AppearanceAccordionProps) => {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
 
   const responsiveStyles: ResponsiveStyles = selectedElement?.styles ?? {};
   const styles: AppearanceStyles = responsiveStyles[currentBreakpoint] ?? {};

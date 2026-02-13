@@ -4,6 +4,7 @@ import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentListElement } from "@/interfaces/elements.interface";
+import { ContentItem } from "@/interfaces/cms.interface";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
 import { Database } from "lucide-react";
@@ -50,8 +51,8 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
   });
 
   // Use provided data or CMS content
-  const itemsToRender = Array.isArray(data)
-    ? data
+  const itemsToRender: ContentItem[] = Array.isArray(data)
+    ? (data as ContentItem[])
     : contentItems && contentItems.length > 0
       ? contentItems
       : [];
@@ -113,7 +114,10 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
           >
             {cmsElement.elements && cmsElement.elements.length > 0 ? (
               // Use child elements as template
-              <ElementLoader elements={cmsElement.elements} data={item} />
+              <ElementLoader
+                elements={cmsElement.elements}
+                data={item as unknown as Record<string, unknown>}
+              />
             ) : (
               // Default rendering
               <div className="border rounded-lg p-4 bg-white shadow-sm">
@@ -126,7 +130,7 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
                 <div className="text-xs text-gray-400 mt-2">
                   {getFieldValue(item, "createdAt")
                     ? new Date(
-                        getFieldValue(item, "createdAt"),
+                        getFieldValue(item, "createdAt")!,
                       ).toLocaleDateString()
                     : ""}
                 </div>

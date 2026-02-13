@@ -1,8 +1,17 @@
-// webbuilderv2/src/hooks/features/useDashboard.ts
+/**
+ * useDashboard.ts
+ *
+ * Encapsulates all state, filtering, sorting, and mutation logic for the
+ * project dashboard view. Keeps the Dashboard page component thin.
+ */
 
 import { useState, useMemo } from "react";
 import { useUserProjects, useDeleteProject, usePublishProject } from "@/hooks";
-import type { SortOption, ViewMode } from "@/components/dashboard/DashboardFilters";
+import type {
+  SortOption,
+  ViewMode,
+} from "@/components/dashboard/DashboardFilters";
+import type { Project } from "@/interfaces/project.interface";
 
 export interface ProjectToDelete {
   id: string;
@@ -15,6 +24,15 @@ export interface ProjectToPublish {
   published: boolean;
 }
 
+/** Project with optional extended fields that may exist at runtime. */
+type ProjectWithViews = Project & { views?: number };
+
+/**
+ * Hook that powers the project dashboard.
+ *
+ * Manages search, sort, filter state and exposes mutation handlers for
+ * delete and publish actions with confirmation dialogs.
+ */
 export function useDashboard() {
   // State management
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,8 +41,10 @@ export function useDashboard() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showPublishedOnly, setShowPublishedOnly] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<ProjectToDelete | null>(null);
-  const [projectToPublish, setProjectToPublish] = useState<ProjectToPublish | null>(null);
+  const [projectToDelete, setProjectToDelete] =
+    useState<ProjectToDelete | null>(null);
+  const [projectToPublish, setProjectToPublish] =
+    useState<ProjectToPublish | null>(null);
 
   // Hooks
   const { data: projects, isLoading } = useUserProjects();
@@ -38,8 +58,12 @@ export function useDashboard() {
     return projects
       .filter((project) => {
         const matchesSearch =
-          (project.name ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (project.description ?? "").toLowerCase().includes(searchQuery.toLowerCase());
+          (project.name ?? "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          (project.description ?? "")
+            .toLowerCase()
+            .includes(searchQuery.toLowerCase());
         const matchesPublished = !showPublishedOnly || !!project.published;
         return matchesSearch && matchesPublished;
       })
@@ -49,8 +73,8 @@ export function useDashboard() {
 
         switch (sortBy) {
           case "views":
-            aValue = ((a as any).views ?? 0) as number;
-            bValue = ((b as any).views ?? 0) as number;
+            aValue = (a as ProjectWithViews).views ?? 0;
+            bValue = (b as ProjectWithViews).views ?? 0;
             break;
           case "name":
             aValue = (a.name ?? "").toLowerCase();
@@ -93,7 +117,10 @@ export function useDashboard() {
     }
   };
 
-  const handlePublishProject = (projectId: string, currentlyPublished: boolean) => {
+  const handlePublishProject = (
+    projectId: string,
+    currentlyPublished: boolean,
+  ) => {
     const project = projects?.find((p) => p.id === projectId);
     setProjectToPublish({
       id: projectId,

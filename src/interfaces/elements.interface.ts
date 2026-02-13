@@ -107,21 +107,6 @@ export interface FormElement extends Element<"Form", FormSettings> {
   elements: EditorElement[];
 }
 
-export interface DataLoaderSettings {
-  apiUrl: string;
-  method?: "GET" | "POST" | "PUT" | "DELETE";
-  headers?: Record<string, string>;
-  body?: string;
-  authToken?: string;
-}
-
-export interface DataLoaderElement extends Element<
-  "DataLoader",
-  DataLoaderSettings
-> {
-  elements: EditorElement[];
-}
-
 export interface CMSContentSettings {
   contentTypeId?: string;
   displayMode?: "list" | "grid" | "single";
@@ -179,9 +164,29 @@ export type EditorElement =
   | ListElement
   | SelectElement
   | FormElement
-  | DataLoaderElement
   | CMSContentListElement
   | CMSContentItemElement
   | CMSContentGridElement;
+
+/**
+ * Mapping of element type names to their respective interface types.
+ * Used for type-safe element creation and manipulation.
+ */
+export type ElementTypeMap = {
+  Text: TextElement;
+  Image: ImageElement;
+  Button: ButtonElement;
+  Input: InputElement;
+  Link: LinkElement;
+  Frame: FrameElement;
+  Form: FormElement;
+  Section: SectionElement;
+  Carousel: CarouselElement;
+  List: ListElement;
+  Select: SelectElement;
+  CMSContentList: CMSContentListElement;
+  CMSContentItem: CMSContentItemElement;
+  CMSContentGrid: CMSContentGridElement;
+};
 
 export type { ElementEvents } from "@/interfaces/events.interface";

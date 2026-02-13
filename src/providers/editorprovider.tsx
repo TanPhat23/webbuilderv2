@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Suspense,
+} from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { EditorSideBar } from "@/components/editor/sidebar/EditorSideBar";
 import LayoutSideBar from "@/components/editor/sidebar/LayoutSideBar";
@@ -10,7 +16,9 @@ import { useAiChat } from "./aiprovider";
 import { ElementCommentsPanel } from "@/components/editor/comments/ElementCommentsPanel";
 import { useEditor } from "@/hooks";
 import { useSearchParams } from "next/navigation";
-import WireframeManager from "@/components/editor/wireframe/WireframeManager";
+const WireframeManager = React.lazy(
+  () => import("@/components/editor/wireframe/WireframeManager"),
+);
 import { Button } from "@/components/ui/button";
 import { LayoutTemplate, PenTool } from "lucide-react";
 import CollaborationProvider from "./collaborationprovider";
@@ -196,7 +204,15 @@ export default function EditorProvider({
           <ModeToggle mode={mode} setMode={setMode} />
           {mode === "wireframe" ? (
             <div className="flex h-screen w-screen overflow-hidden pt-12 bg-background">
-              <WireframeManager pageId={pageId} />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center w-full h-full">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground border-t-transparent" />
+                  </div>
+                }
+              >
+                <WireframeManager pageId={pageId} />
+              </Suspense>
             </div>
           ) : (
             <EditorLayout>{children}</EditorLayout>

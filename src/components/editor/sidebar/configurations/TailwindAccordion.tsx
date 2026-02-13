@@ -6,14 +6,14 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/accordion";
-import { useElementStore } from "@/globalstore/element-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import type { EditorElement } from "@/types/global.type";
 import { Textarea } from "@/components/ui/textarea";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 
 export default function TailwindAccordion() {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
   const [value, setValue] = useState<string>(
     selectedElement?.tailwindStyles ?? "",
   );

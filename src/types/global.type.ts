@@ -1,6 +1,7 @@
 import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
+  type ElementType,
 } from "@/constants/elements";
 import {
   ButtonElement,
@@ -13,7 +14,6 @@ import {
   SelectElement,
   TextElement,
   CarouselElement,
-  DataLoaderElement,
   CMSContentListElement,
   CMSContentItemElement,
   CMSContentGridElement,
@@ -27,7 +27,6 @@ type ContainerElement =
   | ListElement
   | SelectElement
   | CarouselElement
-  | DataLoaderElement
   | CMSContentListElement
   | CMSContentItemElement
   | CMSContentGridElement;
@@ -44,27 +43,9 @@ type EditorElement =
   | SectionElement
   | TextElement
   | CarouselElement
-  | DataLoaderElement
   | CMSContentListElement
   | CMSContentItemElement
   | CMSContentGridElement;
-
-type ElementType =
-  | "Frame"
-  | "Button"
-  | "List"
-  | "Input"
-  | "Select"
-  | "Form"
-  | "Section"
-  | "Text"
-  | "Carousel"
-  | "Image"
-  | "Link"
-  | "DataLoader"
-  | "CMSContentList"
-  | "CMSContentItem"
-  | "CMSContentGrid";
 
 type ExcludeType = "id" | "pageId" | "parentId";
 
@@ -92,3 +73,5 @@ export type {
   LeafElementTemplate,
   ElementTemplate,
 };
+
+export type { ElementTypeMap } from "@/interfaces/elements.interface";

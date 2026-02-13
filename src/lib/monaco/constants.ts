@@ -16,6 +16,10 @@ export const MONACO_COMPILER_OPTIONS = {
   moduleResolution: 2, // monaco.languages.typescript.ModuleResolutionKind.NodeJs (Value is 2)
   typeRoots: ["file:///node_modules/@types", "file:///node_modules"],
   types: ["react", "react-dom"],
+  paths: {
+    "@/*": ["file:///src/*"],
+  },
+  baseUrl: "file:///",
 };
 
 export const MONACO_EXTERNAL_LIBS = [

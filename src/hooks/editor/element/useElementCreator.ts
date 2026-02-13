@@ -1,14 +1,29 @@
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useAddElement } from "@/globalstore/selectors/element-selectors";
+import {
+  useSetSelectedElement,
+  useSetDraggedOverElement,
+} from "@/globalstore/selectors/selection-selectors";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  PERMISSION_ERRORS,
+} from "@/lib/utils/errors/errorToast";
 import { useParams, useSearchParams } from "next/navigation";
 
+/** Shape of the JSON payload received when an image is dropped onto the canvas. */
+interface ImageDropPayload {
+  type: "image";
+  imageLink: string;
+  imageName?: string;
+}
+
 export function useElementCreator() {
-  const { addElement } = useElementStore();
-  const { setSelectedElement, setDraggedOverElement } = useSelectionStore();
+  const addElement = useAddElement();
+  const setSelectedElement = useSetSelectedElement();
+  const setDraggedOverElement = useSetDraggedOverElement();
 
   const params = useParams();
   const pageId = useSearchParams().get("page") as string;
@@ -21,11 +36,15 @@ export function useElementCreator() {
     type: ElementType,
     parentId: string,
   ): EditorElement | undefined => {
-    return elementHelper.createElement.create(type, pageId, parentId);
+    return ElementFactory.getInstance().createElement({
+      type,
+      pageId,
+      parentId,
+    });
   };
 
   const handleImageDrop = (
-    parsed: any,
+    parsed: ImageDropPayload,
     parentElement: EditorElement,
   ): EditorElement | null => {
     const isContainer = elementHelper.isContainerElement(parentElement);
@@ -50,9 +69,7 @@ export function useElementCreator() {
 
     if (data) {
       if (!permissions.canCreateElements) {
-        toast.error("Cannot add elements - editor is in read-only mode", {
-          duration: 2000,
-        });
+        showErrorToast(PERMISSION_ERRORS.cannotAdd);
         return null;
       }
 
@@ -71,18 +88,21 @@ export function useElementCreator() {
     const imageData = e.dataTransfer.getData("application/json");
     if (imageData) {
       try {
-        const parsed = JSON.parse(imageData);
-        if (parsed.type === "image") {
+        const parsed: unknown = JSON.parse(imageData);
+        if (
+          typeof parsed === "object" &&
+          parsed !== null &&
+          "type" in parsed &&
+          (parsed as Record<string, unknown>).type === "image"
+        ) {
           if (!permissions.canCreateElements) {
-            toast.error("Cannot add elements - editor is in read-only mode", {
-              duration: 2000,
-            });
+            showErrorToast(PERMISSION_ERRORS.cannotAdd);
             return null;
           }
 
-          return handleImageDrop(parsed, parentElement);
+          return handleImageDrop(parsed as ImageDropPayload, parentElement);
         }
-      } catch (error) {
+      } catch {
         // Ignore parsing errors
       }
     }

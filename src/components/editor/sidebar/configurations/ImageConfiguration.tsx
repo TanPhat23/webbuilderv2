@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import React, { ChangeEvent, useState, useRef } from "react";
 import { imageService } from "@/services/image";
 import { toast } from "sonner";
@@ -22,8 +22,8 @@ import { Upload, Link2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const ImageConfiguration = () => {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

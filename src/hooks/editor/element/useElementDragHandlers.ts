@@ -1,14 +1,27 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { EditorElement, ElementType } from "@/types/global.type";
-import { useSelectionStore } from "@/globalstore/selection-store";
-import { useElementStore } from "@/globalstore/element-store";
+import {
+  useDragState,
+  useDragActions,
+} from "@/globalstore/selectors/selection-selectors";
+import {
+  useSwapElement,
+  useInsertElement,
+  useAddElement,
+  useElements,
+} from "@/globalstore/selectors/element-selectors";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
 import { customComps } from "@/lib/customcomponents/customComponents";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 import type { EditorPermissions } from "@/hooks/editor/useEditorPermissions";
 import { useElementCreator } from "@/hooks/editor/element/useElementCreator";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  showSuccessToast,
+  PERMISSION_ERRORS,
+} from "@/lib/utils/errors/errorToast";
 
 /**
  * Options for the `useElementDragHandlers` hook.
@@ -79,19 +92,13 @@ export function useElementDragHandlers({
 
   const permissions = useEditorPermissions(effectiveProjectId);
 
-  const {
-    draggedOverElement,
-    draggingElement,
-    setDraggingElement,
-    setDraggedOverElement,
-  } = useSelectionStore();
+  const { draggedOverElement, draggingElement } = useDragState();
+  const { setDraggingElement, setDraggedOverElement } = useDragActions();
 
-  const {
-    elements: allElements,
-    insertElement,
-    swapElement,
-    addElement,
-  } = useElementStore();
+  const allElements = useElements();
+  const insertElement = useInsertElement();
+  const swapElement = useSwapElement();
+  const addElement = useAddElement();
 
   const elementCreator = useElementCreator();
 
@@ -168,12 +175,7 @@ export function useElementDragHandlers({
       e.stopPropagation();
 
       if (!canDrag && !canCreate) {
-        toast.error(
-          "Cannot perform this action - editor is in read-only mode",
-          {
-            duration: 2000,
-          },
-        );
+        showErrorToast(PERMISSION_ERRORS.cannotPerformAction);
         resetDragState();
         return;
       }
@@ -186,7 +188,7 @@ export function useElementDragHandlers({
       if (draggedElementId && draggingElement) {
         if (draggedElementId !== element.id) {
           swapElement(draggedElementId, element.id);
-          toast.success("Elements swapped successfully", { duration: 1500 });
+          showSuccessToast("Elements swapped successfully");
         }
         resetDragState();
         return;
@@ -194,9 +196,7 @@ export function useElementDragHandlers({
 
       if (elementType) {
         if (!canCreate) {
-          toast.error("Cannot add elements - editor is in read-only mode", {
-            duration: 2000,
-          });
+          showErrorToast(PERMISSION_ERRORS.cannotAdd);
           resetDragState();
           return;
         }
@@ -209,11 +209,10 @@ export function useElementDragHandlers({
             elementCreator.completeElementCreation(newElement);
           }
         } else {
-          const newElement = elementHelper.createElement.create(
-            elementType as ElementType,
-            element.pageId,
-            undefined,
-          );
+          const newElement = ElementFactory.getInstance().createElement({
+            type: elementType as ElementType,
+            pageId: element.pageId,
+          });
           if (newElement) insertElement(element, newElement);
         }
 
@@ -226,19 +225,18 @@ export function useElementDragHandlers({
       if (customElement) {
         try {
           if (!canCreate) {
-            toast.error("Cannot add elements - editor is in read-only mode", {
-              duration: 2000,
-            });
+            showErrorToast(PERMISSION_ERRORS.cannotAdd);
             resetDragState();
             return;
           }
 
           const compIndex = parseInt(customElement, 10);
           const customComp = customComps[compIndex];
-          const newElement = elementHelper.createElement.createFromTemplate(
-            customComp,
-            element.pageId,
-          );
+          const newElement =
+            ElementFactory.getInstance().createElementFromTemplate({
+              element: customComp,
+              pageId: element.pageId,
+            });
           if (newElement) {
             if (elementHelper.isContainerElement(element)) {
               newElement.parentId = element.id;

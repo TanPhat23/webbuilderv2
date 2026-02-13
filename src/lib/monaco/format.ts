@@ -1,10 +1,9 @@
 import type { Monaco } from "@monaco-editor/react";
 import type * as monacoEditor from "monaco-editor";
-import type { Plugin } from "prettier";
 
 type PrettierOptions = {
   parser?: string;
-  plugins?: Plugin[];
+  plugins?: any[];
   filepath?: string;
   semi?: boolean;
   singleQuote?: boolean;
@@ -15,7 +14,56 @@ type PrettierAPI = {
 };
 
 /**
+ * Manual formatter that applies basic prettier-compatible formatting
+ * Fallback when Prettier fails or isn't available
+ */
+function manualFormat(code: string): string {
+  // Add basic formatting without external dependencies
+  let result = code;
+
+  // Normalize line endings
+  result = result.replace(/\r\n/g, "\n");
+
+  // Split into lines for processing
+  let lines = result.split("\n");
+  let formatted: string[] = [];
+  let indentLevel = 0;
+  const indentString = "  ";
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+
+    // Skip empty lines but preserve them
+    if (!trimmed) {
+      formatted.push("");
+      continue;
+    }
+
+    // Decrease indent for closing tags/brackets
+    if (
+      trimmed.startsWith("}") ||
+      trimmed.startsWith("]") ||
+      trimmed.startsWith(")")
+    ) {
+      indentLevel = Math.max(0, indentLevel - 1);
+    }
+
+    // Add indentation
+    formatted.push(indentString.repeat(indentLevel) + trimmed);
+
+    // Increase indent for opening tags/brackets
+    const openCount = (trimmed.match(/[\{\[\(]/g) || []).length;
+    const closeCount = (trimmed.match(/[\}\]\)]/g) || []).length;
+    indentLevel += openCount - closeCount;
+    indentLevel = Math.max(0, indentLevel);
+  }
+
+  return formatted.join("\n");
+}
+
+/**
  * Registers Prettier as a formatting provider for TypeScript and JavaScript in Monaco.
+ * Falls back to manual formatting if Prettier fails.
  */
 export const registerPrettierFormatter = (monaco: Monaco) => {
   const registerFor = (language: string) => {
@@ -24,42 +72,52 @@ export const registerPrettierFormatter = (monaco: Monaco) => {
         model: monacoEditor.editor.ITextModel,
       ): Promise<monacoEditor.languages.TextEdit[]> {
         try {
-          // Dynamic imports to keep the initial bundle size small
-          const [prettierModule, tsPluginModule] = await Promise.all([
-            import("prettier/standalone"),
-            import("prettier/parser-typescript"),
-          ]);
-
-          const prettierCandidate = prettierModule as
-            | PrettierAPI
-            | { default: PrettierAPI };
-
-          const prettier =
-            "format" in (prettierCandidate as PrettierAPI)
-              ? (prettierCandidate as PrettierAPI)
-              : (prettierCandidate as { default: PrettierAPI }).default;
-
-          const tsPluginCandidate = tsPluginModule as
-            | Plugin
-            | { default: Plugin };
-
-          const parserTs =
-            "default" in (tsPluginCandidate as { default?: Plugin })
-              ? (tsPluginCandidate as { default: Plugin }).default
-              : (tsPluginCandidate as Plugin);
+          console.log(`[Prettier] Starting format for ${language}`);
 
           const originalText = model.getValue();
-          const filePath = model.uri.path || model.uri.toString();
 
-          const formatted = await prettier.format(originalText, {
-            parser: "typescript",
-            plugins: [parserTs],
-            filepath: filePath,
-            semi: true,
-            singleQuote: false,
-          });
+          let formatted = originalText;
+          let formatSource = "prettier";
+
+          try {
+            // Try to use Prettier from CDN via dynamic import
+            const prettierModule = await import("prettier/standalone");
+            const babelModule = await import("prettier/parser-babel");
+
+            const prettier = (prettierModule as any).default || prettierModule;
+            const babelParser = (babelModule as any).default || babelModule;
+
+            console.log("[Prettier] Successfully imported Prettier and Babel");
+
+            if (prettier && typeof prettier.format === "function") {
+              formatted = await prettier.format(originalText, {
+                parser: "babel",
+                plugins: [babelParser],
+                semi: true,
+                singleQuote: false,
+                trailingComma: "es5",
+              });
+              console.log("[Prettier] Format successful with Prettier");
+            } else {
+              throw new Error("Prettier.format is not a function");
+            }
+          } catch (prettierError: unknown) {
+            console.warn(
+              "[Prettier] Prettier formatting failed, falling back to manual format:",
+              prettierError instanceof Error
+                ? prettierError.message
+                : String(prettierError),
+            );
+
+            // Fallback to manual formatting
+            formatted = manualFormat(originalText);
+            formatSource = "manual";
+          }
 
           if (formatted && formatted !== originalText) {
+            console.log(
+              `[Prettier] Returning formatted code (source: ${formatSource})`,
+            );
             return [
               {
                 range: model.getFullModelRange(),
@@ -68,9 +126,16 @@ export const registerPrettierFormatter = (monaco: Monaco) => {
             ];
           }
 
+          console.log("[Prettier] Code unchanged after formatting");
           return [];
         } catch (err: unknown) {
-          console.warn("Prettier: could not format document", err);
+          const error = err instanceof Error ? err : new Error(String(err));
+          console.error(`[Prettier] Unexpected error during formatting:`, {
+            message: error.message,
+            stack: error.stack,
+            language,
+          });
+
           return [];
         }
       },
@@ -79,4 +144,6 @@ export const registerPrettierFormatter = (monaco: Monaco) => {
 
   registerFor("typescript");
   registerFor("javascript");
+  registerFor("jsx");
+  registerFor("tsx");
 };

@@ -6,8 +6,9 @@ import {
   ElementTemplate,
   ElementType,
 } from "@/types/global.type";
-import { reject, find } from "lodash";
+import { ALL_ELEMENT_TYPES } from "@/constants/elements";
 import { handleSwap } from "./handleSwap";
+import type { ResponsiveStyles } from "@/interfaces/elements.interface";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
 import React from "react";
 import { cn } from "@/lib/utils";
@@ -16,13 +17,11 @@ import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
 } from "@/constants/elements";
-import {
-  createElement,
-  createElementFromTemplate,
-} from "./create/createElements";
-import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
-// Helper function to safely extract styles from an element
+type Breakpoint = "default" | "sm" | "md" | "lg" | "xl";
+
+const BREAKPOINTS: readonly Breakpoint[] = ["default", "sm", "md", "lg", "xl"];
+
 const getSafeStyles = (element: EditorElement): React.CSSProperties => {
   if (
     !element.styles ||
@@ -31,47 +30,40 @@ const getSafeStyles = (element: EditorElement): React.CSSProperties => {
   ) {
     return {};
   }
+
   const merged: React.CSSProperties = {};
-  const styles = element.styles;
-  const breakpoints: (keyof typeof styles)[] = [
-    "default",
-    "sm",
-    "md",
-    "lg",
-    "xl",
-  ];
-  breakpoints.forEach((bp) => {
+  const styles = element.styles as Record<string, React.CSSProperties>;
+
+  for (const bp of BREAKPOINTS) {
     if (styles[bp]) {
       Object.assign(merged, styles[bp]);
     }
-  });
+  }
+
   return merged;
 };
 
-// Helper function to replace placeholders like {{field}} with data values
-const replacePlaceholders = (text: string, data: any): string => {
+const replacePlaceholders = (text: string, data: unknown): string => {
   if (!data || typeof data !== "object") return text;
 
-  return text.replace(/\{\{([^}]+)\}\}/g, (match, placeholder) => {
+  return text.replace(/\{\{([^}]+)\}\}/g, (match, placeholder: string) => {
     const [field, filter] = placeholder.split("|");
-    let value = data;
+    let value: unknown = data;
 
-    // Support nested property access using dot notation (e.g., "0.content", "item.title")
     for (const part of field.split(".")) {
       if (value && typeof value === "object" && part in value) {
-        value = value[part];
+        value = (value as Record<string, unknown>)[part];
       } else {
         value = undefined;
         break;
       }
     }
 
-    if (value === undefined) return match; // Keep placeholder if field not found
+    if (value === undefined) return match;
 
-    // Apply filters
     if (filter === "date" && value) {
       try {
-        value = new Date(value).toLocaleDateString();
+        value = new Date(String(value)).toLocaleDateString();
       } catch {
         // Keep original value if date parsing fails
       }
@@ -82,13 +74,13 @@ const replacePlaceholders = (text: string, data: any): string => {
 };
 
 const findById = (
-  els: EditorElement[],
+  elements: EditorElement[],
   id: string,
 ): EditorElement | undefined => {
-  for (const el of els) {
+  for (const el of elements) {
     if (el.id === id) return el;
     if (isContainerElement(el)) {
-      const found = findById((el as ContainerElement).elements, id);
+      const found = findById(el.elements, id);
       if (found) return found;
     }
   }
@@ -96,11 +88,11 @@ const findById = (
 };
 
 const mapUpdateById = (
-  els: EditorElement[],
+  elements: EditorElement[],
   id: string,
   updater: (el: EditorElement) => EditorElement,
 ): EditorElement[] =>
-  els.map((el) => {
+  elements.map((el) => {
     if (el.id === id) return updater(el);
     if (isContainerElement(el)) {
       return {
@@ -111,30 +103,35 @@ const mapUpdateById = (
     return el;
   });
 
-const mapDeleteById = (els: EditorElement[], id: string): EditorElement[] => {
-  return reject(els, (el) => el.id === id).map((el) => {
-    if (isContainerElement(el)) {
-      return {
-        ...el,
-        elements: mapDeleteById(el.elements, id),
-      } as EditorElement;
-    }
-    return el;
-  });
+const mapDeleteById = (
+  elements: EditorElement[],
+  id: string,
+): EditorElement[] => {
+  return elements
+    .filter((el) => el.id !== id)
+    .map((el) => {
+      if (isContainerElement(el)) {
+        return {
+          ...el,
+          elements: mapDeleteById(el.elements, id),
+        } as EditorElement;
+      }
+      return el;
+    });
 };
 
-export const mapInsertAfterId = (
-  els: EditorElement[],
+const mapInsertAfterId = (
+  elements: EditorElement[],
   targetId: string,
   toInsert: EditorElement,
 ): EditorElement[] => {
-  const idx = els.findIndex((e) => e.id === targetId);
+  const idx = elements.findIndex((e) => e.id === targetId);
   if (idx !== -1) {
-    const newEls = [...els];
+    const newEls = [...elements];
     newEls.splice(idx + 1, 0, toInsert);
     return newEls;
   }
-  return els.map((el) => {
+  return elements.map((el) => {
     if (isContainerElement(el)) {
       return {
         ...el,
@@ -145,74 +142,14 @@ export const mapInsertAfterId = (
   });
 };
 
-interface ICreateElement {
-  create: <T extends EditorElement>(
-    type: ElementType,
-    pageId: string,
-    parentId?: string,
-  ) => T | undefined;
-
-  createFromTemplate: <T extends EditorElement>(
-    element: ElementTemplate,
-    pageId: string,
-  ) => T | undefined;
-}
-
-interface ElementHelper {
-  createElement: ICreateElement;
-
-  handleSwap: (
-    draggingElement: EditorElement,
-    hoveredElement: EditorElement,
-    elements: EditorElement[],
-    setElements: (elements: EditorElement[]) => void,
-  ) => void;
-
-  findElement: (
-    elements: EditorElement[],
-    id: string,
-  ) => EditorElement | undefined;
-
-  getElementSettings: (element: EditorElement) => string | null;
-
-  isContainerElement: (element: EditorElement) => element is ContainerElement;
-
-  isEditableElement: (element: EditorElement) => boolean;
-
-  computeTailwindFromStyles: (styles: ResponsiveStyles | undefined) => string;
-
-  updateElementStyle: (
-    element: EditorElement,
-    styles: React.CSSProperties,
-    breakpoint: "default" | "sm" | "md" | "lg" | "xl",
-    updateElement: (id: string, updates: Partial<EditorElement>) => void,
-  ) => void;
-
-  findById: (els: EditorElement[], id: string) => EditorElement | undefined;
-
-  mapUpdateById: (
-    els: EditorElement[],
-    id: string,
-    updater: (el: EditorElement) => EditorElement,
-  ) => EditorElement[];
-
-  mapDeleteById: (els: EditorElement[], id: string) => EditorElement[];
-
-  mapInsertAfterId: (
-    els: EditorElement[],
-    targetId: string,
-    toInsert: EditorElement,
-  ) => EditorElement[];
-
-  replacePlaceholders: (text: string, data: any) => string;
-
-  getSafeStyles: (element: EditorElement) => React.CSSProperties;
-}
-
-export const isContainerElement = (
+const isContainerElement = (
   element: EditorElement,
 ): element is ContainerElement => {
   return CONTAINER_ELEMENT_TYPES.includes(element.type as ContainerElementType);
+};
+
+const isEditableElement = (element: EditorElement): boolean => {
+  return EDITABLE_ELEMENT_TYPES.includes(element.type as EditableElementType);
 };
 
 const findElement = (
@@ -220,11 +157,11 @@ const findElement = (
   id: string,
 ): EditorElement | undefined => {
   const findRecursive = (els: EditorElement[]): EditorElement | undefined => {
-    const directMatch = find(els, (el) => el.id === id);
+    const directMatch = els.find((el) => el.id === id);
     if (directMatch) return directMatch;
 
     for (const el of els) {
-      if ("elements" in el && Array.isArray(el.elements)) {
+      if (isContainerElement(el)) {
         const nestedMatch = findRecursive(el.elements);
         if (nestedMatch) return nestedMatch;
       }
@@ -245,45 +182,69 @@ const getElementSettings = (element: EditorElement): string | null => {
 const updateElementStyle = (
   element: EditorElement,
   styles: React.CSSProperties,
-  breakpoint: "default" | "sm" | "md" | "lg" | "xl",
+  breakpoint: Breakpoint,
   updateElement: (id: string, updates: Partial<EditorElement>) => void,
 ): void => {
   const currentStyles = element.styles || {};
   const newStyles = { ...currentStyles, [breakpoint]: styles };
 
   try {
-    const computedTailwind = computeTailwindFromStyles(newStyles);
+    const computedTailwind = computeTailwindFromStyles(
+      newStyles as ResponsiveStyles,
+    );
     const mergedTailwind = twMerge(
       cn(element.tailwindStyles || "", computedTailwind),
     );
     updateElement(element.id, {
-      styles: newStyles,
+      styles: newStyles as ResponsiveStyles,
       tailwindStyles: mergedTailwind,
     });
   } catch (err) {
     console.error("Failed to compute tailwind classes from styles:", err);
-    updateElement(element.id, { styles: newStyles });
+    updateElement(element.id, { styles: newStyles as ResponsiveStyles });
   }
 };
 
-export const elementHelper: ElementHelper = {
-  createElement: {
-    create: createElement,
-    createFromTemplate: createElementFromTemplate,
-  },
-  handleSwap: handleSwap,
-  findElement: findElement,
-  getElementSettings: getElementSettings,
-  isContainerElement: isContainerElement,
-  isEditableElement: (element: EditorElement): boolean => {
-    return EDITABLE_ELEMENT_TYPES.includes(element.type as EditableElementType);
-  },
-  computeTailwindFromStyles: computeTailwindFromStyles,
-  updateElementStyle: updateElementStyle,
-  findById: findById,
-  mapUpdateById: mapUpdateById,
-  mapDeleteById: mapDeleteById,
-  mapInsertAfterId: mapInsertAfterId,
-  replacePlaceholders: replacePlaceholders,
-  getSafeStyles: getSafeStyles,
+/**
+ * Runtime type guard that checks whether a value is a valid {@link ElementType}.
+ *
+ * Useful for validating user input, drag-data payloads, or any external string
+ * before narrowing it to `ElementType`.
+ *
+ * @param value - The value to check.
+ * @returns `true` if `value` is one of the known element types.
+ *
+ * @example
+ * ```ts
+ * const raw: unknown = e.dataTransfer.getData("elementType");
+ * if (isValidElementType(raw)) {
+ *   // raw is now narrowed to ElementType
+ *   factory.createElement({ type: raw, pageId });
+ * }
+ * ```
+ */
+export function isValidElementType(value: unknown): value is ElementType {
+  return (
+    typeof value === "string" &&
+    (ALL_ELEMENT_TYPES as readonly string[]).includes(value)
+  );
+}
+
+export const elementHelper = {
+  getSafeStyles,
+  replacePlaceholders,
+  findById,
+  mapUpdateById,
+  mapDeleteById,
+  mapInsertAfterId,
+  isContainerElement,
+  isEditableElement,
+  findElement,
+  getElementSettings,
+  updateElementStyle,
+  computeTailwindFromStyles,
+  handleSwap,
+  isValidElementType,
 };
+
+export type { Breakpoint };

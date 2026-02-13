@@ -7,7 +7,15 @@ import type {
   CreateInvitationRequest,
   AcceptInvitationRequest,
 } from "@/interfaces/collaboration.interface";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
+import {
+  getErrorMessage,
+  onMutationError,
+} from "@/lib/utils/hooks/mutationUtils";
 
 // Query keys for invitations
 export const invitationKeys = {
@@ -20,9 +28,10 @@ export const invitationKeys = {
 };
 
 /**
- * Hook to get all invitations for a specific project
- * @param projectId - The project ID
- * @param enabled - Whether the query should be enabled (default: true)
+ * Hook to get all invitations for a specific project.
+ *
+ * @param projectId - The project ID.
+ * @param enabled   - Whether the query should be enabled (default: true).
  */
 export function useProjectInvitations(
   projectId: string | null,
@@ -37,15 +46,15 @@ export function useProjectInvitations(
       return invitations || [];
     },
     enabled: !!projectId && enabled,
-    staleTime: 1000 * 30, // 30 seconds
+    ...QUERY_CONFIG.SHORT,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 }
 
 /**
- * Hook to create a new invitation
- * Automatically invalidates project invitations cache on success
+ * Hook to create a new invitation.
+ * Automatically invalidates project invitations cache on success.
  */
 export function useCreateInvitation() {
   const queryClient = useQueryClient();
@@ -66,19 +75,15 @@ export function useCreateInvitation() {
         queryKey: invitationKeys.byProject(variables.projectId),
       });
 
-      toast.success(`Invitation sent to ${variables.email}!`);
+      showSuccessToast(`Invitation sent to ${variables.email}!`);
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to send invitation",
-      );
-    },
+    onError: onMutationError("Failed to send invitation"),
   });
 }
 
 /**
- * Hook to accept an invitation
- * Invalidates both invitations and collaborators caches
+ * Hook to accept an invitation.
+ * Invalidates both invitations and collaborators caches.
  */
 export function useAcceptInvitation() {
   const queryClient = useQueryClient();
@@ -100,19 +105,16 @@ export function useAcceptInvitation() {
         queryKey: ["projects"],
       });
 
-      toast.success("Invitation accepted! You are now a collaborator.");
+      showSuccessToast("Invitation accepted! You are now a collaborator.");
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to accept invitation",
-      );
-    },
+    onError: onMutationError("Failed to accept invitation"),
   });
 }
 
 /**
- * Hook to update invitation status
- * @param projectId - Optional project ID for optimistic updates
+ * Hook to update invitation status.
+ *
+ * @param projectId - Optional project ID for optimistic updates.
  */
 export function useUpdateInvitationStatus(projectId?: string) {
   const queryClient = useQueryClient();
@@ -131,7 +133,7 @@ export function useUpdateInvitationStatus(projectId?: string) {
       );
     },
     onSuccess: (updatedInvitation) => {
-      toast.success(
+      showSuccessToast(
         `Invitation status updated to ${updatedInvitation.status}!`,
       );
 
@@ -156,19 +158,14 @@ export function useUpdateInvitationStatus(projectId?: string) {
         });
       }
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update invitation status",
-      );
-    },
+    onError: onMutationError("Failed to update invitation status"),
   });
 }
 
 /**
- * Hook to cancel an invitation
- * @param projectId - Optional project ID for optimistic updates
+ * Hook to cancel an invitation.
+ *
+ * @param projectId - Optional project ID for optimistic updates.
  */
 export function useCancelInvitation(projectId?: string) {
   const queryClient = useQueryClient();
@@ -178,7 +175,7 @@ export function useCancelInvitation(projectId?: string) {
       return await invitationService.cancelInvitation(invitationId);
     },
     onSuccess: (updatedInvitation) => {
-      toast.success("Invitation cancelled successfully!");
+      showSuccessToast("Invitation cancelled successfully!");
 
       if (projectId) {
         queryClient.setQueryData<Invitation[]>(
@@ -201,17 +198,14 @@ export function useCancelInvitation(projectId?: string) {
         });
       }
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to cancel invitation",
-      );
-    },
+    onError: onMutationError("Failed to cancel invitation"),
   });
 }
 
 /**
- * Hook to delete/revoke an invitation
- * @param projectId - Optional project ID for optimistic updates
+ * Hook to delete/revoke an invitation.
+ *
+ * @param projectId - Optional project ID for optimistic updates.
  */
 export function useDeleteInvitation(projectId?: string) {
   const queryClient = useQueryClient();
@@ -242,9 +236,9 @@ export function useDeleteInvitation(projectId?: string) {
       return { previousInvitations, projectId };
     },
     onSuccess: () => {
-      toast.success("Invitation deleted successfully!");
+      showSuccessToast("Invitation deleted successfully!");
     },
-    onError: (error, invitationId, context) => {
+    onError: (error, _invitationId, context) => {
       // Rollback on error
       if (context?.previousInvitations && context?.projectId) {
         queryClient.setQueryData(
@@ -253,9 +247,7 @@ export function useDeleteInvitation(projectId?: string) {
         );
       }
 
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete invitation",
-      );
+      showErrorToast(getErrorMessage(error, "Failed to delete invitation"));
     },
     onSettled: (_, __, ___, context) => {
       // Always refetch after deletion to ensure consistency
@@ -269,8 +261,8 @@ export function useDeleteInvitation(projectId?: string) {
 }
 
 /**
- * Combined hook for invitation management
- * Provides all invitation operations in a single hook
+ * Combined hook for invitation management.
+ * Provides all invitation operations in a single hook.
  */
 export function useInvitationManager(projectId: string | null) {
   const invitations = useProjectInvitations(projectId);

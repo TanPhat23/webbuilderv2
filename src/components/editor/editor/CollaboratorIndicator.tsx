@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
-import { useMouseStore } from "@/globalstore/mouse-store";
+import { useCollaboratorUsers } from "@/globalstore/selectors/mouse-selectors";
 import { useAuth } from "@clerk/nextjs";
 import CollaborationStatus from "./CollaborationStatus";
 
@@ -65,7 +65,7 @@ export default function CollaboratorIndicator({
   projectId,
 }: CollaboratorIndicatorProps) {
   const { userId } = useAuth();
-  const { users } = useMouseStore();
+  const users = useCollaboratorUsers();
 
   const onlineUsers = Object.values(users);
   const currentUser = onlineUsers.find((u) => u.userId === userId);

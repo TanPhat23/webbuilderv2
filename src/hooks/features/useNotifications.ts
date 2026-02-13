@@ -1,80 +1,84 @@
-"use client"
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { notificationService } from "@/services/notification"
-import type { NotificationFilters, UpdateNotificationPayload } from "@/interfaces/notification.interface"
-import { toast } from "sonner"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationService } from "@/services/notification";
+import type {
+  NotificationFilters,
+  UpdateNotificationPayload,
+} from "@/interfaces/notification.interface";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import { showSuccessToast } from "@/lib/utils/errors/errorToast";
+import { onMutationError } from "@/lib/utils/hooks/mutationUtils";
 
 export const notificationKeys = {
   all: ["notifications"] as const,
   lists: () => [...notificationKeys.all, "list"] as const,
-  list: (filters?: NotificationFilters) => [...notificationKeys.lists(), filters] as const,
-}
+  list: (filters?: NotificationFilters) =>
+    [...notificationKeys.lists(), filters] as const,
+};
 
+/** Hook to get notifications with optional filters. */
 export function useNotifications(filters?: NotificationFilters) {
   return useQuery({
     queryKey: notificationKeys.list(filters),
     queryFn: () => notificationService.getNotifications(filters),
-    staleTime: 1000 * 30, // 30 seconds
-  })
+    ...QUERY_CONFIG.SHORT,
+  });
 }
 
+/** Hook to update a single notification (e.g. mark as read). */
 export function useUpdateNotification() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: UpdateNotificationPayload) => 
+    mutationFn: (payload: UpdateNotificationPayload) =>
       notificationService.updateNotification(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
-    onError: (error) => {
-      toast.error("Failed to update notification")
-      console.error("Error updating notification:", error)
-    },
-  })
+    onError: onMutationError("Failed to update notification", { log: true }),
+  });
 }
 
+/** Hook to mark all notifications as read. */
 export function useMarkAllAsRead() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () => notificationService.markAllAsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all })
-      toast.success("All notifications marked as read")
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+      showSuccessToast("All notifications marked as read");
     },
-    onError: (error) => {
-      toast.error("Failed to mark all as read")
-      console.error("Error marking all as read:", error)
-    },
-  })
+    onError: onMutationError("Failed to mark all as read", { log: true }),
+  });
 }
 
+/** Hook to create a profile-update notification. */
 export function useCreateProfileUpdateNotification() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: { description: string }) => {
-      const response = await fetch('/api/notifications/profile-update', {
-        method: 'POST',
+      const response = await fetch("/api/notifications/profile-update", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(data),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to create notification')
+        throw new Error("Failed to create notification");
       }
 
-      return response.json()
+      return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all })
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
-    onError: (error) => {
-      console.error("Error creating profile update notification:", error)
-    },
-  })
+    onError: onMutationError("Failed to create profile update notification", {
+      log: true,
+    }),
+  });
 }

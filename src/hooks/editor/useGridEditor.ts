@@ -15,13 +15,17 @@ export interface GridEditorState<T> {
 export interface GridEditorActions<T> {
   startEditing: (id: string, currentData?: T) => void;
   stopEditing: (id: string) => void;
-  updateValue: (id: string, field: keyof T, value: any) => void;
+  updateValue: (id: string, field: keyof T, value: T[keyof T]) => void;
   saveChanges: (id: string) => Promise<void>;
   addNewRow: (initialData?: Partial<T>) => void;
   cancelNewRow: () => void;
   saveNewRow: () => Promise<void>;
   isEditing: (id: string) => boolean;
-  getEditedValue: (id: string, field: keyof T, defaultValue?: any) => any;
+  getEditedValue: (
+    id: string,
+    field: keyof T,
+    defaultValue?: T[keyof T],
+  ) => T[keyof T] | undefined;
 }
 
 export function useGridEditor<T extends { id: string }>({
@@ -58,7 +62,7 @@ export function useGridEditor<T extends { id: string }>({
   }, []);
 
   const updateValue = useCallback(
-    (id: string, field: keyof T, value: any) => {
+    (id: string, field: keyof T, value: T[keyof T]) => {
       if (newRow && "isNew" in newRow && newRow.isNew) {
         setNewRow((prev) => ({ ...prev!, [field]: value }));
       } else {
@@ -115,7 +119,11 @@ export function useGridEditor<T extends { id: string }>({
   );
 
   const getEditedValue = useCallback(
-    (id: string, field: keyof T, defaultValue?: any) => {
+    (
+      id: string,
+      field: keyof T,
+      defaultValue?: T[keyof T],
+    ): T[keyof T] | undefined => {
       const edited = editedValues[id];
       return edited?.[field] ?? defaultValue;
     },

@@ -1,21 +1,22 @@
 "use client";
 import React, { useEffect, useRef } from "react";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
 import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { SectionElement } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useInsertElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import ElementLoader from "../ElementLoader";
 import { usePageStore } from "@/globalstore/page-store";
 
 const SectionComponent = ({ element, data }: EditorComponentProps) => {
   const sectionElement = element as SectionElement;
-  const { insertElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const insertElement = useInsertElement();
+  const selectedElement = useSelectedElement();
   const { id } = useParams();
   const previousEventsRef = useRef<any>(null);
 
@@ -47,11 +48,10 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
   const eventHandlers = createEventHandlers();
 
   const handleCreateSeciont = () => {
-    const newElement = elementHelper.createElement.create<SectionElement>(
-      "Section",
-      currentPage?.Id || "",
-      undefined,
-    );
+    const newElement = ElementFactory.getInstance().createElement({
+      type: "Section",
+      pageId: currentPage?.Id || "",
+    });
     console.log("New Section Element:", newElement);
     if (newElement) insertElement(element, newElement);
   };

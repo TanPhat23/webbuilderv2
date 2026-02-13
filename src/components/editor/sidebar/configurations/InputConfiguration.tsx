@@ -19,16 +19,16 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 
 import { InputElement, InputSettings } from "@/interfaces/elements.interface";
 import React, { ChangeEvent } from "react";
 import ValidationConfiguration from "./ValidationConfigration";
 
 export default function InputConfiguration() {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
 
   if (!selectedElement || selectedElement.type !== "Input") {
     return <AccordionItem value="input-settings"></AccordionItem>;

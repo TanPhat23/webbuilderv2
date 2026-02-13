@@ -1,7 +1,7 @@
 "use client";
 
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useDragAndSelectionState } from "@/globalstore/selectors/selection-selectors";
 import { useElementHandler } from "@/hooks";
 import { useResizeHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -473,9 +473,9 @@ export default function ResizeHandler({
   iframeRef,
 }: ResizeHandlerProps) {
   const targetRef = useRef<HTMLDivElement>(null);
-  const { updateElement } = useElementStore();
+  const updateElement = useUpdateElement();
   const { draggedOverElement, selectedElement, hoveredElement } =
-    useSelectionStore();
+    useDragAndSelectionState();
   const { handleDoubleClick } = useElementHandler();
   const permissions = useEditorPermissions();
   const canResize = !isReadOnly && !isLocked && permissions.canEditElements;
@@ -596,7 +596,6 @@ export default function ResizeHandler({
     e.stopPropagation();
   };
 
- 
   return (
     <div
       ref={targetRef}

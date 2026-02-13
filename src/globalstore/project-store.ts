@@ -66,8 +66,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => {
         return null;
       }
 
-      console.log("updateProject called. projectId:", projectId);
-
       const optimistic: Project = {
         ...current,
         ...updates,

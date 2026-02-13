@@ -5,6 +5,7 @@ import ResizeHandler from "@/components/editor/resizehandler/ResizeHandler";
 import EditorContextMenu from "@/components/editor/EditorContextMenu";
 import { cn } from "@/lib/utils";
 import { CollaboratorRole } from "@/interfaces/collaboration.interface";
+import { useEditorFlags } from "@/components/editor/context/EditorFlagsContext";
 
 interface ElementReorderListProps {
   /**
@@ -24,23 +25,6 @@ interface ElementReorderListProps {
   renderElement: (element: EditorElement) => React.ReactNode;
 
   /**
-   * Editor state flags passed through to wrappers (ResizeHandler / ContextMenu).
-   */
-  isReadOnly?: boolean;
-  isLocked?: boolean;
-
-  /**
-   * Optional iframeRef forwarded to ResizeHandler for copy/resizing in previews.
-   */
-  iframeRef?: React.RefObject<HTMLIFrameElement>;
-
-  /**
-   * Role of the current collaborator. If the user is a viewer, the context menu
-   * won't be shown. May be undefined/null while permissions are loading.
-   */
-  permissionsRole?: CollaboratorRole | null;
-
-  /**
    * Extra classes for the root element.
    */
   className?: string;
@@ -51,17 +35,19 @@ interface ElementReorderListProps {
  * `framer-motion`'s `Reorder.Group` / `Reorder.Item`. Each item is wrapped with
  * `ResizeHandler` and conditionally with `EditorContextMenu` depending on the
  * user's role.
+ *
+ * Editor flags (`isReadOnly`, `isLocked`, `permissionsRole`, `iframeRef`) are
+ * consumed from the {@link EditorFlagsProvider} context set up by `ElementLoader`,
+ * eliminating the need for explicit prop drilling.
  */
 export default function ElementReorderList({
   items,
   onReorder,
   renderElement,
-  isReadOnly = false,
-  isLocked = false,
-  iframeRef,
-  permissionsRole = null,
   className,
 }: ElementReorderListProps) {
+  const { isReadOnly, isLocked, iframeRef, permissionsRole } = useEditorFlags();
+
   if (!items || items.length === 0) return null;
 
   return (

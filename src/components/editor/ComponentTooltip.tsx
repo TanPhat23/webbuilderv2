@@ -94,10 +94,7 @@ const componentInfo: Record<
     title: "List",
     description: "Repeatable list items for displaying collections of data",
   },
-  DataLoader: {
-    title: "Data Loader",
-    description: "Load and display dynamic data from external sources",
-  },
+
   CMSContentList: {
     title: "CMS Content List",
     description: "Display a list of CMS content items",
@@ -273,23 +270,7 @@ const createMockElement = (type: ElementType): any => {
         },
       },
     },
-    DataLoader: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "16px",
-          border: "2px solid #34d399",
-          borderRadius: "6px",
-          backgroundColor: "#f0fdf4",
-          minHeight: "60px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        },
-      },
-      settings: { apiUrl: "", method: "GET" },
-    },
+
     CMSContentList: {
       ...base,
       elements: [],
@@ -424,17 +405,14 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
       <span className="text-xs text-gray-500">Drop Zone</span>
     </div>
   ),
-  DataLoader: (
-    <div className="w-full h-16 border-2 border-green-400 rounded-lg bg-green-50 flex items-center justify-center gap-2">
-      <RefreshCw className="w-5 h-5 text-green-600 animate-spin" />
-      <span className="text-xs text-green-700 font-medium">Loading...</span>
-    </div>
-  ),
+
   CMSContentList: (
     <div className="w-full space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <FileText className="w-4 h-4 text-purple-600" />
-        <span className="text-xs text-purple-700 font-medium">Content List</span>
+        <span className="text-xs text-purple-700 font-medium">
+          Content List
+        </span>
       </div>
       {[1, 2].map((i) => (
         <div
@@ -454,7 +432,9 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
     <div className="w-full p-3 border-2 border-purple-400 rounded-lg bg-purple-50">
       <div className="flex items-center gap-2 mb-2">
         <FileText className="w-4 h-4 text-purple-600" />
-        <span className="text-xs text-purple-700 font-medium">Content Item</span>
+        <span className="text-xs text-purple-700 font-medium">
+          Content Item
+        </span>
       </div>
       <div className="w-full h-16 bg-purple-200 rounded mb-2"></div>
       <div className="space-y-1">
@@ -467,7 +447,9 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
     <div className="w-full space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <Grid3X3 className="w-4 h-4 text-purple-600" />
-        <span className="text-xs text-purple-700 font-medium">Content Grid</span>
+        <span className="text-xs text-purple-700 font-medium">
+          Content Grid
+        </span>
       </div>
       <div className="w-full grid grid-cols-2 gap-2">
         {[1, 2, 3, 4].map((i) => (
@@ -490,12 +472,14 @@ function ComponentPreview({ type }: { type: ElementType }) {
   if (!Component)
     return <div className="text-xs text-gray-500 p-4">No preview</div>;
 
-  return customPreviews[type] || (
-    <div className="w-full min-h-10 flex items-center justify-center">
-      <div style={{ transform: "scale(0.95)", width: "100%" }}>
-        <Component element={mockElement} />
+  return (
+    customPreviews[type] || (
+      <div className="w-full min-h-10 flex items-center justify-center">
+        <div style={{ transform: "scale(0.95)", width: "100%" }}>
+          <Component element={mockElement} />
+        </div>
       </div>
-    </div>
+    )
   );
 }
 
@@ -520,7 +504,9 @@ export function ComponentTooltip({
           onMouseLeave={() => setIsOpen(false)}
         >
           <div className="px-3 py-2 bg-linear-to-r from-gray-50 to-gray-100 border-b">
-            <h4 className="font-semibold text-sm text-gray-900">{info.title}</h4>
+            <h4 className="font-semibold text-sm text-gray-900">
+              {info.title}
+            </h4>
             <p className="text-xs text-gray-600 mt-0.5">{info.description}</p>
           </div>
           <div className="p-3 bg-white">

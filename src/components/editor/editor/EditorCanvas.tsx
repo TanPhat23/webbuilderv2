@@ -10,7 +10,7 @@ import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/components/editor/ElementLoader";
 import { Button } from "@/components/ui/button";
 import { KeyboardEvent as KeyboardEventClass } from "@/lib/utils/element/keyBoardEvents";
-import { useMouseStore } from "@/globalstore/mouse-store";
+import { useCollaborationCursors } from "@/globalstore/selectors/mouse-selectors";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
 type EditorCanvasProps = {
@@ -49,7 +49,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
   const keyboardEvent = new KeyboardEventClass();
-  const { remoteUsers, users } = useMouseStore();
+  const { remoteUsers, users } = useCollaborationCursors();
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
 
   // Assign the canvas ref to the collaboration provider for mouse tracking

@@ -83,7 +83,10 @@ const PreviewCMSContentItemComponent = ({
 
   return (
     <div className={element.tailwindStyles} style={safeStyles}>
-      <PreviewElementLoader elements={element.elements} data={contentItem} />
+      <PreviewElementLoader
+        elements={element.elements}
+        data={contentItem as unknown as Record<string, unknown>}
+      />
     </div>
   );
 };

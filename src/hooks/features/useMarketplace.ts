@@ -8,7 +8,9 @@ import {
   CreateMarketplaceItemRequest,
   UpdateMarketplaceItemRequest,
 } from "@/interfaces/market.interface";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import { showSuccessToast } from "@/lib/utils/errors/errorToast";
+import { onMutationError } from "@/lib/utils/hooks/mutationUtils";
 
 export const marketplaceKeys = {
   all: ["marketplace"] as const,
@@ -20,6 +22,7 @@ export const marketplaceKeys = {
   tags: () => [...marketplaceKeys.all, "tags"] as const,
 };
 
+/** Hook to get marketplace items with optional filters. */
 export function useMarketplaceItems(filters?: MarketplaceFilters) {
   return useQuery({
     queryKey: marketplaceKeys.itemsList(filters),
@@ -29,14 +32,16 @@ export function useMarketplaceItems(filters?: MarketplaceFilters) {
         const items = Array.isArray(result) ? result : [];
         return items;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch marketplace items:", error);
         return [];
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
+/** Hook to get a single marketplace item by ID. */
 export function useMarketplaceItem(id: string, enabled: boolean = true) {
   return useQuery({
     queryKey: marketplaceKeys.item(id),
@@ -46,33 +51,34 @@ export function useMarketplaceItem(id: string, enabled: boolean = true) {
       } catch (error) {
         // Don't log 404 errors for deleted items
         if (error instanceof Error && !error.message.includes("404")) {
+          // eslint-disable-next-line no-console
           console.error("Failed to fetch marketplace item:", error);
         }
         throw error;
       }
     },
     enabled: enabled && !!id,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...QUERY_CONFIG.DEFAULT,
     retry: false, // Don't retry on 404 errors
   });
 }
 
+/** Hook to create a new marketplace item. */
 export function useCreateMarketplaceItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateMarketplaceItemRequest) =>
       marketplaceService.createMarketplaceItem(data),
-    onSuccess: (newItem) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.items() });
-      toast.success("Template created successfully!");
+      showSuccessToast("Template created successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to create template: ${error.message}`);
-    },
+    onError: onMutationError("Failed to create template"),
   });
 }
 
+/** Hook to update an existing marketplace item. */
 export function useUpdateMarketplaceItem() {
   const queryClient = useQueryClient();
 
@@ -87,14 +93,13 @@ export function useUpdateMarketplaceItem() {
     onSuccess: (updatedItem, variables) => {
       queryClient.setQueryData(marketplaceKeys.item(variables.id), updatedItem);
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.items() });
-      toast.success("Template updated successfully!");
+      showSuccessToast("Template updated successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to update template: ${error.message}`);
-    },
+    onError: onMutationError("Failed to update template"),
   });
 }
 
+/** Hook to delete a marketplace item. */
 export function useDeleteMarketplaceItem() {
   const queryClient = useQueryClient();
 
@@ -110,14 +115,13 @@ export function useDeleteMarketplaceItem() {
       // Also invalidate the generic marketplace items query that ProjectCard uses
       queryClient.invalidateQueries({ queryKey: ["marketplaceItems"] });
 
-      toast.success("Template deleted successfully!");
+      showSuccessToast("Template deleted successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to delete template: ${error.message}`);
-    },
+    onError: onMutationError("Failed to delete template"),
   });
 }
 
+/** Hook to increment download count for a marketplace item. */
 export function useIncrementDownloads() {
   const queryClient = useQueryClient();
 
@@ -136,21 +140,18 @@ export function useIncrementDownloads() {
       );
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.item(id) });
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to record download: ${error.message}`);
-    },
+    onError: onMutationError("Failed to record download"),
   });
 }
 
+/** Hook to download a marketplace item (creates a new project from the template). */
 export function useDownloadMarketplaceItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (marketplaceItemId: string) => {
-      // Create a new project from the template
       const newProject =
         await marketplaceService.downloadMarketplaceItem(marketplaceItemId);
-
       return newProject;
     },
     onSuccess: (newProject, marketplaceItemId) => {
@@ -169,14 +170,15 @@ export function useDownloadMarketplaceItem() {
         },
       );
 
-      toast.success(`Template downloaded! Created project: ${newProject.name}`);
+      showSuccessToast(
+        `Template downloaded! Created project: ${newProject.name}`,
+      );
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to download template: ${error.message}`);
-    },
+    onError: onMutationError("Failed to download template"),
   });
 }
 
+/** Hook to increment like count for a marketplace item. */
 export function useIncrementLikes() {
   const queryClient = useQueryClient();
 
@@ -194,14 +196,13 @@ export function useIncrementLikes() {
         },
       );
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.item(id) });
-      toast.success("Thanks for liking this template!");
+      showSuccessToast("Thanks for liking this template!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to like template: ${error.message}`);
-    },
+    onError: onMutationError("Failed to like template"),
   });
 }
 
+/** Hook to get all marketplace categories. */
 export function useCategories() {
   return useQuery({
     queryKey: marketplaceKeys.categories(),
@@ -211,14 +212,16 @@ export function useCategories() {
         const cats = Array.isArray(result) ? result : [];
         return cats;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch categories:", error);
         return [];
       }
     },
-    staleTime: 1000 * 60 * 10,
+    ...QUERY_CONFIG.LONG,
   });
 }
 
+/** Hook to create a new category. */
 export function useCreateCategory() {
   const queryClient = useQueryClient();
 
@@ -226,14 +229,13 @@ export function useCreateCategory() {
     mutationFn: (name: string) => marketplaceService.createCategory(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.categories() });
-      toast.success("Category created successfully!");
+      showSuccessToast("Category created successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to create category: ${error.message}`);
-    },
+    onError: onMutationError("Failed to create category"),
   });
 }
 
+/** Hook to delete a category. */
 export function useDeleteCategory() {
   const queryClient = useQueryClient();
 
@@ -241,31 +243,32 @@ export function useDeleteCategory() {
     mutationFn: (id: string) => marketplaceService.deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.categories() });
-      toast.success("Category deleted successfully!");
+      showSuccessToast("Category deleted successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to delete category: ${error.message}`);
-    },
+    onError: onMutationError("Failed to delete category"),
   });
 }
 
+/** Hook to get all marketplace tags. */
 export function useTags() {
   return useQuery({
     queryKey: marketplaceKeys.tags(),
     queryFn: async () => {
       try {
         const result = await marketplaceService.getTags();
-        const cats = Array.isArray(result) ? result : [];
-        return cats;
+        const tags = Array.isArray(result) ? result : [];
+        return tags;
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error("Failed to fetch tags:", error);
         return [];
       }
     },
-    staleTime: 1000 * 60 * 10,
+    ...QUERY_CONFIG.LONG,
   });
 }
 
+/** Hook to create a new tag. */
 export function useCreateTag() {
   const queryClient = useQueryClient();
 
@@ -273,14 +276,13 @@ export function useCreateTag() {
     mutationFn: (name: string) => marketplaceService.createTag(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.tags() });
-      toast.success("Tag created successfully!");
+      showSuccessToast("Tag created successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to create tag: ${error.message}`);
-    },
+    onError: onMutationError("Failed to create tag"),
   });
 }
 
+/** Hook to delete a tag. */
 export function useDeleteTag() {
   const queryClient = useQueryClient();
 
@@ -288,14 +290,16 @@ export function useDeleteTag() {
     mutationFn: (id: string) => marketplaceService.deleteTag(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: marketplaceKeys.tags() });
-      toast.success("Tag deleted successfully!");
+      showSuccessToast("Tag deleted successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to delete tag: ${error.message}`);
-    },
+    onError: onMutationError("Failed to delete tag"),
   });
 }
 
+/**
+ * Combined hook for marketplace management.
+ * Provides all marketplace CRUD operations in a single hook.
+ */
 export function useMarketplaceManager() {
   const createItem = useCreateMarketplaceItem();
   const updateItem = useUpdateMarketplaceItem();

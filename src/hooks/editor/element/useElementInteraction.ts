@@ -9,13 +9,17 @@
  */
 
 import React, { useCallback } from "react";
-import { useSelectionStore } from "@/globalstore/selection-store";
-import { useElementStore } from "@/globalstore/element-store";
+import { useInteractionSelectionState } from "@/globalstore/selectors/selection-selectors";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  PERMISSION_ERRORS,
+} from "@/lib/utils/errors/errorToast";
+import type { ResponsiveStyles } from "@/interfaces/elements.interface";
 
 /**
  * Handlers from a DnD implementation that can be merged into the event set.
@@ -93,13 +97,13 @@ export function useElementInteraction({
   isLocked = false,
   projectId = null,
 }: UseElementInteractionOptions = {}): UseElementInteractionReturn {
-  const { updateElement } = useElementStore();
+  const updateElement = useUpdateElement();
   const {
     hoveredElement,
     selectedElement,
     setSelectedElement,
     setHoveredElement,
-  } = useSelectionStore();
+  } = useInteractionSelectionState();
 
   const permissions = useEditorPermissions(projectId ?? null);
 
@@ -113,9 +117,7 @@ export function useElementInteraction({
       e.stopPropagation();
 
       if (!permissions.canEditElements) {
-        toast.error("Cannot edit elements - editor is in read-only mode", {
-          duration: 2000,
-        });
+        showErrorToast(PERMISSION_ERRORS.cannotEdit);
         return;
       }
 
@@ -189,9 +191,7 @@ export function useElementInteraction({
       }
 
       if (!permissions.canEditElements) {
-        toast.error("Cannot edit elements - editor is in read-only mode", {
-          duration: 2000,
-        });
+        showErrorToast(PERMISSION_ERRORS.cannotEdit);
         return;
       }
 
@@ -216,19 +216,13 @@ export function useElementInteraction({
         return {};
       }
       const merged: React.CSSProperties = {};
-      const styles = element.styles as any;
-      const breakpoints: (keyof typeof styles)[] = [
-        "default",
-        "sm",
-        "md",
-        "lg",
-        "xl",
-      ];
-      breakpoints.forEach((bp) => {
+      const styles = element.styles as ResponsiveStyles;
+      const breakpoints = ["default", "sm", "md", "lg", "xl"] as const;
+      for (const bp of breakpoints) {
         if (styles[bp]) {
           Object.assign(merged, styles[bp]);
         }
-      });
+      }
       return merged;
     },
     [],

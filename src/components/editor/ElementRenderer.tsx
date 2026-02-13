@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import { EditorElement } from "@/types/global.type";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
-import { getComponentMap } from "@/constants/elements";
+import { getComponentFactory } from "@/constants/elements";
 
 interface ElementRendererProps {
   element: EditorElement;
@@ -27,8 +27,28 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({ element, data }) => {
     data,
   };
 
-  const Component = getComponentMap(commonProps);
-  return Component ? <Component {...commonProps} /> : null;
+  const componentFactory = getComponentFactory(element.type);
+  const [Component, setComponent] =
+    React.useState<React.ComponentType<EditorComponentProps> | null>(null);
+
+  React.useEffect(() => {
+    if (componentFactory) {
+      componentFactory()
+        .then(setComponent)
+        .catch((err) => {
+          console.error(
+            `Failed to load component for type "${element.type}":`,
+            err,
+          );
+        });
+    }
+  }, [element.type, componentFactory]);
+
+  if (!Component) {
+    return null;
+  }
+
+  return <Component {...commonProps} />;
 };
 
 export default React.memo(

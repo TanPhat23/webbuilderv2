@@ -6,6 +6,8 @@ import type { EditorElement } from "@/types/global.type";
 import ElementItem from "./element-loader/ElementItem";
 import ElementReorderList from "./element-loader/ElementReorderList";
 import useElementDragHandlers from "@/hooks/editor/element/useElementDragHandlers";
+import { EditorFlagsProvider } from "./context/EditorFlagsContext";
+import { DragProvider } from "./context/DragContext";
 
 /**
  * ElementLoaderProps
@@ -15,11 +17,16 @@ import useElementDragHandlers from "@/hooks/editor/element/useElementDragHandler
  *  - `ElementItem` for per-element rendering & DnD UI
  *  - `ElementReorderList` for the reorderable list view
  *
- * This keeps the file maintainable and the responsibilities well scoped.
+ * Props drilling has been reduced by wrapping children in:
+ *  - `EditorFlagsProvider` — isReadOnly, isLocked, permissionsRole, iframeRef
+ *  - `DragProvider` — canDrag, isDraggingLocal, draggingElement, draggedOverElement, handlers
+ *
+ * `ElementItem` and `ElementReorderList` consume these via `useEditorFlags()` and
+ * `useDragContext()` hooks instead of receiving them as explicit props.
  */
 interface ElementLoaderProps {
   elements?: EditorElement[];
-  data?: any;
+  data?: Record<string, unknown>;
   isReadOnly?: boolean;
   isLocked?: boolean;
   enableReorder?: boolean;
@@ -65,6 +72,7 @@ export default function ElementLoader({
     [data],
   );
 
+  // Export mode: render elements without any editor wrappers
   if (isExport) {
     return (
       <>
@@ -75,41 +83,48 @@ export default function ElementLoader({
     );
   }
 
+  // Shared context values — provided once here instead of drilling through every child
+  const editorFlagsValue = {
+    isReadOnly,
+    isLocked,
+    permissionsRole: permissions?.role ?? null,
+    iframeRef,
+  };
+
+  const dragContextValue = {
+    canDrag,
+    isDraggingLocal,
+    draggingElement,
+    draggedOverElement,
+    handleDragStart,
+    handleDragEnd,
+    handleHover,
+    handleDrop,
+  };
+
   if (enableReorder && canDrag && items && items.length > 1) {
     return (
-      <ElementReorderList
-        items={items}
-        onReorder={handleReorder}
-        renderElement={renderElement}
-        isReadOnly={isReadOnly}
-        isLocked={isLocked}
-        iframeRef={iframeRef}
-        permissionsRole={permissions?.role ?? null}
-      />
+      <EditorFlagsProvider {...editorFlagsValue}>
+        <ElementReorderList
+          items={items}
+          onReorder={handleReorder}
+          renderElement={renderElement}
+        />
+      </EditorFlagsProvider>
     );
   }
 
   return (
-    <>
-      {items?.map((element: EditorElement) => (
-        <ElementItem
-          key={element.id}
-          element={element}
-          isReadOnly={isReadOnly}
-          isLocked={isLocked}
-          iframeRef={iframeRef}
-          renderElement={renderElement}
-          canDrag={canDrag}
-          isDraggingLocal={isDraggingLocal}
-          draggingElement={draggingElement}
-          draggedOverElement={draggedOverElement}
-          handleDragStart={handleDragStart}
-          handleDragEnd={handleDragEnd}
-          handleHover={handleHover}
-          handleDrop={handleDrop}
-          permissionsRole={permissions?.role ?? null}
-        />
-      ))}
-    </>
+    <EditorFlagsProvider {...editorFlagsValue}>
+      <DragProvider {...dragContextValue}>
+        {items?.map((element: EditorElement) => (
+          <ElementItem
+            key={element.id}
+            element={element}
+            renderElement={renderElement}
+          />
+        ))}
+      </DragProvider>
+    </EditorFlagsProvider>
   );
 }

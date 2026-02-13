@@ -3,18 +3,22 @@ import { useState, useEffect, useCallback } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useAddElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { usePageStore } from "@/globalstore/page-store";
 import { useProjectStore } from "@/globalstore/project-store";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
 import { customComps } from "@/lib/customcomponents/customComponents";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { SectionElement } from "@/interfaces/elements.interface";
 import type { Project } from "@/interfaces/project.interface";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/hooks";
-import { toast } from "sonner";
+import {
+  showErrorToast,
+  PERMISSION_ERRORS,
+} from "@/lib/utils/errors/errorToast";
 import { Page } from "@/interfaces/page.interface";
 
 export type Viewport = "mobile" | "tablet" | "desktop";
@@ -64,8 +68,8 @@ export const useEditor = (
   const isReadOnly = options?.isReadOnly ?? !permissions.canEditElements;
   const isLocked = options?.isLocked ?? false;
 
-  const { addElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const addElement = useAddElement();
+  const selectedElement = useSelectedElement();
   const { loadPages, setCurrentPage } = usePageStore();
   const { loadProject } = useProjectStore();
 
@@ -120,9 +124,7 @@ export const useEditor = (
   }, [project, loadProject, router]);
 
   const showReadOnlyError = useCallback(() => {
-    toast.error("Cannot add elements - editor is in read-only mode", {
-      duration: 2000,
-    });
+    showErrorToast(PERMISSION_ERRORS.cannotAdd);
   }, []);
 
   const canCreate = !isReadOnly && !isLocked && permissions.canCreateElements;
@@ -150,18 +152,17 @@ export const useEditor = (
       let newElement: EditorElement | undefined;
 
       if (elementType) {
-        newElement = elementHelper.createElement.create(
-          elementType as ElementType,
+        newElement = ElementFactory.getInstance().createElement({
+          type: elementType as ElementType,
           pageId,
-          "",
-        );
+        });
       } else if (customElement) {
         const customComp = customComps[parseInt(customElement, 10)];
         if (customComp) {
-          newElement = elementHelper.createElement.createFromTemplate(
-            customComp,
+          newElement = ElementFactory.getInstance().createElementFromTemplate({
+            element: customComp,
             pageId,
-          );
+          });
         }
       }
 
@@ -195,11 +196,10 @@ export const useEditor = (
       return;
     }
 
-    const newElement = elementHelper.createElement.create<SectionElement>(
-      "Section",
+    const newElement = ElementFactory.getInstance().createElement({
+      type: "Section",
       pageId,
-      "",
-    );
+    });
     if (newElement) addElement(newElement);
   }, [canCreate, showReadOnlyError, pageId, addElement]);
 
