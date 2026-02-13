@@ -34,7 +34,6 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   isReadOnly = false,
   isLocked = false,
 }) => {
-  const { updateElement } = useElementStore();
   const { setSelectedElement } = useSelectionStore();
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
   // Determine if operations are allowed

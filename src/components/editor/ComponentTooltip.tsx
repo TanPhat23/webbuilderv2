@@ -49,10 +49,6 @@ const componentInfo: Record<
   ElementType,
   { title: string; description: string }
 > = {
-  Base: {
-    title: "Base Container",
-    description: "Basic container element for grouping components",
-  },
   Text: {
     title: "Text",
     description: "Add text content to your page. Double-click to edit.",
@@ -127,21 +123,6 @@ const createMockElement = (type: ElementType): any => {
   };
 
   const mocks: Record<ElementType, any> = {
-    Base: {
-      ...base,
-      content: "Container",
-      styles: {
-        default: {
-          padding: "12px",
-          border: "2px dashed #60a5fa",
-          borderRadius: "6px",
-          backgroundColor: "#eff6ff",
-          color: "#2563eb",
-          fontSize: "11px",
-          textAlign: "center" as const,
-        },
-      },
-    },
     Text: {
       ...base,
       content: "Sample text content",
@@ -351,7 +332,6 @@ const createMockElement = (type: ElementType): any => {
 };
 
 const componentMap: Partial<Record<ElementType, React.ComponentType<any>>> = {
-  Base: BaseComponent,
   Text: BaseComponent,
   Button: ButtonComponent,
   Section: SectionComponent,

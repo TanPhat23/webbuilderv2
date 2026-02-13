@@ -10,6 +10,8 @@ import {
   Search,
   MessageSquare,
   MessageSquareOff,
+  Code,
+  PenTool,
 } from "lucide-react";
 
 // Types
@@ -30,9 +32,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-import ExportDialog from "../ExportDialog";
 import CollaborationButton from "./CollaborationButton";
 import CollaboratorIndicator from "./CollaboratorIndicator";
+import { useEditorContext } from "@/providers/editorprovider";
 import EventModeToggle from "../eventmode/EventModeToggle";
 import { PageNavigationCommand } from "./PageNavigationCommand";
 import CollaborationStatus from "./CollaborationStatus";
@@ -110,10 +112,24 @@ function ViewportSelector({
 }
 
 function ControlsGroup() {
+  const { editingMode, setEditingMode } = useEditorContext();
+
   return (
     <div className="flex items-center gap-2.5">
       <EventModeToggle />
-      <ExportDialog />
+      <Button
+        onClick={() =>
+          setEditingMode(editingMode === "visual" ? "code" : "visual")
+        }
+        className="h-8"
+      >
+        {editingMode === "visual" ? (
+          <PenTool className="w-4 h-4 mr-2" />
+        ) : (
+          <Code className="w-4 h-4 mr-2" />
+        )}
+        {editingMode.toUpperCase()[0] + editingMode.slice(1)} 
+      </Button>
     </div>
   );
 }

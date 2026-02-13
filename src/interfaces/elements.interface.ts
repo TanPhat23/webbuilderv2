@@ -30,8 +30,6 @@ export interface Element<
   eventWorkflowConnections?: string[];
 }
 
-export interface BaseElement extends Element<"Base"> {}
-
 export interface TextElement extends Element<"Text"> {}
 
 export interface ImageSettings {
@@ -177,7 +175,6 @@ export type EditorElement =
   | FrameElement
   | SectionElement
   | CarouselElement
-  | BaseElement
   | InputElement
   | ListElement
   | SelectElement

@@ -25,6 +25,7 @@ type EditorCanvasProps = {
   sendMessage?: (message: any) => boolean;
   isReadOnly?: boolean;
   isLocked?: boolean;
+  showAddSectionButton?: boolean;
   iframeRef?: React.RefObject<HTMLIFrameElement>;
 };
 
@@ -40,6 +41,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   sendMessage,
   isReadOnly = false,
   isLocked = false,
+  showAddSectionButton = true,
   iframeRef,
 }) => {
   const collab = useCollaborationOptional();
@@ -53,9 +55,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   // Assign the canvas ref to the collaboration provider for mouse tracking
   useEffect(() => {
     if (collab && canvasRef.current) {
-      // The collaboration provider's canvasRef is set externally;
-      // we sync our local ref into it so presence tracking works.
-      (collab.canvasRef as React.MutableRefObject<HTMLElement | null>).current =
+      (collab.canvasRef as React.RefObject<HTMLElement | null>).current =
         canvasRef.current;
     }
   }, [collab, canvasRef.current]);
@@ -200,7 +200,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
             iframeRef={iframeRef}
           />
         )}
-        {!selectedElement && (
+        {!selectedElement && showAddSectionButton && (
           <Button
             className="mb-4 w-full"
             onClick={addNewSection}

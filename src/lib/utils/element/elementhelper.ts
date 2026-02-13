@@ -10,6 +10,8 @@ import { reject, find } from "lodash";
 import { handleSwap } from "./handleSwap";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
 import React from "react";
+import { cn } from "@/lib/utils";
+import { twMerge } from "tailwind-merge";
 import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
@@ -248,7 +250,20 @@ const updateElementStyle = (
 ): void => {
   const currentStyles = element.styles || {};
   const newStyles = { ...currentStyles, [breakpoint]: styles };
-  updateElement(element.id, { styles: newStyles });
+
+  try {
+    const computedTailwind = computeTailwindFromStyles(newStyles);
+    const mergedTailwind = twMerge(
+      cn(element.tailwindStyles || "", computedTailwind),
+    );
+    updateElement(element.id, {
+      styles: newStyles,
+      tailwindStyles: mergedTailwind,
+    });
+  } catch (err) {
+    console.error("Failed to compute tailwind classes from styles:", err);
+    updateElement(element.id, { styles: newStyles });
+  }
 };
 
 export const elementHelper: ElementHelper = {

@@ -150,18 +150,7 @@ export const TypographyAccordion = ({
       updateElement,
     );
 
-    try {
-      const newTailwind = cn(
-        selectedElement.tailwindStyles,
-        elementHelper.computeTailwindFromStyles(newResponsiveStyles),
-      );
-      updateElement(selectedElement.id, { tailwindStyles: newTailwind });
-    } catch (err) {
-      console.error(
-        "Failed to compute tailwind classes from typography styles:",
-        err,
-      );
-    }
+    // Tailwind classes are now computed and persisted centrally by elementHelper.updateElementStyle.
   };
 
   if (!selectedElement) {

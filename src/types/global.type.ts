@@ -3,7 +3,6 @@ import {
   EDITABLE_ELEMENT_TYPES,
 } from "@/constants/elements";
 import {
-  BaseElement,
   ButtonElement,
   FormElement,
   FrameElement,
@@ -26,11 +25,14 @@ type ContainerElement =
   | SectionElement
   | FormElement
   | ListElement
+  | SelectElement
   | CarouselElement
-  | DataLoaderElement;
+  | DataLoaderElement
+  | CMSContentListElement
+  | CMSContentItemElement
+  | CMSContentGridElement;
 
 type EditorElement =
-  | BaseElement
   | FrameElement
   | ButtonElement
   | ImageElement
@@ -57,7 +59,6 @@ type ElementType =
   | "Section"
   | "Text"
   | "Carousel"
-  | "Base"
   | "Image"
   | "Link"
   | "DataLoader"

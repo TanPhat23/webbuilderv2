@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { useElementStore } from "@/globalstore/element-store";
@@ -14,6 +15,7 @@ import type { Project } from "@/interfaces/project.interface";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/hooks";
 import { toast } from "sonner";
+import { Page } from "@/interfaces/page.interface";
 
 export type Viewport = "mobile" | "tablet" | "desktop";
 
@@ -25,148 +27,171 @@ export interface UseEditorOptions {
   isLocked?: boolean;
 }
 
+export interface UseEditorReturn {
+  currentView: Viewport;
+  setCurrentView: Dispatch<SetStateAction<Viewport>>;
+  isDraggingOver: boolean;
+  isLoading: boolean;
+  selectedElement: EditorElement | undefined;
+  handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
+  addNewSection: () => void;
+  isReadOnly: boolean;
+  isLocked: boolean;
+  permissions: {
+    canCreateElements: boolean;
+    canEditElements: boolean;
+    canDeleteElements: boolean;
+    canReorderElements: boolean;
+  };
+  userId?: string;
+}
+
 export const useEditor = (
   id: string,
   pageId: string,
   options?: UseEditorOptions,
-) => {
+): UseEditorReturn => {
   const [currentView, setCurrentView] = useState<Viewport>("desktop");
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const router = useRouter();
   const { userId } = useAuth();
+  const effectiveUserId = userId ?? undefined;
 
-  // Get permissions from the hook
   const permissions = useEditorPermissions(id);
 
-  // Use passed options or fall back to permissions
   const isReadOnly = options?.isReadOnly ?? !permissions.canEditElements;
   const isLocked = options?.isLocked ?? false;
 
   const { addElement } = useElementStore();
   const { selectedElement } = useSelectionStore();
-  const { pages, loadPages, setCurrentPage } = usePageStore();
+  const { loadPages, setCurrentPage } = usePageStore();
   const { loadProject } = useProjectStore();
 
   const { data: projectPages, isLoading: isLoadingPages } = useProjectPages(id);
   const { data: project, isLoading: isLoadingProject } = useProject(id);
 
-  useEffect(() => {
-    if (projectPages && projectPages.length > 0) {
-      loadPages(projectPages);
+  // Helper: check if a DOM event target is within an existing canvas element
+  const isEventOverElement = useCallback((target: HTMLElement | null) => {
+    return !!(
+      target &&
+      typeof target.closest === "function" &&
+      target.closest("[data-element-id]")
+    );
+  }, []);
+
+  // Navigate to a default page within a project or choose provided page
+  const redirectToDefaultOrRequestedPage = useCallback(
+    (pagesList: Page[] | undefined) => {
+      if (!pagesList || pagesList.length === 0) return;
+      loadPages(pagesList);
+
       if (pageId) {
-        const page = projectPages.find((p) => p.Id === pageId);
-        if (page) {
-          setCurrentPage(page);
-        } else {
-          const defaultPage = projectPages.find((p) => p.Name === "");
-          if (defaultPage) {
-            router.push(`/editor/${id}?page=${defaultPage.Id}`);
-          } else {
-            router.push(`/editor/${id}`);
-          }
-        }
-      } else {
-        // No pageId provided, redirect to default page
-        const defaultPage = projectPages.find((p) => p.Name === "");
-        if (defaultPage) {
-          router.push(`/editor/${id}?page=${defaultPage.Id}`);
+        const found = pagesList.find((p) => p.Id === pageId);
+        if (found) {
+          setCurrentPage(found);
+          return;
         }
       }
-    }
+
+      const defaultPage = pagesList.find((p) => p.Name === "");
+      if (defaultPage) {
+        router.push(`/editor/${id}?page=${defaultPage.Id}`);
+      } else if (!pageId) {
+        router.push(`/editor/${id}`);
+      }
+    },
+    [loadPages, pageId, setCurrentPage, router, id],
+  );
+
+  useEffect(() => {
+    if (!projectPages || projectPages.length === 0) return;
+    redirectToDefaultOrRequestedPage(projectPages);
   }, [projectPages, loadPages, pageId, setCurrentPage, router, id]);
 
   useEffect(() => {
-    if (project) {
-      if (!project || project.deletedAt) {
-        router.push("/dashboard");
-        return;
-      }
-      loadProject(project as Project);
-    }
-  }, [project, loadProject]);
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    // If the drop occurs over an existing element in the canvas, allow the
-    // element-level handler to take precedence. Those handlers will call
-    // preventDefault() / stopPropagation() as needed.
-    const target = e.target as HTMLElement | null;
-    if (
-      target &&
-      typeof target.closest === "function" &&
-      target.closest("[data-element-id]")
-    ) {
+    if (!project) return;
+    if (project.deletedAt) {
+      router.push("/dashboard");
       return;
     }
+    loadProject(project as Project);
+  }, [project, loadProject, router]);
 
-    if (isReadOnly || isLocked || !permissions.canCreateElements) {
+  const showReadOnlyError = useCallback(() => {
+    toast.error("Cannot add elements - editor is in read-only mode", {
+      duration: 2000,
+    });
+  }, []);
+
+  const canCreate = !isReadOnly && !isLocked && permissions.canCreateElements;
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement | null;
+      if (isEventOverElement(target)) return;
+
+      if (!canCreate) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(false);
+        showReadOnlyError();
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
       setIsDraggingOver(false);
-      toast.error("Cannot add elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
 
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-    const elementType = e.dataTransfer.getData("elementType");
-    const customElement = e.dataTransfer.getData("customComponentName");
+      const elementType = e.dataTransfer.getData("elementType");
+      const customElement = e.dataTransfer.getData("customComponentName");
 
-    let newElement: EditorElement | undefined;
+      let newElement: EditorElement | undefined;
 
-    if (elementType) {
-      newElement = elementHelper.createElement.create(
-        elementType as ElementType,
-        pageId,
-        "",
-      );
-    } else if (customElement) {
-      const customComp = customComps[parseInt(customElement)];
-      if (customComp) {
-        newElement = elementHelper.createElement.createFromTemplate(
-          customComp,
+      if (elementType) {
+        newElement = elementHelper.createElement.create(
+          elementType as ElementType,
           pageId,
+          "",
         );
+      } else if (customElement) {
+        const customComp = customComps[parseInt(customElement, 10)];
+        if (customComp) {
+          newElement = elementHelper.createElement.createFromTemplate(
+            customComp,
+            pageId,
+          );
+        }
       }
-    }
 
-    if (!newElement) return;
-    addElement(newElement);
-  };
+      if (!newElement) return;
+      addElement(newElement);
+    },
+    [isEventOverElement, canCreate, pageId, addElement, showReadOnlyError],
+  );
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    // If the drag is currently over an existing element in the canvas,
-    // do not treat this as a canvas-level dragOver — allow element-level
-    // handlers to handle the event instead.
-    const target = e.target as HTMLElement | null;
-    if (
-      target &&
-      typeof target.closest === "function" &&
-      target.closest("[data-element-id]")
-    ) {
-      return;
-    }
+  const handleDragOver = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      const target = e.target as HTMLElement | null;
+      if (isEventOverElement(target)) return;
 
-    // Prevent drag over if read-only
-    if (isReadOnly || isLocked || !permissions.canCreateElements) {
-      return;
-    }
-    e.preventDefault();
-    setIsDraggingOver(true);
-  };
+      if (!canCreate) return;
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      setIsDraggingOver(true);
+    },
+    [isEventOverElement, canCreate],
+  );
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
-  };
+  }, []);
 
-  const addNewSection = () => {
-    if (isReadOnly || isLocked || !permissions.canCreateElements) {
-      toast.error("Cannot add elements - editor is in read-only mode", {
-        duration: 2000,
-      });
+  const addNewSection = useCallback(() => {
+    if (!canCreate) {
+      showReadOnlyError();
       return;
     }
 
@@ -176,9 +201,16 @@ export const useEditor = (
       "",
     );
     if (newElement) addElement(newElement);
-  };
+  }, [canCreate, showReadOnlyError, pageId, addElement]);
 
   const isLoading = isLoadingPages || isLoadingProject;
+
+  const permissionsSummary = {
+    canCreateElements: permissions.canCreateElements,
+    canEditElements: permissions.canEditElements,
+    canDeleteElements: permissions.canDeleteElements,
+    canReorderElements: permissions.canReorderElements,
+  };
 
   return {
     currentView,
@@ -192,12 +224,7 @@ export const useEditor = (
     addNewSection,
     isReadOnly,
     isLocked,
-    permissions: {
-      canCreateElements: permissions.canCreateElements,
-      canEditElements: permissions.canEditElements,
-      canDeleteElements: permissions.canDeleteElements,
-      canReorderElements: permissions.canReorderElements,
-    },
-    userId,
+    permissions: permissionsSummary,
+    userId: effectiveUserId,
   };
 };

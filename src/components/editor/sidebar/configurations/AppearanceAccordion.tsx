@@ -150,12 +150,6 @@ export const AppearanceAccordion = ({
       currentBreakpoint,
       updateElement,
     );
-    const newTailwind = cn(
-      selectedElement.tailwindStyles,
-      elementHelper.computeTailwindFromStyles(newResponsiveStyles),
-    );
-
-    updateElement(selectedElement.id, { tailwindStyles: newTailwind });
   };
 
   const [bgSelectValue, setBgSelectValue] = useState<string>(() => {
@@ -207,11 +201,10 @@ export const AppearanceAccordion = ({
   }
 
   return (
-    <AccordionItem value="appearance" >
+    <AccordionItem value="appearance">
       <AccordionTrigger className="text-sm">Appearance</AccordionTrigger>
-      <AccordionContent >
+      <AccordionContent>
         <Accordion
-      
           type="multiple"
           defaultValue={[
             "size",

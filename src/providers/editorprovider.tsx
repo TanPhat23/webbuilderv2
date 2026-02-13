@@ -30,6 +30,8 @@ interface EditorContextType {
   editor: EditorHookReturnType;
   mode: "editor" | "wireframe";
   setMode: (mode: "editor" | "wireframe") => void;
+  editingMode: "visual" | "code";
+  setEditingMode: (mode: "visual" | "code") => void;
   pageId: string;
 }
 
@@ -45,6 +47,8 @@ export function useEditorContext() {
 
 function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
   const { chatOpen } = useAiChat();
+  const { editingMode } = useEditorContext();
+  const showSidebars = editingMode !== "code";
 
   return (
     <SidebarProvider
@@ -57,14 +61,17 @@ function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
         } as React.CSSProperties
       }
     >
-      <EditorSideBar />
-      {chatOpen && <AIChatPanel />}
+      {showSidebars && <EditorSideBar />}
+      {showSidebars && chatOpen && <AIChatPanel />}
       {children}
     </SidebarProvider>
   );
 }
 
 function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
+  const { editingMode } = useEditorContext();
+  const showSidebars = editingMode !== "code";
+
   return (
     <SidebarProvider
       defaultOpen={true}
@@ -77,7 +84,7 @@ function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
       }
     >
       {children}
-      <LayoutSideBar />
+      {showSidebars && <LayoutSideBar />}
     </SidebarProvider>
   );
 }
@@ -139,6 +146,7 @@ export default function EditorProvider({
   const pageId = searchParams.get("page") || "";
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<"editor" | "wireframe">("editor");
+  const [editingMode, setEditingMode] = useState<"visual" | "code">("code");
 
   useEffect(() => {
     setIsMounted(true);
@@ -157,6 +165,8 @@ export default function EditorProvider({
     editor: editorData,
     mode,
     setMode,
+    editingMode,
+    setEditingMode,
     pageId,
   };
 

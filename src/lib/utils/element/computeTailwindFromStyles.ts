@@ -274,7 +274,11 @@ const isEmptyValue = (val: unknown): boolean =>
 
 function sanitizeForArbitrary(raw: string | number): string {
   const asStr = String(raw);
-  const cleaned = basicClean(asStr);
+  let cleaned = basicClean(asStr);
+
+  // Normalize spaces after commas so values like `var(--bg, #fff)` become `var(--bg,#fff)`
+  // This avoids unnecessary quoting when the only whitespace is after commas.
+  cleaned = cleaned.replace(/,\s+/g, ",");
 
   if (cleaned.length === 0) return "";
 
