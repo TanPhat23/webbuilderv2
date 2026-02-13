@@ -9,7 +9,6 @@
     "start": "bun next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "prepare": "husky install",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "postinstall": "prisma generate",

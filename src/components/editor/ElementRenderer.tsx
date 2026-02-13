@@ -34,7 +34,7 @@ const ElementRenderer: React.FC<ElementRendererProps> = ({ element, data }) => {
   React.useEffect(() => {
     if (componentFactory) {
       componentFactory()
-        .then(setComponent)
+        .then((comp) => setComponent(() => comp))
         .catch((err) => {
           console.error(
             `Failed to load component for type "${element.type}":`,
