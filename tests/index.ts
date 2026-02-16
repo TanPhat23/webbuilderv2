@@ -20,4 +20,5 @@
 export * from "./helpers";
 
 // Re-export setup utilities (if needed in test files)
-export { default as globalSetup } from "./setup/global";
+// Note: global setup is a side-effect module with no exports
+// Import it directly in test config: import "./setup/global"

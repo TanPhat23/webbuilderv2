@@ -58,7 +58,7 @@ export function createMockStoreWithSelectors<T extends Record<string, any>>(
       subscribers.add(callback);
       return () => subscribers.delete(callback);
     },
-    select: <S,>(selector: (state: T) => S) => {
+    select: <S>(selector: (state: T) => S) => {
       return (callback: (selected: S) => void) => {
         return subscribers.add(() => callback(selector(state)));
       };
@@ -116,10 +116,7 @@ export function verifyStoreMutation<T>(
         },
       };
     },
-    {} as Record<
-      string,
-      { changed: boolean; from: any; to: any }
-    >,
+    {} as Record<string, { changed: boolean; from: any; to: any }>,
   );
 
   return changes;
@@ -232,22 +229,24 @@ export function createMockPageStoreState() {
  * ```
  */
 export function createStoreActionTester<T>(getState: () => T) {
+  const testAction = async (
+    name: string,
+    action: () => void | Promise<void>,
+    verify: (state: T) => void,
+  ) => {
+    const stateBefore = getState();
+    try {
+      await action();
+      const stateAfter = getState();
+      verify(stateAfter);
+      return { name, success: true, error: null };
+    } catch (error) {
+      return { name, success: false, error };
+    }
+  };
+
   return {
-    testAction: async (
-      name: string,
-      action: () => void | Promise<void>,
-      verify: (state: T) => void,
-    ) => {
-      const stateBefore = getState();
-      try {
-        await action();
-        const stateAfter = getState();
-        verify(stateAfter);
-        return { name, success: true, error: null };
-      } catch (error) {
-        return { name, success: false, error };
-      }
-    },
+    testAction,
 
     testActions: async (
       tests: Array<{
@@ -258,7 +257,7 @@ export function createStoreActionTester<T>(getState: () => T) {
     ) => {
       const results = [];
       for (const test of tests) {
-        const result = await this.testAction(test.name, test.action, test.verify);
+        const result = await testAction(test.name, test.action, test.verify);
         results.push(result);
       }
       return results;
@@ -284,7 +283,7 @@ export function createStoreSnapshot<T>(state: T) {
 /**
  * Compares two store snapshots and returns differences.
  */
-export function compareSnapshots<T>(
+export function compareSnapshots<T extends Record<string, unknown>>(
   before: ReturnType<typeof createStoreSnapshot>,
   after: ReturnType<typeof createStoreSnapshot>,
 ): {
@@ -353,8 +352,7 @@ export function createSelectionStoreSelectors() {
     selectSelectedElement: (state: any) => state.selectedElement,
     selectSelectedElements: (state: any) => state.selectedElements,
     selectIsMultiSelect: (state: any) => state.isMultiSelectActive,
-    selectHasSelection: (state: any) =>
-      state.selectedElements.length > 0,
+    selectHasSelection: (state: any) => state.selectedElements.length > 0,
     selectSelectionCount: (state: any) => state.selectedElements.length,
   };
 }

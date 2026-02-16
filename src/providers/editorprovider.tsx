@@ -154,7 +154,7 @@ export default function EditorProvider({
   const pageId = searchParams.get("page") || "";
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<"editor" | "wireframe">("editor");
-  const [editingMode, setEditingMode] = useState<"visual" | "code">("code");
+  const [editingMode, setEditingMode] = useState<"visual" | "code">("visual");
 
   useEffect(() => {
     setIsMounted(true);

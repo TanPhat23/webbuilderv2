@@ -48,9 +48,9 @@ export function resetMockIds(): void {
 // Base Element Factory
 // ============================================================================
 
-interface MockElementOverrides extends Partial<EditorElement> {
+type MockElementOverrides = Partial<EditorElement> & {
   elements?: EditorElement[];
-}
+};
 
 /**
  * Base factory for creating mock elements.

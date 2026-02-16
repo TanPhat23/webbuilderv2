@@ -41,7 +41,7 @@ export function createMockComponentProps<T extends Record<string, any>>(
     className: "mock-component",
     style: {},
     ...overrides,
-  } as T;
+  } as any as T;
 }
 
 /**
@@ -134,7 +134,7 @@ export function createMockEventHandlers() {
  */
 export function createMockKeyboardEvent(
   key: string,
-  overrides: Partial<KeyboardEvent> = {},
+  overrides: Partial<React.KeyboardEvent> = {},
 ): Partial<React.KeyboardEvent> {
   return {
     key,
@@ -150,7 +150,7 @@ export function createMockKeyboardEvent(
  */
 export function createMockMouseEvent(
   type: string,
-  overrides: Partial<MouseEvent> = {},
+  overrides: Partial<React.MouseEvent> = {},
 ): Partial<React.MouseEvent> {
   return {
     type,
@@ -167,7 +167,7 @@ export function createMockMouseEvent(
  */
 export function createMockChangeEvent(
   value: string,
-  overrides: Partial<Event> = {},
+  overrides: Partial<React.ChangeEvent<HTMLInputElement>> = {},
 ): Partial<React.ChangeEvent<HTMLInputElement>> {
   return {
     target: {
@@ -235,10 +235,7 @@ export function createAsyncComponentTester() {
       return false;
     },
 
-    simulateAsyncData: async <T,>(
-      data: T,
-      delay = 100,
-    ): Promise<T> => {
+    simulateAsyncData: async <T,>(data: T, delay = 100): Promise<T> => {
       await new Promise((resolve) => setTimeout(resolve, delay));
       return data;
     },
@@ -252,9 +249,7 @@ export function createAsyncComponentTester() {
 /**
  * Creates a snapshot of rendered component output.
  */
-export function createComponentSnapshot(
-  element: HTMLElement,
-): {
+export function createComponentSnapshot(element: HTMLElement): {
   html: string;
   text: string;
   testId: string | null;
@@ -350,9 +345,7 @@ export function createUserInteractionSimulator() {
     },
 
     hoverElement: async (element: HTMLElement) => {
-      element.dispatchEvent(
-        new MouseEvent("mouseenter", { bubbles: true }),
-      );
+      element.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 0));
     },
 
@@ -373,7 +366,9 @@ export function createUserInteractionSimulator() {
 export function createComponentQueryHelper(container: HTMLElement) {
   return {
     findByTestId: (testId: string) => {
-      return container.querySelector(`[data-testid="${testId}"]`) as HTMLElement | null;
+      return container.querySelector(
+        `[data-testid="${testId}"]`,
+      ) as HTMLElement | null;
     },
 
     findAllByTestId: (testId: string) => {

@@ -1,18 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { beforeEach, vi } from "vitest";
 
-/**
- * Global test setup file for all vitest suites.
- * Centralizes mocking of external dependencies and global test configuration.
- */
-
-// ============================================================================
-// Environment Setup
-// ============================================================================
-
-// Ensure we're running in test mode
-process.env.NODE_ENV = "test";
-
 // ============================================================================
 // Mock next/navigation
 // ============================================================================
