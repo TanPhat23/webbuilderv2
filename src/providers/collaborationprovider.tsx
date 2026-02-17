@@ -25,97 +25,20 @@ import type { Page } from "@/interfaces/page.interface";
 import type {
   WSCollabState,
   WSRoomState,
-  WSConnectionState,
   CollaborationContextValue,
   WSCollaborationConfig,
   RemotePresence,
-  SyncResponsePayload,
-  ElementCreateBroadcastPayload,
-  ElementUpdateBroadcastPayload,
-  ElementMoveBroadcastPayload,
-  ElementDeleteBroadcastPayload,
-  ErrorPayload,
   PresenceBroadcastPayload,
-  WSEnvelope,
 } from "@/interfaces/websocket";
 
-// ============================================================================
-// Constants
-// ============================================================================
 
 const DEFAULT_WS_URL = "ws://localhost:8080";
 const PRESENCE_SEND_THROTTLE_MS = 50;
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-
-/**
- * Recursively find and update/insert an element in a flat or nested tree.
- */
-function upsertElement(
-  elements: EditorElement[],
-  updated: EditorElement,
-): EditorElement[] {
-  let found = false;
-
-  const walk = (els: EditorElement[]): EditorElement[] =>
-    els.map((el): EditorElement => {
-      if (el.id === updated.id) {
-        found = true;
-        return { ...el, ...updated } as EditorElement;
-      }
-      if ("elements" in el && Array.isArray((el as any).elements)) {
-        return {
-          ...el,
-          elements: walk((el as any).elements),
-        } as EditorElement;
-      }
-      return el;
-    });
-
-  const result = walk(elements);
-  if (!found) {
-    // New element — append at root (parent resolution happens via parentId)
-    return [...result, updated];
-  }
-  return result;
-}
-
-/**
- * Recursively remove an element by ID.
- */
-function removeElement(elements: EditorElement[], id: string): EditorElement[] {
-  return elements
-    .filter((el) => el.id !== id)
-    .map((el): EditorElement => {
-      if ("elements" in el && Array.isArray((el as any).elements)) {
-        return {
-          ...el,
-          elements: removeElement((el as any).elements, id),
-        } as EditorElement;
-      }
-      return el;
-    });
-}
-
-// ============================================================================
-// Context
-// ============================================================================
 
 const CollaborationContext = createContext<CollaborationContextValue | null>(
   null,
 );
 
-// ============================================================================
-// Hooks
-// ============================================================================
-
-/**
- * Hook to consume the collaboration context.
- * Must be used within a `<CollaborationProvider>`.
- */
 export function useCollaboration(): CollaborationContextValue {
   const context = useContext(CollaborationContext);
   if (!context) {
@@ -126,17 +49,10 @@ export function useCollaboration(): CollaborationContextValue {
   return context;
 }
 
-/**
- * Optional hook that returns null when used outside a CollaborationProvider.
- * Useful for components that may or may not be rendered inside the provider.
- */
 export function useCollaborationOptional(): CollaborationContextValue | null {
   return useContext(CollaborationContext);
 }
 
-// ============================================================================
-// Provider Component
-// ============================================================================
 
 interface CollaborationProviderProps {
   children: React.ReactNode;
@@ -211,14 +127,11 @@ export default function CollaborationProvider({
     if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
       return;
 
-    // Setup a local Y.Doc and optional IndexedDB persistence (client-only).
     const ydoc = new Y.Doc();
     let persistence: IndexeddbPersistence | null = null;
     try {
       persistence = new IndexeddbPersistence(pageId, ydoc);
     } catch {
-      // IndexedDB may not be available in all environments (e.g., some tests).
-      // Fall back to in-memory Y.Doc.
       persistence = null;
     }
 

@@ -44,3 +44,6 @@ next-env.d.ts
 
 #chat context
 repomix-output.md
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

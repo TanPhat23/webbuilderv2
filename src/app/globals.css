@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@clerk/themes/shadcn.css";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.2077 0.0398 265.7549);
