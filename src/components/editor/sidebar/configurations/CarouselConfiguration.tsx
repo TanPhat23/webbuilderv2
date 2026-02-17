@@ -13,8 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import {
   CarouselElement,
   CarouselSettings,
@@ -22,14 +22,13 @@ import {
 import { Label } from "@radix-ui/react-label";
 
 export default function CarouselConfigurationAccordion() {
-  const { updateElement } = useElementStore<CarouselElement>();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
 
   if (!selectedElement || selectedElement.type !== "Carousel") {
     return null;
   }
-  const settings: CarouselSettings =
-    (selectedElement as CarouselElement).settings || {};
+  const settings = (selectedElement as CarouselElement).settings || {};
 
   // Handler for text inputs and switches
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

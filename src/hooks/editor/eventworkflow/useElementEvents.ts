@@ -13,9 +13,9 @@ import {
   EventExecutionContext,
 } from "@/interfaces/events.interface";
 import { eventExecutor } from "@/lib/events/eventExecutor";
-import { useEventModeStore } from "@/globalstore/eventmodestore";
-import { useElementEventWorkflows } from "./useElementEventWorkflows";
-import { useEventWorkflows } from "./useEventWorkflows";
+import { useEventModeStore } from "@/globalstore/event-mode-store";
+import { useElementConnections } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
+import { useEventWorkflows } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { transformWorkflowToEventHandlers } from "@/lib/utils/workflow/workflowTransformer";
 
 interface UseElementEventsOptions {
@@ -43,8 +43,8 @@ export function useElementEvents(options: UseElementEventsOptions) {
   // Get event mode state
   const { isEventModeEnabled, isElementEventsDisabled } = useEventModeStore();
 
-  // Fetch workflow connections and workflows
-  const { connections } = useElementEventWorkflows({ elementId });
+  // React Query hooks handle fetching, caching, stale-time, and deduplication
+  const { data: connections = [] } = useElementConnections(elementId);
   const { data: workflows = [] } = useEventWorkflows(projectId || "");
 
   // Determine if events should be active

@@ -1,7 +1,7 @@
 "use client";
 
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useDragAndSelectionState } from "@/globalstore/selectors/selection-selectors";
 import { useElementHandler } from "@/hooks";
 import { useResizeHandler } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,10 @@ import {
   type ResizeDirection,
   directionalClasses,
   getResizeHandles,
-} from "@/constants/direciton";
+} from "@/constants/direction";
 import ResizeTooltip from "./ResizeTooltip";
 import { ElementCommentButton } from "@/components/editor/comments/ElementCommentButton";
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
 import { useEditorPermissions } from "@/hooks/editor/useEditorPermissions";
 
 interface ResizeHandlerProps {
@@ -473,9 +473,9 @@ export default function ResizeHandler({
   iframeRef,
 }: ResizeHandlerProps) {
   const targetRef = useRef<HTMLDivElement>(null);
-  const { updateElement } = useElementStore();
+  const updateElement = useUpdateElement();
   const { draggedOverElement, selectedElement, hoveredElement } =
-    useSelectionStore();
+    useDragAndSelectionState();
   const { handleDoubleClick } = useElementHandler();
   const permissions = useEditorPermissions();
   const canResize = !isReadOnly && !isLocked && permissions.canEditElements;

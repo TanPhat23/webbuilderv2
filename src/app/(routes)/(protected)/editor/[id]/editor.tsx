@@ -1,25 +1,19 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React from "react";
 import EditorHeader from "@/components/editor/editor/EditorHeader";
 import PreviewContainer from "@/components/editor/editor/PreviewContainer";
 import EditorCanvas from "@/components/editor/editor/EditorCanvas";
-import { useEditor } from "@/hooks";
-import { useAuth } from "@clerk/nextjs";
-import * as Y from "yjs";
+import CodeSplit from "@/components/editor/editor/CodeSplit";
+import { useEditorContext } from "@/providers/editorprovider";
 
 type EditorProps = {
   id: string;
   pageId: string;
 };
 
-export default function Editor({ id, pageId }: EditorProps) {
-  const { userId } = useAuth();
-  const [isMounted, setIsMounted] = useState(false);
-  const effectiveUserId = userId || "guest";
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+export default function Editor({ id }: EditorProps) {
+  const { editor, userId, editingMode } = useEditorContext();
 
   const {
     currentView,
@@ -33,15 +27,49 @@ export default function Editor({ id, pageId }: EditorProps) {
     addNewSection,
     isReadOnly,
     isLocked,
-    collab,
-  } = useEditor(id, pageId, {
-    enableCollab: isMounted && !!effectiveUserId,
-    userId: effectiveUserId,
-  });
+  } = editor;
 
-  // Extract Yjs-specific properties
-  const ydoc = collab.ydoc as Y.Doc | null;
-  const provider = collab.provider;
+  const effectiveUserId = userId ?? "guest";
+
+  const baseCanvasProps = {
+    isDraggingOver,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    isLoading,
+    selectedElement: selectedElement ?? null,
+    addNewSection,
+    userId: effectiveUserId,
+  } as const;
+
+  const renderCanvas = (
+    overrides?: Partial<React.ComponentProps<typeof EditorCanvas>>,
+  ) => <EditorCanvas {...baseCanvasProps} {...overrides} />;
+
+  const isCodeMode = editingMode === "code";
+
+  function PreviewChild({
+    iframeRef,
+  }: {
+    iframeRef?: React.RefObject<HTMLIFrameElement>;
+  }) {
+    return (
+      <div className="h-full w-full transition-opacity duration-200 ease-in-out">
+        {renderCanvas({
+          iframeRef,
+          isReadOnly: isReadOnly || isCodeMode,
+          isLocked: isLocked || isCodeMode,
+          showAddSectionButton: !isCodeMode,
+        })}
+      </div>
+    );
+  }
+
+  const previewContent = (
+    <PreviewContainer currentView={currentView} isLoading={isLoading}>
+      <PreviewChild />
+    </PreviewContainer>
+  );
 
   return (
     <div className="flex-1 w-full h-full flex flex-col bg-background text-foreground relative">
@@ -49,27 +77,8 @@ export default function Editor({ id, pageId }: EditorProps) {
         currentView={currentView}
         setCurrentView={setCurrentView}
         projectId={id}
-        isConnected={collab.isConnected}
-        isSynced={collab.isSynced}
-        ydoc={ydoc}
-        collabType={collab.type}
       />
-      <PreviewContainer currentView={currentView} isLoading={isLoading}>
-        <EditorCanvas
-          isDraggingOver={isDraggingOver}
-          handleDrop={handleDrop}
-          handleDragOver={handleDragOver}
-          handleDragLeave={handleDragLeave}
-          isLoading={isLoading}
-          selectedElement={selectedElement || null}
-          addNewSection={addNewSection}
-          userId={effectiveUserId}
-          isReadOnly={isReadOnly}
-          isLocked={isLocked}
-          ydoc={ydoc}
-          provider={provider}
-        />
-      </PreviewContainer>
+      {isCodeMode ? <CodeSplit canvas={previewContent} /> : previewContent}
     </div>
   );
 }

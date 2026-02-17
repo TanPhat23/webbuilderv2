@@ -16,7 +16,7 @@ import { ArrowLeft, Check, Loader2, Sparkles, Menu, X, AlertCircle, User, Layout
 import { pricingPlans, getNumericPrice, requiresAuthentication, type PricingPlan } from "@/constants/pricing"
 import type { BillingPeriod, PlanId } from "@/interfaces/subscription.interface"
 import Link from "next/link"
-import ThemeSwitcher from "@/components/ThemeSwticher"
+import ThemeSwitcher from "@/components/ThemeSwitcher"
 import { useSubscriptionStatus, useCreatePayment, useCancelSubscription } from "@/hooks/subscription/useSubscription"
 import { toast } from "sonner"
 

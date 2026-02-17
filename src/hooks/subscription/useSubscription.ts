@@ -1,26 +1,35 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { subscriptionService } from '@/services/subscription';
-import type { SubscriptionStatus, CreatePaymentRequest } from '@/interfaces/subscription.interface';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { subscriptionService } from "@/services/subscription";
+import type {
+  SubscriptionStatus,
+  CreatePaymentRequest,
+} from "@/interfaces/subscription.interface";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
 
+/** Hook to get the current user's subscription status. */
 export function useSubscriptionStatus() {
   return useQuery<SubscriptionStatus>({
-    queryKey: ['subscription-status'],
+    queryKey: ["subscription-status"],
     queryFn: async () => {
       return subscriptionService.getSubscriptionStatus();
     },
   });
 }
 
+/** Hook to get all subscriptions. */
 export function useAllSubscriptions() {
   return useQuery({
-    queryKey: ['all-subscriptions'],
+    queryKey: ["all-subscriptions"],
     queryFn: async () => {
       return subscriptionService.getAllSubscriptions();
     },
   });
 }
 
+/** Hook to create a payment and redirect to VNPay. */
 export function useCreatePayment() {
   const queryClient = useQueryClient();
 
@@ -33,22 +42,19 @@ export function useCreatePayment() {
       window.location.href = data.paymentUrl;
     },
     onError: (error: Error) => {
-      if (error.message.includes('đã có gói đăng ký')) {
-        toast.error('Bạn đã có gói đăng ký này', {
-          description: 'Vui lòng chọn gói khác hoặc đợi gói hiện tại hết hạn.',
-        });
+      if (error.message.includes("đã có gói đăng ký")) {
+        showErrorToast("Bạn đã có gói đăng ký này");
       } else {
-        toast.error('Không thể tạo thanh toán', {
-          description: error.message,
-        });
+        showErrorToast(`Không thể tạo thanh toán: ${error.message}`);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
     },
   });
 }
 
+/** Hook to cancel a subscription. */
 export function useCancelSubscription() {
   const queryClient = useQueryClient();
 
@@ -57,18 +63,14 @@ export function useCancelSubscription() {
       return subscriptionService.cancelSubscription({ subscriptionId });
     },
     onSuccess: () => {
-      toast.success('Hủy subscription thành công', {
-        description: 'Bạn đã hủy gói đăng ký. Bạn có thể đăng ký gói mới bất cứ lúc nào.',
-      });
+      showSuccessToast("Hủy subscription thành công");
     },
     onError: (error: Error) => {
-      toast.error('Không thể hủy subscription', {
-        description: error.message,
-      });
+      showErrorToast(`Không thể hủy subscription: ${error.message}`);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['subscription-status'] });
-      queryClient.invalidateQueries({ queryKey: ['user-plan'] });
+      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      queryClient.invalidateQueries({ queryKey: ["user-plan"] });
     },
   });
 }

@@ -213,17 +213,17 @@ export const useCMSManager = () => {
   });
 
   // Handlers
-  const handleCreateType = (data: any) => {
+  const handleCreateType = (data: ContentTypeFormValues) => {
     createTypeMutation.mutate(data);
   };
 
-  const handleCreateField = (data: any) => {
+  const handleCreateField = (data: ContentFieldFormValues) => {
     if (selectedTypeId) {
       createFieldMutation.mutate({ contentTypeId: selectedTypeId, data });
     }
   };
 
-  const handleCreateItem = (data: any) => {
+  const handleCreateItem = (data: ContentItemFormValues) => {
     if (selectedTypeId) {
       createItemMutation.mutate({ contentTypeId: selectedTypeId, data });
     }

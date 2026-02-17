@@ -14,7 +14,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ElementComment } from "@/interfaces/elementcomment.interface";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useElements } from "@/globalstore/selectors/element-selectors";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { CommentCard } from "./CommentCard";
 
@@ -50,7 +50,7 @@ export function ElementCommentGroup({
   onElementSelect,
 }: ElementCommentGroupProps) {
   const { user } = useUser();
-  const { elements } = useElementStore();
+  const elements = useElements();
   const [isOpen, setIsOpen] = useState(true);
 
   const element = elementHelper.findById(elements, elementId);

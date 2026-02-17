@@ -86,12 +86,12 @@ export type ModelName = (typeof ModelName)[keyof typeof ModelName]
  * Enums
  */
 
-export const TransactionIsolationLevel = {
+export const TransactionIsolationLevel = runtime.makeStrictEnum({
   ReadUncommitted: 'ReadUncommitted',
   ReadCommitted: 'ReadCommitted',
   RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
-} as const
+} as const)
 
 export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof typeof TransactionIsolationLevel]
 
@@ -102,13 +102,13 @@ export const ElementScalarFieldEnum = {
   Id: 'Id',
   Name: 'Name',
   Order: 'Order',
-  IsLocked: 'IsLocked',
   ParentId: 'ParentId',
   Src: 'Src',
   Styles: 'Styles',
   TailwindStyles: 'TailwindStyles',
   Type: 'Type',
-  PageId: 'PageId'
+  PageId: 'PageId',
+  IsLocked: 'IsLocked'
 } as const
 
 export type ElementScalarFieldEnum = (typeof ElementScalarFieldEnum)[keyof typeof ElementScalarFieldEnum]
@@ -163,10 +163,11 @@ export const EventWorkflowScalarFieldEnum = {
   ProjectId: 'ProjectId',
   Name: 'Name',
   Description: 'Description',
-  CanvasData: 'CanvasData',
+  Handlers: 'Handlers',
   Enabled: 'Enabled',
   CreatedAt: 'CreatedAt',
-  UpdatedAt: 'UpdatedAt'
+  UpdatedAt: 'UpdatedAt',
+  CanvasData: 'CanvasData'
 } as const
 
 export type EventWorkflowScalarFieldEnum = (typeof EventWorkflowScalarFieldEnum)[keyof typeof EventWorkflowScalarFieldEnum]
@@ -286,14 +287,14 @@ export const MarketplaceItemScalarFieldEnum = {
   PageCount: 'PageCount',
   Downloads: 'Downloads',
   Likes: 'Likes',
-  Views: 'Views',
   AuthorId: 'AuthorId',
   AuthorName: 'AuthorName',
   Verified: 'Verified',
   CreatedAt: 'CreatedAt',
   UpdatedAt: 'UpdatedAt',
   DeletedAt: 'DeletedAt',
-  ProjectId: 'ProjectId'
+  ProjectId: 'ProjectId',
+  Views: 'Views'
 } as const
 
 export type MarketplaceItemScalarFieldEnum = (typeof MarketplaceItemScalarFieldEnum)[keyof typeof MarketplaceItemScalarFieldEnum]
@@ -372,9 +373,9 @@ export const InvitationScalarFieldEnum = {
   Role: 'Role',
   Token: 'Token',
   ExpiresAt: 'ExpiresAt',
-  Status: 'Status',
   CreatedAt: 'CreatedAt',
-  AcceptedAt: 'AcceptedAt'
+  AcceptedAt: 'AcceptedAt',
+  Status: 'Status'
 } as const
 
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
@@ -467,15 +468,15 @@ export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
 export const NullableJsonNullValueInput = {
-  DbNull: 'DbNull',
-  JsonNull: 'JsonNull'
+  DbNull: DbNull,
+  JsonNull: JsonNull
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const JsonNullValueInput = {
-  JsonNull: 'JsonNull'
+  JsonNull: JsonNull
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
@@ -490,9 +491,9 @@ export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode]
 
 
 export const JsonNullValueFilter = {
-  DbNull: 'DbNull',
-  JsonNull: 'JsonNull',
-  AnyNull: 'AnyNull'
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
 } as const
 
 export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]

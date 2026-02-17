@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue } from "react";
 import { userService } from "@/services/user";
 import type { User } from "@/services/user";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
 
 export const userKeys = {
   all: ["users"] as const,
@@ -17,6 +18,17 @@ export const userKeys = {
     [...userKeys.all, "username", username] as const,
 };
 
+/**
+ * Hook to search users by query string.
+ *
+ * Uses `useDeferredValue` to debounce the search query and prevent
+ * excessive API calls while the user is typing.
+ *
+ * @param query   - The search string.
+ * @param enabled - Whether the query should be enabled (default: true).
+ * @param limit   - Maximum number of results (default: 20).
+ * @param offset  - Pagination offset (default: 0).
+ */
 export function useSearchUsers(
   query: string,
   enabled = true,
@@ -38,10 +50,16 @@ export function useSearchUsers(
       return result;
     },
     enabled: !!debouncedQuery.trim() && enabled,
-    staleTime: 1000 * 60 * 5,
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
+/**
+ * Hook to get a user by their email address.
+ *
+ * @param email   - The email to look up.
+ * @param enabled - Whether the query should be enabled (default: true).
+ */
 export function useUserByEmail(email: string, enabled = true) {
   return useQuery({
     queryKey: userKeys.byEmail(email),
@@ -50,10 +68,16 @@ export function useUserByEmail(email: string, enabled = true) {
       return await userService.getUserByEmail(email);
     },
     enabled: !!email && enabled,
-    staleTime: 1000 * 60 * 5,
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
+/**
+ * Hook to get a user by their username.
+ *
+ * @param username - The username to look up.
+ * @param enabled  - Whether the query should be enabled (default: true).
+ */
 export function useUserByUsername(username: string, enabled = true) {
   return useQuery({
     queryKey: userKeys.byUsername(username),
@@ -62,6 +86,6 @@ export function useUserByUsername(username: string, enabled = true) {
       return await userService.getUserByUsername(username);
     },
     enabled: !!username && enabled,
-    staleTime: 1000 * 60 * 5,
+    ...QUERY_CONFIG.DEFAULT,
   });
 }

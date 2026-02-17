@@ -13,9 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
-import { ImageElement } from "@/interfaces/elements.interface";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import React, { ChangeEvent, useState, useRef } from "react";
 import { imageService } from "@/services/image";
 import { toast } from "sonner";
@@ -23,8 +22,8 @@ import { Upload, Link2, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const ImageConfiguration = () => {
-  const { updateElement } = useElementStore<ImageElement>();
-  const { selectedElement } = useSelectionStore<ImageElement>();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,7 +49,9 @@ export const ImageConfiguration = () => {
     });
   };
 
-  const handleObjectFitChange = (value: "cover" | "contain" | "fill" | "none" | "scale-down") => {
+  const handleObjectFitChange = (
+    value: "cover" | "contain" | "fill" | "none" | "scale-down",
+  ) => {
     updateElement(selectedElement.id, {
       settings: {
         ...selectedElement.settings,
@@ -97,7 +98,7 @@ export const ImageConfiguration = () => {
     setIsUploading(true);
     try {
       const response = await imageService.uploadImage(file, file.name);
-      
+
       updateElement(selectedElement.id, {
         src: response.imageLink,
         name: response.imageName || file.name,
@@ -215,11 +216,21 @@ export const ImageConfiguration = () => {
               <SelectValue placeholder="Select object fit" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="cover" className="text-xs">Cover</SelectItem>
-              <SelectItem value="contain" className="text-xs">Contain</SelectItem>
-              <SelectItem value="fill" className="text-xs">Fill</SelectItem>
-              <SelectItem value="none" className="text-xs">None</SelectItem>
-              <SelectItem value="scale-down" className="text-xs">Scale Down</SelectItem>
+              <SelectItem value="cover" className="text-xs">
+                Cover
+              </SelectItem>
+              <SelectItem value="contain" className="text-xs">
+                Contain
+              </SelectItem>
+              <SelectItem value="fill" className="text-xs">
+                Fill
+              </SelectItem>
+              <SelectItem value="none" className="text-xs">
+                None
+              </SelectItem>
+              <SelectItem value="scale-down" className="text-xs">
+                Scale Down
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -233,8 +244,12 @@ export const ImageConfiguration = () => {
               <SelectValue placeholder="Select loading" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="lazy" className="text-xs">Lazy</SelectItem>
-              <SelectItem value="eager" className="text-xs">Eager</SelectItem>
+              <SelectItem value="lazy" className="text-xs">
+                Lazy
+              </SelectItem>
+              <SelectItem value="eager" className="text-xs">
+                Eager
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -248,9 +263,15 @@ export const ImageConfiguration = () => {
               <SelectValue placeholder="Select decoding" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="async" className="text-xs">Async</SelectItem>
-              <SelectItem value="sync" className="text-xs">Sync</SelectItem>
-              <SelectItem value="auto" className="text-xs">Auto</SelectItem>
+              <SelectItem value="async" className="text-xs">
+                Async
+              </SelectItem>
+              <SelectItem value="sync" className="text-xs">
+                Sync
+              </SelectItem>
+              <SelectItem value="auto" className="text-xs">
+                Auto
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -265,7 +286,9 @@ export const ImageConfiguration = () => {
                 src={src}
                 alt={alt || "Preview"}
                 className="w-full h-full"
-                style={{ objectFit: objectFit as React.CSSProperties["objectFit"] }}
+                style={{
+                  objectFit: objectFit as React.CSSProperties["objectFit"],
+                }}
               />
             </div>
           </div>

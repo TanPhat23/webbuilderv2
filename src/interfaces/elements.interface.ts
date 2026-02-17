@@ -1,69 +1,38 @@
-import { EditorElement, ElementType } from "@/types/global.type";
-import { ValidationRule } from "./validate.interface";
-import { EmblaOptionsType } from "embla-carousel";
-import { ElementEvents } from "./events.interface";
+import { ElementType } from "@/types/global.type";
+import { CSSProperties } from "react";
+import type { EmblaOptionsType } from "embla-carousel";
+import { ElementEvents } from "@/interfaces/events.interface";
+import { ValidationRule } from "@/interfaces/validate.interface";
 
-type CSSStyles = React.CSSProperties;
+export type CSSStyles = CSSProperties;
+export type Breakpoint = "default" | "sm" | "md" | "lg" | "xl";
+export type ResponsiveStyles = Partial<
+  Record<Breakpoint | string, CSSProperties>
+>;
 
-type ResponsiveStyles = {
-  default?: React.CSSProperties;
-  sm?: React.CSSProperties;
-  md?: React.CSSProperties;
-  lg?: React.CSSProperties;
-  xl?: React.CSSProperties;
-};
-
-// Interface from
-
-interface Element<Settings = undefined> {
-  type: ElementType;
-  id: string;
+export interface Element<
+  Type extends ElementType = ElementType,
+  Settings extends Record<string, any> = Record<string, any>,
+> extends Partial<React.HTMLAttributes<HTMLElement>> {
+  readonly id: string;
+  readonly type: Type;
   content: string;
   name?: string;
   styles?: ResponsiveStyles;
   tailwindStyles?: string;
-  src?: string;
   href?: string;
+  src?: string;
   parentId?: string;
-  pageId: string;
+  readonly pageId: string;
   settings?: Settings | null;
   order?: number;
-  events?: ElementEvents; // Direct event handlers for actions
-  eventWorkflowConnections?: string[]; // Connection IDs linking to backend ElementEventWorkflow records
+  events?: ElementEvents;
+  eventWorkflowConnections?: string[];
 }
 
-interface BaseElement extends Element {}
+export interface TextElement extends Element<"Text"> {}
 
-interface TextElement extends Element<void> {
-  type: "Text";
-}
-
-interface FrameElement extends Element<void> {
-  elements: EditorElement[];
-}
-
-interface SectionElement extends Element<void> {
-  elements: EditorElement[];
-}
-
-interface CarouselSettings extends EmblaOptionsType {
-  withNavigation?: boolean;
-  autoplay?: boolean;
-  autoplaySpeed?: number;
-  slidesToShow?: number;
-  slidesToScroll?: number;
-  breakpoints?: Record<string, Partial<EmblaOptionsType>>;
-}
-
-interface CarouselElement extends Element<CarouselSettings> {
-  elements: EditorElement[];
-}
-
-interface ButtonElement extends Element<void> {
-  element?: FrameElement;
-}
-
-interface ImageSettings {
+export interface ImageSettings {
   objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
   loading?: "lazy" | "eager";
   decoding?: "async" | "sync" | "auto";
@@ -71,11 +40,19 @@ interface ImageSettings {
   srcset?: string;
 }
 
-interface ImageElement extends Element<ImageSettings> {
-  type: "Image";
+export interface ImageElement extends Element<"Image", ImageSettings> {
+  src?: string;
 }
 
-interface InputSettings {
+export interface LinkElement extends Element<"Link"> {
+  href?: string;
+}
+
+export interface ButtonElement extends Element<"Button"> {
+  href?: string;
+}
+
+export interface InputSettings {
   name?: string;
   type?: "text" | "email" | "password" | "number" | "tel" | "url" | "textarea";
   placeholder?: string;
@@ -89,17 +66,29 @@ interface InputSettings {
   autoComplete?: string;
   validateRules?: ValidationRule[];
 }
-interface InputElement extends Element<InputSettings> {}
 
-interface ListElement extends Element<void> {
+export interface InputElement extends Element<"Input", InputSettings> {}
+
+export interface ListElement extends Element<"List"> {
   elements: EditorElement[];
 }
 
-interface SelectElement extends Element<Partial<HTMLSelectElement>> {
+export interface SelectElement extends Element<
+  "Select",
+  Partial<HTMLSelectElement>
+> {
   elements: EditorElement[];
 }
 
-interface FormSettings {
+export interface FrameElement extends Element<"Frame"> {
+  elements: EditorElement[];
+}
+
+export interface SectionElement extends Element<"Section"> {
+  elements: EditorElement[];
+}
+
+export interface FormSettings {
   action?: string;
   method?: "get" | "post";
   autoComplete?: "on" | "off";
@@ -114,23 +103,11 @@ interface FormSettings {
   acceptCharset?: string;
 }
 
-interface FormElement extends Element<FormSettings> {
+export interface FormElement extends Element<"Form", FormSettings> {
   elements: EditorElement[];
 }
 
-interface DataLoaderSettings {
-  apiUrl: string;
-  method?: "GET" | "POST" | "PUT" | "DELETE";
-  headers?: Record<string, string>;
-  body?: string;
-  authToken?: string;
-}
-
-interface DataLoaderElement extends Element<DataLoaderSettings> {
-  elements: EditorElement[];
-}
-
-interface CMSContentSettings {
+export interface CMSContentSettings {
   contentTypeId?: string;
   displayMode?: "list" | "grid" | "single";
   limit?: number;
@@ -141,42 +118,75 @@ interface CMSContentSettings {
   filterBy?: Record<string, any>;
 }
 
-interface CMSContentListElement extends Element<CMSContentSettings> {
+export interface CMSContentListElement extends Element<
+  "CMSContentList",
+  CMSContentSettings
+> {
   elements: EditorElement[]; // Template for each item
 }
 
-interface CMSContentItemElement extends Element<CMSContentSettings> {
+export interface CMSContentItemElement extends Element<
+  "CMSContentItem",
+  CMSContentSettings
+> {
   elements: EditorElement[]; // Template for the item
 }
 
-interface CMSContentGridElement extends Element<CMSContentSettings> {
+export interface CMSContentGridElement extends Element<
+  "CMSContentGrid",
+  CMSContentSettings
+> {
   elements: EditorElement[]; // Template for each grid item
 }
 
-export type {
-  BaseElement,
-  TextElement,
-  SectionElement,
-  FrameElement,
-  ButtonElement,
-  ImageElement,
-  InputElement,
-  ListElement,
-  SelectElement,
-  FormElement,
-  CarouselElement,
-  DataLoaderElement,
-  CMSContentListElement,
-  CMSContentItemElement,
-  CMSContentGridElement,
+export interface CarouselSettings extends EmblaOptionsType {
+  withNavigation?: boolean;
+  autoplay?: boolean;
+  autoplaySpeed?: number;
+  slidesToShow?: number;
+  slidesToScroll?: number;
+  breakpoints?: Record<string, Partial<EmblaOptionsType>>;
+}
+
+export interface CarouselElement extends Element<"Carousel", CarouselSettings> {
+  elements: EditorElement[];
+}
+
+export type EditorElement =
+  | TextElement
+  | ImageElement
+  | LinkElement
+  | ButtonElement
+  | FrameElement
+  | SectionElement
+  | CarouselElement
+  | InputElement
+  | ListElement
+  | SelectElement
+  | FormElement
+  | CMSContentListElement
+  | CMSContentItemElement
+  | CMSContentGridElement;
+
+/**
+ * Mapping of element type names to their respective interface types.
+ * Used for type-safe element creation and manipulation.
+ */
+export type ElementTypeMap = {
+  Text: TextElement;
+  Image: ImageElement;
+  Button: ButtonElement;
+  Input: InputElement;
+  Link: LinkElement;
+  Frame: FrameElement;
+  Form: FormElement;
+  Section: SectionElement;
+  Carousel: CarouselElement;
+  List: ListElement;
+  Select: SelectElement;
+  CMSContentList: CMSContentListElement;
+  CMSContentItem: CMSContentItemElement;
+  CMSContentGrid: CMSContentGridElement;
 };
-//Export settings
-export type {
-  CarouselSettings,
-  ImageSettings,
-  FormSettings,
-  InputSettings,
-  DataLoaderSettings,
-  CMSContentSettings,
-};
-export type { CSSStyles, ResponsiveStyles };
+
+export type { ElementEvents } from "@/interfaces/events.interface";

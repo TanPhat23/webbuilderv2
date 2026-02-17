@@ -117,7 +117,7 @@ export default function CreateProjectDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
                     <Input placeholder="Brief description" {...field} />
                   </FormControl>

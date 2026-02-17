@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { usePageStore } from "@/globalstore/pagestore";
+import { usePageStore } from "@/globalstore/page-store";
 import { Button } from "../ui/button";
 import { v4 as uuidv4 } from "uuid";
 import { useParams } from "next/navigation";

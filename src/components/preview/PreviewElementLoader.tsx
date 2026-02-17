@@ -4,7 +4,7 @@ import { getPreviewComponentMap } from "@/constants/previewComponents";
 
 interface PreviewElementLoaderProps {
   elements?: EditorElement[];
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export default function PreviewElementLoader({
@@ -13,12 +13,10 @@ export default function PreviewElementLoader({
 }: PreviewElementLoaderProps = {}) {
   const renderElement = (element: EditorElement) => {
     const Component = getPreviewComponentMap(element.type);
-    return Component ? <Component key={element.id} element={element} data={data} /> : null;
+    return Component ? (
+      <Component key={element.id} element={element} data={data} />
+    ) : null;
   };
 
-  return (
-    <>
-      {elements?.map((element) => renderElement(element))}
-    </>
-  );
+  return <>{elements?.map((element) => renderElement(element))}</>;
 }

@@ -3,7 +3,7 @@
 import { useRef, useEffect } from "react";
 import { clamp } from "lodash";
 import type { EditorElement } from "@/types/global.type";
-import type { ResizeDirection } from "@/constants/direciton";
+import type { ResizeDirection } from "@/constants/direction";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
 /**
@@ -331,8 +331,8 @@ export function useResizeHandler({
     );
 
     const defaultStyles = currentElement.styles?.default || {};
-    const updatedDefault: any = {
-      ...defaultStyles,
+    const updatedDefault: Record<string, string | undefined> = {
+      ...(defaultStyles as Record<string, string | undefined>),
     };
 
     // Update dimensions based on resize direction

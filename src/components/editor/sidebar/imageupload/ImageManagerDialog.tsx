@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useUserImages, useUploadImage, useDeleteImage } from "@/hooks/images";
-import { useImageStore } from "@/globalstore/imagestore";
+import { useImageStore } from "@/globalstore/image-store";
 import { Image as ImageType } from "@/interfaces/image.interface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

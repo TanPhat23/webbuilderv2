@@ -223,12 +223,12 @@ export type ProjectWhereInput = {
   Styles?: Prisma.JsonNullableFilter<"Project">
   Header?: Prisma.JsonNullableFilter<"Project">
   Collaborators?: Prisma.CollaboratorListRelationFilter
+  EventWorkflows?: Prisma.EventWorkflowListRelationFilter
   Invitations?: Prisma.InvitationListRelationFilter
   MarketplaceItem?: Prisma.XOR<Prisma.MarketplaceItemNullableScalarRelationFilter, Prisma.MarketplaceItemWhereInput> | null
   Pages?: Prisma.PageListRelationFilter
-  Snapshots?: Prisma.SnapshotListRelationFilter
-  EventWorkflows?: Prisma.EventWorkflowListRelationFilter
   Owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  Snapshots?: Prisma.SnapshotListRelationFilter
 }
 
 export type ProjectOrderByWithRelationInput = {
@@ -244,12 +244,12 @@ export type ProjectOrderByWithRelationInput = {
   Styles?: Prisma.SortOrderInput | Prisma.SortOrder
   Header?: Prisma.SortOrderInput | Prisma.SortOrder
   Collaborators?: Prisma.CollaboratorOrderByRelationAggregateInput
+  EventWorkflows?: Prisma.EventWorkflowOrderByRelationAggregateInput
   Invitations?: Prisma.InvitationOrderByRelationAggregateInput
   MarketplaceItem?: Prisma.MarketplaceItemOrderByWithRelationInput
   Pages?: Prisma.PageOrderByRelationAggregateInput
-  Snapshots?: Prisma.SnapshotOrderByRelationAggregateInput
-  EventWorkflows?: Prisma.EventWorkflowOrderByRelationAggregateInput
   Owner?: Prisma.UserOrderByWithRelationInput
+  Snapshots?: Prisma.SnapshotOrderByRelationAggregateInput
 }
 
 export type ProjectWhereUniqueInput = Prisma.AtLeast<{
@@ -268,12 +268,12 @@ export type ProjectWhereUniqueInput = Prisma.AtLeast<{
   Styles?: Prisma.JsonNullableFilter<"Project">
   Header?: Prisma.JsonNullableFilter<"Project">
   Collaborators?: Prisma.CollaboratorListRelationFilter
+  EventWorkflows?: Prisma.EventWorkflowListRelationFilter
   Invitations?: Prisma.InvitationListRelationFilter
   MarketplaceItem?: Prisma.XOR<Prisma.MarketplaceItemNullableScalarRelationFilter, Prisma.MarketplaceItemWhereInput> | null
   Pages?: Prisma.PageListRelationFilter
-  Snapshots?: Prisma.SnapshotListRelationFilter
-  EventWorkflows?: Prisma.EventWorkflowListRelationFilter
   Owner?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  Snapshots?: Prisma.SnapshotListRelationFilter
 }, "Id">
 
 export type ProjectOrderByWithAggregationInput = {
@@ -322,12 +322,12 @@ export type ProjectCreateInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateInput = {
@@ -343,11 +343,11 @@ export type ProjectUncheckedCreateInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUpdateInput = {
@@ -362,12 +362,12 @@ export type ProjectUpdateInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateInput = {
@@ -383,11 +383,11 @@ export type ProjectUncheckedUpdateInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateManyInput = {
@@ -629,11 +629,11 @@ export type ProjectCreateWithoutPagesInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutPagesInput = {
@@ -649,10 +649,10 @@ export type ProjectUncheckedCreateWithoutPagesInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutPagesInput = {
@@ -683,11 +683,11 @@ export type ProjectUpdateWithoutPagesInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutPagesInput = {
@@ -703,10 +703,10 @@ export type ProjectUncheckedUpdateWithoutPagesInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutEventWorkflowsInput = {
@@ -724,8 +724,8 @@ export type ProjectCreateWithoutEventWorkflowsInput = {
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutEventWorkflowsInput = {
@@ -778,8 +778,8 @@ export type ProjectUpdateWithoutEventWorkflowsInput = {
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutEventWorkflowsInput = {
@@ -813,10 +813,10 @@ export type ProjectCreateWithoutSnapshotsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
 }
 
@@ -833,10 +833,10 @@ export type ProjectUncheckedCreateWithoutSnapshotsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutSnapshotsInput = {
@@ -867,10 +867,10 @@ export type ProjectUpdateWithoutSnapshotsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
 }
 
@@ -887,10 +887,10 @@ export type ProjectUncheckedUpdateWithoutSnapshotsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutOwnerInput = {
@@ -905,11 +905,11 @@ export type ProjectCreateWithoutOwnerInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutOwnerInput = {
@@ -924,11 +924,11 @@ export type ProjectUncheckedCreateWithoutOwnerInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutOwnerInput = {
@@ -986,11 +986,11 @@ export type ProjectCreateWithoutMarketplaceItemInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutMarketplaceItemInput = {
@@ -1006,10 +1006,10 @@ export type ProjectUncheckedCreateWithoutMarketplaceItemInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutMarketplaceItemInput = {
@@ -1040,11 +1040,11 @@ export type ProjectUpdateWithoutMarketplaceItemInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutMarketplaceItemInput = {
@@ -1060,10 +1060,10 @@ export type ProjectUncheckedUpdateWithoutMarketplaceItemInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutInvitationsInput = {
@@ -1078,11 +1078,11 @@ export type ProjectCreateWithoutInvitationsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutInvitationsInput = {
@@ -1098,10 +1098,10 @@ export type ProjectUncheckedCreateWithoutInvitationsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedCreateNestedManyWithoutProjectInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutInvitationsInput = {
@@ -1132,11 +1132,11 @@ export type ProjectUpdateWithoutInvitationsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutInvitationsInput = {
@@ -1152,10 +1152,10 @@ export type ProjectUncheckedUpdateWithoutInvitationsInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateWithoutCollaboratorsInput = {
@@ -1169,12 +1169,12 @@ export type ProjectCreateWithoutCollaboratorsInput = {
   UpdatedAt: Date | string
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageCreateNestedManyWithoutProjectInput
-  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowCreateNestedManyWithoutProjectInput
   Owner: Prisma.UserCreateNestedOneWithoutProjectsInput
+  Snapshots?: Prisma.SnapshotCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectUncheckedCreateWithoutCollaboratorsInput = {
@@ -1189,11 +1189,11 @@ export type ProjectUncheckedCreateWithoutCollaboratorsInput = {
   UpdatedAt: Date | string
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
   Invitations?: Prisma.InvitationUncheckedCreateNestedManyWithoutProjectInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedCreateNestedOneWithoutProjectInput
   Pages?: Prisma.PageUncheckedCreateNestedManyWithoutProjectInput
   Snapshots?: Prisma.SnapshotUncheckedCreateNestedManyWithoutProjectInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedCreateNestedManyWithoutProjectInput
 }
 
 export type ProjectCreateOrConnectWithoutCollaboratorsInput = {
@@ -1223,12 +1223,12 @@ export type ProjectUpdateWithoutCollaboratorsInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
-  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Owner?: Prisma.UserUpdateOneRequiredWithoutProjectsNestedInput
+  Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutCollaboratorsInput = {
@@ -1243,11 +1243,11 @@ export type ProjectUncheckedUpdateWithoutCollaboratorsInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectCreateManyOwnerInput = {
@@ -1275,11 +1275,11 @@ export type ProjectUpdateWithoutOwnerInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateWithoutOwnerInput = {
@@ -1294,11 +1294,11 @@ export type ProjectUncheckedUpdateWithoutOwnerInput = {
   Styles?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Header?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Collaborators?: Prisma.CollaboratorUncheckedUpdateManyWithoutProjectNestedInput
+  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
   Invitations?: Prisma.InvitationUncheckedUpdateManyWithoutProjectNestedInput
   MarketplaceItem?: Prisma.MarketplaceItemUncheckedUpdateOneWithoutProjectNestedInput
   Pages?: Prisma.PageUncheckedUpdateManyWithoutProjectNestedInput
   Snapshots?: Prisma.SnapshotUncheckedUpdateManyWithoutProjectNestedInput
-  EventWorkflows?: Prisma.EventWorkflowUncheckedUpdateManyWithoutProjectNestedInput
 }
 
 export type ProjectUncheckedUpdateManyWithoutOwnerInput = {
@@ -1321,18 +1321,18 @@ export type ProjectUncheckedUpdateManyWithoutOwnerInput = {
 
 export type ProjectCountOutputType = {
   Collaborators: number
+  EventWorkflows: number
   Invitations: number
   Pages: number
   Snapshots: number
-  EventWorkflows: number
 }
 
 export type ProjectCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Collaborators?: boolean | ProjectCountOutputTypeCountCollaboratorsArgs
+  EventWorkflows?: boolean | ProjectCountOutputTypeCountEventWorkflowsArgs
   Invitations?: boolean | ProjectCountOutputTypeCountInvitationsArgs
   Pages?: boolean | ProjectCountOutputTypeCountPagesArgs
   Snapshots?: boolean | ProjectCountOutputTypeCountSnapshotsArgs
-  EventWorkflows?: boolean | ProjectCountOutputTypeCountEventWorkflowsArgs
 }
 
 /**
@@ -1350,6 +1350,13 @@ export type ProjectCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Exte
  */
 export type ProjectCountOutputTypeCountCollaboratorsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.CollaboratorWhereInput
+}
+
+/**
+ * ProjectCountOutputType without action
+ */
+export type ProjectCountOutputTypeCountEventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.EventWorkflowWhereInput
 }
 
 /**
@@ -1373,13 +1380,6 @@ export type ProjectCountOutputTypeCountSnapshotsArgs<ExtArgs extends runtime.Typ
   where?: Prisma.SnapshotWhereInput
 }
 
-/**
- * ProjectCountOutputType without action
- */
-export type ProjectCountOutputTypeCountEventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.EventWorkflowWhereInput
-}
-
 
 export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   Description?: boolean
@@ -1394,12 +1394,12 @@ export type ProjectSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   Styles?: boolean
   Header?: boolean
   Collaborators?: boolean | Prisma.Project$CollaboratorsArgs<ExtArgs>
+  EventWorkflows?: boolean | Prisma.Project$EventWorkflowsArgs<ExtArgs>
   Invitations?: boolean | Prisma.Project$InvitationsArgs<ExtArgs>
   MarketplaceItem?: boolean | Prisma.Project$MarketplaceItemArgs<ExtArgs>
   Pages?: boolean | Prisma.Project$PagesArgs<ExtArgs>
-  Snapshots?: boolean | Prisma.Project$SnapshotsArgs<ExtArgs>
-  EventWorkflows?: boolean | Prisma.Project$EventWorkflowsArgs<ExtArgs>
   Owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  Snapshots?: boolean | Prisma.Project$SnapshotsArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["project"]>
 
@@ -1450,12 +1450,12 @@ export type ProjectSelectScalar = {
 export type ProjectOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Description" | "Id" | "Name" | "OwnerId" | "Published" | "Subdomain" | "CreatedAt" | "DeletedAt" | "UpdatedAt" | "Styles" | "Header", ExtArgs["result"]["project"]>
 export type ProjectInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Collaborators?: boolean | Prisma.Project$CollaboratorsArgs<ExtArgs>
+  EventWorkflows?: boolean | Prisma.Project$EventWorkflowsArgs<ExtArgs>
   Invitations?: boolean | Prisma.Project$InvitationsArgs<ExtArgs>
   MarketplaceItem?: boolean | Prisma.Project$MarketplaceItemArgs<ExtArgs>
   Pages?: boolean | Prisma.Project$PagesArgs<ExtArgs>
-  Snapshots?: boolean | Prisma.Project$SnapshotsArgs<ExtArgs>
-  EventWorkflows?: boolean | Prisma.Project$EventWorkflowsArgs<ExtArgs>
   Owner?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  Snapshots?: boolean | Prisma.Project$SnapshotsArgs<ExtArgs>
   _count?: boolean | Prisma.ProjectCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProjectIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1469,12 +1469,12 @@ export type $ProjectPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   name: "Project"
   objects: {
     Collaborators: Prisma.$CollaboratorPayload<ExtArgs>[]
+    EventWorkflows: Prisma.$EventWorkflowPayload<ExtArgs>[]
     Invitations: Prisma.$InvitationPayload<ExtArgs>[]
     MarketplaceItem: Prisma.$MarketplaceItemPayload<ExtArgs> | null
     Pages: Prisma.$PagePayload<ExtArgs>[]
-    Snapshots: Prisma.$SnapshotPayload<ExtArgs>[]
-    EventWorkflows: Prisma.$EventWorkflowPayload<ExtArgs>[]
     Owner: Prisma.$UserPayload<ExtArgs>
+    Snapshots: Prisma.$SnapshotPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     Description: string | null
@@ -1883,12 +1883,12 @@ readonly fields: ProjectFieldRefs;
 export interface Prisma__ProjectClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   Collaborators<T extends Prisma.Project$CollaboratorsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$CollaboratorsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CollaboratorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  EventWorkflows<T extends Prisma.Project$EventWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$EventWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventWorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   Invitations<T extends Prisma.Project$InvitationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$InvitationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$InvitationPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   MarketplaceItem<T extends Prisma.Project$MarketplaceItemArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$MarketplaceItemArgs<ExtArgs>>): Prisma.Prisma__MarketplaceItemClient<runtime.Types.Result.GetResult<Prisma.$MarketplaceItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   Pages<T extends Prisma.Project$PagesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$PagesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  Snapshots<T extends Prisma.Project$SnapshotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$SnapshotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SnapshotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  EventWorkflows<T extends Prisma.Project$EventWorkflowsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$EventWorkflowsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$EventWorkflowPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   Owner<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  Snapshots<T extends Prisma.Project$SnapshotsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Project$SnapshotsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SnapshotPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2349,6 +2349,30 @@ export type Project$CollaboratorsArgs<ExtArgs extends runtime.Types.Extensions.I
 }
 
 /**
+ * Project.EventWorkflows
+ */
+export type Project$EventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the EventWorkflow
+   */
+  select?: Prisma.EventWorkflowSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the EventWorkflow
+   */
+  omit?: Prisma.EventWorkflowOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.EventWorkflowInclude<ExtArgs> | null
+  where?: Prisma.EventWorkflowWhereInput
+  orderBy?: Prisma.EventWorkflowOrderByWithRelationInput | Prisma.EventWorkflowOrderByWithRelationInput[]
+  cursor?: Prisma.EventWorkflowWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.EventWorkflowScalarFieldEnum | Prisma.EventWorkflowScalarFieldEnum[]
+}
+
+/**
  * Project.Invitations
  */
 export type Project$InvitationsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2437,30 +2461,6 @@ export type Project$SnapshotsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.SnapshotScalarFieldEnum | Prisma.SnapshotScalarFieldEnum[]
-}
-
-/**
- * Project.EventWorkflows
- */
-export type Project$EventWorkflowsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the EventWorkflow
-   */
-  select?: Prisma.EventWorkflowSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the EventWorkflow
-   */
-  omit?: Prisma.EventWorkflowOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EventWorkflowInclude<ExtArgs> | null
-  where?: Prisma.EventWorkflowWhereInput
-  orderBy?: Prisma.EventWorkflowOrderByWithRelationInput | Prisma.EventWorkflowOrderByWithRelationInput[]
-  cursor?: Prisma.EventWorkflowWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.EventWorkflowScalarFieldEnum | Prisma.EventWorkflowScalarFieldEnum[]
 }
 
 /**

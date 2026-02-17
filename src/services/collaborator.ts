@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import apiClient from "./apiclient";
 import {
@@ -22,9 +22,10 @@ export const collaboratorService: ICollaboratorService = {
     projectId: string,
   ): Promise<Collaborator[]> => {
     try {
-      const response = await apiClient.get<CollaboratorListResponse>(
-        GetUrl(API_ENDPOINTS.COLLABORATORS.GET_BY_PROJECT(projectId)),
-      );
+      const url = new URLBuilder("api")
+        .setPath(API_ENDPOINTS.COLLABORATORS.GET_BY_PROJECT(projectId))
+        .build();
+      const response = await apiClient.get<CollaboratorListResponse>(url);
       return Array.isArray(response?.collaborators)
         ? response.collaborators
         : [];
@@ -41,21 +42,23 @@ export const collaboratorService: ICollaboratorService = {
     collaboratorId: string,
     data: UpdateCollaboratorRoleRequest,
   ): Promise<Collaborator> => {
-    return apiClient.patch<Collaborator>(
-      GetUrl(API_ENDPOINTS.COLLABORATORS.UPDATE_ROLE(collaboratorId)),
-      data,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.COLLABORATORS.UPDATE_ROLE(collaboratorId))
+      .build();
+    return apiClient.patch<Collaborator>(url, data);
   },
 
   removeCollaborator: async (collaboratorId: string): Promise<boolean> => {
-    return apiClient.delete(
-      GetUrl(API_ENDPOINTS.COLLABORATORS.REMOVE(collaboratorId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.COLLABORATORS.REMOVE(collaboratorId))
+      .build();
+    return apiClient.delete(url);
   },
 
   leaveProject: async (projectId: string): Promise<boolean> => {
-    return apiClient.delete(
-      GetUrl(API_ENDPOINTS.COLLABORATORS.REMOVE_SELF(projectId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.COLLABORATORS.REMOVE_SELF(projectId))
+      .build();
+    return apiClient.delete(url);
   },
 };

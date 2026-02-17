@@ -23,7 +23,7 @@ export const headerComponent: CustomComponent = {
       "flex flex-col md:flex-row items-center justify-between w-full h-[70px] p-4 bg-blue-100 shadow-md gap-2 md:gap-0",
     elements: [
       {
-        type: "Base",
+        type: "Text",
         content: "My Portfolio",
         styles: {
           default: {
@@ -38,7 +38,7 @@ export const headerComponent: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Home",
         styles: {
           default: {
@@ -53,7 +53,7 @@ export const headerComponent: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Projects",
         styles: {
           default: {
@@ -68,7 +68,7 @@ export const headerComponent: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Contact",
         styles: {
           default: {
@@ -111,7 +111,7 @@ export const headerComponent2: CustomComponent = {
       "flex flex-col md:flex-row items-center justify-center w-full p-4 bg-gray-900 shadow-md gap-2 md:gap-0",
     elements: [
       {
-        type: "Base",
+        type: "Text",
         content: "Brothers Inc",
 
         styles: {
@@ -127,7 +127,7 @@ export const headerComponent2: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Home",
 
         styles: {
@@ -143,7 +143,7 @@ export const headerComponent2: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Portfolio",
 
         styles: {
@@ -187,7 +187,7 @@ export const headerComponent3: CustomComponent = {
       "flex flex-col md:flex-row items-center justify-start w-full p-4 bg-green-500 shadow-md gap-2 md:gap-0",
     elements: [
       {
-        type: "Base",
+        type: "Text",
         content: "Welcome to My Site",
 
         styles: {
@@ -203,7 +203,7 @@ export const headerComponent3: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Home",
 
         styles: {
@@ -219,7 +219,7 @@ export const headerComponent3: CustomComponent = {
         src: "",
       },
       {
-        type: "Base",
+        type: "Text",
         content: "Pricing",
 
         styles: {

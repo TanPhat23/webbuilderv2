@@ -1,11 +1,8 @@
 import { ContainerElement, EditorElement } from "@/types/global.type";
 import { v4 as uuidv4 } from "uuid";
 import { elementHelper } from "./elementhelper";
-import { ElementStore } from "@/globalstore/elementstore";
-import { SelectionStore } from "@/globalstore/selectionstore";
-import GetUrl from "@/lib/utils/geturl";
-import { API_ENDPOINTS } from "@/constants/endpoints";
-import apiClient from "@/services/apiclient";
+import { ElementStore } from "@/globalstore/element-store";
+import { SelectionStore } from "@/globalstore/selection-store";
 import { toast } from "sonner";
 
 export interface IKeyboardEvent {

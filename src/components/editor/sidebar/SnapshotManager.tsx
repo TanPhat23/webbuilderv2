@@ -7,19 +7,24 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useProjectStore } from "@/globalstore/projectstore";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useProjectStore } from "@/globalstore/project-store";
+import { useElementsWithLoad } from "@/globalstore/selectors/element-selectors";
 import { History, Save, RotateCcw } from "lucide-react";
-import { useSnapshots, useSaveSnapshot, useLoadSnapshot } from "@/hooks/editor/useSnapshot";
+import {
+  useSnapshots,
+  useSaveSnapshot,
+  useLoadSnapshot,
+} from "@/hooks/editor/useSnapshot";
 import { EditorElement } from "@/types/global.type";
 
 const SnapshotManager = () => {
   const [open, setOpen] = useState(false);
   const { project } = useProjectStore();
-  const { loadElements } = useElementStore();
-  const elements = useElementStore((s) => s.elements);
+  const { elements, loadElements } = useElementsWithLoad();
 
-  const { data: snapshots = [], isLoading: loading } = useSnapshots(project?.id);
+  const { data: snapshots = [], isLoading: loading } = useSnapshots(
+    project?.id,
+  );
   const saveSnapshotMutation = useSaveSnapshot();
   const loadSnapshotMutation = useLoadSnapshot();
 
@@ -51,7 +56,7 @@ const SnapshotManager = () => {
           loadElements(elements as EditorElement[]);
           setOpen(false);
         },
-      }
+      },
     );
   };
 
@@ -80,7 +85,9 @@ const SnapshotManager = () => {
               disabled={saveSnapshotMutation.isPending}
             >
               <Save className="h-4 w-4" />
-              {saveSnapshotMutation.isPending ? "Saving..." : "Save Current Version"}
+              {saveSnapshotMutation.isPending
+                ? "Saving..."
+                : "Save Current Version"}
             </Button>
           </div>
 

@@ -14,7 +14,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkflowCanvas } from "@/hooks/editor";
-import { getNodeTypeColor, ANIMATION_DURATIONS } from "@/constants/eventWorkflows";
+import {
+  getNodeTypeColor,
+  ANIMATION_DURATIONS,
+} from "@/constants/eventWorkflows";
 
 interface WorkflowNodeData {
   label: string;
@@ -25,18 +28,25 @@ interface WorkflowNodeData {
   onConfigure?: (nodeId: string) => void;
 }
 
-const NodeIcon = ({ type }: { type: NodeType }) => {
+const NodeIcon = ({
+  type,
+  className,
+}: {
+  type: NodeType;
+  className?: string;
+}) => {
+  const size = "h-4 w-4";
   switch (type) {
     case NodeType.TRIGGER:
-      return <Zap className="h-4 w-4" />;
+      return <Zap className={cn(size, className)} />;
     case NodeType.ACTION:
-      return <ArrowRight className="h-4 w-4" />;
+      return <ArrowRight className={cn(size, className)} />;
     case NodeType.CONDITION:
-      return <GitBranch className="h-4 w-4" />;
+      return <GitBranch className={cn(size, className)} />;
     case NodeType.OUTPUT:
-      return <CheckCircle className="h-4 w-4" />;
+      return <CheckCircle className={cn(size, className)} />;
     default:
-      return <Zap className="h-4 w-4" />;
+      return <Zap className={cn(size, className)} />;
   }
 };
 
@@ -100,14 +110,16 @@ export const WorkflowNodeWrapper: React.FC<NodeProps<WorkflowNodeData>> = ({
           className={cn(
             "w-3 h-3 rounded-full transition-all",
             showPorts || selected ? "opacity-100" : "opacity-0",
-            "bg-blue-500 dark:bg-blue-400 border-2 border-white dark:border-slate-900",
+            "bg-accent border-2 border-white dark:border-slate-900",
           )}
         />
       ) : null}
 
       <div className="flex items-center gap-2 mb-2">
-        <div className={cn("p-1.5 rounded", getNodeTypeColor(data.type).iconBg)}>
-          <NodeIcon type={data.type} />
+        <div
+          className={cn("p-1.5 rounded", getNodeTypeColor(data.type).iconBg)}
+        >
+          <NodeIcon type={data.type} className={getIconColor(data.type)} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">{data.label}</p>
@@ -149,7 +161,7 @@ export const WorkflowNodeWrapper: React.FC<NodeProps<WorkflowNodeData>> = ({
           className={cn(
             "w-3 h-3 rounded-full transition-all",
             showPorts || selected ? "opacity-100" : "opacity-0",
-            "bg-green-500 dark:bg-green-400 border-2 border-white dark:border-slate-900",
+            "bg-primary border-2 border-white dark:border-slate-900",
           )}
         />
       ) : null}

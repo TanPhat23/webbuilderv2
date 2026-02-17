@@ -9,10 +9,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { useElementCommentStore } from "@/globalstore/elementcommentstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useElementCommentStore } from "@/globalstore/element-comment-store";
+import { useSelectedElementWithSetter } from "@/globalstore/selectors/selection-selectors";
 import { useElementComments, useProjectComments } from "@/hooks";
-import { useProjectStore } from "@/globalstore/projectstore";
+import { useProjectStore } from "@/globalstore/project-store";
 import { useCommentManager } from "@/hooks/useCommentManager";
 
 import { CommentsPanelHeader } from "./components/CommentsPanelHeader";
@@ -27,7 +27,8 @@ import { COMMENTS_SCROLL_HEIGHT, COMMENTS_PANEL } from "@/constants/comments";
 export function ElementCommentsPanel() {
   const { user } = useUser();
   const { project } = useProjectStore();
-  const { selectedElement, setSelectedElement } = useSelectionStore();
+  const { selectedElement, setSelectedElement } =
+    useSelectedElementWithSetter();
   const {
     activeCommentElementId,
     isCommentsVisible,
@@ -208,7 +209,7 @@ export function ElementCommentsPanel() {
           ) : (
             <div className="text-center py-8 border-t border-border">
               <div className="h-12 w-12 rounded-full bg-accent flex items-center justify-center mx-auto mb-3">
-               <MousePointer/>
+                <MousePointer />
               </div>
               <p className="text-sm font-medium text-foreground mb-1">
                 Select an element

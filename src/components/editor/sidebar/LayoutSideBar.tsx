@@ -1,17 +1,11 @@
 "use client";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+
+import React, { Suspense, useState } from "react";
+import { useParams } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -19,13 +13,8 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
-import React, { useState } from "react";
-import { useParams } from "next/navigation";
-import Configurations from "./configurations/Configurations";
-import ElementTreeItem from "./ElementTreeItem";
 import {
-  Square,
-  Layers,
+  Palette,
   Settings2,
   Code2,
   Bot,
@@ -33,9 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAiChat } from "@/providers/aiprovider";
-import { useSelectionStore } from "@/globalstore/selectionstore";
-import { useElementStore } from "@/globalstore/elementstore";
-import CssTextareaImporter from "../editor/CssTextareaImporter";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import {
   Tooltip,
   TooltipContent,
@@ -43,86 +30,64 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import SidebarEmptyState from "./SidebarEmptyState";
 
-interface SidebarSectionProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  children: React.ReactNode;
-  isCollapsed: boolean;
-  onIconClick?: () => void;
-}
+// ---------------------------------------------------------------------------
+// Lazy-loaded configuration panels — only fetched when the user switches
+// to the corresponding tab, reducing the initial LayoutSideBar bundle.
+// ---------------------------------------------------------------------------
 
-function SidebarSection({
-  icon,
-  label,
-  value,
-  children,
-  isCollapsed,
-  onIconClick,
-}: SidebarSectionProps) {
-  if (isCollapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={onIconClick}
-            className="flex items-center justify-center p-2 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full"
-          >
-            {icon}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="left" align="center">
-          <span>Click to expand: {label}</span>
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
+const Settings = React.lazy(() => import("./configurations/Settings"));
+const Styles = React.lazy(() => import("./configurations/Styles"));
+const CssTextareaImporter = React.lazy(
+  () => import("../editor/CssTextareaImporter"),
+);
 
+/**
+ * Lightweight spinner shown while a lazy-loaded panel chunk is fetched.
+ */
+function PanelFallback() {
   return (
-    <AccordionItem value={value} className="border-none">
-      <SidebarGroup>
-        <SidebarGroupLabel asChild>
-          <AccordionTrigger className="hover:no-underline">
-            <div className="flex items-center gap-2">
-              {icon}
-              <span>{label}</span>
-            </div>
-          </AccordionTrigger>
-        </SidebarGroupLabel>
-        <AccordionContent>
-          <SidebarGroupContent>{children}</SidebarGroupContent>
-        </AccordionContent>
-      </SidebarGroup>
-    </AccordionItem>
+    <div className="flex items-center justify-center py-6">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
   );
 }
+
+type TabType = "settings" | "styles" | "code";
 
 function LayoutSideBar() {
   const params = useParams();
   const { toggleSidebar, state, setOpen } = useSidebar();
   const { toggleChat } = useAiChat();
-  const visitProjectSubdomain = (projectId: string) => {
-    window.open(`http://localhost:3000/preview/${projectId}`);
-  };
-  const { selectedElement } = useSelectionStore();
-  const { elements } = useElementStore();
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const selectedElement = useSelectedElement();
+
+  const [activeTab, setActiveTab] = useState<TabType>("settings");
 
   const isCollapsed = state === "collapsed";
 
-  const handleIconClick = (sectionValue: string) => {
-    setActiveSection(sectionValue);
-    setOpen(true);
+  const visitProjectSubdomain = (projectId: string) => {
+    window.open(`http://localhost:3000/preview/${projectId}`);
+  };
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (isCollapsed) {
+      setOpen(true);
+    }
   };
 
   return (
-    <Sidebar side="right" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
+    <Sidebar
+      side="right"
+      collapsible="icon"
+      className="border-l border-border bg-card"
+    >
+      <SidebarHeader className="border-b border-border p-0">
         <div
           className={cn(
-            "flex items-center h-10",
-            isCollapsed ? "justify-center" : "justify-between px-2",
+            "flex items-center h-12 px-4",
+            isCollapsed ? "justify-center" : "justify-between",
           )}
         >
           <Tooltip>
@@ -130,10 +95,7 @@ function LayoutSideBar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-7 w-7 transition-transform duration-200",
-                  isCollapsed && "rotate-180",
-                )}
+                className={cn("h-8 w-8", isCollapsed && "rotate-180")}
                 onClick={toggleSidebar}
               >
                 <ChevronRight className="h-4 w-4" />
@@ -147,118 +109,159 @@ function LayoutSideBar() {
             </TooltipContent>
           </Tooltip>
           {!isCollapsed && (
-            <span className="text-sm font-semibold text-sidebar-foreground">
-              Properties
-            </span>
+            <span className="text-sm font-medium">Properties</span>
           )}
         </div>
+
+        {!isCollapsed && (
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "settings"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Settings
+            </button>
+            <button
+              onClick={() => setActiveTab("styles")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "styles"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Styles
+            </button>
+            <button
+              onClick={() => setActiveTab("code")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "code"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Code
+            </button>
+          </div>
+        )}
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-0">
         {isCollapsed ? (
-          <div className="flex flex-col items-center gap-1 py-2">
-            <SidebarSection
-              icon={<Layers className="h-4 w-4" />}
-              label="Layout"
-              value="layout"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("layout")}
-            >
-              <div />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Settings2 className="h-4 w-4" />}
-              label="Configuration"
-              value="configuration"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("configuration")}
-            >
-              <div />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Code2 className="h-4 w-4" />}
-              label="CSS Importer"
-              value="css-importer"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("css-importer")}
-            >
-              <div />
-            </SidebarSection>
+          <div className="flex flex-col items-center gap-2 py-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("styles")}
+                  className={cn(activeTab === "styles" && "bg-accent")}
+                >
+                  <Palette className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Styles</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("settings")}
+                  className={cn(activeTab === "settings" && "bg-accent")}
+                >
+                  <Settings2 className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Settings</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("styles")}
+                  className={cn(activeTab === "styles" && "bg-accent")}
+                >
+                  <Palette className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Styles</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("code")}
+                  className={cn(activeTab === "code" && "bg-accent")}
+                >
+                  <Code2 className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Code</TooltipContent>
+            </Tooltip>
           </div>
         ) : (
-          <Accordion
-            type="multiple"
-            className="w-full"
-            defaultValue={
-              activeSection ? [activeSection] : ["layout", "configuration"]
-            }
-            key={activeSection || "default"}
-          >
-            <SidebarSection
-              icon={<Layers className="h-4 w-4" />}
-              label="Layout"
-              value="layout"
-              isCollapsed={false}
-            >
-              <div className="max-h-60 overflow-y-auto overflow-x-hidden">
-                {elements.length > 0 ? (
-                  elements.map((element) => (
-                    <ElementTreeItem
-                      key={element.id || Math.random()}
-                      element={element}
-                    />
-                  ))
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            {activeTab === "settings" && (
+              <div className="flex-1 min-h-0 overflow-auto p-4">
+                {selectedElement ? (
+                  <Suspense fallback={<PanelFallback />}>
+                    <Settings />
+                  </Suspense>
                 ) : (
-                  <div className="text-center py-4 text-sm text-muted-foreground">
-                    No elements yet. Drag components from the left sidebar.
-                  </div>
+                  <SidebarEmptyState
+                    title="Select an element to configure settings"
+                    description="Click a component in the canvas to reveal its settings here."
+                    icon={<Settings2 className="h-6 w-6" />}
+                  />
                 )}
               </div>
-            </SidebarSection>
-
-            <SidebarSection
-              icon={<Settings2 className="h-4 w-4" />}
-              label="Configuration"
-              value="configuration"
-              isCollapsed={false}
-            >
-              {selectedElement ? (
-                <div className="p-2">
-                  <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Selected: {selectedElement.name || selectedElement.type}
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      Double-click element to edit content
-                    </p>
+            )}
+            {activeTab === "styles" && (
+              <div className="flex-1 min-h-0 overflow-auto">
+                {selectedElement ? (
+                  <div className="p-4">
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Selected: {selectedElement.name || selectedElement.type}
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Double-click element to edit content
+                      </p>
+                    </div>
+                    <Suspense fallback={<PanelFallback />}>
+                      <Styles />
+                    </Suspense>
                   </div>
-                  <Configurations />
-                </div>
-              ) : (
-                <div className="text-center py-8 px-4">
-                  <div className="text-muted-foreground mb-2">
-                    <Square className="h-12 w-12 mx-auto opacity-50" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Select an element to configure its properties
-                  </p>
-                </div>
-              )}
-            </SidebarSection>
-
-            <SidebarSection
-              icon={<Code2 className="h-4 w-4" />}
-              label="CSS Importer"
-              value="css-importer"
-              isCollapsed={false}
-            >
-              <CssTextareaImporter />
-            </SidebarSection>
-          </Accordion>
+                ) : (
+                  <SidebarEmptyState
+                    title="Select an element to configure styles"
+                    description="Pick a canvas node to unlock its style controls."
+                    icon={<Palette className="h-6 w-6" />}
+                  />
+                )}
+              </div>
+            )}
+            {activeTab === "code" && (
+              <div className="flex-1 min-h-0 overflow-auto p-4">
+                <Suspense fallback={<PanelFallback />}>
+                  <CssTextareaImporter />
+                </Suspense>
+              </div>
+            )}
+          </div>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
+      <SidebarFooter className="border-t border-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton

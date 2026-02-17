@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import React, { Suspense, useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -10,14 +11,11 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -29,17 +27,13 @@ import {
   Database,
   Camera,
   ChevronLeft,
-  Magnet,
+  Layers,
 } from "lucide-react";
 import Link from "next/link";
 import { useAiChat } from "@/providers/aiprovider";
 import { useEditorContext } from "@/providers/editorprovider";
 import { ProjectPageCommand } from "../ProjectPageCommand";
 import { ElementSelector } from "./ElementSelector";
-import CMSManager from "./cmsmanager/CMSManager";
-import SnapshotManager from "./SnapshotManager";
-import { ImageSelector } from "./imageupload/ImageSelector";
-import { EventWorkflowManagerDialog } from "./eventworkflow/EventWorkflowManagerDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -47,100 +41,93 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useElements } from "@/globalstore/selectors/element-selectors";
+import ElementTreeItem from "./ElementTreeItem";
 
-interface SidebarSectionProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  children: React.ReactNode;
-  isCollapsed: boolean;
-  onIconClick?: () => void;
-}
+// ---------------------------------------------------------------------------
+// Lazy-loaded tool panels — these are only fetched when the user opens
+// the corresponding accordion section, reducing the initial sidebar bundle.
+// ---------------------------------------------------------------------------
 
-function SidebarSection({
-  icon,
-  label,
-  value,
-  children,
-  isCollapsed,
-  onIconClick,
-}: SidebarSectionProps) {
-  if (isCollapsed) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={onIconClick}
-            className="flex items-center justify-center p-2 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full"
-          >
-            {icon}
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="right" align="center">
-          <span>Click to expand: {label}</span>
-        </TooltipContent>
-      </Tooltip>
-    );
-  }
+const CMSManager = React.lazy(() => import("./cmsmanager/CMSManager"));
 
+const SnapshotManager = React.lazy(() => import("./SnapshotManager"));
+
+const ImageSelector = React.lazy(() =>
+  import("./imageupload/ImageSelector").then((m) => ({
+    default: m.ImageSelector,
+  })),
+);
+
+const EventWorkflowManagerDialog = React.lazy(() =>
+  import("./eventworkflow/EventWorkflowManagerDialog").then((m) => ({
+    default: m.EventWorkflowManagerDialog,
+  })),
+);
+
+/**
+ * Lightweight spinner shown while a lazy-loaded tool panel chunk is fetched.
+ */
+function ToolPanelFallback() {
   return (
-    <AccordionItem value={value} className="border-none">
-      <SidebarGroup>
-        <SidebarGroupLabel asChild>
-          <AccordionTrigger className="hover:no-underline">
-            <div className="flex items-center gap-2">
-              {icon}
-              <span>{label}</span>
-            </div>
-          </AccordionTrigger>
-        </SidebarGroupLabel>
-        <AccordionContent>
-          <SidebarGroupContent>{children}</SidebarGroupContent>
-        </AccordionContent>
-      </SidebarGroup>
-    </AccordionItem>
+    <div className="flex items-center justify-center py-6">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
   );
 }
+
+type TabType = "components" | "layers" | "tools";
 
 export function EditorSideBar() {
   const { chatOpen } = useAiChat();
   const { projectId } = useEditorContext();
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const { state, toggleSidebar, setOpen } = useSidebar();
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const elements = useElements();
+
+  const [activeTab, setActiveTab] = useState<TabType>("components");
+  const [activeToolSection, setActiveToolSection] = useState<string>("pages");
 
   const isCollapsed = state === "collapsed";
 
-  const handleIconClick = (sectionValue: string) => {
-    setActiveSection(sectionValue);
-    setOpen(true);
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    if (isCollapsed) {
+      setOpen(true);
+    }
+  };
+
+  const handleToolSelect = (section: string) => {
+    setActiveTab("tools");
+    setActiveToolSection(section);
+    if (isCollapsed) {
+      setOpen(true);
+    }
   };
 
   if (chatOpen) return null;
 
   return (
-    <Sidebar side="left" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border">
+    <Sidebar
+      side="left"
+      collapsible="icon"
+      className="border-r border-border bg-card"
+    >
+      <SidebarHeader className="border-b border-border p-0">
         <div
           className={cn(
-            "flex items-center h-10",
-            isCollapsed ? "justify-center" : "justify-between px-2",
+            "flex items-center h-12 px-4",
+            isCollapsed ? "justify-center" : "justify-between",
           )}
         >
-          {!isCollapsed && (
-            <span className="text-sm font-semibold text-sidebar-foreground">
-              Editor Tools
-            </span>
-          )}
+          {!isCollapsed && <span className="text-sm font-medium">Editor</span>}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-7 w-7 transition-transform duration-200",
-                  isCollapsed && "rotate-180",
-                )}
+                className={cn("h-8 w-8", isCollapsed && "rotate-180")}
                 onClick={toggleSidebar}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -154,187 +141,309 @@ export function EditorSideBar() {
             </TooltipContent>
           </Tooltip>
         </div>
+
+        {!isCollapsed && (
+          <div className="flex border-b border-border">
+            <button
+              onClick={() => setActiveTab("components")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "components"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Components
+            </button>
+            <button
+              onClick={() => setActiveTab("layers")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "layers"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Layers
+            </button>
+            <button
+              onClick={() => setActiveTab("tools")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "tools"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Tools
+            </button>
+          </div>
+        )}
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="p-0">
         {isCollapsed ? (
-          <div className="flex flex-col items-center gap-1 py-2">
-            <SidebarSection
-              icon={<Blocks className="h-4 w-4" />}
-              label="Components"
-              value="components"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("components")}
-            >
-              <ElementSelector />
-            </SidebarSection>
-            <SidebarSection
-              icon={<FileText className="h-4 w-4" />}
-              label="Project's pages"
-              value="pages"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("pages")}
-            >
-              <ProjectPageCommand />
-            </SidebarSection>
-            <SidebarSection
-              icon={<ImageIcon className="h-4 w-4" />}
-              label="Image Upload"
-              value="imageupload"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("imageupload")}
-            >
-              <ImageSelector />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Database className="h-4 w-4" />}
-              label="CMS Management"
-              value="cms"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("cms")}
-            >
-              <CMSManager />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Camera className="h-4 w-4" />}
-              label="Snapshots"
-              value="snapshots"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("snapshots")}
-            >
-              <SnapshotManager />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Zap className="h-4 w-4" />}
-              label="Event Workflows"
-              value="workflows"
-              isCollapsed={true}
-              onIconClick={() => handleIconClick("workflows")}
-            >
-              <div />
-            </SidebarSection>
+          <div className="flex flex-col items-center gap-2 py-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("components")}
+                  className={cn(activeTab === "components" && "bg-accent")}
+                >
+                  <Blocks className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Components</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleTabChange("layers")}
+                  className={cn(activeTab === "layers" && "bg-accent")}
+                >
+                  <Layers className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Layers</TooltipContent>
+            </Tooltip>
+            <div className="w-8 h-px bg-border my-2" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToolSelect("pages")}
+                  className={cn(
+                    activeTab === "tools" &&
+                      activeToolSection === "pages" &&
+                      "bg-accent",
+                  )}
+                >
+                  <FileText className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Pages</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToolSelect("imageupload")}
+                  className={cn(
+                    activeTab === "tools" &&
+                      activeToolSection === "imageupload" &&
+                      "bg-accent",
+                  )}
+                >
+                  <ImageIcon className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Images</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToolSelect("cms")}
+                  className={cn(
+                    activeTab === "tools" &&
+                      activeToolSection === "cms" &&
+                      "bg-accent",
+                  )}
+                >
+                  <Database className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">CMS</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToolSelect("snapshots")}
+                  className={cn(
+                    activeTab === "tools" &&
+                      activeToolSection === "snapshots" &&
+                      "bg-accent",
+                  )}
+                >
+                  <Camera className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Snapshots</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleToolSelect("workflows")}
+                  className={cn(
+                    activeTab === "tools" &&
+                      activeToolSection === "workflows" &&
+                      "bg-accent",
+                  )}
+                >
+                  <Zap className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Workflows</TooltipContent>
+            </Tooltip>
           </div>
         ) : (
-          <Accordion
-            type="multiple"
-            className="w-full"
-            defaultValue={
-              activeSection
-                ? [activeSection]
-                : [
-                    "components",
-                    "pages",
-                    "imageupload",
-                    "cms",
-                    "snapshots",
-                    "workflows",
-                    "snap",
-                  ]
-            }
-            key={activeSection || "default"}
-          >
-            <SidebarSection
-              icon={<Blocks className="h-4 w-4" />}
-              label="Components"
-              value="components"
-              isCollapsed={false}
-            >
-              <ElementSelector />
-            </SidebarSection>
-            <SidebarSection
-              icon={<FileText className="h-4 w-4" />}
-              label="Project's pages"
-              value="pages"
-              isCollapsed={false}
-            >
-              <ProjectPageCommand />
-            </SidebarSection>
-            <SidebarSection
-              icon={<ImageIcon className="h-4 w-4" />}
-              label="Image Upload"
-              value="imageupload"
-              isCollapsed={false}
-            >
-              <ImageSelector />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Database className="h-4 w-4" />}
-              label="CMS Management"
-              value="cms"
-              isCollapsed={false}
-            >
-              <CMSManager />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Camera className="h-4 w-4" />}
-              label="Snapshots"
-              value="snapshots"
-              isCollapsed={false}
-            >
-              <SnapshotManager />
-            </SidebarSection>
-            <SidebarSection
-              icon={<Zap className="h-4 w-4" />}
-              label="Event Workflows"
-              value="workflows"
-              isCollapsed={false}
-            >
-              {projectId ? (
-                <>
-                  <EventWorkflowManagerDialog
-                    projectId={projectId}
-                    isOpen={workflowDialogOpen}
-                    onOpenChange={setWorkflowDialogOpen}
-                  />
-                  <button
-                    onClick={() => setWorkflowDialogOpen(true)}
-                    className="w-full mb-3 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium gap-2 flex items-center justify-center"
-                  >
-                    <Zap className="h-4 w-4" />
-                    Open Workflow Editor
-                  </button>
-                  <p className="text-xs text-muted-foreground">
-                    Create and manage visual workflows for your elements with
-                    drag-and-drop nodes
-                  </p>
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Project not loaded
-                </p>
-              )}
-            </SidebarSection>
-          </Accordion>
+          <div className="h-full flex flex-col">
+            {activeTab === "components" && <ElementSelector />}
+            {activeTab === "layers" && (
+              <ScrollArea className="h-full">
+                <div className="p-4">
+                  {elements.length > 0 ? (
+                    elements.map((element) => (
+                      <ElementTreeItem
+                        key={element.id || Math.random()}
+                        element={element}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      No elements yet. Add components to see them here.
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
+            {activeTab === "tools" && (
+              <ScrollArea className="h-full">
+                <Accordion
+                  type="single"
+                  collapsible
+                  value={activeToolSection}
+                  onValueChange={setActiveToolSection}
+                  className="w-full"
+                >
+                  <AccordionItem value="pages" className="border-b">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span>Pages</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <ProjectPageCommand />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="imageupload" className="border-b">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-4 w-4" />
+                        <span>Images</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <ImageSelector />
+                      </Suspense>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="cms" className="border-b">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4" />
+                        <span>CMS</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <CMSManager />
+                      </Suspense>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="snapshots" className="border-b">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <Camera className="h-4 w-4" />
+                        <span>Snapshots</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <SnapshotManager />
+                      </Suspense>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="workflows" className="border-b">
+                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        <span>Workflows</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4">
+                      {projectId ? (
+                        <Suspense fallback={<ToolPanelFallback />}>
+                          <EventWorkflowManagerDialog
+                            projectId={projectId}
+                            isOpen={workflowDialogOpen}
+                            onOpenChange={setWorkflowDialogOpen}
+                          />
+                          <button
+                            onClick={() => setWorkflowDialogOpen(true)}
+                            className="w-full mb-3 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium gap-2 flex items-center justify-center"
+                          >
+                            <Zap className="h-4 w-4" />
+                            Open Workflow Editor
+                          </button>
+                          <p className="text-xs text-muted-foreground">
+                            Create and manage visual workflows for your elements
+                            with drag-and-drop nodes
+                          </p>
+                        </Suspense>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Project not loaded
+                        </p>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </ScrollArea>
+            )}
+          </div>
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Settings">
-                  <Link
-                    href={"/settings/preferences"}
-                    className="flex items-center gap-2"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span
-                      className={cn(
-                        "transition-opacity duration-200",
-                        isCollapsed && "opacity-0 w-0 overflow-hidden",
-                      )}
-                    >
-                      Settings
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarFooter className="border-t border-border p-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Settings">
+              <Link
+                href={"/settings/preferences"}
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span
+                  className={cn(
+                    "transition-opacity duration-200",
+                    isCollapsed && "opacity-0 w-0 overflow-hidden",
+                  )}
+                >
+                  Settings
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
-
       <SidebarRail />
     </Sidebar>
   );

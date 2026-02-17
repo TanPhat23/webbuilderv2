@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { Image, ImageUploadResponse } from "@/interfaces/image.interface";
 import apiClient from "./apiclient";
 import { API_ENDPOINTS } from "@/constants/endpoints";
@@ -25,7 +25,11 @@ export const imageService: IImageService = {
     formData.append("image", file);
     if (imageName) formData.append("imageName", imageName);
 
-    const response = await fetch(GetUrl(API_ENDPOINTS.IMAGES.UPLOAD), {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.IMAGES.UPLOAD)
+      .build();
+
+    const response = await fetch(url, {
       method: "POST",
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -45,21 +49,30 @@ export const imageService: IImageService = {
     imageName?: string,
   ): Promise<ImageUploadResponse> => {
     const data = { base64, imageName };
-    return apiClient.post<ImageUploadResponse>(
-      GetUrl(API_ENDPOINTS.IMAGES.UPLOAD_BASE64),
-      data,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.IMAGES.UPLOAD_BASE64)
+      .build();
+    return apiClient.post<ImageUploadResponse>(url, data);
   },
 
   getUserImages: async (): Promise<Image[]> => {
-    return apiClient.get<Image[]>(GetUrl(API_ENDPOINTS.IMAGES.GET_USER));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.IMAGES.GET_USER)
+      .build();
+    return apiClient.get<Image[]>(url);
   },
 
   getImageByID: async (id: string): Promise<Image> => {
-    return apiClient.get<Image>(GetUrl(API_ENDPOINTS.IMAGES.GET_BY_ID(id)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.IMAGES.GET_BY_ID(id))
+      .build();
+    return apiClient.get<Image>(url);
   },
 
   deleteImage: async (id: string): Promise<boolean> => {
-    return apiClient.delete(GetUrl(API_ENDPOINTS.IMAGES.DELETE(id)));
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.IMAGES.DELETE(id))
+      .build();
+    return apiClient.delete(url);
   },
 };

@@ -29,7 +29,8 @@ import { Save, RotateCcw, Zap, Code2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import clsx from "clsx";
 import { useWorkflowCanvas } from "@/hooks/editor";
-import { validateWorkflow } from "@/lib/utils/workflow/workflowTransformer";
+import { validateWorkflowCanvas } from "@/schema/zod/workflowCanvas";
+import type { ZodIssue } from "zod";
 
 interface WorkflowEditorProps {
   workflowName?: string;
@@ -74,10 +75,13 @@ export const WorkflowEditor = ({
   const handleSave = () => {
     const currentWorkflow = getWorkflow();
 
-    const validation = validateWorkflow(currentWorkflow);
-    if (!validation.isValid) {
-      const errors = validation.errors.join("\n");
-      toast.error(`Workflow validation failed:\n${errors}`);
+    // Use Zod validation for the entire workflow canvas
+    const validation = validateWorkflowCanvas(currentWorkflow);
+    if (!validation.success) {
+      const errors =
+        validation.error?.issues.map((issue: ZodIssue) => issue.message) ?? [];
+      toast.error(`Workflow validation failed:\n${errors.join("\n")}`);
+      console.error("Validation errors:", validation.error);
       return;
     }
 
@@ -107,18 +111,31 @@ export const WorkflowEditor = ({
 
   const handleSaveNodeConfig = (
     nodeId: string,
-    config: Record<string, any>,
+    config: Record<string, unknown>,
   ) => {
+    const existingNode = workflow.nodes.find((n) => n.id === nodeId);
+    const existingLabel = existingNode?.data?.label ?? "";
+    const existingDescription = existingNode?.data?.description;
+
+    const label =
+      typeof config["label"] === "string" && config["label"].trim().length > 0
+        ? config["label"]
+        : existingLabel;
+
+    const description =
+      typeof config["description"] === "string"
+        ? config["description"]
+        : existingDescription;
+
     updateNode(nodeId, {
-      ...workflow.nodes.find((n) => n.id === nodeId),
+      ...(existingNode ?? {}),
       data: {
-        label:
-          config.label ||
-          workflow.nodes.find((n) => n.id === nodeId)?.data.label,
-        description: config.description,
-        config,
+        label,
+        description,
+        config: config,
       },
     });
+
     toast.success("Node configuration saved!");
   };
 
@@ -241,7 +258,7 @@ export const WorkflowEditor = ({
                     <div className="space-y-4">
                       <div>
                         <label className="text-sm font-medium">Nodes</label>
-                        <p className="text-2xl font-bold text-blue-600">
+                        <p className="text-2xl font-bold text-primary">
                           {workflow.nodes.length}
                         </p>
                       </div>
@@ -249,7 +266,7 @@ export const WorkflowEditor = ({
                         <label className="text-sm font-medium">
                           Connections
                         </label>
-                        <p className="text-2xl font-bold text-green-600">
+                        <p className="text-2xl font-bold text-accent">
                           {workflow.connections.length}
                         </p>
                       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEventModeStore } from "@/globalstore/eventmodestore";
+import { useEventModeStore } from "@/globalstore/event-mode-store";
 import { Button } from "@/components/ui/button";
 import {
   Zap,

@@ -1,27 +1,17 @@
-import { Viewport } from "@/hooks";
 import { Wifi, WifiOff } from "lucide-react";
-import { useState } from "react";
-import * as Y from "yjs";
+import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
-type EditorHeaderProps = {
-  currentView: Viewport;
-  setCurrentView: (view: Viewport) => void;
-  projectId: string;
-  isConnected?: boolean;
-  isSynced?: boolean;
-  ydoc?: Y.Doc | null;
-  collabType?: "yjs" | "websocket";
-};
+export default function CollaborationStatus() {
+  const collab = useCollaborationOptional();
 
-export default function CollaborationStatus({
-  isConnected,
-  isSynced,
-  collabType,
-}: Pick<EditorHeaderProps, "isConnected" | "isSynced" | "collabType">) {
+  const isConnected = collab?.isConnected ?? false;
+  const isSynced = collab?.isSynced ?? false;
+
   const status =
     isConnected && isSynced
       ? {
           icon: Wifi,
+          label: "Connected",
           color: "text-emerald-500",
           bgColor: "bg-emerald-500/10",
           dotColor: "bg-emerald-500",

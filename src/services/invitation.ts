@@ -1,11 +1,10 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import apiClient from "./apiclient";
 import {
   Invitation,
   CreateInvitationRequest,
   AcceptInvitationRequest,
-  InvitationListResponse,
 } from "@/interfaces/collaboration.interface";
 
 export interface UpdateInvitationStatusRequest {
@@ -34,10 +33,10 @@ export const invitationService: IInvitationService = {
   createInvitation: async (
     data: CreateInvitationRequest,
   ): Promise<Invitation> => {
-    return apiClient.post<Invitation>(
-      GetUrl(API_ENDPOINTS.INVITATIONS.CREATE),
-      data,
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.INVITATIONS.CREATE)
+      .build();
+    return apiClient.post<Invitation>(url, data);
   },
 
   /**
@@ -47,9 +46,10 @@ export const invitationService: IInvitationService = {
    */
   getProjectInvitations: async (projectId: string): Promise<Invitation[]> => {
     try {
-      const response = await apiClient.get<Invitation[]>(
-        GetUrl(API_ENDPOINTS.INVITATIONS.GET_BY_PROJECT(projectId)),
-      );
+      const url = new URLBuilder("api")
+        .setPath(API_ENDPOINTS.INVITATIONS.GET_BY_PROJECT(projectId))
+        .build();
+      const response = await apiClient.get<Invitation[]>(url);
       return Array.isArray(response) ? response : [];
     } catch (error) {
       console.warn(
@@ -66,7 +66,10 @@ export const invitationService: IInvitationService = {
    * @returns Promise<void>
    */
   acceptInvitation: async (data: AcceptInvitationRequest): Promise<void> => {
-    await apiClient.post<void>(GetUrl(API_ENDPOINTS.INVITATIONS.ACCEPT), data);
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.INVITATIONS.ACCEPT)
+      .build();
+    await apiClient.post<void>(url, data);
   },
 
   /**
@@ -78,9 +81,10 @@ export const invitationService: IInvitationService = {
     projectId: string,
   ): Promise<Invitation[]> => {
     try {
-      const response = await apiClient.get<Invitation[]>(
-        GetUrl(API_ENDPOINTS.INVITATIONS.GET_PENDING_BY_PROJECT(projectId)),
-      );
+      const url = new URLBuilder("api")
+        .setPath(API_ENDPOINTS.INVITATIONS.GET_PENDING_BY_PROJECT(projectId))
+        .build();
+      const response = await apiClient.get<Invitation[]>(url);
       const invitations = Array.isArray(response) ? response : [];
       return invitations;
     } catch (error) {
@@ -94,10 +98,10 @@ export const invitationService: IInvitationService = {
    * @returns Promise<Invitation> - The updated invitation
    */
   cancelInvitation: async (invitationId: string): Promise<Invitation> => {
-    return apiClient.patch<Invitation>(
-      GetUrl(API_ENDPOINTS.INVITATIONS.CANCEL(invitationId)),
-      {},
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.INVITATIONS.CANCEL(invitationId))
+      .build();
+    return apiClient.patch<Invitation>(url, {});
   },
 
   /**
@@ -110,10 +114,10 @@ export const invitationService: IInvitationService = {
     invitationId: string,
     status: string,
   ): Promise<Invitation> => {
-    return apiClient.patch<Invitation>(
-      GetUrl(API_ENDPOINTS.INVITATIONS.UPDATE_STATUS(invitationId)),
-      { status },
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.INVITATIONS.UPDATE_STATUS(invitationId))
+      .build();
+    return apiClient.patch<Invitation>(url, { status });
   },
 
   /**
@@ -122,8 +126,9 @@ export const invitationService: IInvitationService = {
    * @returns Promise<boolean> - Success status
    */
   deleteInvitation: async (invitationId: string): Promise<boolean> => {
-    return apiClient.delete(
-      GetUrl(API_ENDPOINTS.INVITATIONS.DELETE(invitationId)),
-    );
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.INVITATIONS.DELETE(invitationId))
+      .build();
+    return apiClient.delete(url);
   },
 };

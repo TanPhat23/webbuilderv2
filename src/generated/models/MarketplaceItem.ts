@@ -50,7 +50,6 @@ export type MarketplaceItemMinAggregateOutputType = {
   PageCount: number | null
   Downloads: number | null
   Likes: number | null
-  Views: number | null
   AuthorId: string | null
   AuthorName: string | null
   Verified: boolean | null
@@ -58,6 +57,7 @@ export type MarketplaceItemMinAggregateOutputType = {
   UpdatedAt: Date | null
   DeletedAt: Date | null
   ProjectId: string | null
+  Views: number | null
 }
 
 export type MarketplaceItemMaxAggregateOutputType = {
@@ -70,7 +70,6 @@ export type MarketplaceItemMaxAggregateOutputType = {
   PageCount: number | null
   Downloads: number | null
   Likes: number | null
-  Views: number | null
   AuthorId: string | null
   AuthorName: string | null
   Verified: boolean | null
@@ -78,6 +77,7 @@ export type MarketplaceItemMaxAggregateOutputType = {
   UpdatedAt: Date | null
   DeletedAt: Date | null
   ProjectId: string | null
+  Views: number | null
 }
 
 export type MarketplaceItemCountAggregateOutputType = {
@@ -90,7 +90,6 @@ export type MarketplaceItemCountAggregateOutputType = {
   PageCount: number
   Downloads: number
   Likes: number
-  Views: number
   AuthorId: number
   AuthorName: number
   Verified: number
@@ -98,6 +97,7 @@ export type MarketplaceItemCountAggregateOutputType = {
   UpdatedAt: number
   DeletedAt: number
   ProjectId: number
+  Views: number
   _all: number
 }
 
@@ -126,7 +126,6 @@ export type MarketplaceItemMinAggregateInputType = {
   PageCount?: true
   Downloads?: true
   Likes?: true
-  Views?: true
   AuthorId?: true
   AuthorName?: true
   Verified?: true
@@ -134,6 +133,7 @@ export type MarketplaceItemMinAggregateInputType = {
   UpdatedAt?: true
   DeletedAt?: true
   ProjectId?: true
+  Views?: true
 }
 
 export type MarketplaceItemMaxAggregateInputType = {
@@ -146,7 +146,6 @@ export type MarketplaceItemMaxAggregateInputType = {
   PageCount?: true
   Downloads?: true
   Likes?: true
-  Views?: true
   AuthorId?: true
   AuthorName?: true
   Verified?: true
@@ -154,6 +153,7 @@ export type MarketplaceItemMaxAggregateInputType = {
   UpdatedAt?: true
   DeletedAt?: true
   ProjectId?: true
+  Views?: true
 }
 
 export type MarketplaceItemCountAggregateInputType = {
@@ -166,7 +166,6 @@ export type MarketplaceItemCountAggregateInputType = {
   PageCount?: true
   Downloads?: true
   Likes?: true
-  Views?: true
   AuthorId?: true
   AuthorName?: true
   Verified?: true
@@ -174,6 +173,7 @@ export type MarketplaceItemCountAggregateInputType = {
   UpdatedAt?: true
   DeletedAt?: true
   ProjectId?: true
+  Views?: true
   _all?: true
 }
 
@@ -273,7 +273,6 @@ export type MarketplaceItemGroupByOutputType = {
   PageCount: number | null
   Downloads: number
   Likes: number
-  Views: number
   AuthorId: string
   AuthorName: string
   Verified: boolean
@@ -281,6 +280,7 @@ export type MarketplaceItemGroupByOutputType = {
   UpdatedAt: Date
   DeletedAt: Date | null
   ProjectId: string | null
+  Views: number
   _count: MarketplaceItemCountAggregateOutputType | null
   _avg: MarketplaceItemAvgAggregateOutputType | null
   _sum: MarketplaceItemSumAggregateOutputType | null
@@ -316,7 +316,6 @@ export type MarketplaceItemWhereInput = {
   PageCount?: Prisma.IntNullableFilter<"MarketplaceItem"> | number | null
   Downloads?: Prisma.IntFilter<"MarketplaceItem"> | number
   Likes?: Prisma.IntFilter<"MarketplaceItem"> | number
-  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
   AuthorId?: Prisma.StringFilter<"MarketplaceItem"> | string
   AuthorName?: Prisma.StringFilter<"MarketplaceItem"> | string
   Verified?: Prisma.BoolFilter<"MarketplaceItem"> | boolean
@@ -324,11 +323,12 @@ export type MarketplaceItemWhereInput = {
   UpdatedAt?: Prisma.DateTimeFilter<"MarketplaceItem"> | Date | string
   DeletedAt?: Prisma.DateTimeNullableFilter<"MarketplaceItem"> | Date | string | null
   ProjectId?: Prisma.StringNullableFilter<"MarketplaceItem"> | string | null
+  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
+  Comments?: Prisma.CommentListRelationFilter
   Author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   Project?: Prisma.XOR<Prisma.ProjectNullableScalarRelationFilter, Prisma.ProjectWhereInput> | null
   Categories?: Prisma.MarketplaceItemCategoryListRelationFilter
   Tags?: Prisma.MarketplaceItemTagListRelationFilter
-  Comments?: Prisma.CommentListRelationFilter
 }
 
 export type MarketplaceItemOrderByWithRelationInput = {
@@ -341,7 +341,6 @@ export type MarketplaceItemOrderByWithRelationInput = {
   PageCount?: Prisma.SortOrderInput | Prisma.SortOrder
   Downloads?: Prisma.SortOrder
   Likes?: Prisma.SortOrder
-  Views?: Prisma.SortOrder
   AuthorId?: Prisma.SortOrder
   AuthorName?: Prisma.SortOrder
   Verified?: Prisma.SortOrder
@@ -349,11 +348,12 @@ export type MarketplaceItemOrderByWithRelationInput = {
   UpdatedAt?: Prisma.SortOrder
   DeletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   ProjectId?: Prisma.SortOrderInput | Prisma.SortOrder
+  Views?: Prisma.SortOrder
+  Comments?: Prisma.CommentOrderByRelationAggregateInput
   Author?: Prisma.UserOrderByWithRelationInput
   Project?: Prisma.ProjectOrderByWithRelationInput
   Categories?: Prisma.MarketplaceItemCategoryOrderByRelationAggregateInput
   Tags?: Prisma.MarketplaceItemTagOrderByRelationAggregateInput
-  Comments?: Prisma.CommentOrderByRelationAggregateInput
 }
 
 export type MarketplaceItemWhereUniqueInput = Prisma.AtLeast<{
@@ -370,18 +370,18 @@ export type MarketplaceItemWhereUniqueInput = Prisma.AtLeast<{
   PageCount?: Prisma.IntNullableFilter<"MarketplaceItem"> | number | null
   Downloads?: Prisma.IntFilter<"MarketplaceItem"> | number
   Likes?: Prisma.IntFilter<"MarketplaceItem"> | number
-  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
   AuthorId?: Prisma.StringFilter<"MarketplaceItem"> | string
   AuthorName?: Prisma.StringFilter<"MarketplaceItem"> | string
   Verified?: Prisma.BoolFilter<"MarketplaceItem"> | boolean
   CreatedAt?: Prisma.DateTimeFilter<"MarketplaceItem"> | Date | string
   UpdatedAt?: Prisma.DateTimeFilter<"MarketplaceItem"> | Date | string
   DeletedAt?: Prisma.DateTimeNullableFilter<"MarketplaceItem"> | Date | string | null
+  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
+  Comments?: Prisma.CommentListRelationFilter
   Author?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   Project?: Prisma.XOR<Prisma.ProjectNullableScalarRelationFilter, Prisma.ProjectWhereInput> | null
   Categories?: Prisma.MarketplaceItemCategoryListRelationFilter
   Tags?: Prisma.MarketplaceItemTagListRelationFilter
-  Comments?: Prisma.CommentListRelationFilter
 }, "Id" | "ProjectId">
 
 export type MarketplaceItemOrderByWithAggregationInput = {
@@ -394,7 +394,6 @@ export type MarketplaceItemOrderByWithAggregationInput = {
   PageCount?: Prisma.SortOrderInput | Prisma.SortOrder
   Downloads?: Prisma.SortOrder
   Likes?: Prisma.SortOrder
-  Views?: Prisma.SortOrder
   AuthorId?: Prisma.SortOrder
   AuthorName?: Prisma.SortOrder
   Verified?: Prisma.SortOrder
@@ -402,6 +401,7 @@ export type MarketplaceItemOrderByWithAggregationInput = {
   UpdatedAt?: Prisma.SortOrder
   DeletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   ProjectId?: Prisma.SortOrderInput | Prisma.SortOrder
+  Views?: Prisma.SortOrder
   _count?: Prisma.MarketplaceItemCountOrderByAggregateInput
   _avg?: Prisma.MarketplaceItemAvgOrderByAggregateInput
   _max?: Prisma.MarketplaceItemMaxOrderByAggregateInput
@@ -422,7 +422,6 @@ export type MarketplaceItemScalarWhereWithAggregatesInput = {
   PageCount?: Prisma.IntNullableWithAggregatesFilter<"MarketplaceItem"> | number | null
   Downloads?: Prisma.IntWithAggregatesFilter<"MarketplaceItem"> | number
   Likes?: Prisma.IntWithAggregatesFilter<"MarketplaceItem"> | number
-  Views?: Prisma.IntWithAggregatesFilter<"MarketplaceItem"> | number
   AuthorId?: Prisma.StringWithAggregatesFilter<"MarketplaceItem"> | string
   AuthorName?: Prisma.StringWithAggregatesFilter<"MarketplaceItem"> | string
   Verified?: Prisma.BoolWithAggregatesFilter<"MarketplaceItem"> | boolean
@@ -430,6 +429,7 @@ export type MarketplaceItemScalarWhereWithAggregatesInput = {
   UpdatedAt?: Prisma.DateTimeWithAggregatesFilter<"MarketplaceItem"> | Date | string
   DeletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MarketplaceItem"> | Date | string | null
   ProjectId?: Prisma.StringNullableWithAggregatesFilter<"MarketplaceItem"> | string | null
+  Views?: Prisma.IntWithAggregatesFilter<"MarketplaceItem"> | number
 }
 
 export type MarketplaceItemCreateInput = {
@@ -442,17 +442,17 @@ export type MarketplaceItemCreateInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
   Author: Prisma.UserCreateNestedOneWithoutMarketplaceItemsInput
   Project?: Prisma.ProjectCreateNestedOneWithoutMarketplaceItemInput
   Categories?: Prisma.MarketplaceItemCategoryCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUncheckedCreateInput = {
@@ -465,7 +465,6 @@ export type MarketplaceItemUncheckedCreateInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
@@ -473,9 +472,10 @@ export type MarketplaceItemUncheckedCreateInput = {
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
+  Views?: number
+  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUpdateInput = {
@@ -488,17 +488,17 @@ export type MarketplaceItemUpdateInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
   Author?: Prisma.UserUpdateOneRequiredWithoutMarketplaceItemsNestedInput
   Project?: Prisma.ProjectUpdateOneWithoutMarketplaceItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateInput = {
@@ -511,7 +511,6 @@ export type MarketplaceItemUncheckedUpdateInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -519,9 +518,10 @@ export type MarketplaceItemUncheckedUpdateInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemCreateManyInput = {
@@ -534,7 +534,6 @@ export type MarketplaceItemCreateManyInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
@@ -542,6 +541,7 @@ export type MarketplaceItemCreateManyInput = {
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
+  Views?: number
 }
 
 export type MarketplaceItemUpdateManyMutationInput = {
@@ -554,12 +554,12 @@ export type MarketplaceItemUpdateManyMutationInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type MarketplaceItemUncheckedUpdateManyInput = {
@@ -572,7 +572,6 @@ export type MarketplaceItemUncheckedUpdateManyInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -580,6 +579,7 @@ export type MarketplaceItemUncheckedUpdateManyInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 export type MarketplaceItemNullableScalarRelationFilter = {
@@ -607,7 +607,6 @@ export type MarketplaceItemCountOrderByAggregateInput = {
   PageCount?: Prisma.SortOrder
   Downloads?: Prisma.SortOrder
   Likes?: Prisma.SortOrder
-  Views?: Prisma.SortOrder
   AuthorId?: Prisma.SortOrder
   AuthorName?: Prisma.SortOrder
   Verified?: Prisma.SortOrder
@@ -615,6 +614,7 @@ export type MarketplaceItemCountOrderByAggregateInput = {
   UpdatedAt?: Prisma.SortOrder
   DeletedAt?: Prisma.SortOrder
   ProjectId?: Prisma.SortOrder
+  Views?: Prisma.SortOrder
 }
 
 export type MarketplaceItemAvgOrderByAggregateInput = {
@@ -634,7 +634,6 @@ export type MarketplaceItemMaxOrderByAggregateInput = {
   PageCount?: Prisma.SortOrder
   Downloads?: Prisma.SortOrder
   Likes?: Prisma.SortOrder
-  Views?: Prisma.SortOrder
   AuthorId?: Prisma.SortOrder
   AuthorName?: Prisma.SortOrder
   Verified?: Prisma.SortOrder
@@ -642,6 +641,7 @@ export type MarketplaceItemMaxOrderByAggregateInput = {
   UpdatedAt?: Prisma.SortOrder
   DeletedAt?: Prisma.SortOrder
   ProjectId?: Prisma.SortOrder
+  Views?: Prisma.SortOrder
 }
 
 export type MarketplaceItemMinOrderByAggregateInput = {
@@ -654,7 +654,6 @@ export type MarketplaceItemMinOrderByAggregateInput = {
   PageCount?: Prisma.SortOrder
   Downloads?: Prisma.SortOrder
   Likes?: Prisma.SortOrder
-  Views?: Prisma.SortOrder
   AuthorId?: Prisma.SortOrder
   AuthorName?: Prisma.SortOrder
   Verified?: Prisma.SortOrder
@@ -662,6 +661,7 @@ export type MarketplaceItemMinOrderByAggregateInput = {
   UpdatedAt?: Prisma.SortOrder
   DeletedAt?: Prisma.SortOrder
   ProjectId?: Prisma.SortOrder
+  Views?: Prisma.SortOrder
 }
 
 export type MarketplaceItemSumOrderByAggregateInput = {
@@ -810,16 +810,16 @@ export type MarketplaceItemCreateWithoutProjectInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
   Author: Prisma.UserCreateNestedOneWithoutMarketplaceItemsInput
   Categories?: Prisma.MarketplaceItemCategoryCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUncheckedCreateWithoutProjectInput = {
@@ -832,16 +832,16 @@ export type MarketplaceItemUncheckedCreateWithoutProjectInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemCreateOrConnectWithoutProjectInput = {
@@ -870,16 +870,16 @@ export type MarketplaceItemUpdateWithoutProjectInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
   Author?: Prisma.UserUpdateOneRequiredWithoutMarketplaceItemsNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateWithoutProjectInput = {
@@ -892,16 +892,16 @@ export type MarketplaceItemUncheckedUpdateWithoutProjectInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemCreateWithoutAuthorInput = {
@@ -914,16 +914,16 @@ export type MarketplaceItemCreateWithoutAuthorInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
   Project?: Prisma.ProjectCreateNestedOneWithoutMarketplaceItemInput
   Categories?: Prisma.MarketplaceItemCategoryCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUncheckedCreateWithoutAuthorInput = {
@@ -936,16 +936,16 @@ export type MarketplaceItemUncheckedCreateWithoutAuthorInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
+  Views?: number
+  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemCreateOrConnectWithoutAuthorInput = {
@@ -987,7 +987,6 @@ export type MarketplaceItemScalarWhereInput = {
   PageCount?: Prisma.IntNullableFilter<"MarketplaceItem"> | number | null
   Downloads?: Prisma.IntFilter<"MarketplaceItem"> | number
   Likes?: Prisma.IntFilter<"MarketplaceItem"> | number
-  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
   AuthorId?: Prisma.StringFilter<"MarketplaceItem"> | string
   AuthorName?: Prisma.StringFilter<"MarketplaceItem"> | string
   Verified?: Prisma.BoolFilter<"MarketplaceItem"> | boolean
@@ -995,6 +994,7 @@ export type MarketplaceItemScalarWhereInput = {
   UpdatedAt?: Prisma.DateTimeFilter<"MarketplaceItem"> | Date | string
   DeletedAt?: Prisma.DateTimeNullableFilter<"MarketplaceItem"> | Date | string | null
   ProjectId?: Prisma.StringNullableFilter<"MarketplaceItem"> | string | null
+  Views?: Prisma.IntFilter<"MarketplaceItem"> | number
 }
 
 export type MarketplaceItemCreateWithoutTagsInput = {
@@ -1007,16 +1007,16 @@ export type MarketplaceItemCreateWithoutTagsInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
   Author: Prisma.UserCreateNestedOneWithoutMarketplaceItemsInput
   Project?: Prisma.ProjectCreateNestedOneWithoutMarketplaceItemInput
   Categories?: Prisma.MarketplaceItemCategoryCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUncheckedCreateWithoutTagsInput = {
@@ -1029,7 +1029,6 @@ export type MarketplaceItemUncheckedCreateWithoutTagsInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
@@ -1037,8 +1036,9 @@ export type MarketplaceItemUncheckedCreateWithoutTagsInput = {
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
-  Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
+  Views?: number
   Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
+  Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemCreateOrConnectWithoutTagsInput = {
@@ -1067,16 +1067,16 @@ export type MarketplaceItemUpdateWithoutTagsInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
   Author?: Prisma.UserUpdateOneRequiredWithoutMarketplaceItemsNestedInput
   Project?: Prisma.ProjectUpdateOneWithoutMarketplaceItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateWithoutTagsInput = {
@@ -1089,7 +1089,6 @@ export type MarketplaceItemUncheckedUpdateWithoutTagsInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1097,8 +1096,9 @@ export type MarketplaceItemUncheckedUpdateWithoutTagsInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
   Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
+  Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemCreateWithoutCategoriesInput = {
@@ -1111,16 +1111,16 @@ export type MarketplaceItemCreateWithoutCategoriesInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
+  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
   Author: Prisma.UserCreateNestedOneWithoutMarketplaceItemsInput
   Project?: Prisma.ProjectCreateNestedOneWithoutMarketplaceItemInput
   Tags?: Prisma.MarketplaceItemTagCreateNestedManyWithoutItemInput
-  Comments?: Prisma.CommentCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemUncheckedCreateWithoutCategoriesInput = {
@@ -1133,7 +1133,6 @@ export type MarketplaceItemUncheckedCreateWithoutCategoriesInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
@@ -1141,8 +1140,9 @@ export type MarketplaceItemUncheckedCreateWithoutCategoriesInput = {
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
-  Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
+  Views?: number
   Comments?: Prisma.CommentUncheckedCreateNestedManyWithoutItemInput
+  Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
 }
 
 export type MarketplaceItemCreateOrConnectWithoutCategoriesInput = {
@@ -1171,16 +1171,16 @@ export type MarketplaceItemUpdateWithoutCategoriesInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
   Author?: Prisma.UserUpdateOneRequiredWithoutMarketplaceItemsNestedInput
   Project?: Prisma.ProjectUpdateOneWithoutMarketplaceItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateWithoutCategoriesInput = {
@@ -1193,7 +1193,6 @@ export type MarketplaceItemUncheckedUpdateWithoutCategoriesInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1201,8 +1200,9 @@ export type MarketplaceItemUncheckedUpdateWithoutCategoriesInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
   Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
+  Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemCreateWithoutCommentsInput = {
@@ -1215,12 +1215,12 @@ export type MarketplaceItemCreateWithoutCommentsInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
+  Views?: number
   Author: Prisma.UserCreateNestedOneWithoutMarketplaceItemsInput
   Project?: Prisma.ProjectCreateNestedOneWithoutMarketplaceItemInput
   Categories?: Prisma.MarketplaceItemCategoryCreateNestedManyWithoutItemInput
@@ -1237,7 +1237,6 @@ export type MarketplaceItemUncheckedCreateWithoutCommentsInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorId: string
   AuthorName: string
   Verified?: boolean
@@ -1245,6 +1244,7 @@ export type MarketplaceItemUncheckedCreateWithoutCommentsInput = {
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
+  Views?: number
   Categories?: Prisma.MarketplaceItemCategoryUncheckedCreateNestedManyWithoutItemInput
   Tags?: Prisma.MarketplaceItemTagUncheckedCreateNestedManyWithoutItemInput
 }
@@ -1275,12 +1275,12 @@ export type MarketplaceItemUpdateWithoutCommentsInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
   Author?: Prisma.UserUpdateOneRequiredWithoutMarketplaceItemsNestedInput
   Project?: Prisma.ProjectUpdateOneWithoutMarketplaceItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUpdateManyWithoutItemNestedInput
@@ -1297,7 +1297,6 @@ export type MarketplaceItemUncheckedUpdateWithoutCommentsInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorId?: Prisma.StringFieldUpdateOperationsInput | string
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
@@ -1305,6 +1304,7 @@ export type MarketplaceItemUncheckedUpdateWithoutCommentsInput = {
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
   Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
 }
@@ -1319,13 +1319,13 @@ export type MarketplaceItemCreateManyAuthorInput = {
   PageCount?: number | null
   Downloads?: number
   Likes?: number
-  Views?: number
   AuthorName: string
   Verified?: boolean
   CreatedAt?: Date | string
   UpdatedAt?: Date | string
   DeletedAt?: Date | string | null
   ProjectId?: string | null
+  Views?: number
 }
 
 export type MarketplaceItemUpdateWithoutAuthorInput = {
@@ -1338,16 +1338,16 @@ export type MarketplaceItemUpdateWithoutAuthorInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
   Project?: Prisma.ProjectUpdateOneWithoutMarketplaceItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateWithoutAuthorInput = {
@@ -1360,16 +1360,16 @@ export type MarketplaceItemUncheckedUpdateWithoutAuthorInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
+  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
   Categories?: Prisma.MarketplaceItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   Tags?: Prisma.MarketplaceItemTagUncheckedUpdateManyWithoutItemNestedInput
-  Comments?: Prisma.CommentUncheckedUpdateManyWithoutItemNestedInput
 }
 
 export type MarketplaceItemUncheckedUpdateManyWithoutAuthorInput = {
@@ -1382,13 +1382,13 @@ export type MarketplaceItemUncheckedUpdateManyWithoutAuthorInput = {
   PageCount?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   Downloads?: Prisma.IntFieldUpdateOperationsInput | number
   Likes?: Prisma.IntFieldUpdateOperationsInput | number
-  Views?: Prisma.IntFieldUpdateOperationsInput | number
   AuthorName?: Prisma.StringFieldUpdateOperationsInput | string
   Verified?: Prisma.BoolFieldUpdateOperationsInput | boolean
   CreatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   UpdatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   DeletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   ProjectId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Views?: Prisma.IntFieldUpdateOperationsInput | number
 }
 
 
@@ -1397,15 +1397,15 @@ export type MarketplaceItemUncheckedUpdateManyWithoutAuthorInput = {
  */
 
 export type MarketplaceItemCountOutputType = {
+  Comments: number
   Categories: number
   Tags: number
-  Comments: number
 }
 
 export type MarketplaceItemCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  Comments?: boolean | MarketplaceItemCountOutputTypeCountCommentsArgs
   Categories?: boolean | MarketplaceItemCountOutputTypeCountCategoriesArgs
   Tags?: boolean | MarketplaceItemCountOutputTypeCountTagsArgs
-  Comments?: boolean | MarketplaceItemCountOutputTypeCountCommentsArgs
 }
 
 /**
@@ -1416,6 +1416,13 @@ export type MarketplaceItemCountOutputTypeDefaultArgs<ExtArgs extends runtime.Ty
    * Select specific fields to fetch from the MarketplaceItemCountOutputType
    */
   select?: Prisma.MarketplaceItemCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * MarketplaceItemCountOutputType without action
+ */
+export type MarketplaceItemCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.CommentWhereInput
 }
 
 /**
@@ -1432,13 +1439,6 @@ export type MarketplaceItemCountOutputTypeCountTagsArgs<ExtArgs extends runtime.
   where?: Prisma.MarketplaceItemTagWhereInput
 }
 
-/**
- * MarketplaceItemCountOutputType without action
- */
-export type MarketplaceItemCountOutputTypeCountCommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.CommentWhereInput
-}
-
 
 export type MarketplaceItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   Id?: boolean
@@ -1450,7 +1450,6 @@ export type MarketplaceItemSelect<ExtArgs extends runtime.Types.Extensions.Inter
   PageCount?: boolean
   Downloads?: boolean
   Likes?: boolean
-  Views?: boolean
   AuthorId?: boolean
   AuthorName?: boolean
   Verified?: boolean
@@ -1458,11 +1457,12 @@ export type MarketplaceItemSelect<ExtArgs extends runtime.Types.Extensions.Inter
   UpdatedAt?: boolean
   DeletedAt?: boolean
   ProjectId?: boolean
+  Views?: boolean
+  Comments?: boolean | Prisma.MarketplaceItem$CommentsArgs<ExtArgs>
   Author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   Project?: boolean | Prisma.MarketplaceItem$ProjectArgs<ExtArgs>
   Categories?: boolean | Prisma.MarketplaceItem$CategoriesArgs<ExtArgs>
   Tags?: boolean | Prisma.MarketplaceItem$TagsArgs<ExtArgs>
-  Comments?: boolean | Prisma.MarketplaceItem$CommentsArgs<ExtArgs>
   _count?: boolean | Prisma.MarketplaceItemCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["marketplaceItem"]>
 
@@ -1476,7 +1476,6 @@ export type MarketplaceItemSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   PageCount?: boolean
   Downloads?: boolean
   Likes?: boolean
-  Views?: boolean
   AuthorId?: boolean
   AuthorName?: boolean
   Verified?: boolean
@@ -1484,6 +1483,7 @@ export type MarketplaceItemSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   UpdatedAt?: boolean
   DeletedAt?: boolean
   ProjectId?: boolean
+  Views?: boolean
   Author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   Project?: boolean | Prisma.MarketplaceItem$ProjectArgs<ExtArgs>
 }, ExtArgs["result"]["marketplaceItem"]>
@@ -1498,7 +1498,6 @@ export type MarketplaceItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   PageCount?: boolean
   Downloads?: boolean
   Likes?: boolean
-  Views?: boolean
   AuthorId?: boolean
   AuthorName?: boolean
   Verified?: boolean
@@ -1506,6 +1505,7 @@ export type MarketplaceItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   UpdatedAt?: boolean
   DeletedAt?: boolean
   ProjectId?: boolean
+  Views?: boolean
   Author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   Project?: boolean | Prisma.MarketplaceItem$ProjectArgs<ExtArgs>
 }, ExtArgs["result"]["marketplaceItem"]>
@@ -1520,7 +1520,6 @@ export type MarketplaceItemSelectScalar = {
   PageCount?: boolean
   Downloads?: boolean
   Likes?: boolean
-  Views?: boolean
   AuthorId?: boolean
   AuthorName?: boolean
   Verified?: boolean
@@ -1528,15 +1527,16 @@ export type MarketplaceItemSelectScalar = {
   UpdatedAt?: boolean
   DeletedAt?: boolean
   ProjectId?: boolean
+  Views?: boolean
 }
 
-export type MarketplaceItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Title" | "Description" | "Preview" | "TemplateType" | "Featured" | "PageCount" | "Downloads" | "Likes" | "Views" | "AuthorId" | "AuthorName" | "Verified" | "CreatedAt" | "UpdatedAt" | "DeletedAt" | "ProjectId", ExtArgs["result"]["marketplaceItem"]>
+export type MarketplaceItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Title" | "Description" | "Preview" | "TemplateType" | "Featured" | "PageCount" | "Downloads" | "Likes" | "AuthorId" | "AuthorName" | "Verified" | "CreatedAt" | "UpdatedAt" | "DeletedAt" | "ProjectId" | "Views", ExtArgs["result"]["marketplaceItem"]>
 export type MarketplaceItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  Comments?: boolean | Prisma.MarketplaceItem$CommentsArgs<ExtArgs>
   Author?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   Project?: boolean | Prisma.MarketplaceItem$ProjectArgs<ExtArgs>
   Categories?: boolean | Prisma.MarketplaceItem$CategoriesArgs<ExtArgs>
   Tags?: boolean | Prisma.MarketplaceItem$TagsArgs<ExtArgs>
-  Comments?: boolean | Prisma.MarketplaceItem$CommentsArgs<ExtArgs>
   _count?: boolean | Prisma.MarketplaceItemCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MarketplaceItemIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1551,11 +1551,11 @@ export type MarketplaceItemIncludeUpdateManyAndReturn<ExtArgs extends runtime.Ty
 export type $MarketplaceItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "MarketplaceItem"
   objects: {
+    Comments: Prisma.$CommentPayload<ExtArgs>[]
     Author: Prisma.$UserPayload<ExtArgs>
     Project: Prisma.$ProjectPayload<ExtArgs> | null
     Categories: Prisma.$MarketplaceItemCategoryPayload<ExtArgs>[]
     Tags: Prisma.$MarketplaceItemTagPayload<ExtArgs>[]
-    Comments: Prisma.$CommentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     Id: string
@@ -1567,7 +1567,6 @@ export type $MarketplaceItemPayload<ExtArgs extends runtime.Types.Extensions.Int
     PageCount: number | null
     Downloads: number
     Likes: number
-    Views: number
     AuthorId: string
     AuthorName: string
     Verified: boolean
@@ -1575,6 +1574,7 @@ export type $MarketplaceItemPayload<ExtArgs extends runtime.Types.Extensions.Int
     UpdatedAt: Date
     DeletedAt: Date | null
     ProjectId: string | null
+    Views: number
   }, ExtArgs["result"]["marketplaceItem"]>
   composites: {}
 }
@@ -1969,11 +1969,11 @@ readonly fields: MarketplaceItemFieldRefs;
  */
 export interface Prisma__MarketplaceItemClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  Comments<T extends Prisma.MarketplaceItem$CommentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketplaceItem$CommentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   Author<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   Project<T extends Prisma.MarketplaceItem$ProjectArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketplaceItem$ProjectArgs<ExtArgs>>): Prisma.Prisma__ProjectClient<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   Categories<T extends Prisma.MarketplaceItem$CategoriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketplaceItem$CategoriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketplaceItemCategoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   Tags<T extends Prisma.MarketplaceItem$TagsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketplaceItem$TagsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MarketplaceItemTagPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  Comments<T extends Prisma.MarketplaceItem$CommentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MarketplaceItem$CommentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CommentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2012,7 +2012,6 @@ export interface MarketplaceItemFieldRefs {
   readonly PageCount: Prisma.FieldRef<"MarketplaceItem", 'Int'>
   readonly Downloads: Prisma.FieldRef<"MarketplaceItem", 'Int'>
   readonly Likes: Prisma.FieldRef<"MarketplaceItem", 'Int'>
-  readonly Views: Prisma.FieldRef<"MarketplaceItem", 'Int'>
   readonly AuthorId: Prisma.FieldRef<"MarketplaceItem", 'String'>
   readonly AuthorName: Prisma.FieldRef<"MarketplaceItem", 'String'>
   readonly Verified: Prisma.FieldRef<"MarketplaceItem", 'Boolean'>
@@ -2020,6 +2019,7 @@ export interface MarketplaceItemFieldRefs {
   readonly UpdatedAt: Prisma.FieldRef<"MarketplaceItem", 'DateTime'>
   readonly DeletedAt: Prisma.FieldRef<"MarketplaceItem", 'DateTime'>
   readonly ProjectId: Prisma.FieldRef<"MarketplaceItem", 'String'>
+  readonly Views: Prisma.FieldRef<"MarketplaceItem", 'Int'>
 }
     
 
@@ -2416,6 +2416,30 @@ export type MarketplaceItemDeleteManyArgs<ExtArgs extends runtime.Types.Extensio
 }
 
 /**
+ * MarketplaceItem.Comments
+ */
+export type MarketplaceItem$CommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Comment
+   */
+  select?: Prisma.CommentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Comment
+   */
+  omit?: Prisma.CommentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CommentInclude<ExtArgs> | null
+  where?: Prisma.CommentWhereInput
+  orderBy?: Prisma.CommentOrderByWithRelationInput | Prisma.CommentOrderByWithRelationInput[]
+  cursor?: Prisma.CommentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.CommentScalarFieldEnum | Prisma.CommentScalarFieldEnum[]
+}
+
+/**
  * MarketplaceItem.Project
  */
 export type MarketplaceItem$ProjectArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2480,30 +2504,6 @@ export type MarketplaceItem$TagsArgs<ExtArgs extends runtime.Types.Extensions.In
   take?: number
   skip?: number
   distinct?: Prisma.MarketplaceItemTagScalarFieldEnum | Prisma.MarketplaceItemTagScalarFieldEnum[]
-}
-
-/**
- * MarketplaceItem.Comments
- */
-export type MarketplaceItem$CommentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Comment
-   */
-  select?: Prisma.CommentSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Comment
-   */
-  omit?: Prisma.CommentOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.CommentInclude<ExtArgs> | null
-  where?: Prisma.CommentWhereInput
-  orderBy?: Prisma.CommentOrderByWithRelationInput | Prisma.CommentOrderByWithRelationInput[]
-  cursor?: Prisma.CommentWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.CommentScalarFieldEnum | Prisma.CommentScalarFieldEnum[]
 }
 
 /**

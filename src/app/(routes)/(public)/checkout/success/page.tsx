@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CheckCircle, ArrowRight, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import ThemeSwitcher from '@/components/ThemeSwticher'
+import ThemeSwitcher from '@/components/ThemeSwitcher'
 
 function SuccessContent() {
   const searchParams = useSearchParams()

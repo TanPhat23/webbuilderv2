@@ -1,3 +1,4 @@
+
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
 // In-memory cache for tokens with short TTL to match JWT lifetime
@@ -8,6 +9,7 @@ interface CachedToken {
 
 const tokenCache = new Map<string, CachedToken>();
 const CACHE_TTL_MS = 45 * 1000;
+let cleanupIntervalId: NodeJS.Timeout | null = null;
 
 function getCachedToken(sessionId: string): string | null {
   const cached = tokenCache.get(sessionId);
@@ -29,7 +31,7 @@ function setCachedToken(sessionId: string, jwt: string): void {
   });
 }
 
-// Cleanup expired tokens every 2 minutes
+// Cleanup expired tokens
 function cleanupExpiredTokens(): void {
   const now = Date.now();
   for (const [sessionId, cached] of tokenCache.entries()) {
@@ -39,11 +41,16 @@ function cleanupExpiredTokens(): void {
   }
 }
 
-// Run cleanup periodically
-setInterval(cleanupExpiredTokens, 2 * 60 * 1000);
+function initializeCleanup(): void {
+  if (cleanupIntervalId === null) {
+    cleanupIntervalId = setInterval(cleanupExpiredTokens, 2 * 60 * 1000);
+  }
+}
 
 export async function GET() {
   try {
+    initializeCleanup();
+
     const { sessionId } = await auth();
     if (!sessionId) {
       return new Response("Unauthorized", { status: 401 });
@@ -72,10 +79,8 @@ export async function GET() {
     }
 
     // Cache the token for 45 seconds
-    // console.log("Caching token for session:", sessionId);
-    
     setCachedToken(sessionId, token.jwt);
-    // console.log("Token retrieved and cached for session:", token.jwt);
+    
     return Response.json(
       { tokenJWT: token.jwt },
       {

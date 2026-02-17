@@ -239,7 +239,7 @@ export const WorkflowCanvas = ({
   return (
     <div
       className={cn(
-        "relative w-full h-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 overflow-hidden",
+        "relative w-full h-full bg-background overflow-hidden",
         className,
       )}
     >
@@ -256,7 +256,7 @@ export const WorkflowCanvas = ({
         fitView
         attributionPosition="bottom-left"
       >
-        <Background color="#94a3b8" gap={50} size={1} />
+        <Background color="var(--color-border)" gap={50} size={1} />
         <Controls />
         <MiniMap />
 

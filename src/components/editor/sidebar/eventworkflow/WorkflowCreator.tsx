@@ -3,7 +3,9 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflows";
+import { useEventWorkflowStore } from "@/globalstore/event-workflow-store";
+import { useCreateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
+// Uses React Query mutation hook; Zustand holds mutation state flags
 import {
   CreateEventWorkflowSchema,
   type CreateEventWorkflowFormData,
@@ -41,7 +43,8 @@ export const WorkflowCreator = ({
   onSuccess,
   onCancel,
 }: WorkflowCreatorProps) => {
-  const createMutation = useCreateEventWorkflow();
+  const createWorkflowMutation = useCreateEventWorkflow();
+  const isCreating = useEventWorkflowStore((state) => state.isCreating);
 
   const form = useForm<CreateEventWorkflowFormData>({
     resolver: zodResolver(CreateEventWorkflowSchema),
@@ -52,33 +55,28 @@ export const WorkflowCreator = ({
     mode: "onBlur",
   });
 
-  const onSubmit = (data: CreateEventWorkflowFormData) => {
+  const onSubmit = async (data: CreateEventWorkflowFormData) => {
     console.log(projectId);
-    createMutation.mutate(
-      {
+    try {
+      const result = await createWorkflowMutation.mutateAsync({
         projectId,
         input: {
           name: data.name,
           description: data.description,
           canvasData: undefined,
         },
-      },
-      {
-        onSuccess: (response: any) => {
-          toast.success("Workflow created! Now design your workflow visually.");
-          form.reset();
-          onSuccess(response.id);
-        },
-        onError: (error: any) => {
-          const message =
-            error?.message || "Failed to create workflow. Please try again.";
-          toast.error(message);
-        },
-      },
-    );
+      });
+
+      toast.success("Workflow created! Now design your workflow visually.");
+      form.reset();
+      onSuccess(result.id);
+    } catch (error) {
+      console.error("Failed to create workflow:", error);
+      toast.error("Failed to create workflow. Please try again.");
+    }
   };
 
-  const isLoading = createMutation.isPending;
+  const isLoading = isCreating;
 
   return (
     <div className="space-y-4">
@@ -204,12 +202,12 @@ export const WorkflowCreator = ({
       </Card>
 
       {/* Info Card */}
-      <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+      <Card className="border-primary bg-primary/10 dark:border-primary dark:bg-primary/20">
         <CardContent className="pt-6">
-          <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">
+          <h4 className="font-semibold text-sm mb-2 text-primary">
             What happens next?
           </h4>
-          <ol className="text-sm text-blue-700 dark:text-blue-300 space-y-1 list-decimal list-inside">
+          <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
             <li>Your workflow will be created</li>
             <li>The visual editor will open automatically</li>
             <li>Add nodes by clicking the "Add Node" buttons</li>

@@ -4,8 +4,8 @@ import { getUserProjectAccess, Permission, hasPermission } from "@/lib/rbac";
 
 export const projectDAL = {
   createProject: async (project: Project, userId: string) => {
-    if (!project.name || !project.description || !project.id) {
-      throw new Error("Project Name and Description are required");
+    if (!project.name || !project.id) {
+      throw new Error("Project Name is required");
     }
     const now = new Date();
     return await prisma?.project.create({

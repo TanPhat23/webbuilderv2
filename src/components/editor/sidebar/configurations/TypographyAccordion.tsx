@@ -19,12 +19,12 @@ import {
   SelectContent,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { projectService } from "@/services/project";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { cn } from "@/lib/utils";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
@@ -98,8 +98,8 @@ interface TypographyAccordionProps {
 export const TypographyAccordion = ({
   currentBreakpoint,
 }: TypographyAccordionProps) => {
-  const { updateElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
   const [fonts, setFonts] = useState<string[]>(FONT_FAMILIES);
 
   const { data, isLoading } = useQuery({
@@ -150,18 +150,7 @@ export const TypographyAccordion = ({
       updateElement,
     );
 
-    try {
-      const newTailwind = cn(
-        selectedElement.tailwindStyles,
-        elementHelper.computeTailwindFromStyles(newResponsiveStyles),
-      );
-      updateElement(selectedElement.id, { tailwindStyles: newTailwind });
-    } catch (err) {
-      console.error(
-        "Failed to compute tailwind classes from typography styles:",
-        err,
-      );
-    }
+    // Tailwind classes are now computed and persisted centrally by elementHelper.updateElementStyle.
   };
 
   if (!selectedElement) {

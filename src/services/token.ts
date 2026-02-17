@@ -1,8 +1,10 @@
-import { GetNextJSURL } from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { NEXT_API_ENDPOINTS } from "@/constants/endpoints";
 
 export default async function getToken(): Promise<string> {
-  const url = GetNextJSURL(NEXT_API_ENDPOINTS.TOKEN.GET);
+  const url = new URLBuilder("next")
+    .setPath(NEXT_API_ENDPOINTS.TOKEN.GET)
+    .build();
 
   const response = await fetch(url, {
     method: "GET",

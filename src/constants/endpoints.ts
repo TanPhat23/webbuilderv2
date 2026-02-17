@@ -1,4 +1,4 @@
-// Backend API endpoints (used with GetUrl)
+// Backend API endpoints (used with URLBuilder)
 export const API_ENDPOINTS = {
   ELEMENTS: {
     GET: (projectId: string) => `/api/v1/elements/${projectId}`,

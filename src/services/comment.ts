@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import {
   Comment,
   CommentResponse,
@@ -17,14 +17,28 @@ interface ICommentService {
   createComment: (data: CreateCommentRequest) => Promise<Comment>;
   getComments: (filter?: CommentFilter) => Promise<CommentResponse>;
   getCommentById: (commentId: string) => Promise<Comment>;
-  getCommentsByItemId: (itemId: string, filter?: Omit<CommentFilter, 'itemId'>) => Promise<CommentResponse>;
-  updateComment: (commentId: string, data: UpdateCommentRequest) => Promise<Comment>;
+  getCommentsByItemId: (
+    itemId: string,
+    filter?: Omit<CommentFilter, "itemId">,
+  ) => Promise<CommentResponse>;
+  updateComment: (
+    commentId: string,
+    data: UpdateCommentRequest,
+  ) => Promise<Comment>;
   deleteComment: (commentId: string) => Promise<boolean>;
-  moderateComment: (commentId: string, status: string) => Promise<{ message: string; status: string }>;
-  getCommentCount: (itemId: string) => Promise<{ itemId: string; count: number }>;
+  moderateComment: (
+    commentId: string,
+    status: string,
+  ) => Promise<{ message: string; status: string }>;
+  getCommentCount: (
+    itemId: string,
+  ) => Promise<{ itemId: string; count: number }>;
 
   // Reaction operations
-  createReaction: (commentId: string, data: CreateReactionRequest) => Promise<CommentReaction>;
+  createReaction: (
+    commentId: string,
+    data: CreateReactionRequest,
+  ) => Promise<CommentReaction>;
   deleteReaction: (commentId: string, reactionType: string) => Promise<boolean>;
   getReactions: (commentId: string) => Promise<CommentReaction[]>;
   getReactionSummary: (commentId: string) => Promise<ReactionSummary[]>;
@@ -34,58 +48,60 @@ export const commentService: ICommentService = {
   // Comment operations
   createComment: async (data: CreateCommentRequest): Promise<Comment> => {
     return apiClient.post<Comment>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.CREATE),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.CREATE)
+        .build(),
       data,
     );
   },
 
   getComments: async (filter?: CommentFilter): Promise<CommentResponse> => {
-    const queryParams = new URLSearchParams();
+    const builder = new URLBuilder("api").setPath(
+      API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_ALL,
+    );
     if (filter) {
-      if (filter.itemId) queryParams.append("itemId", filter.itemId);
-      if (filter.authorId) queryParams.append("authorId", filter.authorId);
-      if (filter.status) queryParams.append("status", filter.status);
+      if (filter.itemId) builder.addQueryParam("itemId", filter.itemId);
+      if (filter.authorId) builder.addQueryParam("authorId", filter.authorId);
+      if (filter.status) builder.addQueryParam("status", filter.status);
       if (filter.parentId !== undefined) {
-        queryParams.append("parentId", filter.parentId || "");
+        builder.addQueryParam("parentId", filter.parentId || "");
       }
-      if (filter.topLevel) queryParams.append("topLevel", "true");
-      if (filter.limit) queryParams.append("limit", String(filter.limit));
-      if (filter.offset) queryParams.append("offset", String(filter.offset));
-      if (filter.sortBy) queryParams.append("sortBy", filter.sortBy);
-      if (filter.sortOrder) queryParams.append("sortOrder", filter.sortOrder);
+      if (filter.topLevel) builder.addQueryParam("topLevel", "true");
+      if (filter.limit) builder.addQueryParam("limit", String(filter.limit));
+      if (filter.offset) builder.addQueryParam("offset", String(filter.offset));
+      if (filter.sortBy) builder.addQueryParam("sortBy", filter.sortBy);
+      if (filter.sortOrder)
+        builder.addQueryParam("sortOrder", filter.sortOrder);
     }
 
-    const url = queryParams.toString()
-      ? `${GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_ALL)}?${queryParams.toString()}`
-      : GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_ALL);
-
-    return apiClient.get<CommentResponse>(url);
+    return apiClient.get<CommentResponse>(builder.build());
   },
 
   getCommentById: async (commentId: string): Promise<Comment> => {
     return apiClient.get<Comment>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_BY_ID(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_BY_ID(commentId))
+        .build(),
     );
   },
 
   getCommentsByItemId: async (
     itemId: string,
-    filter?: Omit<CommentFilter, 'itemId'>
+    filter?: Omit<CommentFilter, "itemId">,
   ): Promise<CommentResponse> => {
-    const queryParams = new URLSearchParams();
+    const builder = new URLBuilder("api").setPath(
+      API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_BY_ITEM(itemId),
+    );
     if (filter) {
-      if (filter.status) queryParams.append("status", filter.status);
-      if (filter.limit) queryParams.append("limit", String(filter.limit));
-      if (filter.offset) queryParams.append("offset", String(filter.offset));
-      if (filter.sortBy) queryParams.append("sortBy", filter.sortBy);
-      if (filter.sortOrder) queryParams.append("sortOrder", filter.sortOrder);
+      if (filter.status) builder.addQueryParam("status", filter.status);
+      if (filter.limit) builder.addQueryParam("limit", String(filter.limit));
+      if (filter.offset) builder.addQueryParam("offset", String(filter.offset));
+      if (filter.sortBy) builder.addQueryParam("sortBy", filter.sortBy);
+      if (filter.sortOrder)
+        builder.addQueryParam("sortOrder", filter.sortOrder);
     }
 
-    const url = queryParams.toString()
-      ? `${GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_BY_ITEM(itemId))}?${queryParams.toString()}`
-      : GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_BY_ITEM(itemId));
-
-    return apiClient.get<CommentResponse>(url);
+    return apiClient.get<CommentResponse>(builder.build());
   },
 
   updateComment: async (
@@ -93,14 +109,18 @@ export const commentService: ICommentService = {
     data: UpdateCommentRequest,
   ): Promise<Comment> => {
     return apiClient.patch<Comment>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.UPDATE(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.UPDATE(commentId))
+        .build(),
       data,
     );
   },
 
   deleteComment: async (commentId: string): Promise<boolean> => {
     return apiClient.delete(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.DELETE(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.DELETE(commentId))
+        .build(),
     );
   },
 
@@ -109,7 +129,9 @@ export const commentService: ICommentService = {
     status: string,
   ): Promise<{ message: string; status: string }> => {
     return apiClient.post<{ message: string; status: string }>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.MODERATE(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.MODERATE(commentId))
+        .build(),
       { status },
     );
   },
@@ -118,7 +140,9 @@ export const commentService: ICommentService = {
     itemId: string,
   ): Promise<{ itemId: string; count: number }> => {
     return apiClient.get<{ itemId: string; count: number }>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_COUNT(itemId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_COUNT(itemId))
+        .build(),
     );
   },
 
@@ -128,7 +152,9 @@ export const commentService: ICommentService = {
     data: CreateReactionRequest,
   ): Promise<CommentReaction> => {
     return apiClient.post<CommentReaction>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.CREATE_REACTION(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.CREATE_REACTION(commentId))
+        .build(),
       data,
     );
   },
@@ -138,19 +164,28 @@ export const commentService: ICommentService = {
     reactionType: string,
   ): Promise<boolean> => {
     return apiClient.delete(
-      `${GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.DELETE_REACTION(commentId))}?type=${reactionType}`,
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.DELETE_REACTION(commentId))
+        .addQueryParam("type", reactionType)
+        .build(),
     );
   },
 
   getReactions: async (commentId: string): Promise<CommentReaction[]> => {
     return apiClient.get<CommentReaction[]>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_REACTIONS(commentId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_REACTIONS(commentId))
+        .build(),
     );
   },
 
   getReactionSummary: async (commentId: string): Promise<ReactionSummary[]> => {
     return apiClient.get<ReactionSummary[]>(
-      GetUrl(API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_REACTION_SUMMARY(commentId)),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.MARKETPLACE.COMMENTS.GET_REACTION_SUMMARY(commentId),
+        )
+        .build(),
     );
   },
 };

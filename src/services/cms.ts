@@ -1,4 +1,4 @@
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import apiClient from "./apiclient";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import {
@@ -61,17 +61,30 @@ interface ICmsService<TContext = any> {
 
 export const cmsService: ICmsService = {
   getContentTypes: async (): Promise<ContentType[]> => {
-    return apiClient.get(GetUrl(API_ENDPOINTS.CMS.CONTENT_TYPES.GET));
+    return apiClient.get(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.GET)
+        .build(),
+    );
   },
 
   createContentType: async (
     data: Partial<ContentType>,
   ): Promise<ContentType> => {
-    return apiClient.post(GetUrl(API_ENDPOINTS.CMS.CONTENT_TYPES.CREATE), data);
+    return apiClient.post(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.CREATE)
+        .build(),
+      data,
+    );
   },
 
   getContentTypeById: async (id: string): Promise<ContentType> => {
-    return apiClient.get(GetUrl(API_ENDPOINTS.CMS.CONTENT_TYPES.GET_BY_ID(id)));
+    return apiClient.get(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.GET_BY_ID(id))
+        .build(),
+    );
   },
 
   updateContentType: async (
@@ -79,13 +92,19 @@ export const cmsService: ICmsService = {
     data: Partial<ContentType>,
   ): Promise<ContentType> => {
     return apiClient.patch(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_TYPES.UPDATE(id)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.UPDATE(id))
+        .build(),
       data,
     );
   },
 
   deleteContentType: async (id: string): Promise<boolean> => {
-    return apiClient.delete(GetUrl(API_ENDPOINTS.CMS.CONTENT_TYPES.DELETE(id)));
+    return apiClient.delete(
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.DELETE(id))
+        .build(),
+    );
   },
 
   // Content Fields
@@ -93,9 +112,11 @@ export const cmsService: ICmsService = {
     contentTypeId: string,
   ): Promise<ContentField[]> => {
     return apiClient.get(
-      GetUrl(
-        API_ENDPOINTS.CMS.CONTENT_FIELDS.GET_BY_CONTENT_TYPE(contentTypeId),
-      ),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_FIELDS.GET_BY_CONTENT_TYPE(contentTypeId),
+        )
+        .build(),
     );
   },
 
@@ -104,7 +125,9 @@ export const cmsService: ICmsService = {
     data: Partial<ContentField>,
   ): Promise<ContentField> => {
     return apiClient.post(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_FIELDS.CREATE(contentTypeId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_FIELDS.CREATE(contentTypeId))
+        .build(),
       data,
     );
   },
@@ -114,9 +137,11 @@ export const cmsService: ICmsService = {
     fieldId: string,
   ): Promise<ContentField> => {
     return apiClient.get(
-      GetUrl(
-        API_ENDPOINTS.CMS.CONTENT_FIELDS.GET_BY_ID(contentTypeId, fieldId),
-      ),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_FIELDS.GET_BY_ID(contentTypeId, fieldId),
+        )
+        .build(),
     );
   },
 
@@ -126,7 +151,11 @@ export const cmsService: ICmsService = {
     data: Partial<ContentField>,
   ): Promise<ContentField> => {
     return apiClient.patch(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_FIELDS.UPDATE(contentTypeId, fieldId)),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_FIELDS.UPDATE(contentTypeId, fieldId),
+        )
+        .build(),
       data,
     );
   },
@@ -136,7 +165,11 @@ export const cmsService: ICmsService = {
     fieldId: string,
   ): Promise<boolean> => {
     return apiClient.delete(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_FIELDS.DELETE(contentTypeId, fieldId)),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_FIELDS.DELETE(contentTypeId, fieldId),
+        )
+        .build(),
     );
   },
 
@@ -145,9 +178,11 @@ export const cmsService: ICmsService = {
     contentTypeId: string,
   ): Promise<ContentItem[]> => {
     return apiClient.get(
-      GetUrl(
-        API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_CONTENT_TYPE(contentTypeId),
-      ),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_CONTENT_TYPE(contentTypeId),
+        )
+        .build(),
     );
   },
 
@@ -156,7 +191,9 @@ export const cmsService: ICmsService = {
     data: Partial<ContentItem>,
   ): Promise<ContentItem> => {
     return apiClient.post(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_ITEMS.CREATE(contentTypeId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_ITEMS.CREATE(contentTypeId))
+        .build(),
       data,
     );
   },
@@ -166,7 +203,11 @@ export const cmsService: ICmsService = {
     itemId: string,
   ): Promise<ContentItem> => {
     return apiClient.get(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_ID(contentTypeId, itemId)),
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_ID(contentTypeId, itemId),
+        )
+        .build(),
     );
   },
 
@@ -176,7 +217,9 @@ export const cmsService: ICmsService = {
     data: Partial<ContentItem>,
   ): Promise<ContentItem> => {
     return apiClient.patch(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_ITEMS.UPDATE(contentTypeId, itemId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_ITEMS.UPDATE(contentTypeId, itemId))
+        .build(),
       data,
     );
   },
@@ -186,7 +229,9 @@ export const cmsService: ICmsService = {
     itemId: string,
   ): Promise<boolean> => {
     return apiClient.delete(
-      GetUrl(API_ENDPOINTS.CMS.CONTENT_ITEMS.DELETE(contentTypeId, itemId)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.CONTENT_ITEMS.DELETE(contentTypeId, itemId))
+        .build(),
     );
   },
 
@@ -197,15 +242,15 @@ export const cmsService: ICmsService = {
     sortBy?: string;
     sortOrder?: string;
   }): Promise<ContentItem[]> => {
-    const query = new URLSearchParams();
-    if (params?.contentTypeId)
-      query.append("contentTypeId", params.contentTypeId);
-    if (params?.limit) query.append("limit", params.limit.toString());
-    if (params?.sortBy) query.append("sortBy", params.sortBy);
-    if (params?.sortOrder) query.append("sortOrder", params.sortOrder);
-    return apiClient.get(
-      GetUrl(`${API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET}?${query.toString()}`),
+    const builder = new URLBuilder("api").setPath(
+      API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET,
     );
+    if (params?.contentTypeId)
+      builder.addQueryParam("contentTypeId", params.contentTypeId);
+    if (params?.limit) builder.addQueryParam("limit", params.limit.toString());
+    if (params?.sortBy) builder.addQueryParam("sortBy", params.sortBy);
+    if (params?.sortOrder) builder.addQueryParam("sortOrder", params.sortOrder);
+    return apiClient.get(builder.build());
   },
 
   getPublicContentItem: async (
@@ -213,7 +258,9 @@ export const cmsService: ICmsService = {
     slug: string,
   ): Promise<ContentItem> => {
     return apiClient.get(
-      GetUrl(API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET_ITEM(contentTypeId, slug)),
+      new URLBuilder("api")
+        .setPath(API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET_ITEM(contentTypeId, slug))
+        .build(),
     );
   },
 };

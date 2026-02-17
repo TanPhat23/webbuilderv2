@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.1.0
- * Query Engine version: ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba
+ * Prisma Client JS version: 7.3.0
+ * Query Engine version: 9d6ad21cbbceab97458517b147a6a09ff43aa735
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.1.0",
-  engine: "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba"
+  client: "7.3.0",
+  engine: "9d6ad21cbbceab97458517b147a6a09ff43aa735"
 }
 
 /**
@@ -2473,13 +2473,13 @@ export const ElementScalarFieldEnum = {
   Id: 'Id',
   Name: 'Name',
   Order: 'Order',
-  IsLocked: 'IsLocked',
   ParentId: 'ParentId',
   Src: 'Src',
   Styles: 'Styles',
   TailwindStyles: 'TailwindStyles',
   Type: 'Type',
-  PageId: 'PageId'
+  PageId: 'PageId',
+  IsLocked: 'IsLocked'
 } as const
 
 export type ElementScalarFieldEnum = (typeof ElementScalarFieldEnum)[keyof typeof ElementScalarFieldEnum]
@@ -2534,10 +2534,11 @@ export const EventWorkflowScalarFieldEnum = {
   ProjectId: 'ProjectId',
   Name: 'Name',
   Description: 'Description',
-  CanvasData: 'CanvasData',
+  Handlers: 'Handlers',
   Enabled: 'Enabled',
   CreatedAt: 'CreatedAt',
-  UpdatedAt: 'UpdatedAt'
+  UpdatedAt: 'UpdatedAt',
+  CanvasData: 'CanvasData'
 } as const
 
 export type EventWorkflowScalarFieldEnum = (typeof EventWorkflowScalarFieldEnum)[keyof typeof EventWorkflowScalarFieldEnum]
@@ -2657,14 +2658,14 @@ export const MarketplaceItemScalarFieldEnum = {
   PageCount: 'PageCount',
   Downloads: 'Downloads',
   Likes: 'Likes',
-  Views: 'Views',
   AuthorId: 'AuthorId',
   AuthorName: 'AuthorName',
   Verified: 'Verified',
   CreatedAt: 'CreatedAt',
   UpdatedAt: 'UpdatedAt',
   DeletedAt: 'DeletedAt',
-  ProjectId: 'ProjectId'
+  ProjectId: 'ProjectId',
+  Views: 'Views'
 } as const
 
 export type MarketplaceItemScalarFieldEnum = (typeof MarketplaceItemScalarFieldEnum)[keyof typeof MarketplaceItemScalarFieldEnum]
@@ -2743,9 +2744,9 @@ export const InvitationScalarFieldEnum = {
   Role: 'Role',
   Token: 'Token',
   ExpiresAt: 'ExpiresAt',
-  Status: 'Status',
   CreatedAt: 'CreatedAt',
-  AcceptedAt: 'AcceptedAt'
+  AcceptedAt: 'AcceptedAt',
+  Status: 'Status'
 } as const
 
 export type InvitationScalarFieldEnum = (typeof InvitationScalarFieldEnum)[keyof typeof InvitationScalarFieldEnum]
@@ -2912,13 +2913,6 @@ export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
-    
-
-
-/**
  * Reference to a field of type 'Json'
  */
 export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
@@ -2929,6 +2923,13 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

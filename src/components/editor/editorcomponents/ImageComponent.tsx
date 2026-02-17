@@ -12,7 +12,7 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { ImageIcon, Upload } from "lucide-react";
-import { useElementStore } from "@/globalstore/elementstore";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { ImageDragDataSchema } from "@/schema/zod/imageupload";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ type Props = EditorComponentProps;
 
 const ImageComponent: React.FC<Props> = ({ element, data }) => {
   const [isDragOver, setIsDragOver] = useState(false);
-  const { updateElement } = useElementStore();
+  const updateElement = useUpdateElement();
   const { id } = useParams();
   const { elementRef, registerEvents, createEventHandlers, eventsActive } =
     useElementEvents({

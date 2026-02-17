@@ -4,8 +4,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElementWithSetter } from "@/globalstore/selectors/selection-selectors";
 import { cn } from "@/lib/utils";
 import { EditorElement } from "@/types/global.type";
 import {
@@ -87,8 +87,9 @@ export default function ElementTreeItem({
   element: EditorElement;
   level?: number;
 }) {
-  const { updateElement } = useElementStore();
-  const { selectedElement, setSelectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const { selectedElement, setSelectedElement } =
+    useSelectedElementWithSetter();
   const [isOpen, setIsOpen] = React.useState(true);
 
   const handleClick = (e: React.MouseEvent) => {

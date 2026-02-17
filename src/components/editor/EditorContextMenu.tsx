@@ -13,8 +13,7 @@ import {
 import { Copy, Trash2, Layers, ArrowUp, ArrowDown, Save } from "lucide-react";
 import { KeyboardEvent as EditorKeyboardEvent } from "@/lib/utils/element/keyBoardEvents";
 import { EditorElement } from "@/types/global.type";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useSetSelectedElement } from "@/globalstore/selectors/selection-selectors";
 
 import { SaveElementDialog } from "./SaveElementDialog";
 import { toast } from "sonner";
@@ -34,8 +33,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   isReadOnly = false,
   isLocked = false,
 }) => {
-  const { updateElement } = useElementStore();
-  const { setSelectedElement } = useSelectionStore();
+  const setSelectedElement = useSetSelectedElement();
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
   // Determine if operations are allowed
   const canEdit = !isReadOnly && !isLocked;

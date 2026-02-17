@@ -4,6 +4,7 @@ import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentGridElement } from "@/interfaces/elements.interface";
+import { ContentItem } from "@/interfaces/cms.interface";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
 import { Database } from "lucide-react";
@@ -49,14 +50,14 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
     enabled: !!contentTypeId,
   });
 
-  const itemsToRender = Array.isArray(data)
-    ? data
+  const itemsToRender: ContentItem[] = Array.isArray(data)
+    ? (data as ContentItem[])
     : contentItems && contentItems.length > 0
       ? contentItems
       : [];
-  useEffect(()=>{
-    console.log("Content Items", contentItems)
-  },[])
+  useEffect(() => {
+    console.log("Content Items", contentItems);
+  }, []);
   const limitedItems = itemsToRender.slice(0, limit);
 
   if (!contentTypeId) {
@@ -105,7 +106,10 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
         {limitedItems.map((item, index) => (
           <div key={item.id || index} className="group">
             {cmsElement.elements && cmsElement.elements.length > 0 ? (
-              <ElementLoader elements={cmsElement.elements} data={item} />
+              <ElementLoader
+                elements={cmsElement.elements}
+                data={item as unknown as Record<string, unknown>}
+              />
             ) : (
               <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
                 {fieldsToShow.includes("image") &&

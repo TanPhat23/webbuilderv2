@@ -1,9 +1,9 @@
 import React from "react";
-import { BaseElement } from "@/interfaces/elements.interface";
+import { ImageElement } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 
 interface PreviewImageComponentProps {
-  element: BaseElement;
+  element: ImageElement;
   data?: any;
 }
 

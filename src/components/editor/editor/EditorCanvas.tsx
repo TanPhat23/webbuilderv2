@@ -10,9 +10,8 @@ import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/components/editor/ElementLoader";
 import { Button } from "@/components/ui/button";
 import { KeyboardEvent as KeyboardEventClass } from "@/lib/utils/element/keyBoardEvents";
-import { useMouseTracking } from "@/hooks/realtime/use-mouse-tracking";
-import { useMouseStore } from "@/globalstore/mousestore";
-import * as Y from "yjs";
+import { useCollaborationCursors } from "@/globalstore/selectors/mouse-selectors";
+import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -26,8 +25,7 @@ type EditorCanvasProps = {
   sendMessage?: (message: any) => boolean;
   isReadOnly?: boolean;
   isLocked?: boolean;
-  ydoc?: Y.Doc | null;
-  provider?: any;
+  showAddSectionButton?: boolean;
   iframeRef?: React.RefObject<HTMLIFrameElement>;
 };
 
@@ -43,15 +41,24 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   sendMessage,
   isReadOnly = false,
   isLocked = false,
-  ydoc,
-  provider,
+  showAddSectionButton = true,
   iframeRef,
 }) => {
+  const collab = useCollaborationOptional();
+
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
   const keyboardEvent = new KeyboardEventClass();
-  const { mousePositions, remoteUsers, users } = useMouseStore();
+  const { remoteUsers, users } = useCollaborationCursors();
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
+
+  // Assign the canvas ref to the collaboration provider for mouse tracking
+  useEffect(() => {
+    if (collab && canvasRef.current) {
+      (collab.canvasRef as React.RefObject<HTMLElement | null>).current =
+        canvasRef.current;
+    }
+  }, [collab, canvasRef.current]);
 
   useEffect(() => {
     keyboardEvent.setReadOnly(isReadOnly);
@@ -75,139 +82,32 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
   }, []);
 
-  useMouseTracking({
-    canvasRef,
-    sendMessage: sendMessage || (() => false),
-    userId,
-    enabled: !ydoc,
-  });
-
-  useEffect(() => {
-    if (!provider || !provider.awareness) return;
-
-    let logCount = 0;
-    let lastX = -1;
-    let lastY = -1;
-    let lastUpdateTime = 0;
-    const THROTTLE_MS = 50;
-
-    const isIframe = iframeRef && iframeRef.current;
-    const targetDoc = isIframe ? iframeRef.current?.contentDocument : document;
-
-    if (!targetDoc) {
-      return;
-    }
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const now = Date.now();
-      if (now - lastUpdateTime < THROTTLE_MS) {
-        return;
-      }
-      lastUpdateTime = now;
-
-      let x: number;
-      let y: number;
-
-      if (isIframe) {
-        x = e.clientX;
-        y = e.clientY;
-        logCount++;
-      } else {
-        if (!canvasRef.current) return;
-
-        const canvasRect = canvasRef.current.getBoundingClientRect();
-        if (!canvasRect) return;
-
-        logCount++;
-
-        const isInsideCanvas =
-          e.clientX >= canvasRect.left &&
-          e.clientX <= canvasRect.right &&
-          e.clientY >= canvasRect.top &&
-          e.clientY <= canvasRect.bottom;
-
-        if (!isInsideCanvas) {
-          return;
-        }
-
-        x = e.clientX - canvasRect.left;
-        y = e.clientY - canvasRect.top;
-      }
-
-      const deltaX = Math.abs(x - lastX);
-      const deltaY = Math.abs(y - lastY);
-      if (lastX !== -1 && deltaX < 3 && deltaY < 3) {
-        return;
-      }
-      lastX = x;
-      lastY = y;
-
-      try {
-        provider.awareness.setLocalStateField("cursor", { x, y });
-      } catch (err) {
-        // Silent error handling
-      }
-    };
-
-    const handleMouseLeave = () => {
-      try {
-        provider.awareness.setLocalStateField("cursor", null);
-      } catch (err) {
-        // Silent error handling
-      }
-    };
-
-    const trackingTarget = isIframe ? iframeRef.current : canvasRef.current;
-    if (!trackingTarget) return;
-
-    targetDoc.addEventListener("mousemove", handleMouseMove, { passive: true });
-    if (!isIframe) {
-      trackingTarget.addEventListener("mouseleave", handleMouseLeave);
-    }
-
-    return () => {
-      targetDoc.removeEventListener("mousemove", handleMouseMove);
-      if (!isIframe) {
-        trackingTarget.removeEventListener("mouseleave", handleMouseLeave);
-      }
-    };
-  }, [provider, iframeRef]);
-
+  // Build the list of remote cursors from the mouse store
   const remoteCursors = useMemo(() => {
-    if (ydoc && remoteUsers) {
-      const cursors = Object.entries(remoteUsers)
-        .filter(([uid]) => uid !== userId)
-        .map(([uid, pos]) => {
-          const x = typeof pos.x === "number" ? pos.x : 0;
-          const y = typeof pos.y === "number" ? pos.y : 0;
+    if (!remoteUsers) return [];
 
-          return {
-            uid,
-            x: x - scrollOffset.x,
-            y: y - scrollOffset.y,
-            userName: users[uid]?.userName || `User ${uid.slice(0, 8)}`,
-          };
-        });
+    return Object.entries(remoteUsers)
+      .filter(([uid]) => uid !== userId)
+      .filter(([_, pos]) => {
+        // Filter out "hidden" cursors (sent as -1, -1 on mouse leave)
+        const x = typeof pos.x === "number" ? pos.x : 0;
+        const y = typeof pos.y === "number" ? pos.y : 0;
+        return x >= 0 && y >= 0;
+      })
+      .map(([uid, pos]) => {
+        const x = typeof pos.x === "number" ? pos.x : 0;
+        const y = typeof pos.y === "number" ? pos.y : 0;
 
-      return cursors;
-    }
-    return [];
-  }, [ydoc, remoteUsers, userId, users, scrollOffset]);
-
-  const webSocketCursors = useMemo(() => {
-    if (!ydoc && mousePositions) {
-      return Object.entries(mousePositions)
-        .filter(([uid]) => uid !== userId)
-        .map(([uid, pos]) => ({
+        return {
           uid,
-          x: typeof pos.x === "number" ? pos.x - scrollOffset.x : 0,
-          y: typeof pos.y === "number" ? pos.y - scrollOffset.y : 0,
+          x: x - scrollOffset.x,
+          y: y - scrollOffset.y,
           userName: users[uid]?.userName || `User ${uid.slice(0, 8)}`,
-        }));
-    }
-    return [];
-  }, [ydoc, mousePositions, userId, users, scrollOffset]);
+        };
+      });
+  }, [remoteUsers, userId, users, scrollOffset]);
 
+  // Keyboard shortcuts
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -273,24 +173,22 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id="canvas"
       tabIndex={0}
     >
-      {(ydoc ? remoteCursors : webSocketCursors).map(
-        ({ uid, x, y, userName }) => (
-          <div
-            key={`cursor-${uid}`}
-            className="absolute pointer-events-none z-9999 flex flex-col items-start gap-1 transition-all duration-75"
-            style={{
-              left: `${x}px`,
-              top: `${y}px`,
-              transform: "translate(-2px, -2px)",
-            }}
-          >
-            <MousePointer className="w-5 h-5 text-blue-500 drop-shadow-lg" />
-            <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-              {userName}
-            </div>
+      {remoteCursors.map(({ uid, x, y, userName }) => (
+        <div
+          key={`cursor-${uid}`}
+          className="absolute pointer-events-none z-9999 flex flex-col items-start gap-1 transition-all duration-75"
+          style={{
+            left: `${x}px`,
+            top: `${y}px`,
+            transform: "translate(-2px, -2px)",
+          }}
+        >
+          <MousePointer className="w-5 h-5 text-blue-500 drop-shadow-lg" />
+          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
+            {userName}
           </div>
-        ),
-      )}
+        </div>
+      ))}
       <div
         ref={innerContentRef}
         className="overflow-x-hidden h-full w-full p-4"
@@ -302,7 +200,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
             iframeRef={iframeRef}
           />
         )}
-        {!selectedElement && (
+        {!selectedElement && showAddSectionButton && (
           <Button
             className="mb-4 w-full"
             onClick={addNewSection}

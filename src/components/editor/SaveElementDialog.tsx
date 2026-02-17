@@ -14,9 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SelectionStore } from "@/globalstore/selectionstore";
+import { SelectionStore } from "@/globalstore/selection-store";
 import apiClient from "@/services/apiclient";
-import GetUrl from "@/lib/utils/geturl";
+import { URLBuilder } from "@/lib/utils/urlbuilder";
 import { API_ENDPOINTS } from "@/constants/endpoints";
 import { CheckCircle } from "lucide-react";
 
@@ -25,7 +25,10 @@ interface SaveElementDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps) {
+export function SaveElementDialog({
+  open,
+  onOpenChange,
+}: SaveElementDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
@@ -59,15 +62,19 @@ export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps
     setError("");
 
     try {
-      await apiClient.post(GetUrl(API_ENDPOINTS.CUSTOM_ELEMENTS.CREATE), {
-        name: trimmedName,
-        description: description.trim() || undefined,
-        structure: selectedElement, 
-        defaultProps: {}, 
-        isPublic,
-        version: "1.0.0",
-      });
-
+      await apiClient.post(
+        new URLBuilder("api")
+          .setPath(API_ENDPOINTS.CUSTOM_ELEMENTS.CREATE)
+          .build(),
+        {
+          name: trimmedName,
+          description: description.trim() || undefined,
+          structure: selectedElement,
+          defaultProps: {},
+          isPublic,
+          version: "1.0.0",
+        },
+      );
 
       setName("");
       setDescription("");
@@ -78,8 +85,13 @@ export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps
       setShowSuccessDialog(true);
     } catch (error: any) {
       console.error("Error saving element:", error);
-      if (error.message?.includes("409") || error.message?.includes("already exists")) {
-        setError("An element with this name already exists. Please choose a different name.");
+      if (
+        error.message?.includes("409") ||
+        error.message?.includes("already exists")
+      ) {
+        setError(
+          "An element with this name already exists. Please choose a different name.",
+        );
       } else if (error.message?.includes("400")) {
         setError("Invalid data provided. Please check your input.");
       } else {
@@ -119,7 +131,7 @@ export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps
                 value={name}
                 onChange={(e) => {
                   setName(e.target.value);
-                  if (error) setError(""); 
+                  if (error) setError("");
                 }}
                 className="col-span-3"
                 placeholder="Enter element name"
@@ -148,7 +160,10 @@ export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps
                   checked={isPublic}
                   onCheckedChange={(checked) => setIsPublic(checked as boolean)}
                 />
-                <Label htmlFor="public" className="text-sm text-muted-foreground">
+                <Label
+                  htmlFor="public"
+                  className="text-sm text-muted-foreground"
+                >
                   Make this element public for others to use
                 </Label>
               </div>
@@ -180,9 +195,12 @@ export function SaveElementDialog({ open, onOpenChange }: SaveElementDialogProps
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
               <CheckCircle className="h-6 w-6 text-green-600" />
             </div>
-            <DialogTitle className="text-green-900 text-center">Success!</DialogTitle>
+            <DialogTitle className="text-green-900 text-center">
+              Success!
+            </DialogTitle>
             <DialogDescription className="text-center">
-              Element "{savedElementName}" has been saved successfully as a custom component.
+              Element "{savedElementName}" has been saved successfully as a
+              custom component.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="justify-center mx-auto">

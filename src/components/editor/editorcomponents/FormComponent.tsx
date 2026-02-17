@@ -3,12 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
-import { EditorElement } from "@/types/global.type";
+/* EditorElement import removed — useElementStore is no longer generic */
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
 import { useEffect } from "react";
 import { useParams } from "next/navigation";
-import { useElementStore } from "@/globalstore/elementstore";
-import { useSelectionStore } from "@/globalstore/selectionstore";
+import { useAddElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import {
   FormElement,
   InputElement,
@@ -16,7 +17,7 @@ import {
 } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import ElementLoader from "../ElementLoader";
-import { usePageStore } from "@/globalstore/pagestore";
+import { usePageStore } from "@/globalstore/page-store";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,11 +29,11 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
       elementId: element.id,
       projectId: id as string,
     });
-  const { addElement } = useElementStore<EditorElement>();
+  const addElement = useAddElement();
   const formElement = element as FormElement;
   const { currentPage } = usePageStore();
 
-  const { selectedElement } = useSelectionStore();
+  const selectedElement = useSelectedElement();
   const isSelected = selectedElement?.id === formElement.id;
 
   const settings = (formElement.settings as FormSettings) || {
@@ -43,11 +44,11 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
   };
 
   const handleAddField = () => {
-    const newField = elementHelper.createElement.create<InputElement>(
-      "Input",
-      currentPage?.Id || "",
-      formElement.id,
-    );
+    const newField = ElementFactory.getInstance().createElement({
+      type: "Input",
+      pageId: currentPage?.Id || "",
+      parentId: formElement.id,
+    });
     if (!newField) return;
     addElement(newField);
   };
