@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { Suspense, useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -34,10 +34,6 @@ import { useAiChat } from "@/providers/aiprovider";
 import { useEditorContext } from "@/providers/editorprovider";
 import { ProjectPageCommand } from "../ProjectPageCommand";
 import { ElementSelector } from "./ElementSelector";
-import CMSManager from "./cmsmanager/CMSManager";
-import SnapshotManager from "./SnapshotManager";
-import { ImageSelector } from "./imageupload/ImageSelector";
-import { EventWorkflowManagerDialog } from "./eventworkflow/EventWorkflowManagerDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -46,8 +42,40 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useElementStore } from "@/globalstore/element-store";
+import { useElements } from "@/globalstore/selectors/element-selectors";
 import ElementTreeItem from "./ElementTreeItem";
+
+// ---------------------------------------------------------------------------
+// Lazy-loaded tool panels — these are only fetched when the user opens
+// the corresponding accordion section, reducing the initial sidebar bundle.
+// ---------------------------------------------------------------------------
+
+const CMSManager = React.lazy(() => import("./cmsmanager/CMSManager"));
+
+const SnapshotManager = React.lazy(() => import("./SnapshotManager"));
+
+const ImageSelector = React.lazy(() =>
+  import("./imageupload/ImageSelector").then((m) => ({
+    default: m.ImageSelector,
+  })),
+);
+
+const EventWorkflowManagerDialog = React.lazy(() =>
+  import("./eventworkflow/EventWorkflowManagerDialog").then((m) => ({
+    default: m.EventWorkflowManagerDialog,
+  })),
+);
+
+/**
+ * Lightweight spinner shown while a lazy-loaded tool panel chunk is fetched.
+ */
+function ToolPanelFallback() {
+  return (
+    <div className="flex items-center justify-center py-6">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
+  );
+}
 
 type TabType = "components" | "layers" | "tools";
 
@@ -56,7 +84,7 @@ export function EditorSideBar() {
   const { projectId } = useEditorContext();
   const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
   const { state, toggleSidebar, setOpen } = useSidebar();
-  const { elements } = useElementStore();
+  const elements = useElements();
 
   const [activeTab, setActiveTab] = useState<TabType>("components");
   const [activeToolSection, setActiveToolSection] = useState<string>("pages");
@@ -319,7 +347,9 @@ export function EditorSideBar() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <ImageSelector />
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <ImageSelector />
+                      </Suspense>
                     </AccordionContent>
                   </AccordionItem>
 
@@ -331,7 +361,9 @@ export function EditorSideBar() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <CMSManager />
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <CMSManager />
+                      </Suspense>
                     </AccordionContent>
                   </AccordionItem>
 
@@ -343,7 +375,9 @@ export function EditorSideBar() {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
-                      <SnapshotManager />
+                      <Suspense fallback={<ToolPanelFallback />}>
+                        <SnapshotManager />
+                      </Suspense>
                     </AccordionContent>
                   </AccordionItem>
 
@@ -356,7 +390,7 @@ export function EditorSideBar() {
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4">
                       {projectId ? (
-                        <>
+                        <Suspense fallback={<ToolPanelFallback />}>
                           <EventWorkflowManagerDialog
                             projectId={projectId}
                             isOpen={workflowDialogOpen}
@@ -373,7 +407,7 @@ export function EditorSideBar() {
                             Create and manage visual workflows for your elements
                             with drag-and-drop nodes
                           </p>
-                        </>
+                        </Suspense>
                       ) : (
                         <p className="text-xs text-muted-foreground">
                           Project not loaded

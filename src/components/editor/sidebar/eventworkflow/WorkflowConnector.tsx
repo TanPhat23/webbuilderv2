@@ -6,7 +6,7 @@ import {
   useEventWorkflow,
 } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { useElementEventWorkflowActions } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -47,7 +47,7 @@ export const WorkflowConnector = ({
   onBack,
 }: WorkflowConnectorProps) => {
   const { workflows } = useEventWorkflowActions(projectId);
-  const { selectedElement } = useSelectionStore();
+  const selectedElement = useSelectedElement();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
   const element = selectedElement as any;

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery } from "@tanstack/react-query";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
 
 export interface AnalyticsStats {
   totalViews: number;
@@ -49,26 +50,31 @@ export interface AnalyticsData {
   }>;
 }
 
+/**
+ * Hook to fetch analytics data for the current user's marketplace items.
+ *
+ * Uses the `DEFAULT` query config preset (5 min stale, 30 min gc) and
+ * retries up to 2 times with exponential back-off.
+ */
 export function useAnalytics() {
   return useQuery({
-    queryKey: ['analytics'],
+    queryKey: ["analytics"],
     queryFn: async () => {
-      const response = await fetch('/api/analytics', {
-        method: 'GET',
+      const response = await fetch("/api/analytics", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch analytics');
+        throw new Error(errorData.error || "Failed to fetch analytics");
       }
 
       return response.json() as Promise<AnalyticsData>;
     },
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, 
+    ...QUERY_CONFIG.DEFAULT,
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });

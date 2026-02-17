@@ -91,7 +91,10 @@ const PreviewCMSContentListComponent = ({
     <div className={element.tailwindStyles} style={safeStyles}>
       {contentItems.map((item, index) => (
         <div key={item.id || index}>
-          <PreviewElementLoader elements={element.elements} data={item} />
+          <PreviewElementLoader
+            elements={element.elements}
+            data={item as unknown as Record<string, unknown>}
+          />
         </div>
       ))}
     </div>

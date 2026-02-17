@@ -1,7 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { imageService } from "@/services/image";
 import { Image, ImageUploadResponse } from "@/interfaces/image.interface";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
+import {
+  getErrorMessage,
+  onMutationError,
+} from "@/lib/utils/hooks/mutationUtils";
 import {
   ImageFileSchema,
   Base64ImageSchema,
@@ -19,7 +27,7 @@ export const imageKeys = {
   detail: (id: string) => [...imageKeys.details(), id] as const,
 };
 
-// Hook to get all user images
+/** Hook to get all user images. */
 export function useUserImages() {
   return useQuery({
     queryKey: imageKeys.lists(),
@@ -28,11 +36,11 @@ export function useUserImages() {
       // Validate response
       return ImagesArraySchema.parse(images);
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
-// Hook to get a specific image by ID
+/** Hook to get a specific image by ID. */
 export function useImage(imageId: string | null) {
   return useQuery({
     queryKey: imageKeys.detail(imageId || ""),
@@ -45,7 +53,7 @@ export function useImage(imageId: string | null) {
   });
 }
 
-// Hook to upload an image file
+/** Hook to upload an image file. */
 export function useUploadImage() {
   const queryClient = useQueryClient();
 
@@ -83,17 +91,13 @@ export function useUploadImage() {
         return old ? [newImage, ...old] : [newImage];
       });
 
-      toast.success("Image uploaded successfully!");
+      showSuccessToast("Image uploaded successfully!");
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload image"
-      );
-    },
+    onError: onMutationError("Failed to upload image"),
   });
 }
 
-// Hook to upload a base64 image
+/** Hook to upload a base64 image. */
 export function useUploadBase64Image() {
   const queryClient = useQueryClient();
 
@@ -131,17 +135,13 @@ export function useUploadBase64Image() {
         return old ? [newImage, ...old] : [newImage];
       });
 
-      toast.success("Image uploaded successfully!");
+      showSuccessToast("Image uploaded successfully!");
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload image"
-      );
-    },
+    onError: onMutationError("Failed to upload image"),
   });
 }
 
-// Hook to delete an image
+/** Hook to delete an image. */
 export function useDeleteImage() {
   const queryClient = useQueryClient();
 
@@ -156,28 +156,26 @@ export function useDeleteImage() {
 
       // Snapshot the previous value
       const previousImages = queryClient.getQueryData<Image[]>(
-        imageKeys.lists()
+        imageKeys.lists(),
       );
 
       // Optimistically update to remove the image
       queryClient.setQueryData<Image[]>(imageKeys.lists(), (old) =>
-        old ? old.filter((img) => img.imageId !== imageId) : []
+        old ? old.filter((img) => img.imageId !== imageId) : [],
       );
 
       // Return context with snapshot
       return { previousImages };
     },
     onSuccess: () => {
-      toast.success("Image deleted successfully!");
+      showSuccessToast("Image deleted successfully!");
     },
-    onError: (error, imageId, context) => {
+    onError: (error, _imageId, context) => {
       // Rollback on error
       if (context?.previousImages) {
         queryClient.setQueryData(imageKeys.lists(), context.previousImages);
       }
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete image"
-      );
+      showErrorToast(getErrorMessage(error, "Failed to delete image"));
     },
     onSettled: () => {
       // Always refetch after error or success

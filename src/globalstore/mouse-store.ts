@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { User } from "@/interfaces/realtime.interface";
+import type { User } from "@/interfaces/websocket";
 
 type MousePosition = {
   x: number;

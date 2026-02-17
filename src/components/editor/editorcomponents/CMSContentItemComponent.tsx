@@ -4,6 +4,7 @@ import { useCMSContentItem, useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentItemElement } from "@/interfaces/elements.interface";
+import { ContentItem } from "@/interfaces/cms.interface";
 import ElementLoader from "../ElementLoader";
 import { Database } from "lucide-react";
 import { getFieldValue } from "@/hooks";
@@ -38,7 +39,7 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
     itemSlug || "",
   );
 
-  const itemToRender = data || contentItem;
+  const itemToRender = (data as ContentItem | undefined) || contentItem;
 
   if (!contentTypeId) {
     return (
@@ -83,7 +84,10 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
     >
       {cmsElement.elements && cmsElement.elements.length > 0 ? (
         // Use child elements as template
-        <ElementLoader elements={cmsElement.elements} data={itemToRender} />
+        <ElementLoader
+          elements={cmsElement.elements}
+          data={itemToRender as unknown as Record<string, unknown>}
+        />
       ) : itemToRender ? (
         // Default rendering
         <article className="max-w-4xl mx-auto">

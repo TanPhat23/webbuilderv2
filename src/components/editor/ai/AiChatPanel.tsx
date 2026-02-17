@@ -18,8 +18,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useAiChat } from "@/providers/aiprovider";
 import { useSidebar } from "@/components/ui/sidebar";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useSelectedElementWithSetter } from "@/globalstore/selectors/selection-selectors";
 
 interface UseAutoResizeTextareaProps {
   minHeight: number;
@@ -76,8 +75,7 @@ interface CommandSuggestion {
   prefix: string;
 }
 
-interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   containerClassName?: string;
   showRing?: boolean;
 }
@@ -147,7 +145,8 @@ export default function AnimatedAIChat() {
   const { open: sidebarOpen, setOpen } = useSidebar();
   const [inputFocused, setInputFocused] = useState(false);
   const commandPaletteRef = useRef<HTMLDivElement>(null);
-  const { selectedElement, setSelectedElement } = useSelectionStore();
+  const { selectedElement, setSelectedElement } =
+    useSelectedElementWithSetter();
   const commandSuggestions: CommandSuggestion[] = [
     {
       icon: <ImageIcon className="h-4 w-4" />,

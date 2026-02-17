@@ -6,7 +6,15 @@ import type {
   Collaborator,
   UpdateCollaboratorRoleRequest,
 } from "@/interfaces/collaboration.interface";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
+import {
+  getErrorMessage,
+  onMutationError,
+} from "@/lib/utils/hooks/mutationUtils";
 
 // Query keys for collaborators
 export const collaboratorKeys = {
@@ -19,9 +27,10 @@ export const collaboratorKeys = {
 };
 
 /**
- * Hook to get all collaborators for a specific project
- * @param projectId - The project ID
- * @param enabled - Whether the query should be enabled (default: true)
+ * Hook to get all collaborators for a specific project.
+ *
+ * @param projectId - The project ID.
+ * @param enabled   - Whether the query should be enabled (default: true).
  */
 export function useProjectCollaborators(
   projectId: string | null,
@@ -36,13 +45,13 @@ export function useProjectCollaborators(
       return collaborators || [];
     },
     enabled: !!projectId && enabled,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    ...QUERY_CONFIG.SHORT,
   });
 }
 
 /**
- * Hook to update a collaborator's role
- * Only project owners can perform this action
+ * Hook to update a collaborator's role.
+ * Only project owners can perform this action.
  */
 export function useUpdateCollaboratorRole(projectId?: string) {
   const queryClient = useQueryClient();
@@ -88,7 +97,7 @@ export function useUpdateCollaboratorRole(projectId?: string) {
 
       return { previousCollaborators, projectId };
     },
-    onSuccess: (updatedCollaborator, variables, context) => {
+    onSuccess: (updatedCollaborator, _variables, context) => {
       // Update with server data
       if (context?.projectId) {
         queryClient.setQueryData<Collaborator[]>(
@@ -104,9 +113,9 @@ export function useUpdateCollaboratorRole(projectId?: string) {
         );
       }
 
-      toast.success("Collaborator role updated successfully!");
+      showSuccessToast("Collaborator role updated successfully!");
     },
-    onError: (error, variables, context) => {
+    onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousCollaborators && context?.projectId) {
         queryClient.setQueryData(
@@ -115,10 +124,8 @@ export function useUpdateCollaboratorRole(projectId?: string) {
         );
       }
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to update collaborator role",
+      showErrorToast(
+        getErrorMessage(error, "Failed to update collaborator role"),
       );
     },
     onSettled: (_, __, ___, context) => {
@@ -138,8 +145,8 @@ export function useUpdateCollaboratorRole(projectId?: string) {
 }
 
 /**
- * Hook to remove a collaborator from a project
- * Only project owners can perform this action
+ * Hook to remove a collaborator from a project.
+ * Only project owners can perform this action.
  */
 export function useRemoveCollaborator(projectId?: string) {
   const queryClient = useQueryClient();
@@ -168,7 +175,7 @@ export function useRemoveCollaborator(projectId?: string) {
       return { previousCollaborators, projectId };
     },
     onSuccess: (_, __, context) => {
-      toast.success("Collaborator removed successfully!");
+      showSuccessToast("Collaborator removed successfully!");
 
       if (context?.projectId) {
         queryClient.invalidateQueries({
@@ -176,7 +183,7 @@ export function useRemoveCollaborator(projectId?: string) {
         });
       }
     },
-    onError: (error, collaboratorId, context) => {
+    onError: (error, _collaboratorId, context) => {
       // Rollback on error
       if (context?.previousCollaborators && context?.projectId) {
         queryClient.setQueryData(
@@ -185,11 +192,7 @@ export function useRemoveCollaborator(projectId?: string) {
         );
       }
 
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to remove collaborator",
-      );
+      showErrorToast(getErrorMessage(error, "Failed to remove collaborator"));
     },
     onSettled: (_, __, ___, context) => {
       if (context?.projectId) {
@@ -206,7 +209,7 @@ export function useRemoveCollaborator(projectId?: string) {
 }
 
 /**
- * Hook to leave a project (remove self as collaborator)
+ * Hook to leave a project (remove self as collaborator).
  */
 export function useLeaveProject() {
   const queryClient = useQueryClient();
@@ -223,19 +226,15 @@ export function useLeaveProject() {
         queryKey: ["projects"],
       });
 
-      toast.success("You have left the project successfully!");
+      showSuccessToast("You have left the project successfully!");
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to leave project",
-      );
-    },
+    onError: onMutationError("Failed to leave project"),
   });
 }
 
 /**
- * Combined hook for collaborator management
- * Provides all collaborator operations in a single hook
+ * Combined hook for collaborator management.
+ * Provides all collaborator operations in a single hook.
  */
 export function useCollaboratorManager(projectId: string | null) {
   const collaborators = useProjectCollaborators(projectId);
@@ -243,7 +242,7 @@ export function useCollaboratorManager(projectId: string | null) {
   const removeCollaborator = useRemoveCollaborator(projectId || undefined);
   const leaveProject = useLeaveProject();
 
-  const result = {
+  return {
     // Query states
     collaborators: collaborators.data || [],
     isLoading: collaborators.isLoading,
@@ -272,14 +271,4 @@ export function useCollaboratorManager(projectId: string | null) {
     // Refetch
     refetch: collaborators.refetch,
   };
-
-  console.log("useCollaboratorManager Debug:", {
-    projectId,
-    collaborators: result.collaborators,
-    isLoading: result.isLoading,
-    isError: result.isError,
-    error: result.error,
-  });
-
-  return result;
 }

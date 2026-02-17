@@ -1,10 +1,13 @@
+"use client";
+
 import { ElementType } from "@/types/global.type";
 import { Component } from "lucide-react";
 import React from "react";
 import { ComponentTooltip } from "../ComponentTooltip";
+import { IconRenderer, type IconName } from "@/lib/utils/icons/iconMap";
 
 type HolderProps = {
-  icon: React.ReactNode;
+  icon: IconName;
   type: ElementType;
 };
 
@@ -15,6 +18,7 @@ const ComponentHolder = ({ icon, type }: HolderProps) => {
   ) => {
     e.dataTransfer.setData("elementType", elementType);
   };
+
   return (
     <ComponentTooltip componentType={type}>
       <div
@@ -23,7 +27,7 @@ const ComponentHolder = ({ icon, type }: HolderProps) => {
         className="flex flex-row justify-between items-center w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
       >
         <div>{type}</div>
-        {icon}
+        <IconRenderer name={icon} className="w-4 h-4" />
       </div>
     </ComponentTooltip>
   );
@@ -49,7 +53,7 @@ export function CustomComponentHolder({
       className="flex flex-row justify-between items-center w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
     >
       <div>{name}</div>
-      <Component />
+      <Component className="w-4 h-4" />
     </div>
   );
 }

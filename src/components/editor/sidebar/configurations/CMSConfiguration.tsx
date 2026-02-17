@@ -14,14 +14,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { CMSContentSettings } from "@/interfaces/elements.interface";
 import { useCMSContentTypes, useCMSContent } from "@/hooks";
 
 const CMSConfiguration: React.FC = () => {
-  const { selectedElement } = useSelectionStore();
-  const { updateElement } = useElementStore();
+  const selectedElement = useSelectedElement();
+  const updateElement = useUpdateElement();
   const element = selectedElement;
 
   if (!element) return null;

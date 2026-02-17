@@ -26,7 +26,7 @@ export {
 // =============================================================================
 export { useEditor } from "./editor/useEditor";
 export type { Viewport } from "./editor/useEditor";
-export { useElementHandler } from "./editor/useElementHandler";
+export { useElementHandler } from "./editor";
 export { useGridEditor } from "./editor/useGridEditor";
 export { useResizeHandler } from "./editor/useResizeHandler";
 

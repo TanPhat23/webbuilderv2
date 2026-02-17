@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Sidebar,
@@ -22,7 +22,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useAiChat } from "@/providers/aiprovider";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import {
   Tooltip,
   TooltipContent,
@@ -30,10 +30,29 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import Settings from "./configurations/Settings";
-import Styles from "./configurations/Styles";
-import CssTextareaImporter from "../editor/CssTextareaImporter";
 import SidebarEmptyState from "./SidebarEmptyState";
+
+// ---------------------------------------------------------------------------
+// Lazy-loaded configuration panels — only fetched when the user switches
+// to the corresponding tab, reducing the initial LayoutSideBar bundle.
+// ---------------------------------------------------------------------------
+
+const Settings = React.lazy(() => import("./configurations/Settings"));
+const Styles = React.lazy(() => import("./configurations/Styles"));
+const CssTextareaImporter = React.lazy(
+  () => import("../editor/CssTextareaImporter"),
+);
+
+/**
+ * Lightweight spinner shown while a lazy-loaded panel chunk is fetched.
+ */
+function PanelFallback() {
+  return (
+    <div className="flex items-center justify-center py-6">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    </div>
+  );
+}
 
 type TabType = "settings" | "styles" | "code";
 
@@ -41,7 +60,7 @@ function LayoutSideBar() {
   const params = useParams();
   const { toggleSidebar, state, setOpen } = useSidebar();
   const { toggleChat } = useAiChat();
-  const { selectedElement } = useSelectionStore();
+  const selectedElement = useSelectedElement();
 
   const [activeTab, setActiveTab] = useState<TabType>("settings");
 
@@ -194,7 +213,9 @@ function LayoutSideBar() {
             {activeTab === "settings" && (
               <div className="flex-1 min-h-0 overflow-auto p-4">
                 {selectedElement ? (
-                  <Settings />
+                  <Suspense fallback={<PanelFallback />}>
+                    <Settings />
+                  </Suspense>
                 ) : (
                   <SidebarEmptyState
                     title="Select an element to configure settings"
@@ -216,7 +237,9 @@ function LayoutSideBar() {
                         Double-click element to edit content
                       </p>
                     </div>
-                    <Styles />
+                    <Suspense fallback={<PanelFallback />}>
+                      <Styles />
+                    </Suspense>
                   </div>
                 ) : (
                   <SidebarEmptyState
@@ -229,7 +252,9 @@ function LayoutSideBar() {
             )}
             {activeTab === "code" && (
               <div className="flex-1 min-h-0 overflow-auto p-4">
-                <CssTextareaImporter />
+                <Suspense fallback={<PanelFallback />}>
+                  <CssTextareaImporter />
+                </Suspense>
               </div>
             )}
           </div>

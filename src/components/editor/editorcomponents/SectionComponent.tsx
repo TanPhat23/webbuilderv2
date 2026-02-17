@@ -5,17 +5,12 @@ import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { SectionElement } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
-import { Button } from "@/components/ui/button";
 import { useParams } from "next/navigation";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
 import ElementLoader from "../ElementLoader";
-import { usePageStore } from "@/globalstore/page-store";
+import { SectionActions } from "./SectionActions";
 
 const SectionComponent = ({ element, data }: EditorComponentProps) => {
   const sectionElement = element as SectionElement;
-  const { insertElement } = useElementStore();
-  const { selectedElement } = useSelectionStore();
   const { id } = useParams();
   const previousEventsRef = useRef<any>(null);
 
@@ -23,14 +18,12 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
   const { elementRef, registerEvents, createEventHandlers, eventsActive } =
     useElementEvents({
       elementId: element.id,
-      projectId: id as string,
+      projectId: (id as string) || "",
     });
-  const { currentPage } = usePageStore();
 
   const safeStyles = elementHelper.getSafeStyles(sectionElement);
 
   useEffect(() => {
-    // Only log if element events have actually changed
     const eventsChanged =
       JSON.stringify(element.events) !==
       JSON.stringify(previousEventsRef.current);
@@ -46,15 +39,6 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
 
   const eventHandlers = createEventHandlers();
 
-  const handleCreateSeciont = () => {
-    const newElement = elementHelper.createElement.create<SectionElement>(
-      "Section",
-      currentPage?.Id || "",
-      undefined,
-    );
-    console.log("New Section Element:", newElement);
-    if (newElement) insertElement(element, newElement);
-  };
   return (
     <div
       ref={elementRef as React.RefObject<HTMLDivElement>}
@@ -72,24 +56,7 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
       }}
     >
       <ElementLoader elements={sectionElement.elements} data={data} />
-      {selectedElement?.id === sectionElement.id && (
-        <div
-          style={{
-            position: "absolute",
-            left: "50%",
-            transform: "translateX(-50%)",
-            bottom: -30,
-            zIndex: 10,
-          }}
-        >
-          <Button
-            className="h-6 text-primary-foreground"
-            onDoubleClick={handleCreateSeciont}
-          >
-            + Add Section
-          </Button>
-        </div>
-      )}
+      <SectionActions element={sectionElement} />
     </div>
   );
 };

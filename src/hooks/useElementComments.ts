@@ -9,7 +9,9 @@ import {
 } from "@/interfaces/elementcomment.interface";
 import { useUser } from "@clerk/nextjs";
 import { useProjectStore } from "@/globalstore/project-store";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import { showSuccessToast } from "@/lib/utils/errors/errorToast";
+import { onMutationError } from "@/lib/utils/hooks/mutationUtils";
 
 export const elementCommentKeys = {
   all: ["element-comments"] as const,
@@ -50,7 +52,7 @@ interface UseElementCommentsReturn {
   canDeleteComment: (comment: ElementComment) => boolean;
 }
 
-// Get comments for an element
+/** Hook for fetching and managing comments on a specific editor element. */
 export function useElementComments(
   options: UseElementCommentsOptions = {},
 ): UseElementCommentsReturn {
@@ -69,7 +71,7 @@ export function useElementComments(
     queryKey: elementCommentKeys.list(elementId || ""),
     queryFn: () => elementCommentService.getElementComments(elementId || ""),
     enabled: autoLoad && !!elementId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    ...QUERY_CONFIG.SHORT,
   });
 
   const comments = commentsData?.data || [];
@@ -90,16 +92,14 @@ export function useElementComments(
 
       return elementCommentService.createElementComment(request);
     },
-    onSuccess: (newComment) => {
+    onSuccess: () => {
       // Invalidate and refetch comments
       queryClient.invalidateQueries({
         queryKey: elementCommentKeys.list(elementId!),
       });
-      toast.success("Comment posted successfully!");
+      showSuccessToast("Comment posted successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to post comment: ${error.message}`);
-    },
+    onError: onMutationError("Failed to post comment"),
   });
 
   // Update comment mutation
@@ -124,11 +124,9 @@ export function useElementComments(
       queryClient.invalidateQueries({
         queryKey: elementCommentKeys.list(elementId!),
       });
-      toast.success("Comment updated successfully!");
+      showSuccessToast("Comment updated successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to update comment: ${error.message}`);
-    },
+    onError: onMutationError("Failed to update comment"),
   });
 
   // Delete comment mutation
@@ -142,11 +140,9 @@ export function useElementComments(
       queryClient.invalidateQueries({
         queryKey: elementCommentKeys.list(elementId!),
       });
-      toast.success("Comment deleted successfully!");
+      showSuccessToast("Comment deleted successfully!");
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to delete comment: ${error.message}`);
-    },
+    onError: onMutationError("Failed to delete comment"),
   });
 
   // Toggle resolved mutation
@@ -164,9 +160,7 @@ export function useElementComments(
         queryKey: elementCommentKeys.list(elementId!),
       });
     },
-    onError: (error: Error) => {
-      toast.error(`Failed to update comment status: ${error.message}`);
-    },
+    onError: onMutationError("Failed to update comment status"),
   });
 
   // Wrapper functions to maintain the same API
@@ -250,10 +244,8 @@ export function useElementComments(
   };
 }
 
-// Hook for fetching all project comments
+/** Hook for fetching all project comments grouped by element. */
 export function useProjectComments(projectId?: string) {
-  const queryClient = useQueryClient();
-
   const {
     data: commentsData,
     isLoading,
@@ -263,7 +255,7 @@ export function useProjectComments(projectId?: string) {
     queryKey: elementCommentKeys.projectList(projectId || ""),
     queryFn: () => elementCommentService.getProjectComments(projectId || ""),
     enabled: !!projectId,
-    staleTime: 1000 * 60 * 2, // 2 minutes
+    ...QUERY_CONFIG.SHORT,
   });
 
   const comments = commentsData?.data || [];

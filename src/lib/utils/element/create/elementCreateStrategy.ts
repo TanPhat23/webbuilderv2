@@ -3,23 +3,16 @@ import {
   CMSContentGridElement,
   CMSContentItemElement,
   CMSContentListElement,
-  CSSStyles,
-  DataLoaderElement,
   FormElement,
   ImageElement,
   InputElement,
 } from "@/interfaces/elements.interface";
-import { EditorElement, ElementType } from "@/types/global.type";
+import { EditorElement } from "@/types/global.type";
 
-export type BuilderState = {
-  id: string;
-  type: ElementType;
-  src?: string;
-  parentId?: string;
-  pageId: string;
-  styles?: CSSStyles;
-  tailwindStyles?: string;
-  href?: string;
+export type BuilderState = Omit<
+  EditorElement,
+  "content" | "elements" | "settings"
+> & {
   content?: string;
 };
 
@@ -157,7 +150,7 @@ export class ListElementCreateStrategy implements ElementCreateStrategy {
     return createBaseElement(state, {
       styles: {
         default: {
-          width: state.styles?.width ?? "100%",
+          width: state.styles?.default?.width ?? "100%",
           minHeight: "160px",
           backgroundColor: "var(--bg-surface, #ffffff)",
           border: "1px solid rgba(15,23,42,0.06)",
@@ -259,10 +252,7 @@ export class CarouselElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-
-export class CMSContentListElementCreateStrategy
-  implements ElementCreateStrategy
-{
+export class CMSContentListElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): CMSContentListElement {
     return createBaseElement(state, {
       settings: {
@@ -288,9 +278,7 @@ export class CMSContentListElementCreateStrategy
   }
 }
 
-export class CMSContentItemElementCreateStrategy
-  implements ElementCreateStrategy
-{
+export class CMSContentItemElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): CMSContentItemElement {
     return createBaseElement(state, {
       settings: {
@@ -313,9 +301,7 @@ export class CMSContentItemElementCreateStrategy
   }
 }
 
-export class CMSContentGridElementCreateStrategy
-  implements ElementCreateStrategy
-{
+export class CMSContentGridElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): CMSContentGridElement {
     return createBaseElement(state, {
       settings: {

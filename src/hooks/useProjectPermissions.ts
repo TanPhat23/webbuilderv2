@@ -2,7 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@clerk/nextjs";
-import { CollaboratorRole } from "@/interfaces/collaboration.interface";
+import {
+  CollaboratorRole,
+  Collaborator,
+} from "@/interfaces/collaboration.interface";
 import { useProjectCollaborators } from "./features/useCollaborators";
 
 /**
@@ -141,7 +144,10 @@ const ROLE_PERMISSIONS: Record<CollaboratorRole, Permission[]> = {
 /**
  * Check if a role has a specific permission
  */
-function hasPermission(role: CollaboratorRole, permission: Permission): boolean {
+function hasPermission(
+  role: CollaboratorRole,
+  permission: Permission,
+): boolean {
   const permissions = ROLE_PERMISSIONS[role];
   return permissions.includes(permission);
 }
@@ -152,13 +158,13 @@ function hasPermission(role: CollaboratorRole, permission: Permission): boolean 
 function getUserRole(
   userId: string | null | undefined,
   projectId: string,
-  collaborators: any[]
+  collaborators: Collaborator[],
 ): CollaboratorRole | null {
   if (!userId || !collaborators) return null;
 
   // Find user in collaborators list
   const userCollab = collaborators.find(
-    (c) => c.userId === userId || c.user?.id === userId
+    (c) => c.userId === userId || c.user?.id === userId,
   );
 
   if (!userCollab) return null;
@@ -207,14 +213,14 @@ interface UseProjectPermissionsReturn {
  */
 export function useProjectPermissions(
   projectId: string | null,
-  enabled = true
+  enabled = true,
 ): UseProjectPermissionsReturn {
   const { userId, isLoaded } = useAuth();
 
   // Get collaborators for this project
   const { data: collaborators = [], isLoading } = useProjectCollaborators(
     projectId,
-    enabled && isLoaded && !!userId && !!projectId
+    enabled && isLoaded && !!userId && !!projectId,
   );
 
   // Get user's role
@@ -268,7 +274,7 @@ export function useProjectPermissions(
  */
 export function useCanEditOwnResource(
   projectId: string | null,
-  resourceAuthorId: string | null
+  resourceAuthorId: string | null,
 ): boolean {
   const { userId } = useAuth();
   const { hasPermission, role } = useProjectPermissions(projectId);
@@ -295,7 +301,7 @@ export function useCanEditOwnResource(
  */
 export function useCanDeleteOwnResource(
   projectId: string | null,
-  resourceAuthorId: string | null
+  resourceAuthorId: string | null,
 ): boolean {
   const { userId } = useAuth();
   const { hasPermission } = useProjectPermissions(projectId);

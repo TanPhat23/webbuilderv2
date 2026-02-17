@@ -3,7 +3,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectService } from "@/services/project";
 import type { Project } from "@/interfaces/project.interface";
-import { toast } from "sonner";
+import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
+import {
+  getErrorMessage,
+  onMutationError,
+} from "@/lib/utils/hooks/mutationUtils";
 
 // Query keys
 export const projectKeys = {
@@ -18,16 +26,16 @@ export const projectKeys = {
     [...projectKeys.detail(projectId), "pages"] as const,
 };
 
-// Hook to get all user projects
+/** Hook to get all user projects. */
 export function useUserProjects() {
   return useQuery({
     queryKey: projectKeys.userProjects(),
     queryFn: projectService.getUserProjects,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
-// Hook to get a specific project by ID
+/** Hook to get a specific project by ID. */
 export function useProject(projectId: string | null) {
   return useQuery({
     queryKey: projectKeys.detail(projectId || ""),
@@ -39,7 +47,7 @@ export function useProject(projectId: string | null) {
   });
 }
 
-// Hook to get project pages
+/** Hook to get project pages. */
 export function useProjectPages(projectId: string | null) {
   return useQuery({
     queryKey: projectKeys.pages(projectId || ""),
@@ -48,11 +56,11 @@ export function useProjectPages(projectId: string | null) {
       return await projectService.getProjectPages(projectId);
     },
     enabled: !!projectId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
-// Hook to create a new project
+/** Hook to create a new project. */
 export function useCreateProject() {
   const queryClient = useQueryClient();
 
@@ -69,17 +77,13 @@ export function useCreateProject() {
         return old ? [data, ...old] : [data];
       });
 
-      toast.success("Project created successfully!");
+      showSuccessToast("Project created successfully!");
     },
-    onError: (error) => {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to create project",
-      );
-    },
+    onError: onMutationError("Failed to create project"),
   });
 }
 
-// Hook to update a project
+/** Hook to update a project. */
 export function useUpdateProject() {
   const queryClient = useQueryClient();
 
@@ -135,7 +139,7 @@ export function useUpdateProject() {
       queryClient.setQueryData(projectKeys.detail(projectId), data);
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
 
-      toast.success("Project updated successfully!");
+      showSuccessToast("Project updated successfully!");
     },
     onError: (error, { projectId }, context) => {
       // Rollback on error
@@ -152,9 +156,7 @@ export function useUpdateProject() {
         );
       }
 
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update project",
-      );
+      showErrorToast(getErrorMessage(error, "Failed to update project"));
     },
     onSettled: (_, __, { projectId }) => {
       queryClient.invalidateQueries({
@@ -165,7 +167,7 @@ export function useUpdateProject() {
   });
 }
 
-// Hook to delete a project
+/** Hook to delete a project. */
 export function useDeleteProject() {
   const queryClient = useQueryClient();
 
@@ -191,9 +193,9 @@ export function useDeleteProject() {
       return { previousProjects };
     },
     onSuccess: () => {
-      toast.success("Project deleted successfully!");
+      showSuccessToast("Project deleted successfully!");
     },
-    onError: (error, projectId, context) => {
+    onError: (error, _projectId, context) => {
       // Rollback on error
       if (context?.previousProjects) {
         queryClient.setQueryData(
@@ -202,9 +204,7 @@ export function useDeleteProject() {
         );
       }
 
-      toast.error(
-        error instanceof Error ? error.message : "Failed to delete project",
-      );
+      showErrorToast(getErrorMessage(error, "Failed to delete project"));
     },
     onSettled: () => {
       // Always refetch after error or success
@@ -213,7 +213,7 @@ export function useDeleteProject() {
   });
 }
 
-// Hook to publish/unpublish a project
+/** Hook to publish/unpublish a project. */
 export function usePublishProject() {
   const queryClient = useQueryClient();
 
@@ -270,7 +270,7 @@ export function usePublishProject() {
       queryClient.setQueryData(projectKeys.detail(projectId), data);
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
 
-      toast.success(
+      showSuccessToast(
         publish
           ? "Project published successfully!"
           : "Project unpublished successfully!",
@@ -291,9 +291,7 @@ export function usePublishProject() {
         );
       }
 
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update project",
-      );
+      showErrorToast(getErrorMessage(error, "Failed to update project"));
     },
     onSettled: (_, __, { projectId }) => {
       queryClient.invalidateQueries({

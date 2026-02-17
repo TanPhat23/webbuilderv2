@@ -25,23 +25,31 @@ const urlMap: Record<Exclude<URLType, "none">, string> = {
 export class URLBuilder {
   private url: URL;
 
-  constructor(type: URLType) {
-    const base =
-      type !== "none"
-        ? urlMap[type]
-        : typeof window !== "undefined"
-          ? window.location.origin
-          : "http://localhost:3000";
+  constructor(typeOrBase: URLType | string) {
+    const isUrlType = (v: string): v is URLType =>
+      v === "ai" ||
+      v === "api" ||
+      v === "export" ||
+      v === "next" ||
+      v === "none";
+
+    const fallbackOrigin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost:3000";
+
+    const base = isUrlType(typeOrBase)
+      ? typeOrBase !== "none"
+        ? urlMap[typeOrBase]
+        : fallbackOrigin
+      : typeOrBase && typeOrBase.length > 0
+        ? typeOrBase
+        : fallbackOrigin;
 
     try {
       this.url = new URL(base);
     } catch (e) {
-      this.url = new URL(
-        base,
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "http://localhost:3000",
-      );
+      this.url = new URL(base, fallbackOrigin);
     }
   }
 

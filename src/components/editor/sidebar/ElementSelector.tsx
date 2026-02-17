@@ -12,6 +12,7 @@ import elementHolders from "@/constants/elements";
 import ComponentHolder, { CustomComponentHolder } from "./ComponentHolder";
 import { customComps } from "@/lib/customcomponents/customComponents";
 import type { ElementTemplate } from "@/types/global.type";
+import type { IconName } from "@/lib/utils/icons/iconMap";
 
 type SortedCustomComponent = {
   component: ElementTemplate;
@@ -47,12 +48,9 @@ export function ElementSelector() {
   return (
     <Command className="flex h-full w-full flex-col border-none bg-transparent shadow-none [&_[data-slot=command-input-wrapper]]:border-none [&_[data-slot=command-input-wrapper]]:bg-muted/40 [&_[data-slot=command-input-wrapper]]:mx-4 [&_[data-slot=command-input-wrapper]]:mt-4 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:transition-colors [&_[data-slot=command-input-wrapper]]:focus-within:bg-muted/60">
       <div className="flex flex-col gap-2">
-        <CommandInput
-          placeholder="Search elements..."
-          className="h-9"
-        />
+        <CommandInput placeholder="Search elements..." className="h-9" />
         <div className="px-5 pt-2 pb-1">
-           <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
             Components
           </h2>
         </div>
@@ -63,8 +61,8 @@ export function ElementSelector() {
           No matches found.
         </CommandEmpty>
 
-        <CommandGroup 
-          heading="Standard" 
+        <CommandGroup
+          heading="Standard"
           className="px-1 [&_[cmdk-group-heading]]:sr-only"
         >
           <div className="flex flex-col gap-0.5">
@@ -74,7 +72,10 @@ export function ElementSelector() {
                 value={element.type}
                 className="p-0 h-9 rounded-md transition-all hover:bg-accent/50 data-[selected=true]:bg-accent/70 cursor-pointer"
               >
-                <ComponentHolder icon={element.icon} type={element.type} />
+                <ComponentHolder
+                  icon={element.icon as IconName}
+                  type={element.type}
+                />
               </CommandItem>
             ))}
           </div>
@@ -88,8 +89,8 @@ export function ElementSelector() {
                 Custom
               </h3>
             </div>
-            <CommandGroup 
-              heading="Custom" 
+            <CommandGroup
+              heading="Custom"
               className="px-1 [&_[cmdk-group-heading]]:sr-only"
             >
               <div className="flex flex-col gap-0.5">

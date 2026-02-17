@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useElementStore } from "@/globalstore/element-store";
-import { useSelectionStore } from "@/globalstore/selection-store";
+import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
+import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { SelectElement } from "@/interfaces/elements.interface";
 import {
   ArrowDown,
@@ -43,8 +43,8 @@ interface SelectSettings {
 }
 
 export const SelectConfigurationAccordion = () => {
-  const { updateElement } = useElementStore<SelectElement>();
-  const { selectedElement } = useSelectionStore();
+  const updateElement = useUpdateElement();
+  const selectedElement = useSelectedElement();
 
   if (!selectedElement || selectedElement.type !== "Select") {
     return null;

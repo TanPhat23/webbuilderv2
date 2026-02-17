@@ -1,5 +1,12 @@
+/**
+ * useElementEventWorkflowMutations.ts
+ *
+ * React Query mutations for connecting and disconnecting element event
+ * workflows. Uses the centralized toast utilities and `getErrorMessage`
+ * for consistent error handling.
+ */
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { elementEventWorkflowService } from "@/services/elementEventWorkflow";
 import {
   CreateElementEventWorkflowSchema,
@@ -13,6 +20,11 @@ import {
   useElementEventWorkflowStore,
   type IElementEventWorkflowConnection,
 } from "@/globalstore/element-event-workflow-store";
+import {
+  showErrorToast,
+  showSuccessToast,
+} from "@/lib/utils/errors/errorToast";
+import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
 
 type ConnectVariables = {
   elementId: string;
@@ -26,6 +38,7 @@ type DisconnectVariables = {
   workflowId: string;
 };
 
+/** Hook to connect an element event to a workflow. */
 export const useConnectElementEventWorkflow = () => {
   const queryClient = useQueryClient();
   const setIsConnecting = useElementEventWorkflowStore(
@@ -90,26 +103,26 @@ export const useConnectElementEventWorkflow = () => {
       );
 
       setMutationError(null);
-      toast.success("Workflow connected successfully!");
+      showSuccessToast("Workflow connected successfully!");
     },
     onError: (error) => {
       if (error instanceof Error) {
         if (error.message === "Workflow already connected to this event") {
           setMutationError(null);
-          toast.info(error.message);
+          showSuccessToast(error.message);
           return;
         }
         if (error.message.startsWith("Invalid")) {
           setMutationError(error.message);
-          toast.error(error.message);
+          showErrorToast(error.message);
           return;
         }
       }
-      const msg =
-        error instanceof Error ? error.message : "Failed to connect workflow";
+      const msg = getErrorMessage(error, "Failed to connect workflow");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to connect workflow:", error);
-      toast.error("Failed to connect workflow");
+      showErrorToast("Failed to connect workflow");
     },
     onSettled: () => {
       setIsConnecting(false);
@@ -117,6 +130,7 @@ export const useConnectElementEventWorkflow = () => {
   });
 };
 
+/** Hook to disconnect an element event from a workflow. */
 export const useDisconnectElementEventWorkflow = () => {
   const queryClient = useQueryClient();
   const setIsDisconnecting = useElementEventWorkflowStore(
@@ -177,16 +191,14 @@ export const useDisconnectElementEventWorkflow = () => {
       );
 
       setMutationError(null);
-      toast.success("Workflow disconnected");
+      showSuccessToast("Workflow disconnected");
     },
     onError: (error) => {
-      const msg =
-        error instanceof Error
-          ? error.message
-          : "Failed to disconnect workflow";
+      const msg = getErrorMessage(error, "Failed to disconnect workflow");
       setMutationError(msg);
+      // eslint-disable-next-line no-console
       console.error("Failed to disconnect workflow:", error);
-      toast.error("Failed to disconnect workflow");
+      showErrorToast("Failed to disconnect workflow");
     },
     onSettled: () => {
       setIsDisconnecting(false);

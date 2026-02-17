@@ -99,7 +99,10 @@ const PreviewCMSContentGridComponent = ({
     >
       {contentItems.map((item, index) => (
         <div key={item.id || index} style={{ width: "100%" }}>
-          <PreviewElementLoader elements={element.elements} data={item} />
+          <PreviewElementLoader
+            elements={element.elements}
+            data={item as unknown as Record<string, unknown>}
+          />
         </div>
       ))}
     </div>

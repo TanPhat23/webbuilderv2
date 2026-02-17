@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Suspense,
+} from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { EditorSideBar } from "@/components/editor/sidebar/EditorSideBar";
 import LayoutSideBar from "@/components/editor/sidebar/LayoutSideBar";
@@ -10,7 +16,9 @@ import { useAiChat } from "./aiprovider";
 import { ElementCommentsPanel } from "@/components/editor/comments/ElementCommentsPanel";
 import { useEditor } from "@/hooks";
 import { useSearchParams } from "next/navigation";
-import WireframeManager from "@/components/editor/wireframe/WireframeManager";
+const WireframeManager = React.lazy(
+  () => import("@/components/editor/wireframe/WireframeManager"),
+);
 import { Button } from "@/components/ui/button";
 import { LayoutTemplate, PenTool } from "lucide-react";
 import CollaborationProvider from "./collaborationprovider";
@@ -22,7 +30,6 @@ interface EditorProviderProps {
   userId?: string;
 }
 
-// Define the type for the data returned by useEditor
 type EditorHookReturnType = ReturnType<typeof useEditor>;
 
 interface EditorContextType {
@@ -31,6 +38,8 @@ interface EditorContextType {
   editor: EditorHookReturnType;
   mode: "editor" | "wireframe";
   setMode: (mode: "editor" | "wireframe") => void;
+  editingMode: "visual" | "code";
+  setEditingMode: (mode: "visual" | "code") => void;
   pageId: string;
 }
 
@@ -46,6 +55,8 @@ export function useEditorContext() {
 
 function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
   const { chatOpen } = useAiChat();
+  const { editingMode } = useEditorContext();
+  const showSidebars = editingMode !== "code";
 
   return (
     <SidebarProvider
@@ -58,14 +69,17 @@ function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
         } as React.CSSProperties
       }
     >
-      <EditorSideBar />
-      {chatOpen && <AIChatPanel />}
+      {showSidebars && <EditorSideBar />}
+      {showSidebars && chatOpen && <AIChatPanel />}
       {children}
     </SidebarProvider>
   );
 }
 
 function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
+  const { editingMode } = useEditorContext();
+  const showSidebars = editingMode !== "code";
+
   return (
     <SidebarProvider
       defaultOpen={true}
@@ -78,7 +92,7 @@ function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
       }
     >
       {children}
-      <LayoutSideBar />
+      {showSidebars && <LayoutSideBar />}
     </SidebarProvider>
   );
 }
@@ -140,6 +154,7 @@ export default function EditorProvider({
   const pageId = searchParams.get("page") || "";
   const [isMounted, setIsMounted] = useState(false);
   const [mode, setMode] = useState<"editor" | "wireframe">("editor");
+  const [editingMode, setEditingMode] = useState<"visual" | "code">("visual");
 
   useEffect(() => {
     setIsMounted(true);
@@ -158,6 +173,8 @@ export default function EditorProvider({
     editor: editorData,
     mode,
     setMode,
+    editingMode,
+    setEditingMode,
     pageId,
   };
 
@@ -167,7 +184,7 @@ export default function EditorProvider({
         config={{
           projectId: projectId || "",
           pageId,
-          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8082",
+          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8080",
           enabled: collabEnabled,
           onSync: () => {
             toast.success("Live collaboration connected", {
@@ -187,7 +204,15 @@ export default function EditorProvider({
           <ModeToggle mode={mode} setMode={setMode} />
           {mode === "wireframe" ? (
             <div className="flex h-screen w-screen overflow-hidden pt-12 bg-background">
-              <WireframeManager pageId={pageId} />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center w-full h-full">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted-foreground border-t-transparent" />
+                  </div>
+                }
+              >
+                <WireframeManager pageId={pageId} />
+              </Suspense>
             </div>
           ) : (
             <EditorLayout>{children}</EditorLayout>

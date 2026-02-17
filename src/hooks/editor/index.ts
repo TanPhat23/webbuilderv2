@@ -4,7 +4,11 @@
  */
 
 export { useEditor } from "./useEditor";
-export { useElementHandler } from "./useElementHandler";
+export { useElementHandler } from "./element/useElementHandler";
+export { useElementCreator } from "./element/useElementCreator";
+export { useElementDnD } from "./element/useElementDnD";
+export { useElementInteraction } from "./element/useElementInteraction";
+export { useElementDragHandlers } from "./element/useElementDragHandlers";
 export { useGridEditor } from "./useGridEditor";
 export { useResizeHandler } from "./useResizeHandler";
 export {

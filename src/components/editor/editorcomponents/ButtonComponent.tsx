@@ -6,8 +6,8 @@ import { useElementHandler } from "@/hooks";
 import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import DOMPurify from "isomorphic-dompurify";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
-import { ButtonElement } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { ButtonElement } from "@/interfaces/elements.interface";
 
 const ButtonComponent = ({ element }: EditorComponentProps) => {
   const buttonElement = element as ButtonElement;

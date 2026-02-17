@@ -331,8 +331,8 @@ export function useResizeHandler({
     );
 
     const defaultStyles = currentElement.styles?.default || {};
-    const updatedDefault: any = {
-      ...defaultStyles,
+    const updatedDefault: Record<string, string | undefined> = {
+      ...(defaultStyles as Record<string, string | undefined>),
     };
 
     // Update dimensions based on resize direction

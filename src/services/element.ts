@@ -13,6 +13,10 @@ interface IElementService {
     projectId: string,
     snapshotId: string,
   ) => Promise<EditorElement[]>;
+  generateCode: (
+    elements: EditorElement[],
+    options?: RequestInit,
+  ) => Promise<{ code: string }>;
 }
 
 export const elementService: IElementService = {
@@ -67,5 +71,16 @@ export const elementService: IElementService = {
         .build(),
     );
     return snapshot.elements;
+  },
+
+  generateCode: async (
+    elements: EditorElement[],
+    options: RequestInit = {},
+  ): Promise<{ code: string }> => {
+    return apiClient.post<{ code: string }>(
+      new URLBuilder("next").setPath("/api/generate-code").build(),
+      { elements },
+      options,
+    );
   },
 };
