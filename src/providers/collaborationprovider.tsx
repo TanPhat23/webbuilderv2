@@ -31,7 +31,6 @@ import type {
   PresenceBroadcastPayload,
 } from "@/interfaces/websocket";
 
-
 const DEFAULT_WS_URL = "ws://localhost:8080";
 const PRESENCE_SEND_THROTTLE_MS = 50;
 
@@ -52,7 +51,6 @@ export function useCollaboration(): CollaborationContextValue {
 export function useCollaborationOptional(): CollaborationContextValue | null {
   return useContext(CollaborationContext);
 }
-
 
 interface CollaborationProviderProps {
   children: React.ReactNode;
@@ -260,6 +258,7 @@ export default function CollaborationProvider({
     ElementStore.getState().setCollaborativeCallback(async (type, id, data) => {
       if (internalRef.current.isApplyingRemoteUpdate) return;
       if (!providerRef.current?.isSynced) return;
+      if (!providerRef.current.isConnected()) return;
 
       const p = providerRef.current;
       try {

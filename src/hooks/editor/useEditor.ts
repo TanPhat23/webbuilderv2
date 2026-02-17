@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
@@ -205,26 +205,51 @@ export const useEditor = (
 
   const isLoading = isLoadingPages || isLoadingProject;
 
-  const permissionsSummary = {
-    canCreateElements: permissions.canCreateElements,
-    canEditElements: permissions.canEditElements,
-    canDeleteElements: permissions.canDeleteElements,
-    canReorderElements: permissions.canReorderElements,
-  };
+  const permissionsSummary = useMemo(
+    () => ({
+      canCreateElements: permissions.canCreateElements,
+      canEditElements: permissions.canEditElements,
+      canDeleteElements: permissions.canDeleteElements,
+      canReorderElements: permissions.canReorderElements,
+    }),
+    [
+      permissions.canCreateElements,
+      permissions.canEditElements,
+      permissions.canDeleteElements,
+      permissions.canReorderElements,
+    ],
+  );
 
-  return {
-    currentView,
-    setCurrentView,
-    isDraggingOver,
-    isLoading,
-    selectedElement,
-    handleDrop,
-    handleDragOver,
-    handleDragLeave,
-    addNewSection,
-    isReadOnly,
-    isLocked,
-    permissions: permissionsSummary,
-    userId: effectiveUserId,
-  };
+  return useMemo(
+    () => ({
+      currentView,
+      setCurrentView,
+      isDraggingOver,
+      isLoading,
+      selectedElement,
+      handleDrop,
+      handleDragOver,
+      handleDragLeave,
+      addNewSection,
+      isReadOnly,
+      isLocked,
+      permissions: permissionsSummary,
+      userId: effectiveUserId,
+    }),
+    [
+      currentView,
+      setCurrentView,
+      isDraggingOver,
+      isLoading,
+      selectedElement,
+      handleDrop,
+      handleDragOver,
+      handleDragLeave,
+      addNewSection,
+      isReadOnly,
+      isLocked,
+      permissionsSummary,
+      effectiveUserId,
+    ],
+  );
 };

@@ -1,3 +1,5 @@
+"use client";
+
 import { Accordion } from "@/components/ui/accordion";
 import { AppearanceAccordion } from "./AppearanceAccordion";
 import { TypographyAccordion } from "./TypographyAccordion";
@@ -17,12 +19,19 @@ export default function Styles() {
   }
 
   return (
-    <div className="w-full space-y-2">
+    <div className="w-full flex flex-col gap-1">
+      {/* Breakpoint bar */}
       <BreakpointSelector
         currentBreakpoint={currentBreakpoint}
         onBreakpointChange={setCurrentBreakpoint}
       />
-      <Accordion type="multiple" className="w-full space-y-2">
+
+      {/* Style accordions */}
+      <Accordion
+        type="multiple"
+        defaultValue={["appearance", "typography", "tailwind"]}
+        className="w-full flex flex-col gap-0.5"
+      >
         <AppearanceAccordion currentBreakpoint={currentBreakpoint} />
         {selectedElement.type === "Text" && (
           <TypographyAccordion currentBreakpoint={currentBreakpoint} />

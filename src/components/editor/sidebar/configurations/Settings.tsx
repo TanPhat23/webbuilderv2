@@ -1,3 +1,5 @@
+"use client";
+
 import { Accordion } from "@/components/ui/accordion";
 import { ElementType } from "@/types/global.type";
 import React, { Suspense } from "react";
