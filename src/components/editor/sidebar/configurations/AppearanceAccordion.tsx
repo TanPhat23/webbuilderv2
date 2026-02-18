@@ -20,6 +20,7 @@ import {
   ColorPickerField,
   SliderField,
   SpacingGroup,
+  SpacingBoxModel,
   ConfigField,
   BG_COLOR_PRESETS,
   TEXT_COLOR_PRESETS,
@@ -196,15 +197,14 @@ export const AppearanceAccordion = ({
       <Accordion
         type="multiple"
         defaultValue={[
+          "display",
+          "position",
           "size",
+          "spacing",
           "colors",
           "border",
           "box-shadow",
           "opacity",
-          "padding",
-          "margin",
-          "display",
-          "position",
           "background",
           "transform",
           "effects",
@@ -212,6 +212,38 @@ export const AppearanceAccordion = ({
         ]}
         className="w-full flex flex-col gap-0.5"
       >
+        {/* Display & Layout Section (Figma-inspired) — moved to top */}
+        <AccordionSection
+          value="display"
+          title="Auto layout"
+          icon={<LayoutGrid />}
+          nested
+        >
+          <DisplaySection
+            styles={styles}
+            updateStyle={updateStyle}
+            batchUpdateStyle={batchUpdateStyle}
+          />
+        </AccordionSection>
+
+        {/* Position Section (Figma-inspired) — moved to top */}
+        <AccordionSection
+          value="position"
+          title="Position"
+          icon={<MapPin />}
+          nested
+        >
+          <PositionSection
+            styles={styles}
+            updateStyle={(property, value) =>
+              updateStyle(
+                property as keyof AppearanceStyles,
+                value as AppearanceStyles[keyof AppearanceStyles],
+              )
+            }
+          />
+        </AccordionSection>
+
         {/* Size Section */}
         <AccordionSection value="size" title="Size" icon={<Ruler />} nested>
           <ConfigField
@@ -450,71 +482,31 @@ export const AppearanceAccordion = ({
           />
         </AccordionSection>
 
-        {/* Padding Section */}
-        <AccordionSection value="padding" title="Padding" icon={<Box />} nested>
-          <SpacingGroup
-            label="Padding"
-            values={{
-              top: styles.paddingTop,
-              right: styles.paddingRight,
-              bottom: styles.paddingBottom,
-              left: styles.paddingLeft,
-            }}
-            onChange={(dir, val) => {
-              const key =
-                `padding${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
-              updateStyle(key, val);
-            }}
-          />
-        </AccordionSection>
-
-        {/* Margin Section */}
-        <AccordionSection value="margin" title="Margin" icon={<Box />} nested>
-          <SpacingGroup
-            label="Margin"
-            values={{
+        {/* Spacing — Figma-style visual box model */}
+        <AccordionSection value="spacing" title="Spacing" icon={<Box />} nested>
+          <SpacingBoxModel
+            margin={{
               top: styles.marginTop,
               right: styles.marginRight,
               bottom: styles.marginBottom,
               left: styles.marginLeft,
             }}
-            onChange={(dir, val) => {
+            padding={{
+              top: styles.paddingTop,
+              right: styles.paddingRight,
+              bottom: styles.paddingBottom,
+              left: styles.paddingLeft,
+            }}
+            onMarginChange={(dir, val) => {
               const key =
                 `margin${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
               updateStyle(key, val);
             }}
-          />
-        </AccordionSection>
-
-        {/* Display & Layout Section (Figma-inspired) */}
-        <AccordionSection
-          value="display"
-          title="Auto layout"
-          icon={<LayoutGrid />}
-          nested
-        >
-          <DisplaySection
-            styles={styles}
-            updateStyle={updateStyle}
-            batchUpdateStyle={batchUpdateStyle}
-          />
-        </AccordionSection>
-
-        {/* Position Section (Figma-inspired) */}
-        <AccordionSection
-          value="position"
-          title="Position"
-          icon={<MapPin />}
-          nested
-        >
-          <PositionSection
-            styles={styles}
-            updateStyle={(property, value) =>
-              updateStyle(
-                property as keyof AppearanceStyles,
-                value as AppearanceStyles[keyof AppearanceStyles],
-              )
-            }
+            onPaddingChange={(dir, val) => {
+              const key =
+                `padding${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
+              updateStyle(key, val);
+            }}
           />
         </AccordionSection>
 

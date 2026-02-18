@@ -13,6 +13,7 @@ export {
   type ColorPreset,
 } from "./ColorPickerField";
 export { SliderField, SpacingGroup } from "./SliderField";
+export { SpacingBoxModel } from "./SpacingBoxModel";
 export { PositionSection } from "./PositionSection";
 export {
   ToggleGroupField,

@@ -33,7 +33,6 @@ import {
   Asterisk,
 } from "lucide-react";
 
-/* ─── Constants ─── */
 
 const ALL_RULES: RuleType[] = [
   "required",
