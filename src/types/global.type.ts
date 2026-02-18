@@ -4,20 +4,40 @@ import {
   type ElementType,
 } from "@/constants/elements";
 import {
+  ArticleElement,
+  AsideElement,
+  AudioElement,
+  BlockquoteElement,
   ButtonElement,
+  CarouselElement,
+  CheckboxElement,
+  CMSContentGridElement,
+  CMSContentItemElement,
+  CMSContentListElement,
+  CodeElement,
+  FooterElement,
   FormElement,
   FrameElement,
+  HeaderElement,
+  HeadingElement,
+  IconElement,
+  IFrameElement,
   ImageElement,
   InputElement,
+  LabelElement,
+  LinkElement,
   ListElement,
+  NavElement,
+  ProgressElement,
+  RadioElement,
   SectionElement,
   SelectElement,
+  SeparatorElement,
+  SpanElement,
+  TableElement,
   TextElement,
-  CarouselElement,
-  CMSContentListElement,
-  CMSContentItemElement,
-  CMSContentGridElement,
-  LinkElement,
+  TextareaElement,
+  VideoElement,
 } from "@/interfaces/elements.interface";
 
 type ContainerElement =
@@ -29,23 +49,57 @@ type ContainerElement =
   | CarouselElement
   | CMSContentListElement
   | CMSContentItemElement
-  | CMSContentGridElement;
+  | CMSContentGridElement
+  | TableElement
+  | NavElement
+  | HeaderElement
+  | FooterElement
+  | ArticleElement
+  | AsideElement;
 
 type EditorElement =
-  | FrameElement
-  | ButtonElement
+  // Inline / Leaf
+  | TextElement
+  | SpanElement
+  | HeadingElement
+  | LabelElement
+  | BlockquoteElement
+  | CodeElement
+  | SeparatorElement
+  | IconElement
+  // Media
   | ImageElement
+  | VideoElement
+  | AudioElement
+  | IFrameElement
+  // Interactive
   | LinkElement
-  | ListElement
+  | ButtonElement
+  // Form
   | InputElement
+  | TextareaElement
+  | CheckboxElement
+  | RadioElement
+  | ProgressElement
+  | ListElement
   | SelectElement
   | FormElement
+  // Table
+  | TableElement
+  // Container / Layout
+  | FrameElement
   | SectionElement
-  | TextElement
-  | CarouselElement
+  | NavElement
+  | HeaderElement
+  | FooterElement
+  | ArticleElement
+  | AsideElement
+  // CMS
   | CMSContentListElement
   | CMSContentItemElement
-  | CMSContentGridElement;
+  | CMSContentGridElement
+  // Carousel
+  | CarouselElement;
 
 type ExcludeType = "id" | "pageId" | "parentId";
 

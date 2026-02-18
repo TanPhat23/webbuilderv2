@@ -43,6 +43,42 @@ const CarouselConfigurationAccordion = React.lazy(
 
 const CMSConfiguration = React.lazy(() => import("./CMSConfiguration"));
 
+// ── New element configuration panels ──
+
+const HeadingConfiguration = React.lazy(() => import("./HeadingConfiguration"));
+
+const VideoConfiguration = React.lazy(() => import("./VideoConfiguration"));
+
+const AudioConfiguration = React.lazy(() => import("./AudioConfiguration"));
+
+const IFrameConfiguration = React.lazy(() => import("./IFrameConfiguration"));
+
+const TextareaConfiguration = React.lazy(
+  () => import("./TextareaConfiguration"),
+);
+
+const CheckboxConfiguration = React.lazy(
+  () => import("./CheckboxConfiguration"),
+);
+
+const RadioConfiguration = React.lazy(() => import("./RadioConfiguration"));
+
+const ProgressConfiguration = React.lazy(
+  () => import("./ProgressConfiguration"),
+);
+
+const BlockquoteConfiguration = React.lazy(
+  () => import("./BlockquoteConfiguration"),
+);
+
+const CodeConfiguration = React.lazy(() => import("./CodeConfiguration"));
+
+const IconConfiguration = React.lazy(() => import("./IconConfiguration"));
+
+const TableConfiguration = React.lazy(() => import("./TableConfiguration"));
+
+const ButtonConfiguration = React.lazy(() => import("./ButtonConfiguration"));
+
 /**
  * Lightweight loading placeholder shown while a configuration panel chunk
  * is being fetched. Keeps the sidebar from jumping around.
@@ -64,22 +100,62 @@ export default function Settings() {
     }
 
     switch (type) {
+      // Interactive
       case "Link":
         return <LinkConfigurationAccordion />;
+      case "Button":
+        return <ButtonConfiguration />;
+
+      // Form
       case "Form":
         return <FormConfigurationAccordion />;
       case "Input":
         return <InputConfiguration />;
+      case "Textarea":
+        return <TextareaConfiguration />;
       case "Select":
         return <SelectConfigurationAccordion />;
+      case "Checkbox":
+        return <CheckboxConfiguration />;
+      case "Radio":
+        return <RadioConfiguration />;
+      case "Progress":
+        return <ProgressConfiguration />;
+
+      // Media
       case "Image":
         return <ImageConfiguration />;
+      case "Video":
+        return <VideoConfiguration />;
+      case "Audio":
+        return <AudioConfiguration />;
+      case "IFrame":
+        return <IFrameConfiguration />;
+
+      // Inline / Leaf
+      case "Heading":
+        return <HeadingConfiguration />;
+      case "Blockquote":
+        return <BlockquoteConfiguration />;
+      case "Code":
+        return <CodeConfiguration />;
+      case "Icon":
+        return <IconConfiguration />;
+
+      // Table
+      case "Table":
+        return <TableConfiguration />;
+
+      // Carousel
       case "Carousel":
         return <CarouselConfigurationAccordion />;
+
+      // CMS
       case "CMSContentList":
       case "CMSContentItem":
       case "CMSContentGrid":
         return selectedElement ? <CMSConfiguration /> : null;
+
       default:
         return null;
     }

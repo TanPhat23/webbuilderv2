@@ -80,6 +80,7 @@ export function AlignmentMatrix({
             return (
               <button
                 type="button"
+                key={`${justify}-${align}`}
                 onClick={() =>
                   onBatchUpdate({
                     justifyContent: justify,
