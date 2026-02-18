@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useMemo,
   Suspense,
 } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -167,16 +168,28 @@ export default function EditorProvider({
     userId: userId || "guest",
   });
 
-  const contextValue: EditorContextType = {
-    projectId: projectId || null,
-    userId: userId || null,
-    editor: editorData,
-    mode,
-    setMode,
-    editingMode,
-    setEditingMode,
-    pageId,
-  };
+  const contextValue = useMemo<EditorContextType>(
+    () => ({
+      projectId: projectId || null,
+      userId: userId || null,
+      editor: editorData,
+      mode,
+      setMode,
+      editingMode,
+      setEditingMode,
+      pageId,
+    }),
+    [
+      projectId,
+      userId,
+      editorData,
+      mode,
+      setMode,
+      editingMode,
+      setEditingMode,
+      pageId,
+    ],
+  );
 
   return (
     <EditorContext.Provider value={contextValue}>
@@ -187,12 +200,15 @@ export default function EditorProvider({
           wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8080",
           enabled: collabEnabled,
           onSync: () => {
+            toast.dismiss("collab-offline");
             toast.success("Live collaboration connected", {
+              id: "collab-connected",
               duration: 3000,
             });
           },
-          onError: (error) => {
+          onError: () => {
             toast.info("Working in offline mode", {
+              id: "collab-offline",
               description:
                 "Collaboration server unavailable. Changes will be saved locally.",
               duration: 5000,

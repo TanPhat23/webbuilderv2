@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import EditorHeader from "@/components/editor/editor/EditorHeader";
 import PreviewContainer from "@/components/editor/editor/PreviewContainer";
 import EditorCanvas from "@/components/editor/editor/EditorCanvas";
@@ -12,12 +12,25 @@ type EditorProps = {
   pageId: string;
 };
 
-export default function Editor({ id }: EditorProps) {
-  const { editor, userId, editingMode } = useEditorContext();
+/**
+ * PreviewChild
+ *
+ * Extracted to module level so its component identity is stable across renders.
+ * Previously this was defined inside `Editor`, causing React to unmount/remount
+ * the entire iframe portal content on every parent re-render (because the
+ * function reference changed, React treated it as a different component type).
+ *
+ * Receives `iframeRef` via `React.cloneElement` from `PreviewContainer`.
+ * Reads all other data from context/hooks so it doesn't need closure variables.
+ */
+const PreviewChild = React.memo(function PreviewChild({
+  iframeRef,
+}: {
+  iframeRef?: React.RefObject<HTMLIFrameElement>;
+}) {
+  const { editor, editingMode } = useEditorContext();
 
   const {
-    currentView,
-    setCurrentView,
     isDraggingOver,
     isLoading,
     selectedElement,
@@ -27,48 +40,50 @@ export default function Editor({ id }: EditorProps) {
     addNewSection,
     isReadOnly,
     isLocked,
+    userId,
   } = editor;
 
+  const isCodeMode = editingMode === "code";
   const effectiveUserId = userId ?? "guest";
 
-  const baseCanvasProps = {
-    isDraggingOver,
-    handleDrop,
-    handleDragOver,
-    handleDragLeave,
-    isLoading,
-    selectedElement: selectedElement ?? null,
-    addNewSection,
-    userId: effectiveUserId,
-  } as const;
+  return (
+    <div className="h-full w-full transition-opacity duration-200 ease-in-out">
+      <EditorCanvas
+        isDraggingOver={isDraggingOver}
+        handleDrop={handleDrop}
+        handleDragOver={handleDragOver}
+        handleDragLeave={handleDragLeave}
+        isLoading={isLoading}
+        selectedElement={selectedElement ?? null}
+        addNewSection={addNewSection}
+        userId={effectiveUserId}
+        iframeRef={iframeRef}
+        isReadOnly={isReadOnly || isCodeMode}
+        isLocked={isLocked || isCodeMode}
+        showAddSectionButton={!isCodeMode}
+      />
+    </div>
+  );
+});
 
-  const renderCanvas = (
-    overrides?: Partial<React.ComponentProps<typeof EditorCanvas>>,
-  ) => <EditorCanvas {...baseCanvasProps} {...overrides} />;
+PreviewChild.displayName = "PreviewChild";
+
+export default function Editor({ id }: EditorProps) {
+  const { editor, editingMode } = useEditorContext();
+
+  const { currentView, setCurrentView, isLoading } = editor;
 
   const isCodeMode = editingMode === "code";
 
-  function PreviewChild({
-    iframeRef,
-  }: {
-    iframeRef?: React.RefObject<HTMLIFrameElement>;
-  }) {
-    return (
-      <div className="h-full w-full transition-opacity duration-200 ease-in-out">
-        {renderCanvas({
-          iframeRef,
-          isReadOnly: isReadOnly || isCodeMode,
-          isLocked: isLocked || isCodeMode,
-          showAddSectionButton: !isCodeMode,
-        })}
-      </div>
-    );
-  }
-
-  const previewContent = (
-    <PreviewContainer currentView={currentView} isLoading={isLoading}>
-      <PreviewChild />
-    </PreviewContainer>
+  // PreviewChild is a stable module-level component, so this element's type
+  // never changes between renders — React will reconcile instead of remount.
+  const previewContent = useMemo(
+    () => (
+      <PreviewContainer currentView={currentView} isLoading={isLoading}>
+        <PreviewChild />
+      </PreviewContainer>
+    ),
+    [currentView, isLoading],
   );
 
   return (

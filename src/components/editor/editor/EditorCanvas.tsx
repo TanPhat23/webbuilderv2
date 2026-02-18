@@ -214,4 +214,4 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   );
 };
 
-export default EditorCanvas;
+export default React.memo(EditorCanvas);

@@ -1,16 +1,8 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectTrigger,
@@ -18,15 +10,36 @@ import {
   SelectValue,
   SelectContent,
 } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { projectService } from "@/services/project";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
 import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
 import { cn } from "@/lib/utils";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
+import { AccordionSection, ConfigField, SliderField } from "./_shared";
+import {
+  Type,
+  ALargeSmall,
+  Space,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  Underline,
+  Strikethrough,
+  Italic,
+  WrapText,
+  Minus,
+} from "lucide-react";
+
+/* ─── Types ─── */
 
 type TypographyStyles = Pick<
   React.CSSProperties,
@@ -47,6 +60,8 @@ type TypographyStyles = Pick<
   | "wordBreak"
   | "wordWrap"
 >;
+
+/* ─── Constants ─── */
 
 const FONT_FAMILIES = [
   "Arial",
@@ -73,23 +88,92 @@ const FONT_WEIGHTS = [
   { label: "Black", value: 900 },
 ];
 
-type TextAlign = "left" | "right" | "center" | "justify" | "start" | "end";
-const TEXT_ALIGN_OPTIONS: TextAlign[] = [
-  "left",
-  "right",
-  "center",
-  "justify",
-  "start",
-  "end",
-];
+/* ─── Toggle item with tooltip ─── */
 
-type TextTransform = "none" | "capitalize" | "uppercase" | "lowercase";
-const TEXT_TRANSFORM_OPTIONS: TextTransform[] = [
-  "none",
-  "capitalize",
-  "uppercase",
-  "lowercase",
-];
+function ToggleItem({
+  value,
+  label,
+  children,
+  className,
+}: {
+  value: string;
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <ToggleGroupItem
+          value={value}
+          aria-label={label}
+          className={cn(
+            "h-6 w-7 min-w-0 rounded-[4px] p-0",
+            "data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm",
+            "transition-all duration-150 hover:text-foreground/80",
+            className,
+          )}
+        >
+          {children}
+        </ToggleGroupItem>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" className="text-[10px]">
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+/* ─── Compact labeled input ─── */
+
+function CompactInput({
+  label,
+  value,
+  onChange,
+  placeholder = "0",
+  suffix,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+  suffix?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center h-7 rounded-md bg-muted/50 border border-border/40 overflow-hidden",
+        "focus-within:border-foreground/30 focus-within:ring-1 focus-within:ring-foreground/10",
+        "transition-colors",
+        className,
+      )}
+    >
+      <span className="flex items-center justify-center h-full px-1.5 text-[10px] font-medium text-muted-foreground select-none shrink-0 border-r border-border/30">
+        {label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={cn(
+          "flex-1 h-full bg-transparent px-1.5 text-[10px] font-mono tabular-nums text-foreground",
+          "outline-none border-none min-w-0",
+          "placeholder:text-muted-foreground/40",
+        )}
+      />
+      {suffix && (
+        <span className="flex items-center justify-center h-full px-1 text-[9px] text-muted-foreground/60 font-medium select-none shrink-0">
+          {suffix}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main Component ─── */
 
 interface TypographyAccordionProps {
   currentBreakpoint: "default" | "sm" | "md" | "lg" | "xl";
@@ -116,32 +200,12 @@ export const TypographyAccordion = ({
   const responsiveStyles: ResponsiveStyles = selectedElement?.styles ?? {};
   const styles: TypographyStyles = responsiveStyles[currentBreakpoint] ?? {};
 
-  const [textColorSelectValue, setTextColorSelectValue] = useState<string>(
-    () => {
-      if (!styles.color) return "default";
-      if (styles.color.startsWith("var(")) return styles.color;
-      return "custom";
-    },
-  );
-
-  useEffect(() => {
-    setTextColorSelectValue(() => {
-      if (!styles.color) return "default";
-      if (styles.color.startsWith("var(")) return styles.color;
-      return "custom";
-    });
-  }, [currentBreakpoint, styles.color]);
-
   const updateStyle = <K extends keyof TypographyStyles>(
     property: K,
     value: TypographyStyles[K],
   ) => {
     if (!selectedElement) return;
     const newStyles = { ...styles, [property]: value };
-    const newResponsiveStyles = {
-      ...responsiveStyles,
-      [currentBreakpoint]: newStyles,
-    };
 
     elementHelper.updateElementStyle(
       selectedElement,
@@ -149,677 +213,400 @@ export const TypographyAccordion = ({
       currentBreakpoint,
       updateElement,
     );
-
-    // Tailwind classes are now computed and persisted centrally by elementHelper.updateElementStyle.
   };
 
   if (!selectedElement) {
-    return <AccordionItem value="typography"></AccordionItem>;
+    return null;
   }
 
+  /* ─── Derived values ─── */
+
+  const lineHeightNum =
+    typeof styles.lineHeight === "string"
+      ? parseFloat(styles.lineHeight) || 1.5
+      : Number(styles.lineHeight) || 1.5;
+
+  const letterSpacingNum =
+    typeof styles.letterSpacing === "string"
+      ? parseInt(styles.letterSpacing) || 0
+      : Number(styles.letterSpacing) || 0;
+
+  const textAlignValue = (styles.textAlign as string) || "";
+  const textTransformValue = (styles.textTransform as string) || "";
+  const textDecorationValue =
+    typeof styles.textDecoration === "string" ? styles.textDecoration : "";
+  const fontStyleValue = (styles.fontStyle as string) || "";
+
   return (
-    <AccordionItem value="typography">
-      <AccordionTrigger className="text-sm">Typography</AccordionTrigger>
-      <AccordionContent>
-        <Accordion
-          type="multiple"
-          defaultValue={[
-            "font-family",
-            "font-size",
-            "color",
-            "font-weight",
-            "line-height",
-            "letter-spacing",
-            "text-align",
-            "text-transform",
-            "font-style",
-            "text-decoration",
-            "text-shadow",
-            "word-spacing",
-            "white-space",
-            "text-overflow",
-          ]}
+    <AccordionSection value="typography" title="Typography" icon={<Type />}>
+      <Accordion
+        type="multiple"
+        defaultValue={["font", "spacing", "text", "effects", "overflow"]}
+        className="w-full flex flex-col gap-0.5"
+      >
+        {/* ── Font Section ── */}
+        <AccordionSection
+          value="font"
+          title="Font"
+          icon={<ALargeSmall />}
+          nested
         >
-          {/* Font Family */}
-          <AccordionItem value="font-family">
-            <AccordionTrigger className="text-xs">Font Family</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="fontFamily"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Family
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Choose the font family for the text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={styles.fontFamily}
-                  onValueChange={(value) => updateStyle("fontFamily", value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select font" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {isLoading ? (
-                      <SelectItem value="loading" disabled>
-                        Loading fonts...
-                      </SelectItem>
-                    ) : (
-                      fonts.map((font) => (
-                        <SelectItem key={font} value={font}>
-                          {font}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Font Size */}
-          <AccordionItem value="font-size">
-            <AccordionTrigger className="text-xs">Font Size</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="fontSize"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Size
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Adjust the size of the text in pixels.
-                  </HoverCardContent>
-                </HoverCard>
-                <Slider
-                  id="fontSize"
-                  min={8}
-                  max={72}
-                  step={1}
-                  value={[
-                    typeof styles.fontSize === "string"
-                      ? parseInt(styles.fontSize)
-                      : Number(styles.fontSize),
-                  ]}
-                  onValueChange={([val]) => updateStyle("fontSize", `${val}px`)}
-                  className="w-32"
+          {/* Font Family — full width select */}
+          <ConfigField label="Family" hint="Font family for the text">
+            <Select
+              value={styles.fontFamily || ""}
+              onValueChange={(value) => updateStyle("fontFamily", value)}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="h-7 w-full px-1.5 text-[10px] rounded-md">
+                <SelectValue
+                  placeholder={isLoading ? "Loading..." : "Select font"}
                 />
-                <Input
-                  id="fontSize"
-                  type="text"
-                  value={styles.fontSize || ""}
-                  placeholder="e.g. 16px"
-                  onChange={(e) => updateStyle("fontSize", e.target.value)}
-                  className="w-16 h-6 px-1 py-0 text-xs border"
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+              </SelectTrigger>
+              <SelectContent>
+                {fonts.map((font) => (
+                  <SelectItem key={font} value={font} className="text-[10px]">
+                    {font}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </ConfigField>
 
-          {/* Color Section */}
-          <AccordionItem value="color">
-            <AccordionTrigger className="text-xs">Color</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-2 py-1">
-                <div className="flex items-center gap-5">
-                  <HoverCard>
-                    <HoverCardTrigger asChild>
-                      <Label
-                        htmlFor="textColor"
-                        className="text-xs w-20 cursor-help"
-                      >
-                        Text Color
-                      </Label>
-                    </HoverCardTrigger>
-                    <HoverCardContent>
-                      Select the color for the text.
-                    </HoverCardContent>
-                  </HoverCard>
-                  <Select
-                    value={textColorSelectValue}
-                    onValueChange={(value) => {
-                      setTextColorSelectValue(value);
-                      updateStyle(
-                        "color",
-                        value === "default"
-                          ? undefined
-                          : value === "custom"
-                            ? ""
-                            : value,
-                      );
-                    }}
-                  >
-                    <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                      <SelectValue placeholder="Select color" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Default</SelectItem>
-                      <SelectItem value="var(--foreground)">
-                        Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--card-foreground)">
-                        Card Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--primary-foreground)">
-                        Primary Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--secondary-foreground)">
-                        Secondary Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--muted-foreground)">
-                        Muted Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--accent-foreground)">
-                        Accent Foreground
-                      </SelectItem>
-                      <SelectItem value="var(--destructive-foreground)">
-                        Destructive Foreground
-                      </SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                {textColorSelectValue === "custom" && (
-                  <div className="flex items-center gap-5 ml-24">
-                    <Input
-                      id="textColor"
-                      type="color"
-                      value={styles.color || ""}
-                      onChange={(e) => {
-                        updateStyle("color", e.target.value);
-                        setTextColorSelectValue("custom");
-                      }}
-                      className="w-6 h-6 p-0 border-none bg-transparent"
-                    />
-                    <Input
-                      id="textColorHex"
-                      type="text"
-                      value={styles.color || ""}
-                      maxLength={7}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^#([0-9A-Fa-f]{0,6})$/.test(val)) {
-                          updateStyle("color", val);
-                          setTextColorSelectValue("custom");
-                        }
-                      }}
-                      className="w-16 h-6 px-1 py-0 text-xs border"
-                    />
-                  </div>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Font Weight */}
-          <AccordionItem value="font-weight">
-            <AccordionTrigger className="text-xs">Font Weight</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="fontWeight"
-                      className="text-xs w-20 cursor-help"
+          {/* Size + Weight — two column row */}
+          <div className="grid grid-cols-2 gap-2">
+            <CompactInput
+              label="Sz"
+              value={styles.fontSize?.toString() || ""}
+              onChange={(val) => updateStyle("fontSize", val)}
+              placeholder="16px"
+            />
+            <div>
+              <Select
+                value={styles.fontWeight?.toString() || "400"}
+                onValueChange={(value) =>
+                  updateStyle(
+                    "fontWeight",
+                    isNaN(Number(value)) ? value : Number(value),
+                  )
+                }
+              >
+                <SelectTrigger className="h-7 w-full px-1.5 text-[10px] rounded-md">
+                  <SelectValue placeholder="Weight" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FONT_WEIGHTS.map((fw) => (
+                    <SelectItem
+                      key={fw.value}
+                      value={fw.value.toString()}
+                      className="text-[10px]"
                     >
-                      Weight
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Set the thickness of the font.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={styles.fontWeight?.toString()}
-                  onValueChange={(value) =>
-                    updateStyle(
-                      "fontWeight",
-                      isNaN(Number(value)) ? value : Number(value),
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select weight" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FONT_WEIGHTS.map((fw) => (
-                      <SelectItem key={fw.value} value={fw.value.toString()}>
-                        {fw.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+                      {fw.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
+          {/* Font Style toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground select-none">
+              Style
+            </span>
+            <ToggleGroup
+              type="single"
+              value={fontStyleValue || "normal"}
+              onValueChange={(val) => {
+                if (!val || val === "normal") {
+                  updateStyle("fontStyle", undefined);
+                } else {
+                  updateStyle("fontStyle", val);
+                }
+              }}
+              className="h-7 gap-0 rounded-md bg-muted/40 p-0.5"
+            >
+              <ToggleItem value="normal" label="Normal">
+                <span className="text-[10px] font-medium">N</span>
+              </ToggleItem>
+              <ToggleItem value="italic" label="Italic">
+                <Italic className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="oblique" label="Oblique">
+                <span className="text-[10px] font-medium italic skew-x-[-8deg]">
+                  O
+                </span>
+              </ToggleItem>
+            </ToggleGroup>
+          </div>
+        </AccordionSection>
+
+        {/* ── Spacing Section ── */}
+        <AccordionSection
+          value="spacing"
+          title="Spacing"
+          icon={<Space />}
+          nested
+        >
           {/* Line Height */}
-          <AccordionItem value="line-height">
-            <AccordionTrigger className="text-xs">Line Height</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="lineHeight"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Line Height
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Adjust the spacing between lines of text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Slider
-                  id="lineHeight"
-                  min={1}
-                  max={3}
-                  step={0.01}
-                  value={[
-                    typeof styles.lineHeight === "string"
-                      ? parseFloat(styles.lineHeight)
-                      : Number(styles.lineHeight),
-                  ]}
-                  onValueChange={([val]) =>
-                    updateStyle("lineHeight", val.toString())
-                  }
-                  className="w-32"
-                />
-                <Input
-                  id="lineHeight"
-                  type="text"
-                  value={styles.lineHeight?.toString() || ""}
-                  placeholder="e.g. 1.5"
-                  onChange={(e) => updateStyle("lineHeight", e.target.value)}
-                  className="w-16 h-6 px-1 py-0 text-xs border"
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          <SliderField
+            label="Line H"
+            id="lineHeight"
+            hint="Spacing between lines of text"
+            value={lineHeightNum}
+            onChange={(val) => updateStyle("lineHeight", String(val))}
+            min={0.5}
+            max={4}
+            step={0.05}
+            unit=""
+            rawNumber={false}
+            allowTextInput
+            placeholder="1.5"
+            inputWidth="w-12"
+          />
 
           {/* Letter Spacing */}
-          <AccordionItem value="letter-spacing">
-            <AccordionTrigger className="text-xs">
-              Letter Spacing
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="letterSpacing"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Spacing
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Control the space between characters.
-                  </HoverCardContent>
-                </HoverCard>
-                <Slider
-                  id="letterSpacing"
-                  min={-5}
-                  max={20}
-                  step={1}
-                  value={[
-                    typeof styles.letterSpacing === "string"
-                      ? parseInt(styles.letterSpacing)
-                      : Number(styles.letterSpacing),
-                  ]}
-                  onValueChange={([val]) =>
-                    updateStyle("letterSpacing", `${val}px`)
-                  }
-                  className="w-32"
-                />
-                <Input
-                  id="letterSpacing"
-                  type="text"
-                  value={styles.letterSpacing || ""}
-                  placeholder="e.g. 2px"
-                  onChange={(e) => updateStyle("letterSpacing", e.target.value)}
-                  className="w-16 h-6 px-1 py-0 text-xs border"
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Text Align */}
-          <AccordionItem value="text-align">
-            <AccordionTrigger className="text-xs">Text Align</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="textAlign"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Align
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Set the horizontal alignment of the text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={
-                    TEXT_ALIGN_OPTIONS.includes(styles.textAlign as TextAlign)
-                      ? (styles.textAlign as TextAlign)
-                      : "default"
-                  }
-                  onValueChange={(value: TextAlign | "default") =>
-                    updateStyle(
-                      "textAlign",
-                      value === "default" ? undefined : value,
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select align" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    {TEXT_ALIGN_OPTIONS.map((align) => (
-                      <SelectItem key={align} value={align}>
-                        {align.charAt(0).toUpperCase() + align.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Text Transform */}
-          <AccordionItem value="text-transform">
-            <AccordionTrigger className="text-xs">
-              Text Transform
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="textTransform"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Transform
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Change the capitalization of the text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={
-                    TEXT_TRANSFORM_OPTIONS.includes(
-                      styles.textTransform as TextTransform,
-                    )
-                      ? (styles.textTransform as TextTransform)
-                      : "default"
-                  }
-                  onValueChange={(value: TextTransform | "default") =>
-                    updateStyle(
-                      "textTransform",
-                      value === "default" ? undefined : value,
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select transform" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    {TEXT_TRANSFORM_OPTIONS.map((transform) => (
-                      <SelectItem key={transform} value={transform}>
-                        {transform.charAt(0).toUpperCase() + transform.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Font Style */}
-          <AccordionItem value="font-style">
-            <AccordionTrigger className="text-xs">Font Style</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="fontStyle"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Style
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Apply italic or oblique style to the font.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={styles.fontStyle || "default"}
-                  onValueChange={(value) =>
-                    updateStyle(
-                      "fontStyle",
-                      value === "default" ? undefined : value,
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select style" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="italic">Italic</SelectItem>
-                    <SelectItem value="oblique">Oblique</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Text Decoration */}
-          <AccordionItem value="text-decoration">
-            <AccordionTrigger className="text-xs">
-              Text Decoration
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="textDecoration"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Decoration
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Add underlines, overlines, or strikethrough to text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={
-                    typeof styles.textDecoration === "string"
-                      ? styles.textDecoration
-                      : "default"
-                  }
-                  onValueChange={(value) =>
-                    updateStyle(
-                      "textDecoration",
-                      value === "default" ? undefined : value,
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select decoration" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="default">Default</SelectItem>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="underline">Underline</SelectItem>
-                    <SelectItem value="overline">Overline</SelectItem>
-                    <SelectItem value="line-through">Line Through</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Text Shadow */}
-          <AccordionItem value="text-shadow">
-            <AccordionTrigger className="text-xs">Text Shadow</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="textShadow"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Shadow
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Add shadow effect to text (e.g., 2px 2px 4px
-                    rgba(0,0,0,0.5)).
-                  </HoverCardContent>
-                </HoverCard>
-                <Input
-                  id="textShadow"
-                  type="text"
-                  value={styles.textShadow || ""}
-                  placeholder="2px 2px 4px #000"
-                  onChange={(e) => updateStyle("textShadow", e.target.value)}
-                  className="w-40 h-6 px-1 py-0 text-xs border"
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          <SliderField
+            label="Letter"
+            id="letterSpacing"
+            hint="Space between characters"
+            value={letterSpacingNum}
+            onChange={(val) => updateStyle("letterSpacing", `${val}px`)}
+            min={-5}
+            max={20}
+            step={0.5}
+            unit="px"
+            inputWidth="w-12"
+          />
 
           {/* Word Spacing */}
-          <AccordionItem value="word-spacing">
-            <AccordionTrigger className="text-xs">
-              Word Spacing
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="wordSpacing"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Spacing
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Adjust space between words.
-                  </HoverCardContent>
-                </HoverCard>
-                <Input
-                  id="wordSpacing"
-                  type="text"
-                  value={styles.wordSpacing || ""}
-                  placeholder="2px"
-                  onChange={(e) => updateStyle("wordSpacing", e.target.value)}
-                  className="w-24 h-6 px-1 py-0 text-xs border"
-                />
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          <CompactInput
+            label="Word"
+            value={styles.wordSpacing?.toString() || ""}
+            onChange={(val) => updateStyle("wordSpacing", val)}
+            placeholder="normal"
+            suffix="px"
+          />
+        </AccordionSection>
 
+        {/* ── Text Section ── */}
+        <AccordionSection value="text" title="Text" icon={<AlignLeft />} nested>
+          {/* Text Align — icon toggle group */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground select-none">
+              Align
+            </span>
+            <ToggleGroup
+              type="single"
+              value={textAlignValue}
+              onValueChange={(val) => {
+                updateStyle(
+                  "textAlign",
+                  !val ? undefined : (val as TypographyStyles["textAlign"]),
+                );
+              }}
+              className="h-7 gap-0 rounded-md bg-muted/40 p-0.5"
+            >
+              <ToggleItem value="left" label="Align Left">
+                <AlignLeft className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="center" label="Align Center">
+                <AlignCenter className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="right" label="Align Right">
+                <AlignRight className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="justify" label="Justify">
+                <AlignJustify className="h-3 w-3" />
+              </ToggleItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Text Transform — text toggle group */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground select-none">
+              Case
+            </span>
+            <ToggleGroup
+              type="single"
+              value={textTransformValue}
+              onValueChange={(val) => {
+                updateStyle(
+                  "textTransform",
+                  !val || val === "none"
+                    ? undefined
+                    : (val as TypographyStyles["textTransform"]),
+                );
+              }}
+              className="h-7 gap-0 rounded-md bg-muted/40 p-0.5"
+            >
+              <ToggleItem value="none" label="None">
+                <Minus className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="capitalize" label="Capitalize">
+                <span className="text-[9px] font-semibold leading-none">
+                  Aa
+                </span>
+              </ToggleItem>
+              <ToggleItem value="uppercase" label="Uppercase">
+                <span className="text-[9px] font-semibold leading-none">
+                  AA
+                </span>
+              </ToggleItem>
+              <ToggleItem value="lowercase" label="Lowercase">
+                <span className="text-[9px] font-semibold leading-none">
+                  aa
+                </span>
+              </ToggleItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Text Decoration — icon toggle group */}
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-medium text-muted-foreground select-none">
+              Decor
+            </span>
+            <ToggleGroup
+              type="single"
+              value={textDecorationValue}
+              onValueChange={(val) => {
+                updateStyle(
+                  "textDecoration",
+                  !val || val === "none" ? undefined : val,
+                );
+              }}
+              className="h-7 gap-0 rounded-md bg-muted/40 p-0.5"
+            >
+              <ToggleItem value="none" label="None">
+                <Minus className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="underline" label="Underline">
+                <Underline className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="line-through" label="Strikethrough">
+                <Strikethrough className="h-3 w-3" />
+              </ToggleItem>
+              <ToggleItem value="overline" label="Overline">
+                <span className="text-[10px] font-medium leading-none overline">
+                  O
+                </span>
+              </ToggleItem>
+            </ToggleGroup>
+          </div>
+        </AccordionSection>
+
+        {/* ── Effects Section ── */}
+        <AccordionSection
+          value="effects"
+          title="Effects"
+          icon={<Type />}
+          nested
+        >
+          <ConfigField
+            label="Shadow"
+            hint="Text shadow (e.g. 2px 2px 4px rgba(0,0,0,0.5))"
+          >
+            <Input
+              type="text"
+              value={styles.textShadow || ""}
+              placeholder="2px 2px 4px #000"
+              onChange={(e) => updateStyle("textShadow", e.target.value)}
+              className="h-7 w-full px-1.5 text-[10px] font-mono rounded-md"
+            />
+          </ConfigField>
+        </AccordionSection>
+
+        {/* ── Overflow Section ── */}
+        <AccordionSection
+          value="overflow"
+          title="Overflow"
+          icon={<WrapText />}
+          nested
+        >
           {/* White Space */}
-          <AccordionItem value="white-space">
-            <AccordionTrigger className="text-xs">White Space</AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="whiteSpace"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      White Space
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Control how whitespace is handled in text.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={styles.whiteSpace || "normal"}
-                  onValueChange={(value) => updateStyle("whiteSpace", value)}
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="normal">Normal</SelectItem>
-                    <SelectItem value="nowrap">No Wrap</SelectItem>
-                    <SelectItem value="pre">Pre</SelectItem>
-                    <SelectItem value="pre-wrap">Pre Wrap</SelectItem>
-                    <SelectItem value="pre-line">Pre Line</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          <ConfigField label="Wrap" hint="How whitespace is handled in text">
+            <Select
+              value={styles.whiteSpace || "normal"}
+              onValueChange={(value) => updateStyle("whiteSpace", value)}
+            >
+              <SelectTrigger className="h-7 w-[80px] px-1.5 text-[10px] rounded-md">
+                <SelectValue placeholder="Normal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal" className="text-[10px]">
+                  Normal
+                </SelectItem>
+                <SelectItem value="nowrap" className="text-[10px]">
+                  No Wrap
+                </SelectItem>
+                <SelectItem value="pre" className="text-[10px]">
+                  Pre
+                </SelectItem>
+                <SelectItem value="pre-wrap" className="text-[10px]">
+                  Pre Wrap
+                </SelectItem>
+                <SelectItem value="pre-line" className="text-[10px]">
+                  Pre Line
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </ConfigField>
 
           {/* Text Overflow */}
-          <AccordionItem value="text-overflow">
-            <AccordionTrigger className="text-xs">
-              Text Overflow
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex items-center gap-5 py-1">
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Label
-                      htmlFor="textOverflow"
-                      className="text-xs w-20 cursor-help"
-                    >
-                      Overflow
-                    </Label>
-                  </HoverCardTrigger>
-                  <HoverCardContent>
-                    Handle text that overflows its container.
-                  </HoverCardContent>
-                </HoverCard>
-                <Select
-                  value={styles.textOverflow || "clip"}
-                  onValueChange={(value) => updateStyle("textOverflow", value)}
-                >
-                  <SelectTrigger className="w-32 max-h-6 px-1 py-0 text-xs border">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="clip">Clip</SelectItem>
-                    <SelectItem value="ellipsis">Ellipsis</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </AccordionContent>
-    </AccordionItem>
+          <ConfigField
+            label="Overflow"
+            hint="How overflowing text is displayed"
+          >
+            <Select
+              value={styles.textOverflow || "clip"}
+              onValueChange={(value) => updateStyle("textOverflow", value)}
+            >
+              <SelectTrigger className="h-7 w-[80px] px-1.5 text-[10px] rounded-md">
+                <SelectValue placeholder="Clip" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="clip" className="text-[10px]">
+                  Clip
+                </SelectItem>
+                <SelectItem value="ellipsis" className="text-[10px]">
+                  Ellipsis
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+
+          {/* Word Break */}
+          <ConfigField label="Break" hint="How words break at end of line">
+            <Select
+              value={styles.wordBreak || "normal"}
+              onValueChange={(value) =>
+                updateStyle(
+                  "wordBreak",
+                  value as React.CSSProperties["wordBreak"],
+                )
+              }
+            >
+              <SelectTrigger className="h-7 w-[80px] px-1.5 text-[10px] rounded-md">
+                <SelectValue placeholder="Normal" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal" className="text-[10px]">
+                  Normal
+                </SelectItem>
+                <SelectItem value="break-all" className="text-[10px]">
+                  Break All
+                </SelectItem>
+                <SelectItem value="break-word" className="text-[10px]">
+                  Break Word
+                </SelectItem>
+                <SelectItem value="keep-all" className="text-[10px]">
+                  Keep All
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+        </AccordionSection>
+      </Accordion>
+    </AccordionSection>
   );
 };

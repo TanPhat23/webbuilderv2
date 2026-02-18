@@ -309,4 +309,4 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   );
 };
 
-export default PreviewContainer;
+export default React.memo(PreviewContainer);
