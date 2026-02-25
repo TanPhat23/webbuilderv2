@@ -1,38 +1,24 @@
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentListElement } from "@/interfaces/elements.interface";
 import { ContentItem } from "@/interfaces/cms.interface";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
-import { Database } from "lucide-react";
-import { useCMSContent, getFieldValue } from "@/hooks";
+import { getFieldValue, useCMSContent } from "@/hooks";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
 
 const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentListElement;
-  const { id } = useParams();
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const safeStyles = elementHelper.getSafeStyles(cmsElement);
 
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
-
-  // Get CMS settings
   const settings = cmsElement.settings || {};
   const {
     contentTypeId,
@@ -50,56 +36,41 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
     enabled: !!contentTypeId,
   });
 
-  // Use provided data or CMS content
   const itemsToRender: ContentItem[] = Array.isArray(data)
     ? (data as ContentItem[])
-    : contentItems && contentItems.length > 0
+    : contentItems?.length
       ? contentItems
       : [];
 
-  // Apply limit
   const limitedItems = itemsToRender.slice(0, limit);
+
+  const rootProps = {
+    ref: elementRef as React.RefObject<HTMLDivElement>,
+    "data-element-id": element.id,
+    "data-element-type": element.type,
+    ...getCommonProps(cmsElement),
+    ...eventHandlers,
+    style: {
+      ...safeStyles,
+      width: "100%",
+      height: "100%",
+      ...eventsStyle(eventsActive),
+    },
+  };
 
   if (!contentTypeId) {
     return (
-      <div
-        ref={elementRef as React.RefObject<HTMLDivElement>}
-        data-element-id={element.id}
-        data-element-type={element.type}
-        {...getCommonProps(cmsElement)}
-        {...eventHandlers}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          cursor: eventsActive ? "pointer" : "inherit",
-          userSelect: eventsActive ? "none" : "auto",
-        }}
-        className="flex items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50"
-      >
-        <div className="text-center text-gray-500">
-          <Database className="w-8 h-8 mx-auto mb-2" />
-          <p className="text-sm">CMS Content List</p>
-          <p className="text-xs">Configure content type in settings</p>
-        </div>
-      </div>
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content List"
+        description="Configure content type in settings"
+      />
     );
   }
 
   return (
     <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(cmsElement)}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
-      }}
+      {...rootProps}
       className={
         displayMode === "grid"
           ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
@@ -112,14 +83,12 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
             key={item.id || index}
             className={displayMode === "list" ? "mb-4" : ""}
           >
-            {cmsElement.elements && cmsElement.elements.length > 0 ? (
-              // Use child elements as template
+            {cmsElement.elements?.length ? (
               <ElementLoader
                 elements={cmsElement.elements}
                 data={item as unknown as Record<string, unknown>}
               />
             ) : (
-              // Default rendering
               <div className="border rounded-lg p-4 bg-white shadow-sm">
                 <h3 className="font-semibold text-lg mb-2">
                   {getFieldValue(item, "title") || `Item ${index + 1}`}

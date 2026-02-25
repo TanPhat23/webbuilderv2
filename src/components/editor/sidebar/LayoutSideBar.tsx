@@ -62,7 +62,7 @@ function LayoutSideBar() {
   const { toggleChat } = useAiChat();
   const selectedElement = useSelectedElement();
 
-  const [activeTab, setActiveTab] = useState<TabType>("settings");
+  const [activeTab, setActiveTab] = useState<TabType>("styles");
 
   const isCollapsed = state === "collapsed";
 
@@ -116,17 +116,6 @@ function LayoutSideBar() {
         {!isCollapsed && (
           <div className="flex border-b border-border">
             <button
-              onClick={() => setActiveTab("settings")}
-              className={cn(
-                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
-                activeTab === "settings"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Settings
-            </button>
-            <button
               onClick={() => setActiveTab("styles")}
               className={cn(
                 "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
@@ -136,6 +125,17 @@ function LayoutSideBar() {
               )}
             >
               Styles
+            </button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={cn(
+                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
+                activeTab === "settings"
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Settings
             </button>
             <button
               onClick={() => setActiveTab("code")}

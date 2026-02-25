@@ -296,7 +296,7 @@ export class AwarenessController extends EventEmitter {
       if (this._remotePresences.has(clientIdStr)) return;
 
       if (state.user) {
-        const u = state.user as any;
+        const u = state.user;
         users[clientIdStr] = {
           userId: u.userId || clientIdStr,
           userName: u.userName || u.name || "Unknown",

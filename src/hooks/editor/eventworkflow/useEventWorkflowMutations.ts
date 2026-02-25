@@ -1,9 +1,19 @@
 /**
  * useEventWorkflowMutations.ts
  *
- * React Query mutations for creating, updating, toggling, and deleting
- * event workflows. Uses the centralized `getErrorMessage` utility for
- * consistent error extraction and stores mutation state in Zustand.
+ * React Query mutations for creating, updating, toggling, and deleting event
+ * workflows.
+ *
+ * Mutation state (isPending, isError, error) is owned entirely by TanStack
+ * Query — there is no Zustand flag syncing here. Consumers that need aggregate
+ * flags (isCreating, isUpdating, …) should use the `useEventWorkflowActions`
+ * convenience hook in `useEventWorkflows.ts`, which derives them from these
+ * mutation objects.
+ *
+ * Cache updates follow an optimistic-write pattern:
+ *   1. Write the server response directly into the detail cache entry.
+ *   2. Patch every matching list cache entry so UIs stay consistent without
+ *      a redundant network round-trip.
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,11 +23,10 @@ import {
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
 } from "@/interfaces/eventWorkflow.interface";
-import {
-  eventWorkflowKeys,
-  useEventWorkflowStore,
-} from "@/globalstore/event-workflow-store";
-import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
+import { eventWorkflowKeys } from "@/globalstore/event-workflow-store";
+import { onMutationError } from "@/lib/utils/hooks/mutationUtils";
+
+// ─── Variable types ───────────────────────────────────────────────────────────
 
 type CreateWorkflowVariables = {
   projectId: string;
@@ -38,151 +47,99 @@ type DeleteWorkflowVariables = {
   workflowId: string;
 };
 
-/** Hook to create a new event workflow for a project. */
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+/** Create a new event workflow for a project. */
 export const useCreateEventWorkflow = () => {
   const queryClient = useQueryClient();
-  const setIsCreating = useEventWorkflowStore((s) => s.setIsCreating);
-  const setMutationError = useEventWorkflowStore((s) => s.setMutationError);
 
   return useMutation({
-    mutationFn: async ({ projectId, input }: CreateWorkflowVariables) =>
+    mutationFn: ({ projectId, input }: CreateWorkflowVariables) =>
       eventWorkflowService.createEventWorkflow(projectId, input),
-    onSuccess: (created, variables) => {
-      setMutationError(null);
-      const { projectId } = variables;
 
+    onSuccess: (created, { projectId }) => {
+      // Append to the project list (avoids a full refetch).
       queryClient.setQueryData<EventWorkflow[]>(
         eventWorkflowKeys.list(projectId),
         (old) => (old ? [...old, created] : [created]),
       );
+      // Seed the detail cache so detail queries resolve instantly.
       queryClient.setQueryData(eventWorkflowKeys.detail(created.id), created);
     },
-    onError: (error) => {
-      const msg = getErrorMessage(error, "Failed to create workflow");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to create workflow:", error);
-    },
-    onSettled: () => {
-      setIsCreating(false);
-    },
-    onMutate: () => {
-      setIsCreating(true);
-      setMutationError(null);
-    },
+
+    onError: onMutationError("Failed to create workflow", { log: true }),
   });
 };
 
-/** Hook to update an existing event workflow. */
+/** Update the name, description, or canvas data of an existing workflow. */
 export const useUpdateEventWorkflow = () => {
   const queryClient = useQueryClient();
-  const setIsUpdating = useEventWorkflowStore((s) => s.setIsUpdating);
-  const setMutationError = useEventWorkflowStore((s) => s.setMutationError);
 
   return useMutation({
-    mutationFn: async ({ workflowId, input }: UpdateWorkflowVariables) =>
+    mutationFn: ({ workflowId, input }: UpdateWorkflowVariables) =>
       eventWorkflowService.updateEventWorkflow(workflowId, input),
-    onSuccess: (updated, variables) => {
-      setMutationError(null);
-      const { workflowId } = variables;
 
+    onSuccess: (updated, { workflowId }) => {
+      // Update the detail cache entry.
       queryClient.setQueryData(eventWorkflowKeys.detail(workflowId), updated);
+
+      // Patch every list cache entry that contains this workflow.
       queryClient.setQueriesData<EventWorkflow[]>(
         { queryKey: eventWorkflowKeys.lists() },
-        (old) =>
-          old ? old.map((w) => (w.id === workflowId ? updated : w)) : old,
+        (old) => old?.map((w) => (w.id === workflowId ? updated : w)),
       );
     },
-    onError: (error) => {
-      const msg = getErrorMessage(error, "Failed to update workflow");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to update workflow:", error);
-    },
-    onSettled: () => {
-      setIsUpdating(false);
-    },
-    onMutate: () => {
-      setIsUpdating(true);
-      setMutationError(null);
-    },
+
+    onError: onMutationError("Failed to update workflow", { log: true }),
   });
 };
 
-/** Hook to toggle the enabled/disabled state of a workflow. */
+/** Toggle the enabled / disabled state of a workflow. */
 export const useUpdateEventWorkflowEnabled = () => {
   const queryClient = useQueryClient();
-  const setIsUpdating = useEventWorkflowStore((s) => s.setIsUpdating);
-  const setMutationError = useEventWorkflowStore((s) => s.setMutationError);
 
   return useMutation({
-    mutationFn: async ({
-      workflowId,
-      enabled,
-    }: UpdateWorkflowEnabledVariables) =>
+    mutationFn: ({ workflowId, enabled }: UpdateWorkflowEnabledVariables) =>
       eventWorkflowService.updateEventWorkflowEnabled(workflowId, enabled),
-    onSuccess: (updated, variables) => {
-      setMutationError(null);
-      const { workflowId } = variables;
 
+    onSuccess: (updated, { workflowId }) => {
       queryClient.setQueryData(eventWorkflowKeys.detail(workflowId), updated);
+
       queryClient.setQueriesData<EventWorkflow[]>(
         { queryKey: eventWorkflowKeys.lists() },
-        (old) =>
-          old ? old.map((w) => (w.id === workflowId ? updated : w)) : old,
+        (old) => old?.map((w) => (w.id === workflowId ? updated : w)),
       );
     },
-    onError: (error) => {
-      const msg = getErrorMessage(error, "Failed to update workflow status");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to update workflow status:", error);
-    },
-    onSettled: () => {
-      setIsUpdating(false);
-    },
-    onMutate: () => {
-      setIsUpdating(true);
-      setMutationError(null);
-    },
+
+    onError: onMutationError("Failed to update workflow status", { log: true }),
   });
 };
 
-/** Hook to delete an event workflow. */
+/** Permanently delete a workflow and remove it from all caches. */
 export const useDeleteEventWorkflow = () => {
   const queryClient = useQueryClient();
-  const setIsDeleting = useEventWorkflowStore((s) => s.setIsDeleting);
-  const setMutationError = useEventWorkflowStore((s) => s.setMutationError);
 
   return useMutation({
     mutationFn: async ({ workflowId }: DeleteWorkflowVariables) => {
       await eventWorkflowService.deleteEventWorkflow(workflowId);
+      // Return the id so onSuccess can reference it without closing over variables.
       return workflowId;
     },
-    onSuccess: (workflowId) => {
-      setMutationError(null);
 
+    onSuccess: (workflowId) => {
+      // Remove the detail cache entry entirely.
       queryClient.removeQueries({
         queryKey: eventWorkflowKeys.detail(workflowId),
         exact: true,
       });
+
+      // Remove from every list cache entry.
       queryClient.setQueriesData<EventWorkflow[]>(
         { queryKey: eventWorkflowKeys.lists() },
-        (old) => (old ? old.filter((w) => w.id !== workflowId) : old),
+        (old) => old?.filter((w) => w.id !== workflowId),
       );
     },
-    onError: (error) => {
-      const msg = getErrorMessage(error, "Failed to delete workflow");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to delete workflow:", error);
-    },
-    onSettled: () => {
-      setIsDeleting(false);
-    },
-    onMutate: () => {
-      setIsDeleting(true);
-      setMutationError(null);
-    },
+
+    onError: onMutationError("Failed to delete workflow", { log: true }),
   });
 };

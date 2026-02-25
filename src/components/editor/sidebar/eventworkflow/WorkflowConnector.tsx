@@ -33,7 +33,10 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EVENT_TYPES, CONNECTION_CONFIG } from "@/constants/eventWorkflows";
+import {
+  WORKFLOW_EVENT_TYPES,
+  CONNECTION_CONFIG,
+} from "@/constants/eventWorkflows";
 
 interface WorkflowConnectorProps {
   projectId: string;
@@ -167,7 +170,7 @@ export const WorkflowConnector = ({
                     <SelectValue placeholder="Select event to connect..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {EVENT_TYPES.map((event) => {
+                    {WORKFLOW_EVENT_TYPES.map((event) => {
                       const isConnected = isConnectedToEvent(
                         event.value,
                         targetWorkflow.id,
@@ -231,7 +234,7 @@ export const WorkflowConnector = ({
         <CardContent>
           <ScrollArea className="h-[calc(100vh-500px)]">
             <div className="space-y-3">
-              {EVENT_TYPES.map((event) => {
+              {WORKFLOW_EVENT_TYPES.map((event) => {
                 const connectedWorkflows = getConnectedWorkflows(
                   event.value,
                   workflows,

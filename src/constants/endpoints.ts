@@ -190,6 +190,8 @@ export const API_ENDPOINTS = {
     CREATE: "/api/v1/element-event-workflows",
     GET_ALL: "/api/v1/element-event-workflows",
     GET_BY_ID: (id: string) => `/api/v1/element-event-workflows/${id}`,
+    GET_BY_PAGE: (pageId: string) =>
+      `/api/v1/element-event-workflows/page/${pageId}`,
     UPDATE: (id: string) => `/api/v1/element-event-workflows/${id}`,
     DELETE: (id: string) => `/api/v1/element-event-workflows/${id}`,
     DELETE_BY_ELEMENT: (elementId: string) =>

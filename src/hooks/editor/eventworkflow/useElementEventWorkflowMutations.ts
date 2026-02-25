@@ -1,24 +1,15 @@
-/**
- * useElementEventWorkflowMutations.ts
- *
- * React Query mutations for connecting and disconnecting element event
- * workflows. Uses the centralized toast utilities and `getErrorMessage`
- * for consistent error handling.
- */
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { elementEventWorkflowService } from "@/services/elementEventWorkflow";
 import {
   CreateElementEventWorkflowSchema,
-  DisconnectElementEventWorkflowSchema,
   getFirstError,
   validateCreateConnection,
   validateDisconnectConnection,
 } from "@/schema/elementEventWorkflowSchemas";
 import {
   elementEventWorkflowKeys,
-  useElementEventWorkflowStore,
   type IElementEventWorkflowConnection,
+  useElementEventWorkflowStore,
 } from "@/globalstore/element-event-workflow-store";
 import {
   showErrorToast,
@@ -26,41 +17,28 @@ import {
 } from "@/lib/utils/errors/errorToast";
 import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
 
-type ConnectVariables = {
+type ConnectionVariables = {
   elementId: string;
   eventType: string;
   workflowId: string;
 };
 
-type DisconnectVariables = {
-  elementId: string;
-  eventType: string;
-  workflowId: string;
-};
-
-/** Hook to connect an element event to a workflow. */
 export const useConnectElementEventWorkflow = () => {
   const queryClient = useQueryClient();
-  const setIsConnecting = useElementEventWorkflowStore(
-    (s) => s.setIsConnecting,
-  );
-  const setMutationError = useElementEventWorkflowStore(
-    (s) => s.setMutationError,
-  );
 
   return useMutation({
     mutationFn: async ({
       elementId,
       eventType,
       workflowId,
-    }: ConnectVariables) => {
+    }: ConnectionVariables) => {
       const validation = validateCreateConnection({
         elementId,
         eventName: eventType,
         workflowId,
       });
       if (!validation.success) {
-        throw new Error(getFirstError(validation) || "Invalid connection data");
+        throw new Error(getFirstError(validation) ?? "Invalid connection data");
       }
 
       const cached =
@@ -68,98 +46,75 @@ export const useConnectElementEventWorkflow = () => {
           elementEventWorkflowKeys.byElement(elementId),
         ) ?? [];
 
-      const isDuplicate = cached.some(
-        (c) => c.eventName === eventType && c.workflowId === workflowId,
-      );
-      if (isDuplicate) {
+      if (
+        cached.some(
+          (c) => c.eventName === eventType && c.workflowId === workflowId,
+        )
+      ) {
         throw new Error("Workflow already connected to this event");
       }
 
-      const validatedData = CreateElementEventWorkflowSchema.parse({
+      const validated = CreateElementEventWorkflowSchema.parse({
         elementId,
         eventName: eventType,
         workflowId,
       });
 
       return elementEventWorkflowService.createElementEventWorkflow({
-        elementId: validatedData.elementId,
-        workflowId: validatedData.workflowId,
-        eventName: validatedData.eventName,
+        elementId: validated.elementId,
+        workflowId: validated.workflowId,
+        eventName: validated.eventName,
       });
     },
-    onMutate: () => {
-      setIsConnecting(true);
-      setMutationError(null);
-    },
-    onSuccess: (newConnection, variables) => {
-      const { elementId } = variables;
+
+    onSuccess: (newConnection, { elementId }) => {
+      const conn = newConnection as IElementEventWorkflowConnection;
 
       queryClient.setQueryData<IElementEventWorkflowConnection[]>(
         elementEventWorkflowKeys.byElement(elementId),
-        (old) => [
-          ...(old ?? []),
-          newConnection as IElementEventWorkflowConnection,
-        ],
+        (old) => [...(old ?? []), conn],
       );
 
-      setMutationError(null);
+      useElementEventWorkflowStore.getState().addConnection(conn);
       showSuccessToast("Workflow connected successfully!");
     },
+
     onError: (error) => {
-      if (error instanceof Error) {
-        if (error.message === "Workflow already connected to this event") {
-          setMutationError(null);
-          showSuccessToast(error.message);
-          return;
-        }
-        if (error.message.startsWith("Invalid")) {
-          setMutationError(error.message);
-          showErrorToast(error.message);
-          return;
-        }
+      if (
+        error instanceof Error &&
+        error.message === "Workflow already connected to this event"
+      ) {
+        showSuccessToast(error.message);
+        return;
       }
-      const msg = getErrorMessage(error, "Failed to connect workflow");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to connect workflow:", error);
-      showErrorToast("Failed to connect workflow");
-    },
-    onSettled: () => {
-      setIsConnecting(false);
+
+      if (error instanceof Error && error.message.startsWith("Invalid")) {
+        showErrorToast(error.message);
+        return;
+      }
+
+      showErrorToast(getErrorMessage(error, "Failed to connect workflow"));
     },
   });
 };
 
-/** Hook to disconnect an element event from a workflow. */
 export const useDisconnectElementEventWorkflow = () => {
   const queryClient = useQueryClient();
-  const setIsDisconnecting = useElementEventWorkflowStore(
-    (s) => s.setIsDisconnecting,
-  );
-  const setMutationError = useElementEventWorkflowStore(
-    (s) => s.setMutationError,
-  );
 
   return useMutation({
     mutationFn: async ({
       elementId,
       eventType,
       workflowId,
-    }: DisconnectVariables) => {
+    }: ConnectionVariables) => {
       const validation = validateDisconnectConnection({
         elementId,
         eventName: eventType,
         workflowId,
       });
       if (!validation.success) {
-        throw new Error(getFirstError(validation) || "Invalid disconnect data");
+        throw new Error(getFirstError(validation) ?? "Invalid disconnect data");
       }
-
-      DisconnectElementEventWorkflowSchema.parse({
-        elementId,
-        eventName: eventType,
-        workflowId,
-      });
 
       const cached =
         queryClient.getQueryData<IElementEventWorkflowConnection[]>(
@@ -170,9 +125,7 @@ export const useDisconnectElementEventWorkflow = () => {
         (c) => c.eventName === eventType && c.workflowId === workflowId,
       );
 
-      if (!connection) {
-        throw new Error("Connection not found");
-      }
+      if (!connection) throw new Error("Connection not found");
 
       await elementEventWorkflowService.deleteElementEventWorkflow(
         connection.id,
@@ -180,28 +133,21 @@ export const useDisconnectElementEventWorkflow = () => {
 
       return { elementId, connectionId: connection.id };
     },
-    onMutate: () => {
-      setIsDisconnecting(true);
-      setMutationError(null);
-    },
+
     onSuccess: ({ elementId, connectionId }) => {
       queryClient.setQueryData<IElementEventWorkflowConnection[]>(
         elementEventWorkflowKeys.byElement(elementId),
-        (old) => (old ? old.filter((c) => c.id !== connectionId) : []),
+        (old) => old?.filter((c) => c.id !== connectionId) ?? [],
       );
 
-      setMutationError(null);
+      useElementEventWorkflowStore
+        .getState()
+        .removeConnection(connectionId, elementId);
       showSuccessToast("Workflow disconnected");
     },
+
     onError: (error) => {
-      const msg = getErrorMessage(error, "Failed to disconnect workflow");
-      setMutationError(msg);
-      // eslint-disable-next-line no-console
-      console.error("Failed to disconnect workflow:", error);
-      showErrorToast("Failed to disconnect workflow");
-    },
-    onSettled: () => {
-      setIsDisconnecting(false);
+      showErrorToast(getErrorMessage(error, "Failed to disconnect workflow"));
     },
   });
 };

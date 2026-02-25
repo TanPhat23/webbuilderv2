@@ -20,6 +20,8 @@ import {
   ColorPickerField,
   SliderField,
   SpacingGroup,
+  SpacingBoxModel,
+  BorderBoxModel,
   ConfigField,
   BG_COLOR_PRESETS,
   TEXT_COLOR_PRESETS,
@@ -196,15 +198,14 @@ export const AppearanceAccordion = ({
       <Accordion
         type="multiple"
         defaultValue={[
+          "display",
+          "position",
           "size",
+          "spacing",
           "colors",
           "border",
           "box-shadow",
           "opacity",
-          "padding",
-          "margin",
-          "display",
-          "position",
           "background",
           "transform",
           "effects",
@@ -212,6 +213,38 @@ export const AppearanceAccordion = ({
         ]}
         className="w-full flex flex-col gap-0.5"
       >
+        {/* Display & Layout Section (Figma-inspired) — moved to top */}
+        <AccordionSection
+          value="display"
+          title="Auto layout"
+          icon={<LayoutGrid />}
+          nested
+        >
+          <DisplaySection
+            styles={styles}
+            updateStyle={updateStyle}
+            batchUpdateStyle={batchUpdateStyle}
+          />
+        </AccordionSection>
+
+        {/* Position Section (Figma-inspired) — moved to top */}
+        <AccordionSection
+          value="position"
+          title="Position"
+          icon={<MapPin />}
+          nested
+        >
+          <PositionSection
+            styles={styles}
+            updateStyle={(property, value) =>
+              updateStyle(
+                property as keyof AppearanceStyles,
+                value as AppearanceStyles[keyof AppearanceStyles],
+              )
+            }
+          />
+        </AccordionSection>
+
         {/* Size Section */}
         <AccordionSection value="size" title="Size" icon={<Ruler />} nested>
           <ConfigField
@@ -258,130 +291,96 @@ export const AppearanceAccordion = ({
           />
         </AccordionSection>
 
-        {/* Border Section */}
+        {/* Border Section — Figma-style visual box model */}
         <AccordionSection
           value="border"
           title="Border"
           icon={<Square />}
           nested
         >
-          <ColorPickerField
-            label="Color"
-            hint="Border color"
-            value={styles.borderColor}
-            onChange={(color) => updateStyle("borderColor", color)}
-            presets={BORDER_COLOR_PRESETS}
-          />
-          <SliderField
-            label="Width"
-            id="borderWidth"
-            hint="Border thickness in pixels"
-            value={
-              typeof styles.borderWidth === "number" ? styles.borderWidth : 0
-            }
-            onChange={(val) =>
+          <BorderBoxModel
+            sides={{
+              top: {
+                width: styles.borderWidth,
+                style: styles.borderStyle as
+                  | "solid"
+                  | "dashed"
+                  | "dotted"
+                  | "double"
+                  | "none"
+                  | undefined,
+                color: styles.borderColor,
+              },
+              right: {
+                width: styles.borderWidth,
+                style: styles.borderStyle as
+                  | "solid"
+                  | "dashed"
+                  | "dotted"
+                  | "double"
+                  | "none"
+                  | undefined,
+                color: styles.borderColor,
+              },
+              bottom: {
+                width: styles.borderWidth,
+                style: styles.borderStyle as
+                  | "solid"
+                  | "dashed"
+                  | "dotted"
+                  | "double"
+                  | "none"
+                  | undefined,
+                color: styles.borderColor,
+              },
+              left: {
+                width: styles.borderWidth,
+                style: styles.borderStyle as
+                  | "solid"
+                  | "dashed"
+                  | "dotted"
+                  | "double"
+                  | "none"
+                  | undefined,
+                color: styles.borderColor,
+              },
+            }}
+            radii={{
+              topLeft: styles.borderTopLeftRadius,
+              topRight: styles.borderTopRightRadius,
+              bottomRight: styles.borderBottomRightRadius,
+              bottomLeft: styles.borderBottomLeftRadius,
+            }}
+            borderColor={styles.borderColor}
+            onSideChange={(side, field, value) => {
+              if (field === "width") {
+                updateStyle("borderWidth", parseInt(value, 10) || 0);
+              } else if (field === "style") {
+                updateStyle(
+                  "borderStyle",
+                  value as AppearanceStyles["borderStyle"],
+                );
+              } else if (field === "color") {
+                updateStyle("borderColor", value);
+              }
+            }}
+            onRadiusChange={(corner, value) => {
+              const keyMap: Record<string, keyof AppearanceStyles> = {
+                topLeft: "borderTopLeftRadius",
+                topRight: "borderTopRightRadius",
+                bottomRight: "borderBottomRightRadius",
+                bottomLeft: "borderBottomLeftRadius",
+              };
+              updateStyle(keyMap[corner], value);
+            }}
+            onColorChange={(color) => updateStyle("borderColor", color)}
+            onStyleChange={(style) =>
               updateStyle(
-                "borderWidth",
-                typeof val === "number" ? val : parseInt(String(val)) || 0,
+                "borderStyle",
+                style as AppearanceStyles["borderStyle"],
               )
             }
-            min={0}
-            max={20}
-            step={1}
-            unit="px"
-            rawNumber
           />
-          <ConfigField label="Style" hint="Border line style">
-            <Select
-              value={styles.borderStyle || "solid"}
-              onValueChange={(value) => updateStyle("borderStyle", value)}
-            >
-              <SelectTrigger className="h-7 w-[100px] px-2 text-[11px] rounded-md">
-                <SelectValue placeholder="Style" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="solid">Solid</SelectItem>
-                <SelectItem value="dashed">Dashed</SelectItem>
-                <SelectItem value="dotted">Dotted</SelectItem>
-                <SelectItem value="double">Double</SelectItem>
-                <SelectItem value="groove">Groove</SelectItem>
-                <SelectItem value="ridge">Ridge</SelectItem>
-                <SelectItem value="inset">Inset</SelectItem>
-                <SelectItem value="outset">Outset</SelectItem>
-                <SelectItem value="none">None</SelectItem>
-              </SelectContent>
-            </Select>
-          </ConfigField>
-          <SliderField
-            label="Radius"
-            id="borderRadius"
-            hint="Corner rounding in pixels"
-            value={
-              typeof styles.borderRadius === "number" ? styles.borderRadius : 0
-            }
-            onChange={(val) =>
-              updateStyle(
-                "borderRadius",
-                typeof val === "number" ? val : parseInt(String(val)) || 0,
-              )
-            }
-            min={0}
-            max={100}
-            step={1}
-            unit="px"
-            rawNumber
-          />
-          <SectionDivider />
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-            <ConfigField label="TL" htmlFor="borderTopLeftRadius">
-              <Input
-                id="borderTopLeftRadius"
-                type="number"
-                value={styles.borderTopLeftRadius || ""}
-                onChange={(e) =>
-                  updateStyle("borderTopLeftRadius", `${e.target.value}px`)
-                }
-                className="h-6 w-[48px] px-1 text-[11px] font-mono tabular-nums text-center rounded-md"
-                placeholder="0"
-              />
-            </ConfigField>
-            <ConfigField label="TR" htmlFor="borderTopRightRadius">
-              <Input
-                id="borderTopRightRadius"
-                type="number"
-                value={styles.borderTopRightRadius || ""}
-                onChange={(e) =>
-                  updateStyle("borderTopRightRadius", `${e.target.value}px`)
-                }
-                className="h-6 w-[48px] px-1 text-[11px] font-mono tabular-nums text-center rounded-md"
-                placeholder="0"
-              />
-            </ConfigField>
-            <ConfigField label="BL" htmlFor="borderBottomLeftRadius">
-              <Input
-                id="borderBottomLeftRadius"
-                type="number"
-                value={styles.borderBottomLeftRadius || ""}
-                onChange={(e) =>
-                  updateStyle("borderBottomLeftRadius", `${e.target.value}px`)
-                }
-                className="h-6 w-[48px] px-1 text-[11px] font-mono tabular-nums text-center rounded-md"
-                placeholder="0"
-              />
-            </ConfigField>
-            <ConfigField label="BR" htmlFor="borderBottomRightRadius">
-              <Input
-                id="borderBottomRightRadius"
-                type="number"
-                value={styles.borderBottomRightRadius || ""}
-                onChange={(e) =>
-                  updateStyle("borderBottomRightRadius", `${e.target.value}px`)
-                }
-                className="h-6 w-[48px] px-1 text-[11px] font-mono tabular-nums text-center rounded-md"
-                placeholder="0"
-              />
-            </ConfigField>
-          </div>
         </AccordionSection>
 
         {/* Box Shadow Section */}
@@ -450,71 +449,31 @@ export const AppearanceAccordion = ({
           />
         </AccordionSection>
 
-        {/* Padding Section */}
-        <AccordionSection value="padding" title="Padding" icon={<Box />} nested>
-          <SpacingGroup
-            label="Padding"
-            values={{
-              top: styles.paddingTop,
-              right: styles.paddingRight,
-              bottom: styles.paddingBottom,
-              left: styles.paddingLeft,
-            }}
-            onChange={(dir, val) => {
-              const key =
-                `padding${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
-              updateStyle(key, val);
-            }}
-          />
-        </AccordionSection>
-
-        {/* Margin Section */}
-        <AccordionSection value="margin" title="Margin" icon={<Box />} nested>
-          <SpacingGroup
-            label="Margin"
-            values={{
+        {/* Spacing — Figma-style visual box model */}
+        <AccordionSection value="spacing" title="Spacing" icon={<Box />} nested>
+          <SpacingBoxModel
+            margin={{
               top: styles.marginTop,
               right: styles.marginRight,
               bottom: styles.marginBottom,
               left: styles.marginLeft,
             }}
-            onChange={(dir, val) => {
+            padding={{
+              top: styles.paddingTop,
+              right: styles.paddingRight,
+              bottom: styles.paddingBottom,
+              left: styles.paddingLeft,
+            }}
+            onMarginChange={(dir, val) => {
               const key =
                 `margin${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
               updateStyle(key, val);
             }}
-          />
-        </AccordionSection>
-
-        {/* Display & Layout Section (Figma-inspired) */}
-        <AccordionSection
-          value="display"
-          title="Auto layout"
-          icon={<LayoutGrid />}
-          nested
-        >
-          <DisplaySection
-            styles={styles}
-            updateStyle={updateStyle}
-            batchUpdateStyle={batchUpdateStyle}
-          />
-        </AccordionSection>
-
-        {/* Position Section (Figma-inspired) */}
-        <AccordionSection
-          value="position"
-          title="Position"
-          icon={<MapPin />}
-          nested
-        >
-          <PositionSection
-            styles={styles}
-            updateStyle={(property, value) =>
-              updateStyle(
-                property as keyof AppearanceStyles,
-                value as AppearanceStyles[keyof AppearanceStyles],
-              )
-            }
+            onPaddingChange={(dir, val) => {
+              const key =
+                `padding${dir.charAt(0).toUpperCase() + dir.slice(1)}` as keyof AppearanceStyles;
+              updateStyle(key, val);
+            }}
           />
         </AccordionSection>
 

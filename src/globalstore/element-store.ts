@@ -185,41 +185,9 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     addElement: (...newElements: EditorElement[]) => {
       takeSnapshot();
       const { elements } = get();
-      const insertOne = (
-        tree: EditorElement[],
-        newEl: EditorElement,
-      ): EditorElement[] => {
-        if (!newEl.parentId) return [...tree, newEl];
-        let parentFound = false;
-
-        const addToParent = (el: EditorElement): EditorElement => {
-          if (el.id === newEl.parentId) {
-            if (elementHelper.isContainerElement(el)) {
-              parentFound = true;
-              return {
-                ...el,
-                elements: [...el.elements, newEl],
-              } as EditorElement;
-            }
-            parentFound = true;
-            return el;
-          }
-          if (elementHelper.isContainerElement(el)) {
-            return {
-              ...el,
-              elements: el.elements.map(addToParent),
-            } as EditorElement;
-          }
-          return el;
-        };
-
-        const updatedTree = tree.map(addToParent);
-        if (!parentFound) return [...updatedTree, newEl];
-        return updatedTree;
-      };
-
       const updatedTree = newElements.reduce<EditorElement[]>(
-        (acc, newEl) => insertOne(acc, newEl),
+        (acc, newEl) =>
+          elementHelper.mapAddChildById(acc, newEl.parentId, newEl),
         elements as EditorElement[],
       ) as EditorElement[];
 
@@ -236,28 +204,22 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     updateAllElements: (update: Partial<EditorElement>) => {
       takeSnapshot();
       const { elements } = get();
-      const recursivelyUpdate = (el: EditorElement): EditorElement => {
-        const updated = { ...el };
-        Object.assign(updated, update);
-        if (update.styles) {
-          const safeElStyles =
-            el.styles &&
-            typeof el.styles === "object" &&
-            !Array.isArray(el.styles)
-              ? el.styles
-              : {};
-          updated.styles = { ...safeElStyles, ...update.styles };
-        }
-        if (elementHelper.isContainerElement(el)) {
-          return {
-            ...updated,
-            elements: el.elements.map(recursivelyUpdate),
-          } as EditorElement;
-        }
-        return updated;
-      };
-      const updated = elements.map(
-        (e) => recursivelyUpdate(e as EditorElement) as EditorElement,
+      const updated = elementHelper.mapRecursively(
+        elements as EditorElement[],
+        (el) => {
+          const updateEl = { ...el };
+          Object.assign(updateEl, update);
+          if (update.styles) {
+            const safeElStyles =
+              el.styles &&
+              typeof el.styles === "object" &&
+              !Array.isArray(el.styles)
+                ? el.styles
+                : {};
+            updateEl.styles = { ...safeElStyles, ...update.styles };
+          }
+          return updateEl as EditorElement;
+        },
       );
       set({ elements: updated });
       triggerYjsCallback();
@@ -300,74 +262,36 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
       if (!el1 || !el2 || el1.parentId !== el2.parentId) return get();
 
-      const parentId = el1.parentId;
+      const parentId = el1.parentId ?? null;
+      const updatedTree = elementHelper.mapSwapChildrenById(
+        elements as EditorElement[],
+        parentId,
+        id1,
+        id2,
+      ) as EditorElement[];
 
-      if (parentId) {
-        // Nested elements
-        const parent = elementHelper.findById(
-          elements as EditorElement[],
-          parentId,
-        );
-        if (!parent || !elementHelper.isContainerElement(parent)) return get();
+      set({ elements: updatedTree });
+      triggerYjsCallback();
 
-        const targetElements = parent.elements;
-        const idx1 = targetElements.findIndex((e) => e.id === id1);
-        const idx2 = targetElements.findIndex((e) => e.id === id2);
+      // Find the new position of id1 after swap
+      const newIdx =
+        updatedTree.length > 0
+          ? parentId
+            ? (() => {
+                const parent = elementHelper.findById(updatedTree, parentId);
+                return parent && elementHelper.isContainerElement(parent)
+                  ? parent.elements.findIndex((e) => e.id === id1)
+                  : -1;
+              })()
+            : updatedTree.findIndex((e) => e.id === id1)
+          : -1;
 
-        if (idx1 === -1 || idx2 === -1) return get();
-
-        const newTargetElements = [...targetElements];
-        [newTargetElements[idx1], newTargetElements[idx2]] = [
-          newTargetElements[idx2],
-          newTargetElements[idx1],
-        ];
-
-        // Update the parent element
-        const updatedParent = {
-          ...parent,
-          elements: newTargetElements,
-        } as EditorElement;
-
-        const updatedTree = elementHelper.mapUpdateById(
-          elements as EditorElement[],
-          parentId,
-          () => updatedParent,
-        ) as EditorElement[];
-
-        set({ elements: updatedTree });
-
-        triggerYjsCallback();
-
-        // Send only the first element's move to avoid conflicts
-        triggerCollaborativeCallback("move", id1, {
-          elementId: id1,
-          newParentId: parentId,
-          newPosition: idx2,
-        });
-      } else {
-        // Top-level elements
-        const idx1 = elements.findIndex((e) => e.id === id1);
-        const idx2 = elements.findIndex((e) => e.id === id2);
-
-        if (idx1 === -1 || idx2 === -1) return get();
-
-        const newElements = [...elements];
-        [newElements[idx1], newElements[idx2]] = [
-          newElements[idx2],
-          newElements[idx1],
-        ];
-
-        set({ elements: newElements });
-
-        triggerYjsCallback();
-
-        // Send only the first element's move to avoid conflicts
-        triggerCollaborativeCallback("move", id1, {
-          elementId: id1,
-          newParentId: null,
-          newPosition: idx2,
-        });
-      }
+      // Send only the first element's move to avoid conflicts
+      triggerCollaborativeCallback("move", id1, {
+        elementId: id1,
+        newParentId: parentId,
+        newPosition: newIdx,
+      });
 
       return get();
     },

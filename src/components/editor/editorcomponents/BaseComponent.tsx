@@ -1,49 +1,26 @@
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { TextElement } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle, resolveContent } from "./shared";
 
 const BaseComponent = ({ element, data }: EditorComponentProps) => {
   const baseElement = element as TextElement;
-  const { id } = useParams();
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(baseElement);
-
   const commonProps = getCommonProps(baseElement);
-  const isEditing = commonProps.contentEditable;
-
-  let content =
-    (typeof data === "string" ? data : "") ||
-    (typeof data === "object" && data && typeof data.content === "string"
-      ? data.content
-      : "") ||
-    (typeof element.content === "string" ? element.content : "") ||
-    "";
-
-  if (typeof element.content === "string" && data && typeof data === "object") {
-    content = elementHelper.replacePlaceholders(element.content, data);
-  }
-
-  const displayContent = isEditing ? element.content : content;
-
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
+  const displayContent = resolveContent(
+    element,
+    data,
+    !!commonProps.contentEditable,
+  );
 
   return (
     <div
@@ -56,14 +33,11 @@ const BaseComponent = ({ element, data }: EditorComponentProps) => {
         ...safeStyles,
         width: "100%",
         height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
-      suppressContentEditableWarning={true}
-      dangerouslySetInnerHTML={{
-        __html: DOMPurify.sanitize(displayContent),
-      }}
-    ></div>
+      suppressContentEditableWarning
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(displayContent) }}
+    />
   );
 };
 

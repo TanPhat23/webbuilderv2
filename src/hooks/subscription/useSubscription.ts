@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { subscriptionService } from "@/services/subscription";
+import { userPlanKeys } from "./useUserPlan";
 import type {
   SubscriptionStatus,
   CreatePaymentRequest,
@@ -9,23 +10,25 @@ import {
   showSuccessToast,
 } from "@/lib/utils/errors/errorToast";
 
+export const subscriptionKeys = {
+  all: ["subscriptions"] as const,
+  status: () => [...subscriptionKeys.all, "status"] as const,
+  list: () => [...subscriptionKeys.all, "list"] as const,
+};
+
 /** Hook to get the current user's subscription status. */
 export function useSubscriptionStatus() {
   return useQuery<SubscriptionStatus>({
-    queryKey: ["subscription-status"],
-    queryFn: async () => {
-      return subscriptionService.getSubscriptionStatus();
-    },
+    queryKey: subscriptionKeys.status(),
+    queryFn: () => subscriptionService.getSubscriptionStatus(),
   });
 }
 
 /** Hook to get all subscriptions. */
 export function useAllSubscriptions() {
   return useQuery({
-    queryKey: ["all-subscriptions"],
-    queryFn: async () => {
-      return subscriptionService.getAllSubscriptions();
-    },
+    queryKey: subscriptionKeys.list(),
+    queryFn: () => subscriptionService.getAllSubscriptions(),
   });
 }
 
@@ -49,7 +52,7 @@ export function useCreatePayment() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.status() });
     },
   });
 }
@@ -69,8 +72,8 @@ export function useCancelSubscription() {
       showErrorToast(`Không thể hủy subscription: ${error.message}`);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscription-status"] });
-      queryClient.invalidateQueries({ queryKey: ["user-plan"] });
+      queryClient.invalidateQueries({ queryKey: subscriptionKeys.status() });
+      queryClient.invalidateQueries({ queryKey: userPlanKeys.detail() });
     },
   });
 }

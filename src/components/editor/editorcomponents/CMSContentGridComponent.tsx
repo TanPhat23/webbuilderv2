@@ -1,38 +1,26 @@
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
+
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentGridElement } from "@/interfaces/elements.interface";
 import { ContentItem } from "@/interfaces/cms.interface";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
-import { Database } from "lucide-react";
-import { useCMSContent, getFieldValue } from "@/hooks";
+import { getFieldValue, useCMSContent } from "@/hooks";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
 
 const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentGridElement;
-  const { id } = useParams();
+
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const safeStyles = elementHelper.getSafeStyles(cmsElement);
 
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
-
-  // Get CMS settings
   const settings = cmsElement.settings || {};
   const {
     contentTypeId,
@@ -52,168 +40,55 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
 
   const itemsToRender: ContentItem[] = Array.isArray(data)
     ? (data as ContentItem[])
-    : contentItems && contentItems.length > 0
+    : contentItems?.length
       ? contentItems
       : [];
-  useEffect(() => {
-    console.log("Content Items", contentItems);
-  }, []);
+
   const limitedItems = itemsToRender.slice(0, limit);
+
+  const rootProps = {
+    ref: elementRef as React.RefObject<HTMLDivElement>,
+    "data-element-id": element.id,
+    "data-element-type": element.type,
+    ...getCommonProps(cmsElement),
+    ...eventHandlers,
+    style: {
+      ...safeStyles,
+      width: "100%",
+      height: "100%",
+      ...eventsStyle(eventsActive),
+    },
+  };
 
   if (!contentTypeId) {
     return (
-      <div
-        ref={elementRef as React.RefObject<HTMLDivElement>}
-        data-element-id={element.id}
-        data-element-type={element.type}
-        {...getCommonProps(cmsElement)}
-        {...eventHandlers}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          cursor: eventsActive ? "pointer" : "inherit",
-          userSelect: eventsActive ? "none" : "auto",
-        }}
-        className="flex items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50"
-      >
-        <div className="text-center text-gray-500">
-          <Database className="w-8 h-8 mx-auto mb-2" />
-          <p className="text-sm">CMS Content Grid</p>
-          <p className="text-xs">Configure content type in settings</p>
-        </div>
-      </div>
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content Grid"
+        description="Configure content type in settings"
+      />
     );
   }
 
   return (
     <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(cmsElement)}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
-      }}
+      {...rootProps}
       className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
     >
       <LayoutGroup>
         {limitedItems.map((item, index) => (
           <div key={item.id || index} className="group">
-            {cmsElement.elements && cmsElement.elements.length > 0 ? (
+            {cmsElement.elements?.length ? (
               <ElementLoader
                 elements={cmsElement.elements}
                 data={item as unknown as Record<string, unknown>}
               />
             ) : (
-              <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-                {fieldsToShow.includes("image") &&
-                  getFieldValue(item, "image") && (
-                    <div className="aspect-video bg-gray-100 flex items-center justify-center">
-                      <img
-                        src={getFieldValue(item, "image")}
-                        alt={item.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                          if (e.currentTarget.nextElementSibling) {
-                            (
-                              e.currentTarget.nextElementSibling as HTMLElement
-                            ).style.display = "flex";
-                          }
-                        }}
-                      />
-                      <div className="hidden items-center justify-center text-gray-400">
-                        <Database className="w-8 h-8" />
-                      </div>
-                    </div>
-                  )}
-
-                <div className="p-4">
-                  {fieldsToShow.includes("title") && (
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {item.title || `Item ${index + 1}`}
-                    </h3>
-                  )}
-
-                  {fieldsToShow.includes("excerpt") &&
-                    getFieldValue(item, "excerpt") && (
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                        {getFieldValue(item, "excerpt")}
-                      </p>
-                    )}
-
-                  {/* Content field (fallback if no excerpt) */}
-                  {fieldsToShow.includes("content") &&
-                    getFieldValue(item, "content") &&
-                    !getFieldValue(item, "excerpt") && (
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-3">
-                        {getFieldValue(item, "content")?.substring(0, 120)}...
-                      </p>
-                    )}
-
-                  {fieldsToShow.includes("author") &&
-                    getFieldValue(item, "author") && (
-                      <p className="text-gray-600 text-sm mb-2">
-                        By {getFieldValue(item, "author")}
-                      </p>
-                    )}
-
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    {fieldsToShow.includes("date") && (
-                      <span>
-                        {item.createdAt
-                          ? new Date(item.createdAt).toLocaleDateString()
-                          : ""}
-                      </span>
-                    )}
-                    {fieldsToShow.includes("status") && item.published && (
-                      <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
-                        Published
-                      </span>
-                    )}
-                  </div>
-
-                  {fieldsToShow
-                    .filter(
-                      (field) =>
-                        ![
-                          "title",
-                          "excerpt",
-                          "content",
-                          "image",
-                          "author",
-                          "date",
-                          "status",
-                        ].includes(field),
-                    )
-                    .map((fieldName) => {
-                      const fieldValue = getFieldValue(item, fieldName);
-                      if (fieldValue) {
-                        return (
-                          <div key={fieldName} className="mt-2">
-                            <span className="text-xs font-medium text-gray-500 capitalize">
-                              {fieldName}:
-                            </span>
-                            <span className="text-sm text-gray-700 ml-1">
-                              {typeof fieldValue === "boolean"
-                                ? fieldValue
-                                  ? "Yes"
-                                  : "No"
-                                : String(fieldValue)}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                </div>
-              </div>
+              <DefaultItemCard
+                item={item}
+                index={index}
+                fieldsToShow={fieldsToShow}
+              />
             )}
           </div>
         ))}
@@ -221,5 +96,101 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
     </div>
   );
 };
+
+interface DefaultItemCardProps {
+  item: ContentItem;
+  index: number;
+  fieldsToShow: string[];
+}
+
+function DefaultItemCard({ item, index, fieldsToShow }: DefaultItemCardProps) {
+  const KNOWN_FIELDS = [
+    "title",
+    "excerpt",
+    "content",
+    "image",
+    "author",
+    "date",
+    "status",
+  ];
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+      {fieldsToShow.includes("image") && getFieldValue(item, "image") && (
+        <div className="aspect-video bg-gray-100 flex items-center justify-center">
+          <img
+            src={getFieldValue(item, "image")}
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="p-4">
+        {fieldsToShow.includes("title") && (
+          <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+            {item.title || `Item ${index + 1}`}
+          </h3>
+        )}
+
+        {fieldsToShow.includes("excerpt") && getFieldValue(item, "excerpt") && (
+          <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+            {getFieldValue(item, "excerpt")}
+          </p>
+        )}
+
+        {fieldsToShow.includes("content") &&
+          getFieldValue(item, "content") &&
+          !getFieldValue(item, "excerpt") && (
+            <p className="text-gray-600 text-sm mb-3 line-clamp-3">
+              {getFieldValue(item, "content")?.substring(0, 120)}...
+            </p>
+          )}
+
+        {fieldsToShow.includes("author") && getFieldValue(item, "author") && (
+          <p className="text-gray-600 text-sm mb-2">
+            By {getFieldValue(item, "author")}
+          </p>
+        )}
+
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          {fieldsToShow.includes("date") && (
+            <span>
+              {item.createdAt
+                ? new Date(item.createdAt).toLocaleDateString()
+                : ""}
+            </span>
+          )}
+          {fieldsToShow.includes("status") && item.published && (
+            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              Published
+            </span>
+          )}
+        </div>
+
+        {fieldsToShow
+          .filter((f) => !KNOWN_FIELDS.includes(f))
+          .map((fieldName) => {
+            const fieldValue = getFieldValue(item, fieldName);
+            if (!fieldValue) return null;
+            return (
+              <div key={fieldName} className="mt-2">
+                <span className="text-xs font-medium text-gray-500 capitalize">
+                  {fieldName}:
+                </span>
+                <span className="text-sm text-gray-700 ml-1">
+                  {typeof fieldValue === "boolean"
+                    ? fieldValue
+                      ? "Yes"
+                      : "No"
+                    : String(fieldValue)}
+                </span>
+              </div>
+            );
+          })}
+      </div>
+    </div>
+  );
+}
 
 export default CMSContentGridComponent;

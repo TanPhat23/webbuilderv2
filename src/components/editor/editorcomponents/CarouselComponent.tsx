@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Carousel,
   CarouselContent,
@@ -6,7 +7,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import {
   CarouselElement,
@@ -14,45 +14,32 @@ import {
 } from "@/interfaces/elements.interface";
 import { cn } from "@/lib/utils";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
-import { useEffect } from "react";
 import ElementLoader from "../ElementLoader";
-import { useParams } from "next/navigation";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const CarouselComponent = ({ element, data }: EditorComponentProps) => {
   const carouselElement = element as CarouselElement;
-  const { id } = useParams();
-  const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
-  element = element as CarouselElement;
-  if (!element || !element.elements) {
+  const { getCommonProps } = useElementHandler();
+
+  if (!carouselElement.elements) {
     return <div>No carousel content available.</div>;
   }
 
-  const carouselSettings: CarouselSettings = element.settings ?? {};
+  const carouselSettings: CarouselSettings = carouselElement.settings ?? {};
   const hasNavigation = carouselSettings.withNavigation ?? true;
-
-  const safeStyles = elementHelper.getSafeStyles(element);
-
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
+  const safeStyles = elementHelper.getSafeStyles(carouselElement);
 
   return (
     <Carousel
-      ref={elementRef as any}
+      ref={elementRef as React.RefObject<HTMLDivElement>}
       data-element-id={element.id}
       data-element-type={element.type}
-      {...getCommonProps(element)}
+      {...getCommonProps(carouselElement)}
       {...eventHandlers}
       opts={carouselSettings}
       className={cn("w-full h-full")}
@@ -60,14 +47,13 @@ const CarouselComponent = ({ element, data }: EditorComponentProps) => {
         ...safeStyles,
         width: "100%",
         height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
       role="region"
       aria-roledescription="carousel"
     >
       <CarouselContent>
-        {element.elements.map((slide) => (
+        {carouselElement.elements.map((slide) => (
           <CarouselItem key={slide.id}>
             <div className="p-1 h-full w-full">
               <ElementLoader elements={[slide]} data={data} />

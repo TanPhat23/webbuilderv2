@@ -142,6 +142,113 @@ const mapInsertAfterId = (
   });
 };
 
+/**
+ * Recursively maps over all elements in the tree, applying an updater function
+ * to each element. Useful for global updates that affect all elements.
+ *
+ * @param elements - The root elements array
+ * @param updater - Function to apply to each element
+ * @returns Updated tree with all elements transformed
+ */
+const mapRecursively = (
+  elements: EditorElement[],
+  updater: (el: EditorElement) => EditorElement,
+): EditorElement[] =>
+  elements.map((el) => {
+    const updated = updater(el);
+    if (isContainerElement(updated)) {
+      return {
+        ...updated,
+        elements: mapRecursively(updated.elements, updater),
+      } as EditorElement;
+    }
+    return updated;
+  });
+
+/**
+ * Adds a child element to a parent element's children array, recursively
+ * searching through the tree. If parentId is null/undefined, adds to root.
+ *
+ * @param elements - The root elements array
+ * @param parentId - ID of the parent element (null for root-level addition)
+ * @param childToAdd - The child element to add
+ * @returns Updated tree with child added
+ */
+const mapAddChildById = (
+  elements: EditorElement[],
+  parentId: string | null | undefined,
+  childToAdd: EditorElement,
+): EditorElement[] => {
+  if (!parentId) {
+    return [...elements, childToAdd];
+  }
+
+  return mapUpdateById(elements, parentId, (parent) => {
+    if (!isContainerElement(parent)) {
+      return parent;
+    }
+    return {
+      ...parent,
+      elements: [...parent.elements, childToAdd],
+    } as EditorElement;
+  });
+};
+
+/**
+ * Swaps the positions of two children within their parent's children array.
+ * Both elements must have the same parent.
+ *
+ * @param elements - The root elements array
+ * @param parentId - ID of the parent containing both children (null for root)
+ * @param id1 - ID of first child to swap
+ * @param id2 - ID of second child to swap
+ * @returns Updated tree with children swapped, or unchanged tree if swap fails
+ */
+const mapSwapChildrenById = (
+  elements: EditorElement[],
+  parentId: string | null | undefined,
+  id1: string,
+  id2: string,
+): EditorElement[] => {
+  const targetElements = !parentId
+    ? elements
+    : (() => {
+        const parent = findById(elements, parentId);
+        return parent && isContainerElement(parent) ? parent.elements : null;
+      })();
+
+  if (!targetElements) {
+    return elements;
+  }
+
+  const idx1 = targetElements.findIndex((e) => e.id === id1);
+  const idx2 = targetElements.findIndex((e) => e.id === id2);
+
+  if (idx1 === -1 || idx2 === -1) {
+    return elements;
+  }
+
+  const newTargetElements = [...targetElements];
+  [newTargetElements[idx1], newTargetElements[idx2]] = [
+    newTargetElements[idx2],
+    newTargetElements[idx1],
+  ];
+
+  if (!parentId) {
+    return newTargetElements;
+  }
+
+  return mapUpdateById(
+    elements,
+    parentId,
+    (parent) =>
+      ({
+        ...parent,
+        elements: newTargetElements,
+      }) as EditorElement,
+  );
+};
+
 const isContainerElement = (
   element: EditorElement,
 ): element is ContainerElement => {
@@ -237,6 +344,9 @@ export const elementHelper = {
   mapUpdateById,
   mapDeleteById,
   mapInsertAfterId,
+  mapRecursively,
+  mapAddChildById,
+  mapSwapChildrenById,
   isContainerElement,
   isEditableElement,
   findElement,

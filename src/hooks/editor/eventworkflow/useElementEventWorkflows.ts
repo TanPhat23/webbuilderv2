@@ -1,26 +1,72 @@
 import { useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { elementEventWorkflowService } from "@/services/elementEventWorkflow";
 import { EventWorkflow } from "@/interfaces/eventWorkflow.interface";
 import {
   elementEventWorkflowKeys,
-  useElementEventWorkflowStore,
   type IElementEventWorkflowConnection,
   getConnectedWorkflowsForEvent,
   isWorkflowConnected as isWorkflowConnectedFn,
   getWorkflowConnections as getWorkflowConnectionsFn,
   isConnectedToEvent as isConnectedToEventFn,
+  useElementEventWorkflowStore,
 } from "@/globalstore/element-event-workflow-store";
+import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
 import {
   useConnectElementEventWorkflow,
   useDisconnectElementEventWorkflow,
 } from "./useElementEventWorkflowMutations";
 
-/**
- * Fetch element-event-workflow connections for a given element.
- * React Query handles stale time, gc, deduplication, and background refetch.
- */
-export function useElementConnections(elementId: string | undefined) {
+export function usePageElementConnections(pageId: string | undefined) {
+  const queryClient = useQueryClient();
+  const { setPageConnections, setPageLoading } = useElementEventWorkflowStore();
+
+  return useQuery({
+    queryKey: elementEventWorkflowKeys.byPage(pageId ?? ""),
+    queryFn: async () => {
+      setPageLoading(pageId!, true);
+
+      const response =
+        await elementEventWorkflowService.getElementEventWorkflowsByPage(
+          pageId!,
+        );
+
+      const connections = Array.isArray(response)
+        ? (response as IElementEventWorkflowConnection[])
+        : [];
+
+      const grouped = new Map<string, IElementEventWorkflowConnection[]>();
+      for (const conn of connections) {
+        const bucket = grouped.get(conn.elementId) ?? [];
+        bucket.push(conn);
+        grouped.set(conn.elementId, bucket);
+      }
+
+      grouped.forEach((elementConnections, elementId) => {
+        queryClient.setQueryData<IElementEventWorkflowConnection[]>(
+          elementEventWorkflowKeys.byElement(elementId),
+          elementConnections,
+        );
+      });
+
+      setPageConnections(pageId!, connections);
+
+      return connections;
+    },
+    enabled: !!pageId,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+  });
+}
+
+export function useElementConnections(
+  elementId: string | undefined,
+  pageId?: string,
+) {
+  const queryClient = useQueryClient();
+
+  usePageElementConnections(pageId);
+
   return useQuery({
     queryKey: elementEventWorkflowKeys.byElement(elementId ?? ""),
     queryFn: async () => {
@@ -33,22 +79,37 @@ export function useElementConnections(elementId: string | undefined) {
         ? (result as IElementEventWorkflowConnection[])
         : [];
     },
-    enabled: !!elementId,
+    enabled: !!elementId && !pageId,
     staleTime: 30_000,
     gcTime: 5 * 60_000,
+    initialData: pageId
+      ? () => {
+          const pageData = queryClient.getQueryData<
+            IElementEventWorkflowConnection[]
+          >(elementEventWorkflowKeys.byPage(pageId));
+
+          if (!pageData) return undefined;
+
+          return pageData.filter((conn) => conn.elementId === elementId);
+        }
+      : undefined,
+    initialDataUpdatedAt: pageId
+      ? () =>
+          queryClient.getQueryState(elementEventWorkflowKeys.byPage(pageId))
+            ?.dataUpdatedAt
+      : undefined,
   });
 }
 
-/**
- * Convenience hook that returns connections + mutation actions + derived helpers.
- */
 export function useElementEventWorkflowActions(elementId: string | undefined) {
+  const queryClient = useQueryClient();
   const query = useElementConnections(elementId);
-  const store = useElementEventWorkflowStore();
   const connections = query.data ?? [];
 
   const connectMutation = useConnectElementEventWorkflow();
   const disconnectMutation = useDisconnectElementEventWorkflow();
+
+  const mutationError = connectMutation.error ?? disconnectMutation.error;
 
   const getConnectedWorkflows = useCallback(
     (eventType: string, workflows: EventWorkflow[]) =>
@@ -72,24 +133,36 @@ export function useElementEventWorkflowActions(elementId: string | undefined) {
     [connections],
   );
 
+  const invalidateAll = useCallback(
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: elementEventWorkflowKeys.all,
+      }),
+    [queryClient],
+  );
+
+  const invalidateElement = useCallback(
+    (id: string) =>
+      queryClient.invalidateQueries({
+        queryKey: elementEventWorkflowKeys.byElement(id),
+        exact: true,
+      }),
+    [queryClient],
+  );
+
   return {
-    // React Query data
     connections,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     error: query.error
-      ? query.error instanceof Error
-        ? query.error.message
-        : "Failed to load connections"
-      : store.mutationError,
-
-    // Computed getters
+      ? getErrorMessage(query.error, "Failed to load connections")
+      : mutationError
+        ? getErrorMessage(mutationError, "Operation failed")
+        : null,
     getConnectedWorkflows,
     isWorkflowConnected,
     getWorkflowConnections,
     isConnectedToEvent,
-
-    // Mutation actions
     handleConnect: (eventType: string, workflowId: string) =>
       elementId
         ? connectMutation.mutateAsync({ elementId, eventType, workflowId })
@@ -98,16 +171,10 @@ export function useElementEventWorkflowActions(elementId: string | undefined) {
       elementId
         ? disconnectMutation.mutateAsync({ elementId, eventType, workflowId })
         : Promise.reject(new Error("Missing elementId")),
-
-    // Mutation flags (from store)
-    isConnecting: store.isConnecting,
-    isDisconnecting: store.isDisconnecting,
-
-    // Cache helpers
-    invalidateAll: store.invalidateAll,
-    invalidateElement: store.invalidateElement,
-
-    // Pass-through for components needing the raw query
+    isConnecting: connectMutation.isPending,
+    isDisconnecting: disconnectMutation.isPending,
+    invalidateAll,
+    invalidateElement,
     refetch: query.refetch,
   };
 }

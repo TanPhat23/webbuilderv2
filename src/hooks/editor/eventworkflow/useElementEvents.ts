@@ -1,12 +1,6 @@
 "use client";
 
-/**
- * useElementEvents Hook
- * Provides event handling capabilities for elements in preview mode
- * Respects global event mode toggle to avoid interference with element handler
- */
-
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   EventHandler,
   ElementEvents,
@@ -17,6 +11,7 @@ import { useEventModeStore } from "@/globalstore/event-mode-store";
 import { useElementConnections } from "@/hooks/editor/eventworkflow/useElementEventWorkflows";
 import { useEventWorkflows } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { transformWorkflowToEventHandlers } from "@/lib/utils/workflow/workflowTransformer";
+import { usePageStore } from "@/globalstore/page-store";
 
 interface UseElementEventsOptions {
   elementId: string;
@@ -35,145 +30,110 @@ export function useElementEvents(options: UseElementEventsOptions) {
     projectId,
   } = options;
 
+  const pageId = usePageStore((state) => state.currentPage?.Id);
+
   const [elementState, setElementState] = useState<Record<string, any>>({});
+  const elementStateRef = useRef<Record<string, any>>({});
   const elementRef = useRef<HTMLElement | null>(null);
   const eventsMapRef = useRef<Map<string, EventHandler[]>>(new Map());
   const previousWorkflowHandlersRef = useRef<ElementEvents | null>(null);
 
-  // Get event mode state
+  // Keep ref in sync so handleEvent never reads stale closure state.
+  useEffect(() => {
+    elementStateRef.current = elementState;
+  }, [elementState]);
+
   const { isEventModeEnabled, isElementEventsDisabled } = useEventModeStore();
 
-  // React Query hooks handle fetching, caching, stale-time, and deduplication
-  const { data: connections = [] } = useElementConnections(elementId);
+  const { data: connections = [] } = useElementConnections(elementId, pageId);
   const { data: workflows = [] } = useEventWorkflows(projectId || "");
 
-  // Determine if events should be active
   const shouldEventsBeActive = enableEventsOverride ? true : isEventModeEnabled;
   const areEventsDisabledForElement = isElementEventsDisabled(elementId);
   const eventsActive = shouldEventsBeActive && !areEventsDisabledForElement;
 
-  /**
-   * Register event handlers for an element
-   */
   const registerEvents = useCallback(
     (elementEvents: ElementEvents) => {
       eventsMapRef.current.clear();
-      if (!eventsActive) {
-        return;
-      }
+      if (!eventsActive) return;
       Object.entries(elementEvents).forEach(([eventType, handlers]) => {
         if (Array.isArray(handlers)) {
           eventsMapRef.current.set(eventType, handlers);
         }
       });
     },
-    [elementId, eventsActive],
+    [eventsActive],
   );
 
-  /**
-   * Handle event and execute associated handlers
-   */
-  const handleEvent = async (
-    eventType: string,
-    nativeEvent: React.SyntheticEvent | Event,
-  ) => {
-    // Skip if events are not active
-    if (!eventsActive) {
-      return;
-    }
+  const handleEvent = useCallback(
+    async (eventType: string, nativeEvent: React.SyntheticEvent | Event) => {
+      if (!eventsActive) return;
 
-    const handlers = eventsMapRef.current.get(eventType);
+      const handlers = eventsMapRef.current.get(eventType);
+      if (!handlers || handlers.length === 0) return;
 
-    if (!handlers || handlers.length === 0) {
-      return;
-    }
+      for (const handler of handlers) {
+        const context: EventExecutionContext = {
+          element: elementRef.current,
+          event: nativeEvent,
+          elementState: elementStateRef.current,
+          globalState,
+          elementInstance: elementRef.current,
+        };
 
-    for (const handler of handlers) {
-      const context: EventExecutionContext = {
-        element: elementRef.current,
-        event: nativeEvent,
-        elementState,
-        globalState,
-        elementInstance: elementRef.current,
-      };
-
-      try {
-        await eventExecutor.execute(handler, context);
-
-        // Update state if changed
-        onStateChange?.(elementState);
-      } catch (error) {
-        console.error(`Error handling ${eventType}:`, error);
+        try {
+          await eventExecutor.execute(handler, context);
+          onStateChange?.(elementStateRef.current);
+        } catch (error) {
+          console.error(`Error handling ${eventType}:`, error);
+        }
       }
-    }
-  };
+    },
+    [eventsActive, globalState, onStateChange],
+  );
 
-  /**
-   * Create event handlers for all registered events
-   */
-  const createEventHandlers = () => {
+  const createEventHandlers = useCallback(() => {
     const handlers: Record<string, (e: Event) => void> = {};
-
-    if (!eventsActive) {
-      return handlers;
-    }
+    if (!eventsActive) return handlers;
 
     eventsMapRef.current.forEach((_, eventType) => {
-      handlers[eventType] = (e: Event) => {
-        handleEvent(eventType, e);
-      };
+      handlers[eventType] = (e: Event) => handleEvent(eventType, e);
     });
 
     return handlers;
-  };
+  }, [eventsActive, handleEvent]);
 
-  /**
-   * Update element state
-   */
-  const updateState = (key: string, value: unknown) => {
-    setElementState((prev) => {
-      const newState = { ...prev, [key]: value };
-      onStateChange?.(newState);
-      return newState;
-    });
-  };
+  const updateState = useCallback(
+    (key: string, value: unknown) => {
+      setElementState((prev) => {
+        const newState = { ...prev, [key]: value };
+        onStateChange?.(newState);
+        return newState;
+      });
+    },
+    [onStateChange],
+  );
 
-  /**
-   * Get current element state
-   */
-  const getState = (key?: string) => {
-    if (key) {
-      return elementState[key];
-    }
-    return elementState;
-  };
+  const getState = useCallback((key?: string) => {
+    if (key) return elementStateRef.current[key];
+    return elementStateRef.current;
+  }, []);
 
-  /**
-   * Enable events for this element
-   */
-  const enableEvents = () => {
+  const enableEvents = useCallback(() => {
     useEventModeStore.getState().enableElementEvents(elementId);
-  };
+  }, [elementId]);
 
-  /**
-   * Disable events for this element
-   */
-  const disableEvents = () => {
+  const disableEvents = useCallback(() => {
     useEventModeStore.getState().disableElementEvents(elementId);
-  };
+  }, [elementId]);
 
-  /**
-   * Check if events are currently active
-   */
-  const areEventsEnabled = () => {
-    return eventsActive;
-  };
+  const areEventsEnabled = useCallback(() => eventsActive, [eventsActive]);
 
-  // Register workflow handlers dynamically
   useEffect(() => {
     if (!projectId || !eventsActive) return;
 
     const workflowHandlers: ElementEvents = {};
+
     for (const conn of connections) {
       const workflow = workflows.find((w) => w.id === conn.workflowId);
       if (workflow?.canvasData) {
@@ -185,20 +145,14 @@ export function useElementEvents(options: UseElementEventsOptions) {
       }
     }
 
-    // Only log if workflow handlers have actually changed
     const handlersChanged =
       JSON.stringify(workflowHandlers) !==
       JSON.stringify(previousWorkflowHandlersRef.current);
 
     if (handlersChanged) {
-      console.log(
-        `Registering workflow events for element ${elementId}:`,
-        workflowHandlers,
-      );
       previousWorkflowHandlersRef.current = workflowHandlers;
+      registerEvents(workflowHandlers);
     }
-
-    registerEvents(workflowHandlers);
   }, [
     projectId,
     elementId,
@@ -207,12 +161,6 @@ export function useElementEvents(options: UseElementEventsOptions) {
     workflows,
     registerEvents,
   ]);
-
-  // Re-register events when event mode changes
-  useEffect(() => {
-    // Events will be re-registered through the registerEvents call
-    // This hook dependency ensures we respond to mode changes
-  }, [eventsActive, isEventModeEnabled, areEventsDisabledForElement]);
 
   return {
     elementRef,

@@ -1,35 +1,24 @@
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+"use client";
+
+import React from "react";
 import { useCMSContentItem, useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { CMSContentItemElement } from "@/interfaces/elements.interface";
 import { ContentItem } from "@/interfaces/cms.interface";
 import ElementLoader from "../ElementLoader";
-import { Database } from "lucide-react";
 import { getFieldValue } from "@/hooks";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
 
 const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentItemElement;
-  const { id } = useParams();
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const safeStyles = elementHelper.getSafeStyles(cmsElement);
-
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   const settings = cmsElement.settings || {};
   const { contentTypeId, itemSlug } = settings;
@@ -41,55 +30,38 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
 
   const itemToRender = (data as ContentItem | undefined) || contentItem;
 
+  const rootProps = {
+    ref: elementRef as React.RefObject<HTMLDivElement>,
+    "data-element-id": element.id,
+    "data-element-type": element.type,
+    ...getCommonProps(cmsElement),
+    ...eventHandlers,
+    style: {
+      ...safeStyles,
+      width: "100%",
+      height: "100%",
+      ...eventsStyle(eventsActive),
+    },
+  };
+
   if (!contentTypeId) {
     return (
-      <div
-        ref={elementRef as React.RefObject<HTMLDivElement>}
-        data-element-id={element.id}
-        data-element-type={element.type}
-        {...getCommonProps(cmsElement)}
-        {...eventHandlers}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          cursor: eventsActive ? "pointer" : "inherit",
-          userSelect: eventsActive ? "none" : "auto",
-        }}
-        className="flex items-center justify-center border-2 border-dashed border-gray-300 bg-gray-50"
-      >
-        <div className="text-center text-gray-500">
-          <Database className="w-8 h-8 mx-auto mb-2" />
-          <p className="text-sm">CMS Content Item</p>
-          <p className="text-xs">Configure content type and slug in settings</p>
-        </div>
-      </div>
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content Item"
+        description="Configure content type and slug in settings"
+      />
     );
   }
 
   return (
-    <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(cmsElement)}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
-      }}
-    >
-      {cmsElement.elements && cmsElement.elements.length > 0 ? (
-        // Use child elements as template
+    <div {...rootProps}>
+      {cmsElement.elements?.length ? (
         <ElementLoader
           elements={cmsElement.elements}
           data={itemToRender as unknown as Record<string, unknown>}
         />
       ) : itemToRender ? (
-        // Default rendering
         <article className="max-w-4xl mx-auto">
           <header className="mb-6">
             <h1 className="text-3xl font-bold mb-2">{itemToRender.title}</h1>

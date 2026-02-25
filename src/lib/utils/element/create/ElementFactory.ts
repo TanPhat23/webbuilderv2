@@ -7,20 +7,6 @@ import {
   ElementType,
 } from "@/types/global.type";
 import type {
-  TextElement,
-  ImageElement,
-  ButtonElement,
-  InputElement,
-  LinkElement,
-  FrameElement,
-  FormElement,
-  SectionElement,
-  CarouselElement,
-  ListElement,
-  SelectElement,
-  CMSContentListElement,
-  CMSContentItemElement,
-  CMSContentGridElement,
   ResponsiveStyles,
   ElementTypeMap,
 } from "@/interfaces/elements.interface";
@@ -48,21 +34,13 @@ interface CreateElementParams<T extends ElementType = ElementType> {
   readonly parentId?: string;
 }
 
-/** Return type of {@link ElementFactory.createElement}. */
 type CreateElementResult<T extends ElementType> = ElementByType<T> | undefined;
 
-/** Parameters accepted by {@link ElementFactory.createElementFromTemplate}. */
 interface CreateElementFromTemplateParams<T extends ElementType = ElementType> {
   readonly element: ElementTemplate;
   readonly pageId: string;
 }
 
-/**
- * Typed error thrown by the {@link ElementFactory} when element creation fails.
- *
- * The `code` field allows callers to programmatically distinguish between
- * different failure modes without parsing the message string.
- */
 class ElementFactoryError extends Error {
   constructor(
     message: string,

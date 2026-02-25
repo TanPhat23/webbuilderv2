@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { QUERY_CONFIG } from "@/lib/utils/query/queryConfig";
 
+export const analyticsKeys = {
+  all: ["analytics"] as const,
+  detail: () => [...analyticsKeys.all, "detail"] as const,
+};
+
 export interface AnalyticsStats {
   totalViews: number;
   totalDownloads: number;
@@ -58,7 +63,7 @@ export interface AnalyticsData {
  */
 export function useAnalytics() {
   return useQuery({
-    queryKey: ["analytics"],
+    queryKey: analyticsKeys.detail(),
     queryFn: async () => {
       const response = await fetch("/api/analytics", {
         method: "GET",

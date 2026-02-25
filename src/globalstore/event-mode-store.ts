@@ -56,7 +56,6 @@ const customStorage: PersistStorage<EventModeState> = {
 export const useEventModeStore = create<EventModeState>()(
   persist(
     (set, get) => ({
-      // Global event mode (default: disabled to not interfere with element handler)
       isEventModeEnabled: false,
       setEventModeEnabled: (enabled: boolean) => {
         set({ isEventModeEnabled: enabled });

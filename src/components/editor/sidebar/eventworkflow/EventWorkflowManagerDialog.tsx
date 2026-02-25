@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { WorkflowList } from "./WorkflowList";
@@ -8,7 +8,6 @@ import { WorkflowCreator } from "./WorkflowCreator";
 import { WorkflowConnector } from "./WorkflowConnector";
 import { WorkflowEditor } from "./WorkflowEditor";
 import { WorkflowData } from "./types/workflow.types";
-import { useEventWorkflowStore } from "@/globalstore/event-workflow-store";
 import { useEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflows";
 import { useUpdateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
 import { toast } from "sonner";
@@ -104,7 +103,6 @@ export const EventWorkflowManagerDialog = ({
   const handleSaveWorkflow = async (workflow: WorkflowData) => {
     if (viewState.type !== "edit") return;
 
-    // Validate using Zod schema (call .safeParse directly to avoid import name issues)
     const validation = WorkflowCanvasSchema.safeParse(workflow);
     if (!validation.success) {
       const errors =
@@ -131,19 +129,15 @@ export const EventWorkflowManagerDialog = ({
         },
       });
 
-      if (result) {
-        toast.success("Workflow saved successfully!");
-        console.log("Workflow saved with canvas data");
-      } else {
-        const errorMessage =
-          useEventWorkflowStore.getState().mutationError ||
-          "Failed to save workflow";
-        toast.error(`Error saving workflow:\n${errorMessage}`);
-      }
+      toast.success("Workflow saved successfully!");
+      console.log("Workflow saved with canvas data");
     } catch (error) {
       const errorMessage =
-        useEventWorkflowStore.getState().mutationError ||
-        "Failed to save workflow";
+        updateWorkflowMutation.error instanceof Error
+          ? updateWorkflowMutation.error.message
+          : error instanceof Error
+            ? error.message
+            : "Failed to save workflow";
       console.error("Failed to save workflow:", error);
       toast.error(`Error saving workflow:\n${errorMessage}`);
     }
@@ -151,11 +145,6 @@ export const EventWorkflowManagerDialog = ({
 
   const handleBackToList = () => {
     setViewState({ type: "list" });
-  };
-
-  const handleClose = () => {
-    setViewState({ type: "list" });
-    onOpenChange(false);
   };
 
   const handleNameChange = (name: string) => {

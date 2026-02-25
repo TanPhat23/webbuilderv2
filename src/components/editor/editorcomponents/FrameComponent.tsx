@@ -1,32 +1,20 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { FrameElement } from "@/interfaces/elements.interface";
 import ElementLoader from "../ElementLoader";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
-import { useParams } from "next/navigation";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const FrameComponent = ({ element, data }: EditorComponentProps) => {
   const frameElement = element as FrameElement;
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
+
   const { getCommonProps } = useElementHandler();
-  const { id } = useParams();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(frameElement);
-
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   return (
     <div
@@ -39,8 +27,7 @@ const FrameComponent = ({ element, data }: EditorComponentProps) => {
         ...safeStyles,
         width: "100%",
         height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     >
       <ElementLoader elements={frameElement.elements} data={data} />
