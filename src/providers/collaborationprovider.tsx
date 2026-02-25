@@ -21,6 +21,7 @@ import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
 import type { EditorElement } from "@/types/global.type";
+
 import type { Page } from "@/interfaces/page.interface";
 import type {
   WSCollabState,
@@ -268,7 +269,9 @@ export default function CollaborationProvider({
           await p.deleteElement(id);
         } else if (type === "create" && data) {
           const el = data as EditorElement;
-          await p.createElement(el, el.parentId ?? null, el.order);
+          p.createElement(el, el.parentId ?? null, el.order).catch((err) =>
+            latest.current.onError?.(err as Error),
+          );
         } else if (type === "move" && data) {
           const moveData = data as MoveData;
           if (internalRef.current.pendingMoves.has(moveData.elementId)) return;

@@ -28,6 +28,7 @@ import type {
   PresenceBroadcastPayload,
   RemotePresence,
   ElementCreatePayload,
+  ElementCreatePayloadNode,
   ElementUpdatePayload,
   ElementMovePayload,
   ElementDeletePayload,
@@ -325,6 +326,34 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   //   4. Returns the promise that resolves when the server responds
   // ==========================================================================
 
+  private toPayloadNode(
+    element: EditorElement,
+    parentId?: string | null,
+    position?: number,
+  ): ElementCreatePayloadNode {
+    const children = (element as { elements?: EditorElement[] }).elements;
+    return {
+      id: element.id,
+      type: element.type,
+      settings: (element.settings as Record<string, unknown>) ?? null,
+      styles: (element.styles as Record<string, unknown>) ?? null,
+      tailwindStyles: element.tailwindStyles ?? "",
+      order: position ?? element.order ?? 0,
+      parentId: parentId ?? element.parentId ?? null,
+      ...(element.content !== undefined ? { content: element.content } : {}),
+      ...(element.name !== undefined ? { name: element.name } : {}),
+      ...(element.src !== undefined ? { src: element.src } : {}),
+      ...(element.href !== undefined ? { href: element.href } : {}),
+      ...(children && children.length > 0
+        ? {
+            elements: children.map((child) =>
+              this.toPayloadNode(child, element.id),
+            ),
+          }
+        : {}),
+    };
+  }
+
   public async createElement(
     element: EditorElement,
     parentId?: string | null,
@@ -336,21 +365,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       "element:create",
       this.projectId,
       this.pageId,
-      {
-        element: {
-          type: element.type,
-          settings: (element.settings as Record<string, unknown>) ?? null,
-          styles: (element.styles as Record<string, unknown>) ?? null,
-          order: position ?? element.order ?? 0,
-          parentId: parentId ?? element.parentId ?? null,
-          // Pass through additional fields
-          ...(element.content !== undefined
-            ? { content: element.content }
-            : {}),
-          ...(element.name !== undefined ? { name: element.name } : {}),
-          ...(element.id !== undefined ? { id: element.id } : {}),
-        },
-      },
+      { element: this.toPayloadNode(element, parentId, position) },
       { userId: this.userId, requestId },
     );
 
@@ -379,6 +394,11 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         ...(updates.content !== undefined ? { content: updates.content } : {}),
         ...(updates.name !== undefined ? { name: updates.name } : {}),
         ...(updates.order !== undefined ? { order: updates.order } : {}),
+        ...(updates.tailwindStyles !== undefined
+          ? { tailwindStyles: updates.tailwindStyles }
+          : {}),
+        ...(updates.src !== undefined ? { src: updates.src } : {}),
+        ...(updates.href !== undefined ? { href: updates.href } : {}),
       },
       { userId: this.userId, requestId },
     );
