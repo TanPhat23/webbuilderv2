@@ -5,7 +5,6 @@ import Editor from "./editor";
 
 export default async function EditorPage(props: PageProps<"/editor/[id]">) {
   const { id } = await props.params;
-  const { page } = await props.searchParams;
   const queryClient = getQueryClient();
   await queryClient.prefetchQuery({
     queryKey: ["fonts"],
@@ -14,7 +13,7 @@ export default async function EditorPage(props: PageProps<"/editor/[id]">) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Editor id={id} pageId={page as string} />
+      <Editor id={id} />
     </HydrationBoundary>
   );
 }

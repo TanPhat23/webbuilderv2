@@ -5,40 +5,32 @@ import {
   Monitor,
   Smartphone,
   Tablet,
-  ChevronDown,
-  Check,
   Search,
   MessageSquare,
   MessageSquareOff,
   Code,
   PenTool,
+  LayoutTemplate,
+  ChevronRight,
 } from "lucide-react";
 
-// Types
 import { Viewport } from "@/hooks";
-
-// Components
 import { Button } from "@/components/ui/button";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import CollaborationButton from "./CollaborationButton";
 import CollaboratorIndicator from "./CollaboratorIndicator";
 import { useEditorContext } from "@/providers/editorprovider";
 import EventModeToggle from "../eventmode/EventModeToggle";
 import { PageNavigationCommand } from "./PageNavigationCommand";
-import CollaborationStatus from "./CollaborationStatus";
 import { useElementCommentStore } from "@/globalstore/element-comment-store";
+import { useProjectStore } from "@/globalstore/project-store";
+import { usePageStore } from "@/globalstore/page-store";
+import { cn } from "@/lib/utils";
 
 type EditorHeaderProps = {
   currentView: Viewport;
@@ -52,84 +44,267 @@ const VIEWPORT_OPTIONS = [
   { view: "desktop" as const, icon: Monitor, label: "Desktop" },
 ] as const;
 
-function ViewportSelector({
-  currentView,
-  setCurrentView,
-}: Pick<EditorHeaderProps, "currentView" | "setCurrentView">) {
-  const [open, setOpen] = useState(false);
-  const currentOption = VIEWPORT_OPTIONS.find(
-    (opt) => opt.view === currentView,
-  );
+function useNavigationShortcut(onToggle: () => void) {
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        onToggle();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onToggle]);
+}
 
+function HeaderDivider() {
+  return <div className="h-4 w-px bg-border shrink-0" aria-hidden="true" />;
+}
+
+function PillGroup({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 h-8 px-2 hover:bg-muted transition-colors"
-          aria-label="Select viewport size"
-          aria-expanded={open}
-        >
-          {currentOption && <currentOption.icon className="w-4 h-4" />}
-          <ChevronDown
-            className={`w-3.5 h-3.5 opacity-50 transition-transform ${
-              open ? "rotate-180" : ""
-            }`}
-          />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-40 p-0" align="end">
-        <Command>
-          <CommandList className="max-h-48">
-            <CommandEmpty>No viewport found</CommandEmpty>
-            <CommandGroup>
-              {VIEWPORT_OPTIONS.map(({ view, icon: Icon, label }) => (
-                <CommandItem
-                  key={view}
-                  value={view}
-                  onSelect={() => {
-                    setCurrentView(view);
-                    setOpen(false);
-                  }}
-                  className={`cursor-pointer ${
-                    currentView === view ? "bg-muted" : ""
-                  }`}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  <span>{label}</span>
-                  {currentView === view && (
-                    <Check className="w-4 h-4 ml-auto text-accent-foreground" />
-                  )}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+    <div
+      className={cn(
+        "flex items-center rounded-lg bg-muted/50 border border-border p-0.5 gap-0.5",
+        className,
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
-function ControlsGroup() {
-  const { editingMode, setEditingMode } = useEditorContext();
+function ProjectBreadcrumb() {
+  const { project } = useProjectStore();
+  const { currentPage } = usePageStore();
+
+  if (!project) return null;
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex items-center gap-1.5 min-w-0">
+      <span className="text-sm font-semibold text-foreground truncate max-w-32">
+        {project.name}
+      </span>
+      {currentPage && (
+        <>
+          <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+          <span className="text-sm text-muted-foreground truncate max-w-24">
+            {currentPage.Name}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ViewportToggle({
+  currentView,
+  setCurrentView,
+}: Pick<EditorHeaderProps, "currentView" | "setCurrentView">) {
+  return (
+    <PillGroup>
+      {VIEWPORT_OPTIONS.map(({ view, icon: Icon, label }) => (
+        <Tooltip key={view}>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setCurrentView(view)}
+              aria-pressed={currentView === view}
+              aria-label={label}
+              className={cn(
+                "inline-flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+                currentView === view
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{label}</TooltipContent>
+        </Tooltip>
+      ))}
+    </PillGroup>
+  );
+}
+
+function EditingModeToggle() {
+  const { editingMode, setEditingMode } = useEditorContext();
+  const isVisual = editingMode === "visual";
+
+  return (
+    <PillGroup>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setEditingMode("visual")}
+            aria-pressed={isVisual}
+            className={cn(
+              "inline-flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              isVisual
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+            )}
+          >
+            <PenTool className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Visual</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setEditingMode("code")}
+            aria-pressed={!isVisual}
+            className={cn(
+              "inline-flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              !isVisual
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+            )}
+          >
+            <Code className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Code</TooltipContent>
+      </Tooltip>
+    </PillGroup>
+  );
+}
+
+function CanvasModeToggle() {
+  const { mode, setMode } = useEditorContext();
+
+  return (
+    <PillGroup>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setMode("wireframe")}
+            aria-pressed={mode === "wireframe"}
+            className={cn(
+              "inline-flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              mode === "wireframe"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+            )}
+          >
+            <LayoutTemplate className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Wireframe</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setMode("editor")}
+            aria-pressed={mode === "editor"}
+            className={cn(
+              "inline-flex items-center justify-center h-7 w-7 rounded-md transition-all duration-150",
+              mode === "editor"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-background/60",
+            )}
+          >
+            <PenTool className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Editor</TooltipContent>
+      </Tooltip>
+    </PillGroup>
+  );
+}
+
+function CommentToggleButton() {
+  const { showCommentButtons, toggleCommentButtons } = useElementCommentStore();
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleCommentButtons}
+          aria-pressed={showCommentButtons}
+          aria-label="Toggle comments"
+          className={cn(
+            "h-7 w-7 p-0 transition-colors",
+            showCommentButtons
+              ? "text-primary bg-primary/10 hover:bg-primary/15"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {showCommentButtons ? (
+            <MessageSquare className="w-3.5 h-3.5" />
+          ) : (
+            <MessageSquareOff className="w-3.5 h-3.5" />
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        {showCommentButtons ? "Hide comments" : "Show comments"}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function NavigateButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={onClick}
+          aria-label="Open page navigation (Cmd+K)"
+          className="inline-flex items-center justify-center h-7 w-7 text-muted-foreground rounded-md hover:bg-muted hover:text-foreground transition-all duration-150"
+        >
+          <Search className="w-3.5 h-3.5" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        Pages <kbd className="font-mono opacity-60 text-[10px] ml-1">⌘K</kbd>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function LeftSection({
+  projectId,
+  onNavigate,
+}: {
+  projectId: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <ProjectBreadcrumb />
+      <HeaderDivider />
+      <NavigateButton onClick={onNavigate} />
+      <CollaboratorIndicator projectId={projectId} />
+      <CollaborationButton projectId={projectId} />
+    </div>
+  );
+}
+
+function RightSection({
+  currentView,
+  setCurrentView,
+}: Pick<EditorHeaderProps, "currentView" | "setCurrentView">) {
+  return (
+    <div className="flex items-center gap-1.5 ml-auto">
+      <HeaderDivider />
       <EventModeToggle />
-      <Button
-        onClick={() =>
-          setEditingMode(editingMode === "visual" ? "code" : "visual")
-        }
-        className="h-8"
-      >
-        {editingMode === "visual" ? (
-          <PenTool className="w-4 h-4 mr-2" />
-        ) : (
-          <Code className="w-4 h-4 mr-2" />
-        )}
-        {editingMode.toUpperCase()[0] + editingMode.slice(1)} 
-      </Button>
+      <EditingModeToggle />
+      <CommentToggleButton />
+      <HeaderDivider />
+      <ViewportToggle
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+      />
     </div>
   );
 }
@@ -140,73 +315,29 @@ export default function EditorHeader({
   projectId,
 }: EditorHeaderProps) {
   const [navigationCommandOpen, setNavigationCommandOpen] = useState(false);
-  const { showCommentButtons, toggleCommentButtons } = useElementCommentStore();
 
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setNavigationCommandOpen((open) => !open);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  useNavigationShortcut(() => setNavigationCommandOpen((prev) => !prev));
 
   return (
-    <>
-      <header className="relative z-40 flex items-center justify-between gap-3 sm:gap-4 border-b border-border bg-background shadow-sm px-3 sm:px-4 py-2.5 transition-colors duration-200">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 sm:flex-none">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setNavigationCommandOpen(true)}
-            className="h-8 w-32 sm:w-40 px-3 py-1.5 text-xs rounded-lg bg-input border border-border hover:bg-muted transition-all"
-            aria-label="Open navigation command"
-          >
-            <Search className="w-4 h-4 mr-2" />
-            Navigate... (Cmd+K)
-          </Button>
-          <div className="h-6 w-px bg-border" aria-hidden="true" />
-          <CollaboratorIndicator projectId={projectId} />
-          <CollaborationButton projectId={projectId} />
+    <TooltipProvider>
+      <header className="relative z-40 h-11 flex items-center justify-between gap-4 border-b border-border bg-background px-3">
+        <LeftSection
+          projectId={projectId}
+          onNavigate={() => setNavigationCommandOpen(true)}
+        />
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <CanvasModeToggle />
         </div>
-
-        {/* Right Section: Controls and Viewport Selector */}
-        <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-          <ControlsGroup />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleCommentButtons}
-            aria-pressed={showCommentButtons}
-            aria-label="Toggle comment buttons"
-            className="h-8 px-2 gap-1"
-          >
-            {showCommentButtons ? (
-              <MessageSquare className="w-4 h-4" />
-            ) : (
-              <MessageSquareOff className="w-4 h-4" />
-            )}
-          </Button>
-          <div className="h-6 w-px bg-border" aria-hidden="true" />
-          <ViewportSelector
-            currentView={currentView}
-            setCurrentView={setCurrentView}
-          />
-        </div>
-
-        {/* Mobile Collaboration Status */}
-        <div className="md:hidden">
-          <CollaborationStatus />
-        </div>
+        <RightSection
+          currentView={currentView}
+          setCurrentView={setCurrentView}
+        />
       </header>
 
       <PageNavigationCommand
         open={navigationCommandOpen}
         setOpen={setNavigationCommandOpen}
       />
-    </>
+    </TooltipProvider>
   );
 }

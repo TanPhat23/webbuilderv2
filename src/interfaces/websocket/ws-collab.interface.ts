@@ -75,16 +75,23 @@ export interface PresencePayload {
 }
 
 /** Payload for `element:create` (client -> server) */
+export interface ElementCreatePayloadNode {
+  type: string;
+  settings?: Record<string, unknown> | null;
+  styles?: Record<string, unknown> | null;
+  tailwindStyles?: string;
+  order: number;
+  parentId?: string | null;
+  content?: string;
+  name?: string;
+  id?: string;
+  src?: string;
+  href?: string;
+  elements?: ElementCreatePayloadNode[];
+}
+
 export interface ElementCreatePayload {
-  element: {
-    type: string;
-    settings?: Record<string, unknown> | null;
-    styles?: Record<string, unknown> | null;
-    order: number;
-    parentId?: string | null;
-    /** Allow additional element-specific fields */
-    [key: string]: unknown;
-  };
+  element: ElementCreatePayloadNode;
 }
 
 /** Payload for `element:update` (client -> server, patch semantics) */

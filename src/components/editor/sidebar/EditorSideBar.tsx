@@ -28,6 +28,8 @@ import {
   Camera,
   ChevronLeft,
   Layers,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { useAiChat } from "@/providers/aiprovider";
@@ -45,39 +47,42 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useElements } from "@/globalstore/selectors/element-selectors";
 import ElementTreeItem from "./ElementTreeItem";
 
-// ---------------------------------------------------------------------------
-// Lazy-loaded tool panels — these are only fetched when the user opens
-// the corresponding accordion section, reducing the initial sidebar bundle.
-// ---------------------------------------------------------------------------
-
 const CMSManager = React.lazy(() => import("./cmsmanager/CMSManager"));
-
 const SnapshotManager = React.lazy(() => import("./SnapshotManager"));
-
 const ImageSelector = React.lazy(() =>
   import("./imageupload/ImageSelector").then((m) => ({
     default: m.ImageSelector,
   })),
 );
-
 const EventWorkflowManagerDialog = React.lazy(() =>
   import("./eventworkflow/EventWorkflowManagerDialog").then((m) => ({
     default: m.EventWorkflowManagerDialog,
   })),
 );
 
-/**
- * Lightweight spinner shown while a lazy-loaded tool panel chunk is fetched.
- */
-function ToolPanelFallback() {
+function PanelFallback() {
   return (
-    <div className="flex items-center justify-center py-6">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+    <div className="flex items-center justify-center py-8">
+      <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
     </div>
   );
 }
 
 type TabType = "components" | "layers" | "tools";
+
+const MAIN_TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
+  { id: "components", label: "Components", icon: Blocks },
+  { id: "layers", label: "Layers", icon: Layers },
+  { id: "tools", label: "Tools", icon: Settings },
+];
+
+const TOOL_SECTIONS = [
+  { id: "pages", label: "Pages", icon: FileText },
+  { id: "imageupload", label: "Images", icon: ImageIcon },
+  { id: "cms", label: "CMS", icon: Database },
+  { id: "snapshots", label: "Snapshots", icon: Camera },
+  { id: "workflows", label: "Workflows", icon: Zap },
+];
 
 export function EditorSideBar() {
   const { chatOpen } = useAiChat();
@@ -93,17 +98,13 @@ export function EditorSideBar() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    if (isCollapsed) {
-      setOpen(true);
-    }
+    if (isCollapsed) setOpen(true);
   };
 
   const handleToolSelect = (section: string) => {
     setActiveTab("tools");
     setActiveToolSection(section);
-    if (isCollapsed) {
-      setOpen(true);
-    }
+    if (isCollapsed) setOpen(true);
   };
 
   if (chatOpen) return null;
@@ -115,209 +116,127 @@ export function EditorSideBar() {
       className="border-r border-border bg-card"
     >
       <SidebarHeader className="border-b border-border p-0">
-        <div
-          className={cn(
-            "flex items-center h-12 px-4",
-            isCollapsed ? "justify-center" : "justify-between",
-          )}
-        >
-          {!isCollapsed && <span className="text-sm font-medium">Editor</span>}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn("h-8 w-8", isCollapsed && "rotate-180")}
-                onClick={toggleSidebar}
+        {isCollapsed ? (
+          /* collapsed: single centered expand button */
+          <div className="flex h-11 items-center justify-center">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={toggleSidebar}
+                >
+                  <PanelLeftOpen className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Expand</TooltipContent>
+            </Tooltip>
+          </div>
+        ) : (
+          /* expanded: inline tab row + collapse button */
+          <div className="flex h-11 items-center">
+            {MAIN_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={cn(
+                  "flex-1 h-full text-xs font-medium transition-colors border-b-2",
+                  activeTab === tab.id
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
               >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">
-                  {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              {isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        {!isCollapsed && (
-          <div className="flex border-b border-border">
-            <button
-              onClick={() => setActiveTab("components")}
-              className={cn(
-                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
-                activeTab === "components"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Components
-            </button>
-            <button
-              onClick={() => setActiveTab("layers")}
-              className={cn(
-                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
-                activeTab === "layers"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Layers
-            </button>
-            <button
-              onClick={() => setActiveTab("tools")}
-              className={cn(
-                "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
-                activeTab === "tools"
-                  ? "border-primary text-foreground"
-                  : "border-transparent text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Tools
-            </button>
+                {tab.label}
+              </button>
+            ))}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 mx-1 shrink-0"
+                  onClick={toggleSidebar}
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Collapse</TooltipContent>
+            </Tooltip>
           </div>
         )}
       </SidebarHeader>
 
       <SidebarContent className="p-0">
         {isCollapsed ? (
-          <div className="flex flex-col items-center gap-2 py-4">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleTabChange("components")}
-                  className={cn(activeTab === "components" && "bg-accent")}
-                >
-                  <Blocks className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Components</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleTabChange("layers")}
-                  className={cn(activeTab === "layers" && "bg-accent")}
-                >
-                  <Layers className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Layers</TooltipContent>
-            </Tooltip>
-            <div className="w-8 h-px bg-border my-2" />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleToolSelect("pages")}
-                  className={cn(
-                    activeTab === "tools" &&
-                      activeToolSection === "pages" &&
-                      "bg-accent",
-                  )}
-                >
-                  <FileText className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Pages</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleToolSelect("imageupload")}
-                  className={cn(
-                    activeTab === "tools" &&
-                      activeToolSection === "imageupload" &&
-                      "bg-accent",
-                  )}
-                >
-                  <ImageIcon className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Images</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleToolSelect("cms")}
-                  className={cn(
-                    activeTab === "tools" &&
-                      activeToolSection === "cms" &&
-                      "bg-accent",
-                  )}
-                >
-                  <Database className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">CMS</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleToolSelect("snapshots")}
-                  className={cn(
-                    activeTab === "tools" &&
-                      activeToolSection === "snapshots" &&
-                      "bg-accent",
-                  )}
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Snapshots</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleToolSelect("workflows")}
-                  className={cn(
-                    activeTab === "tools" &&
-                      activeToolSection === "workflows" &&
-                      "bg-accent",
-                  )}
-                >
-                  <Zap className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Workflows</TooltipContent>
-            </Tooltip>
+          /* collapsed icon rail */
+          <div className="flex flex-col items-center gap-1 py-3">
+            {MAIN_TABS.map((tab) => (
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8",
+                      activeTab === tab.id &&
+                        "bg-accent text-accent-foreground",
+                    )}
+                    onClick={() => handleTabChange(tab.id)}
+                  >
+                    <tab.icon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{tab.label}</TooltipContent>
+              </Tooltip>
+            ))}
+
+            <div className="my-1 h-px w-6 bg-border" />
+
+            {TOOL_SECTIONS.map((s) => (
+              <Tooltip key={s.id}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8",
+                      activeTab === "tools" &&
+                        activeToolSection === s.id &&
+                        "bg-accent text-accent-foreground",
+                    )}
+                    onClick={() => handleToolSelect(s.id)}
+                  >
+                    <s.icon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{s.label}</TooltipContent>
+              </Tooltip>
+            ))}
           </div>
         ) : (
-          <div className="h-full flex flex-col">
+          <div className="h-full flex flex-col overflow-hidden">
             {activeTab === "components" && <ElementSelector />}
+
             {activeTab === "layers" && (
               <ScrollArea className="h-full">
-                <div className="p-4">
+                <div className="py-2">
                   {elements.length > 0 ? (
                     elements.map((element) => (
                       <ElementTreeItem
-                        key={element.id || Math.random()}
+                        key={element.id ?? Math.random()}
                         element={element}
                       />
                     ))
                   ) : (
-                    <div className="text-center py-8 text-sm text-muted-foreground">
+                    <p className="py-10 text-center text-xs text-muted-foreground px-4">
                       No elements yet. Add components to see them here.
-                    </div>
+                    </p>
                   )}
                 </div>
               </ScrollArea>
             )}
+
             {activeTab === "tools" && (
               <ScrollArea className="h-full">
                 <Accordion
@@ -327,94 +246,49 @@ export function EditorSideBar() {
                   onValueChange={setActiveToolSection}
                   className="w-full"
                 >
-                  <AccordionItem value="pages" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span>Pages</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <ProjectPageCommand />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="imageupload" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon className="h-4 w-4" />
-                        <span>Images</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <Suspense fallback={<ToolPanelFallback />}>
-                        <ImageSelector />
-                      </Suspense>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="cms" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-4 w-4" />
-                        <span>CMS</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <Suspense fallback={<ToolPanelFallback />}>
-                        <CMSManager />
-                      </Suspense>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="snapshots" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <Camera className="h-4 w-4" />
-                        <span>Snapshots</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      <Suspense fallback={<ToolPanelFallback />}>
-                        <SnapshotManager />
-                      </Suspense>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="workflows" className="border-b">
-                    <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-accent/50">
-                      <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4" />
-                        <span>Workflows</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 pb-4">
-                      {projectId ? (
-                        <Suspense fallback={<ToolPanelFallback />}>
-                          <EventWorkflowManagerDialog
-                            projectId={projectId}
-                            isOpen={workflowDialogOpen}
-                            onOpenChange={setWorkflowDialogOpen}
-                          />
-                          <button
-                            onClick={() => setWorkflowDialogOpen(true)}
-                            className="w-full mb-3 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium gap-2 flex items-center justify-center"
-                          >
-                            <Zap className="h-4 w-4" />
-                            Open Workflow Editor
-                          </button>
-                          <p className="text-xs text-muted-foreground">
-                            Create and manage visual workflows for your elements
-                            with drag-and-drop nodes
-                          </p>
+                  {TOOL_SECTIONS.map((section) => (
+                    <AccordionItem
+                      key={section.id}
+                      value={section.id}
+                      className="border-b"
+                    >
+                      <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-accent/40 text-xs font-medium">
+                        <div className="flex items-center gap-2">
+                          <section.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                          {section.label}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-3 pb-3 pt-1">
+                        <Suspense fallback={<PanelFallback />}>
+                          {section.id === "pages" && <ProjectPageCommand />}
+                          {section.id === "imageupload" && <ImageSelector />}
+                          {section.id === "cms" && <CMSManager />}
+                          {section.id === "snapshots" && <SnapshotManager />}
+                          {section.id === "workflows" &&
+                            (projectId ? (
+                              <>
+                                <EventWorkflowManagerDialog
+                                  projectId={projectId}
+                                  isOpen={workflowDialogOpen}
+                                  onOpenChange={setWorkflowDialogOpen}
+                                />
+                                <button
+                                  onClick={() => setWorkflowDialogOpen(true)}
+                                  className="w-full px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-xs font-medium flex items-center justify-center gap-2"
+                                >
+                                  <Zap className="h-3.5 w-3.5" />
+                                  Open Workflow Editor
+                                </button>
+                              </>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Project not loaded
+                              </p>
+                            ))}
                         </Suspense>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Project not loaded
-                        </p>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
                 </Accordion>
               </ScrollArea>
             )}
@@ -422,18 +296,18 @@ export function EditorSideBar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-2">
+      <SidebarFooter className="border-t border-border p-1.5">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Settings">
               <Link
-                href={"/settings/preferences"}
+                href="/settings/preferences"
                 className="flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />
                 <span
                   className={cn(
-                    "transition-opacity duration-200",
+                    "text-xs transition-opacity duration-200",
                     isCollapsed && "opacity-0 w-0 overflow-hidden",
                   )}
                 >
@@ -444,6 +318,7 @@ export function EditorSideBar() {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );

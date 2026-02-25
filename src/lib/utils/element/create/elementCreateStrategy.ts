@@ -39,6 +39,7 @@ function createBaseElement(
     id: state.id,
     type: state.type,
     src: state.src,
+    href: state.href,
     parentId:
       state.parentId && state.parentId !== "" ? state.parentId : undefined,
     pageId: state.pageId,
@@ -47,7 +48,16 @@ function createBaseElement(
     tailwindStyles: "",
     elements: [],
     settings: null,
+    // Strategy defaults come first
     ...overrides,
+    // Template values always win when explicitly provided
+    ...(state.content !== undefined ? { content: state.content } : {}),
+    ...(state.styles && Object.keys(state.styles).length > 0
+      ? { styles: state.styles }
+      : {}),
+    ...(state.tailwindStyles !== undefined && state.tailwindStyles !== ""
+      ? { tailwindStyles: state.tailwindStyles }
+      : {}),
   } as EditorElement;
 }
 
@@ -612,14 +622,12 @@ export class FrameElementCreateStrategy implements ElementCreateStrategy {
           width: "100%",
           margin: "0 auto",
           backgroundColor: "var(--bg-surface, #ffffff)",
-          border: "1px solid rgba(15, 23, 42, 0.06)",
           borderRadius: "8px",
           padding: "16px",
-          boxShadow: "0 1px 2px rgba(16,24,40,0.04)",
         },
       },
       tailwindStyles:
-        "w-full mx-auto rounded-lg p-4 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow",
+        "w-full mx-auto rounded-lg p-4 bg-white dark:bg-slate-800",
     });
   }
 }

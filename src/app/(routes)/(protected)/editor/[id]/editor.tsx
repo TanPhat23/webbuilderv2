@@ -9,20 +9,8 @@ import { useEditorContext } from "@/providers/editorprovider";
 
 type EditorProps = {
   id: string;
-  pageId: string;
 };
 
-/**
- * PreviewChild
- *
- * Extracted to module level so its component identity is stable across renders.
- * Previously this was defined inside `Editor`, causing React to unmount/remount
- * the entire iframe portal content on every parent re-render (because the
- * function reference changed, React treated it as a different component type).
- *
- * Receives `iframeRef` via `React.cloneElement` from `PreviewContainer`.
- * Reads all other data from context/hooks so it doesn't need closure variables.
- */
 const PreviewChild = React.memo(function PreviewChild({
   iframeRef,
 }: {
@@ -75,8 +63,6 @@ export default function Editor({ id }: EditorProps) {
 
   const isCodeMode = editingMode === "code";
 
-  // PreviewChild is a stable module-level component, so this element's type
-  // never changes between renders — React will reconcile instead of remount.
   const previewContent = useMemo(
     () => (
       <PreviewContainer currentView={currentView} isLoading={isLoading}>
@@ -93,7 +79,9 @@ export default function Editor({ id }: EditorProps) {
         setCurrentView={setCurrentView}
         projectId={id}
       />
-      {isCodeMode ? <CodeSplit canvas={previewContent} /> : previewContent}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        {isCodeMode ? <CodeSplit canvas={previewContent} /> : previewContent}
+      </div>
     </div>
   );
 }

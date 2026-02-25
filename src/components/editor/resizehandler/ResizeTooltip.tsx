@@ -8,7 +8,8 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import type React from "react";
+import React, { useState, useEffect } from "react";
+import { useResizeContext } from "./ResizeContext";
 
 function getHandleTooltip(
   direction: ResizeDirection,
@@ -89,17 +90,48 @@ export default function ResizeTooltip({
   isResizing = false,
   currentResizeDirection = null,
 }: ResizeTooltipProps) {
+  const resizeCtx = useResizeContext();
+  const pendingStylesRef = resizeCtx?.pendingStylesRef;
+  const isActive = isResizing && direction === currentResizeDirection;
+  const [liveStyles, setLiveStyles] = useState<CSSStyles | undefined>(
+    undefined,
+  );
+
+  // Poll pendingStylesRef via RAF while this handle is the active resize direction
+  useEffect(() => {
+    if (!isActive || !pendingStylesRef) return;
+
+    let raf: number;
+    let prevTooltipText = "";
+    const poll = () => {
+      if (pendingStylesRef.current?.default) {
+        const nextStyles = pendingStylesRef.current.default as CSSStyles;
+        const nextText = getHandleTooltip(direction, nextStyles);
+        if (nextText !== prevTooltipText) {
+          prevTooltipText = nextText;
+          setLiveStyles(nextStyles);
+        }
+      }
+      raf = requestAnimationFrame(poll);
+    };
+    raf = requestAnimationFrame(poll);
+    return () => cancelAnimationFrame(raf);
+  }, [isActive, pendingStylesRef, direction]);
+
   const shouldShowTooltip = !isResizing || direction === currentResizeDirection;
 
   if (!shouldShowTooltip) {
     return <>{children}</>;
   }
 
+  const displayStyles =
+    isActive && liveStyles ? liveStyles : element.styles?.default;
+
   return (
     <Tooltip open={isResizing ? true : undefined}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side="top">
-        {getHandleTooltip(direction, element.styles?.default)}
+        {getHandleTooltip(direction, displayStyles)}
       </TooltipContent>
     </Tooltip>
   );

@@ -37,10 +37,9 @@ export default function CollaborationButton({
         <Button
           variant="ghost"
           size="sm"
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-2 hover:text-foreground bg-blue-500 hover:bg-blue-600 text-white"
         >
-          <Users className="h-4 w-4" />
-          <span className="hidden sm:inline">Collaborators</span>
+          Share
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-[40vw]! min-w-[20vw] max-h-[95vh] overflow-hidden flex flex-col">
@@ -58,4 +57,4 @@ export default function CollaborationButton({
       </DialogContent>
     </Dialog>
   );
-}
+} 
