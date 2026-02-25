@@ -4,6 +4,7 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  memo,
 } from "react";
 import { MousePointer } from "lucide-react";
 import { EditorElement } from "@/types/global.type";
@@ -48,7 +49,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
-  const keyboardEvent = new KeyboardEventClass();
+  const keyboardEventRef = useRef(new KeyboardEventClass());
   const { remoteUsers, users } = useCollaborationCursors();
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
 
@@ -61,9 +62,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   }, [collab, canvasRef.current]);
 
   useEffect(() => {
-    keyboardEvent.setReadOnly(isReadOnly);
-    keyboardEvent.setLocked(isLocked);
-  }, [isReadOnly, isLocked, keyboardEvent]);
+    keyboardEventRef.current.setReadOnly(isReadOnly);
+    keyboardEventRef.current.setLocked(isLocked);
+  }, [isReadOnly, isLocked]);
 
   useEffect(() => {
     if (!innerContentRef.current) return;
@@ -112,36 +113,38 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    const kb = keyboardEventRef.current;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
           case "c":
             e.preventDefault();
-            keyboardEvent.copyElement();
+            kb.copyElement();
             break;
           case "v":
             e.preventDefault();
-            keyboardEvent.pasteElement();
+            kb.pasteElement();
             break;
           case "x":
             e.preventDefault();
-            keyboardEvent.cutElement();
+            kb.cutElement();
             break;
           case "z":
             e.preventDefault();
-            keyboardEvent.undo();
+            kb.undo();
             break;
           case "y":
             e.preventDefault();
-            keyboardEvent.redo();
+            kb.redo();
             break;
         }
       } else if (e.key === "Delete") {
         e.preventDefault();
-        keyboardEvent.deleteElement();
+        kb.deleteElement();
       } else if (e.key === "Escape") {
         e.preventDefault();
-        keyboardEvent.deselectAll();
+        kb.deselectAll();
       }
     };
 
@@ -159,7 +162,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         iframeDoc.removeEventListener("keydown", handleKeyDown, true);
       }
     };
-  }, [keyboardEvent, iframeRef]);
+  }, [iframeRef]);
 
   return (
     <div
@@ -191,7 +194,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       ))}
       <div
         ref={innerContentRef}
-        className="overflow-x-hidden h-full w-full p-4"
+        className="overflow-y-auto overflow-x-hidden h-full w-full scrollbar-hide p-4"
       >
         {isLoading ? null : (
           <ElementLoader
@@ -214,4 +217,4 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   );
 };
 
-export default React.memo(EditorCanvas);
+export default memo(EditorCanvas);

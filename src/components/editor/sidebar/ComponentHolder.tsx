@@ -24,10 +24,13 @@ const ComponentHolder = ({ icon, type }: HolderProps) => {
       <div
         draggable
         onDragStart={(e) => onDragStart(e, type)}
-        className="flex flex-row justify-between items-center w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
+        className="flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
       >
-        <div>{type}</div>
-        <IconRenderer name={icon} className="w-4 h-4" />
+        <IconRenderer
+          name={icon}
+          className="w-3.5 h-3.5 shrink-0 text-muted-foreground"
+        />
+        <span className="truncate">{type}</span>
       </div>
     </ComponentTooltip>
   );
@@ -50,10 +53,10 @@ export function CustomComponentHolder({
     <div
       draggable
       onDragStart={(e) => onDragStart(e)}
-      className="flex flex-row justify-between items-center w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
+      className="flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
     >
-      <div>{name}</div>
-      <Component className="w-4 h-4" />
+      <Component className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+      <span className="truncate">{name}</span>
     </div>
   );
 }

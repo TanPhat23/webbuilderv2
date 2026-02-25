@@ -1,21 +1,36 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { clamp } from "lodash";
 import type { EditorElement } from "@/types/global.type";
 import type { ResizeDirection } from "@/constants/direction";
 import { ResponsiveStyles } from "@/interfaces/elements.interface";
 
-/**
- * Enhanced resize handler with improvements:
- * - Fixed direction parsing to avoid string matching bugs
- * - Optimized calculations with caching
- * - Smooth RAF-based updates
- * - Proper constraint handling
- * - Fixed special resize (gap, padding, margin) logic
- * - Better aspect ratio locking
- * - Robust cleanup
- */
+// CSS properties that resize operations can change — safe to write directly to el.style
+const RESIZE_DOM_PROPS = new Set([
+  "width",
+  "height",
+  "top",
+  "left",
+  "gap",
+  "paddingTop",
+  "paddingBottom",
+  "paddingLeft",
+  "paddingRight",
+  "marginTop",
+  "marginBottom",
+  "marginLeft",
+  "marginRight",
+]);
+
+function applyStylesToDom(el: HTMLDivElement, styles: ResponsiveStyles): void {
+  const s = styles.default ?? {};
+  for (const [prop, val] of Object.entries(s)) {
+    if (RESIZE_DOM_PROPS.has(prop) && val !== undefined) {
+      (el.style as unknown as Record<string, string>)[prop] = String(val);
+    }
+  }
+}
 
 const MIN_SIZE = 20;
 const MAX_PERCENT = 100;
@@ -50,11 +65,7 @@ interface ResizeState {
   initialStyles: ResponsiveStyles;
 }
 
-/**
- * Parse direction into explicit flags to avoid string matching bugs
- */
 function parseDirection(direction: ResizeDirection): DirectionFlags {
-  // Handle special cases first
   if (direction === "gap") {
     return {
       isNorth: false,
@@ -92,7 +103,6 @@ function parseDirection(direction: ResizeDirection): DirectionFlags {
     };
   }
 
-  // Parse normal directional resize
   const normalized = direction.toLowerCase().replace(/[-_]/g, "");
   return {
     isNorth: normalized.includes("n"),
@@ -103,14 +113,10 @@ function parseDirection(direction: ResizeDirection): DirectionFlags {
   };
 }
 
-/**
- * Map direction to appropriate cursor
- */
 function directionToCursor(direction: ResizeDirection): string {
   if (direction === "gap") return "ns-resize";
-  if (direction.startsWith("padding-") || direction.startsWith("margin-")) {
+  if (direction.startsWith("padding-") || direction.startsWith("margin-"))
     return "move";
-  }
 
   const cursorMap: Record<string, string> = {
     n: "ns-resize",
@@ -122,9 +128,135 @@ function directionToCursor(direction: ResizeDirection): string {
     se: "nwse-resize",
     sw: "nesw-resize",
   };
+  return cursorMap[direction.replace(/[-_]/g, "").toLowerCase()] ?? "default";
+}
 
-  const key = direction.replace(/[-_]/g, "").toLowerCase();
-  return cursorMap[key] || "default";
+function computeSpecialStyles(
+  state: ResizeState,
+  element: EditorElement,
+  clientX: number,
+  clientY: number,
+): ResponsiveStyles {
+  const { directionFlags, startPos, initialStyles } = state;
+  const initialDefault = initialStyles.default ?? {};
+
+  if (directionFlags.specialType === "gap") {
+    const initialGap = parseInt(String(initialDefault.gap ?? "0"), 10);
+    return {
+      ...element.styles,
+      default: {
+        ...element.styles?.default,
+        gap: `${Math.max(0, initialGap + (clientY - startPos.y))}px`,
+      },
+    };
+  }
+
+  if (
+    (directionFlags.specialType === "padding" ||
+      directionFlags.specialType === "margin") &&
+    directionFlags.specialSide
+  ) {
+    const { specialType: type, specialSide: side } = directionFlags;
+    const sideMap = { n: "Top", s: "Bottom", e: "Right", w: "Left" } as const;
+    const propName = `${type}${sideMap[side]}` as keyof typeof initialDefault;
+
+    const deltaMap: Record<"n" | "s" | "e" | "w", number> = {
+      n: startPos.y - clientY,
+      s: clientY - startPos.y,
+      e: clientX - startPos.x,
+      w: startPos.x - clientX,
+    };
+    const initialValue = parseInt(String(initialDefault[propName] ?? "0"), 10);
+    const newValue = Math.max(0, initialValue + deltaMap[side]);
+
+    return {
+      ...element.styles,
+      default: { ...element.styles?.default, [propName]: `${newValue}px` },
+    };
+  }
+
+  return element.styles ?? { default: {} };
+}
+
+function computeDimensionStyles(
+  state: ResizeState,
+  element: EditorElement,
+  clientX: number,
+  clientY: number,
+  shiftKey: boolean,
+): ResponsiveStyles {
+  const { directionFlags, startRect, parentRect, parentElement, aspectRatio } =
+    state;
+
+  let newWidth = startRect.width;
+  let newHeight = startRect.height;
+  let newTop = startRect.top - parentRect.top;
+  let newLeft = startRect.left - parentRect.left;
+
+  if (directionFlags.isEast) newWidth = clientX - startRect.left;
+  if (directionFlags.isWest) {
+    newWidth = startRect.width + (startRect.left - clientX);
+    newLeft = clientX - parentRect.left;
+  }
+  if (directionFlags.isSouth) newHeight = clientY - startRect.top;
+  if (directionFlags.isNorth) {
+    newHeight = startRect.height + (startRect.top - clientY);
+    newTop = clientY - parentRect.top;
+  }
+
+  if (shiftKey && aspectRatio && aspectRatio > 0) {
+    const isDiagonal =
+      (directionFlags.isNorth || directionFlags.isSouth) &&
+      (directionFlags.isEast || directionFlags.isWest);
+    if (isDiagonal) {
+      if (
+        Math.abs(newWidth - startRect.width) >
+        Math.abs(newHeight - startRect.height)
+      ) {
+        newHeight = newWidth / aspectRatio;
+        if (directionFlags.isNorth)
+          newTop = startRect.bottom - parentRect.top - newHeight;
+      } else {
+        newWidth = newHeight * aspectRatio;
+        if (directionFlags.isWest)
+          newLeft = startRect.right - parentRect.left - newWidth;
+      }
+    }
+  }
+
+  newWidth = Math.max(MIN_SIZE, newWidth);
+  newHeight = Math.max(MIN_SIZE, newHeight);
+
+  const parentWidth = parentElement.clientWidth || parentRect.width;
+  const parentHeight = parentElement.clientHeight || parentRect.height;
+
+  if (parentWidth <= 0 || parentHeight <= 0)
+    return element.styles ?? { default: {} };
+
+  const widthPercent = clamp((newWidth / parentWidth) * 100, 0, MAX_PERCENT);
+  const heightPercent = clamp((newHeight / parentHeight) * 100, 0, MAX_PERCENT);
+
+  const defaultStyles = element.styles?.default ?? {};
+  const updatedDefault: Record<string, string | undefined> = {
+    ...(defaultStyles as Record<string, string | undefined>),
+  };
+
+  const isVerticalOnly =
+    (directionFlags.isNorth || directionFlags.isSouth) &&
+    !(directionFlags.isEast || directionFlags.isWest);
+  const isHorizontalOnly =
+    (directionFlags.isEast || directionFlags.isWest) &&
+    !(directionFlags.isNorth || directionFlags.isSouth);
+
+  if (!isVerticalOnly) updatedDefault.width = `${widthPercent.toFixed(2)}%`;
+  if (!isHorizontalOnly) updatedDefault.height = `${heightPercent.toFixed(2)}%`;
+
+  if (defaultStyles.position === "absolute") {
+    updatedDefault.left = `${clamp((newLeft / parentWidth) * 100, 0, MAX_PERCENT).toFixed(2)}%`;
+    updatedDefault.top = `${clamp((newTop / parentHeight) * 100, 0, MAX_PERCENT).toFixed(2)}%`;
+  }
+
+  return { ...element.styles, default: updatedDefault };
 }
 
 export function useResizeHandler({
@@ -133,402 +265,168 @@ export function useResizeHandler({
   targetRef,
   enabled = true,
 }: UseResizeHandlerProps) {
-  // Store element in ref to always have latest version
   const elementRef = useRef(element);
   elementRef.current = element;
+
+  const updateElementRef = useRef(updateElement);
+  updateElementRef.current = updateElement;
 
   const resizeStateRef = useRef<ResizeState | null>(null);
   const pendingStylesRef = useRef<ResponsiveStyles | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastOwnerDocRef = useRef<Document | null>(null);
 
-  /**
-   * Schedule a batched style update using RAF
-   */
-  const scheduleUpdate = () => {
-    if (rafRef.current !== null) return;
+  const [isResizing, setIsResizing] = useState(false);
 
+  // Stable listener refs — DOM handlers are created once; implementations are updated each render
+  const handlersRef = useRef({
+    onMouseMove: (_e: MouseEvent) => {},
+    onMouseUp: () => {},
+  });
+
+  const domMouseMove = useCallback(
+    (e: MouseEvent) => handlersRef.current.onMouseMove(e),
+    [],
+  );
+  const domMouseUp = useCallback(() => handlersRef.current.onMouseUp(), []);
+
+  const restoreBodyStyles = useCallback((doc: Document) => {
+    try {
+      if (doc.body) {
+        doc.body.style.userSelect = "";
+        doc.body.style.cursor = "";
+      }
+    } catch {
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+  }, []);
+
+  // Update implementations (fresh each render, but DOM listeners stay stable)
+  handlersRef.current.onMouseMove = (e: MouseEvent) => {
+    const state = resizeStateRef.current;
+    if (!state) return;
+    e.preventDefault();
+
+    const computed = state.directionFlags.isSpecial
+      ? computeSpecialStyles(state, elementRef.current, e.clientX, e.clientY)
+      : computeDimensionStyles(
+          state,
+          elementRef.current,
+          e.clientX,
+          e.clientY,
+          e.shiftKey,
+        );
+
+    pendingStylesRef.current = computed;
+
+    // Write directly to DOM via RAF — zero React/store overhead during drag
+    if (rafRef.current !== null) return;
     rafRef.current = requestAnimationFrame(() => {
       rafRef.current = null;
-      const styles = pendingStylesRef.current;
-      if (styles) {
-        updateElement(elementRef.current.id, { styles });
-        pendingStylesRef.current = null;
+      if (pendingStylesRef.current && targetRef.current) {
+        applyStylesToDom(targetRef.current, pendingStylesRef.current);
       }
     });
   };
 
-  /**
-   * Cancel pending RAF update
-   */
-  const cancelUpdate = () => {
+  handlersRef.current.onMouseUp = () => {
+    if (!resizeStateRef.current) return;
+    resizeStateRef.current = null;
+    setIsResizing(false);
+
+    const ownerDoc = lastOwnerDocRef.current ?? document;
+    ownerDoc.removeEventListener("mousemove", domMouseMove);
+    ownerDoc.removeEventListener("mouseup", domMouseUp);
+
+    // Cancel any pending DOM-only RAF
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-    pendingStylesRef.current = null;
-  };
 
-  /**
-   * Handle special resize types (gap, padding, margin)
-   */
-  const handleSpecialResize = (
-    state: ResizeState,
-    clientX: number,
-    clientY: number,
-  ): ResponsiveStyles => {
-    const { directionFlags, startPos, initialStyles } = state;
-    const currentElement = elementRef.current;
-    const initialDefaultStyles = initialStyles.default || {};
-
-    // Handle gap resize
-    if (directionFlags.specialType === "gap") {
-      const deltaY = clientY - startPos.y;
-      const initialGap = parseInt(String(initialDefaultStyles.gap || "0"), 10);
-      const newGap = Math.max(0, initialGap + deltaY);
-
-      return {
-        ...currentElement.styles,
-        default: {
-          ...currentElement.styles?.default,
-          gap: `${newGap}px`,
-        },
-      };
+    // Single store commit — takes one undo snapshot, one React render
+    if (pendingStylesRef.current) {
+      updateElementRef.current(elementRef.current.id, {
+        styles: pendingStylesRef.current,
+      });
+      pendingStylesRef.current = null;
     }
 
-    // Handle padding/margin resize
-    if (
-      (directionFlags.specialType === "padding" ||
-        directionFlags.specialType === "margin") &&
-      directionFlags.specialSide
-    ) {
-      const type = directionFlags.specialType;
-      const side = directionFlags.specialSide;
-
-      // Map side to CSS property
-      const sideMap = {
-        n: "Top",
-        s: "Bottom",
-        e: "Right",
-        w: "Left",
-      };
-      const propName =
-        `${type}${sideMap[side]}` as keyof typeof initialDefaultStyles;
-
-      // Calculate delta based on side
-      let delta = 0;
-      if (side === "n") delta = startPos.y - clientY;
-      else if (side === "s") delta = clientY - startPos.y;
-      else if (side === "e") delta = clientX - startPos.x;
-      else if (side === "w") delta = startPos.x - clientX;
-
-      const initialValue = parseInt(
-        String(initialDefaultStyles[propName] || "0"),
-        10,
-      );
-      const newValue = Math.max(0, initialValue + delta);
-
-      return {
-        ...currentElement.styles,
-        default: {
-          ...currentElement.styles?.default,
-          [propName]: `${newValue}px`,
-        },
-      };
-    }
-
-    return currentElement.styles || { default: {} };
-  };
-
-  /**
-   * Handle normal dimension resize
-   */
-  const handleDimensionResize = (
-    state: ResizeState,
-    clientX: number,
-    clientY: number,
-    shiftKey: boolean,
-  ): ResponsiveStyles => {
-    const {
-      directionFlags,
-      startRect,
-      parentRect,
-      parentElement,
-      aspectRatio,
-    } = state;
-
-    const currentElement = elementRef.current;
-
-    let newWidth = startRect.width;
-    let newHeight = startRect.height;
-    let newTop = startRect.top - parentRect.top;
-    let newLeft = startRect.left - parentRect.left;
-
-    // Calculate new dimensions based on direction flags
-    if (directionFlags.isEast) {
-      newWidth = clientX - startRect.left;
-    }
-    if (directionFlags.isWest) {
-      const delta = startRect.left - clientX;
-      newWidth = startRect.width + delta;
-      newLeft = clientX - parentRect.left;
-    }
-    if (directionFlags.isSouth) {
-      newHeight = clientY - startRect.top;
-    }
-    if (directionFlags.isNorth) {
-      const delta = startRect.top - clientY;
-      newHeight = startRect.height + delta;
-      newTop = clientY - parentRect.top;
-    }
-
-    // Apply aspect ratio locking with Shift key
-    if (shiftKey && aspectRatio && aspectRatio > 0) {
-      const isDiagonal =
-        (directionFlags.isNorth || directionFlags.isSouth) &&
-        (directionFlags.isEast || directionFlags.isWest);
-
-      if (isDiagonal) {
-        // For corner handles, maintain aspect ratio
-        const widthDelta = Math.abs(newWidth - startRect.width);
-        const heightDelta = Math.abs(newHeight - startRect.height);
-
-        if (widthDelta > heightDelta) {
-          // Width changed more, adjust height
-          newHeight = newWidth / aspectRatio;
-          if (directionFlags.isNorth) {
-            newTop = startRect.bottom - parentRect.top - newHeight;
-          }
-        } else {
-          // Height changed more, adjust width
-          newWidth = newHeight * aspectRatio;
-          if (directionFlags.isWest) {
-            newLeft = startRect.right - parentRect.left - newWidth;
-          }
-        }
-      }
-    }
-
-    // Apply minimum size constraints
-    newWidth = Math.max(MIN_SIZE, newWidth);
-    newHeight = Math.max(MIN_SIZE, newHeight);
-
-    // Get parent dimensions
-    const parentWidth = parentElement.clientWidth || parentRect.width;
-    const parentHeight = parentElement.clientHeight || parentRect.height;
-
-    // Ensure parent dimensions are valid
-    if (parentWidth <= 0 || parentHeight <= 0) {
-      return currentElement.styles || { default: {} };
-    }
-
-    // Convert to percentages
-    const widthPercent = clamp((newWidth / parentWidth) * 100, 0, MAX_PERCENT);
-    const heightPercent = clamp(
-      (newHeight / parentHeight) * 100,
-      0,
-      MAX_PERCENT,
-    );
-
-    const defaultStyles = currentElement.styles?.default || {};
-    const updatedDefault: Record<string, string | undefined> = {
-      ...(defaultStyles as Record<string, string | undefined>),
-    };
-
-    // Update dimensions based on resize direction
-    const isSingleAxisVertical =
-      (directionFlags.isNorth || directionFlags.isSouth) &&
-      !(directionFlags.isEast || directionFlags.isWest);
-    const isSingleAxisHorizontal =
-      (directionFlags.isEast || directionFlags.isWest) &&
-      !(directionFlags.isNorth || directionFlags.isSouth);
-
-    if (!isSingleAxisVertical) {
-      updatedDefault.width = `${widthPercent.toFixed(2)}%`;
-    }
-    if (!isSingleAxisHorizontal) {
-      updatedDefault.height = `${heightPercent.toFixed(2)}%`;
-    }
-
-    // Handle absolute positioning
-    if (defaultStyles.position === "absolute") {
-      const leftPercent = clamp((newLeft / parentWidth) * 100, 0, MAX_PERCENT);
-      const topPercent = clamp((newTop / parentHeight) * 100, 0, MAX_PERCENT);
-
-      updatedDefault.left = `${leftPercent.toFixed(2)}%`;
-      updatedDefault.top = `${topPercent.toFixed(2)}%`;
-    }
-
-    return {
-      ...currentElement.styles,
-      default: updatedDefault,
-    };
-  };
-
-  /**
-   * Mouse move handler
-   */
-  const onMouseMove = (e: MouseEvent) => {
-    const state = resizeStateRef.current;
-    if (!state) return;
-
-    e.preventDefault();
-
-    const clientX = e.clientX;
-    const clientY = e.clientY;
-
-    // Handle special resize (gap, padding, margin)
-    if (state.directionFlags.isSpecial) {
-      pendingStylesRef.current = handleSpecialResize(state, clientX, clientY);
-      scheduleUpdate();
-      return;
-    }
-
-    // Handle normal dimension resize
-    pendingStylesRef.current = handleDimensionResize(
-      state,
-      clientX,
-      clientY,
-      e.shiftKey,
-    );
-    scheduleUpdate();
-  };
-
-  /**
-   * Mouse up handler - finalize resize
-   */
-  const onMouseUp = () => {
-    const state = resizeStateRef.current;
-    if (!state) return;
-
-    resizeStateRef.current = null;
-
-    const ownerDoc = lastOwnerDocRef.current || document;
-
-    // Remove event listeners
-    ownerDoc.removeEventListener("mousemove", onMouseMove);
-    ownerDoc.removeEventListener("mouseup", onMouseUp);
-
-    // Cancel any pending updates
-    cancelUpdate();
-
-    // Restore body styles
-    try {
-      if (ownerDoc.body) {
-        ownerDoc.body.style.userSelect = "";
-        ownerDoc.body.style.cursor = "";
-      }
-    } catch (e) {
-      // Ignore cross-origin errors
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
-    }
-
+    restoreBodyStyles(ownerDoc);
     lastOwnerDocRef.current = null;
   };
 
-  /**
-   * Start resize operation
-   */
-  const handleResizeStart = (
-    direction: ResizeDirection,
-    e: React.MouseEvent,
-  ) => {
-    if (!enabled || !targetRef.current) return;
+  const handleResizeStart = useCallback(
+    (direction: ResizeDirection, e: React.MouseEvent) => {
+      if (!enabled || !targetRef.current) return;
+      e.preventDefault();
+      e.stopPropagation();
 
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopPropagation();
+      const ownerDoc = targetRef.current.ownerDocument ?? document;
+      const ownerWin = ownerDoc.defaultView ?? window;
+      lastOwnerDocRef.current = ownerDoc;
 
-    // Get owner document and window
-    const ownerDoc = targetRef.current.ownerDocument || document;
-    const ownerWin = ownerDoc.defaultView || window;
+      const parentElement =
+        targetRef.current.parentElement ??
+        ownerDoc.getElementById("preview-iframe") ??
+        ownerDoc.getElementById("canvas") ??
+        document.body;
 
-    lastOwnerDocRef.current = ownerDoc;
+      const startRect = targetRef.current.getBoundingClientRect();
+      const parentRect = parentElement.getBoundingClientRect();
 
-    // Find parent element
-    const parentElement =
-      targetRef.current.parentElement ||
-      ownerDoc.getElementById("preview-iframe") ||
-      ownerDoc.getElementById("canvas") ||
-      document.body;
+      resizeStateRef.current = {
+        direction,
+        directionFlags: parseDirection(direction),
+        startRect,
+        startPos: { x: e.clientX, y: e.clientY },
+        parentElement,
+        parentRect,
+        aspectRatio:
+          startRect.height > 0 ? startRect.width / startRect.height : undefined,
+        ownerDocument: ownerDoc,
+        ownerWindow: ownerWin,
+        initialStyles: elementRef.current.styles ?? { default: {} },
+      };
 
-    const startRect = targetRef.current.getBoundingClientRect();
-    const parentRect = parentElement.getBoundingClientRect();
+      setIsResizing(true);
+      ownerDoc.addEventListener("mousemove", domMouseMove);
+      ownerDoc.addEventListener("mouseup", domMouseUp);
 
-    // Parse direction into flags
-    const directionFlags = parseDirection(direction);
-
-    // Calculate aspect ratio
-    const aspectRatio =
-      startRect.height > 0 ? startRect.width / startRect.height : undefined;
-
-    // Store resize state
-    resizeStateRef.current = {
-      direction,
-      directionFlags,
-      startRect,
-      startPos: { x: e.clientX, y: e.clientY },
-      parentElement,
-      parentRect,
-      aspectRatio,
-      ownerDocument: ownerDoc,
-      ownerWindow: ownerWin,
-      initialStyles: element.styles || { default: {} },
-    };
-
-    ownerDoc.addEventListener("mousemove", onMouseMove);
-    ownerDoc.addEventListener("mouseup", onMouseUp);
-
-    try {
-      if (ownerDoc.body) {
-        ownerDoc.body.style.userSelect = "none";
-        ownerDoc.body.style.cursor = directionToCursor(direction);
-      }
-    } catch (e) {
-      // Ignore cross-origin errors
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = directionToCursor(direction);
-    }
-  };
-
-  /**
-   * Cleanup on unmount
-   */
-  useEffect(() => {
-    return () => {
-      const ownerDoc = lastOwnerDocRef.current || document;
-
-      resizeStateRef.current = null;
-
-      // Remove event listeners
-      ownerDoc.removeEventListener("mousemove", onMouseMove);
-      ownerDoc.removeEventListener("mouseup", onMouseUp);
-
-      // Cancel pending updates
-      cancelUpdate();
-
-      // Restore body styles
       try {
         if (ownerDoc.body) {
-          ownerDoc.body.style.userSelect = "";
-          ownerDoc.body.style.cursor = "";
+          ownerDoc.body.style.userSelect = "none";
+          ownerDoc.body.style.cursor = directionToCursor(direction);
         }
-      } catch (e) {
-        document.body.style.userSelect = "";
-        document.body.style.cursor = "";
+      } catch {
+        document.body.style.userSelect = "none";
+        document.body.style.cursor = directionToCursor(direction);
       }
+    },
+    [enabled, targetRef, domMouseMove, domMouseUp],
+  );
 
+  useEffect(() => {
+    return () => {
+      const ownerDoc = lastOwnerDocRef.current ?? document;
+      resizeStateRef.current = null;
+      ownerDoc.removeEventListener("mousemove", domMouseMove);
+      ownerDoc.removeEventListener("mouseup", domMouseUp);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      pendingStylesRef.current = null;
+      restoreBodyStyles(ownerDoc);
       lastOwnerDocRef.current = null;
     };
-  }, []);
-
-  const isResizing = resizeStateRef.current !== null;
-  const currentResizeDirection = resizeStateRef.current?.direction || null;
+  }, [domMouseMove, domMouseUp, restoreBodyStyles]);
 
   return {
     handleResizeStart,
     isResizing,
-    currentResizeDirection,
+    currentResizeDirection: resizeStateRef.current?.direction ?? null,
+    pendingStylesRef,
   };
 }

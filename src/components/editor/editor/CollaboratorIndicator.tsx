@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
 import { useCollaboratorUsers } from "@/globalstore/selectors/mouse-selectors";
 import { useAuth } from "@clerk/nextjs";
-import CollaborationStatus from "./CollaborationStatus";
 
 // Helper functions for user display
 const getFullName = (user: { userName: string; email: string }) => {
@@ -90,7 +89,6 @@ export default function CollaboratorIndicator({
           <span className="hidden sm:inline">
             {hasOnlineUsers ? `${onlineCount} ` : "No one online"}
           </span>
-          <CollaborationStatus />
         </Button>
       </PopoverTrigger>
 
