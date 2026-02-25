@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
-import { getPlanLimits } from '@/constants/pricing';
-import { subscriptionService } from '@/services/subscription';
-import type { PlanId } from '@/interfaces/subscription.interface';
+import { useQuery } from "@tanstack/react-query";
+import { getPlanLimits } from "@/constants/pricing";
+import { subscriptionService } from "@/services/subscription";
+import type { PlanId } from "@/interfaces/subscription.interface";
 
-interface UserPlan {
+export const userPlanKeys = {
+  all: ["user-plan"] as const,
+  detail: () => [...userPlanKeys.all] as const,
+};
+
+export interface UserPlan {
   plan: PlanId;
   hasActiveSubscription: boolean;
   subscriptionEndDate?: string;
@@ -13,15 +18,15 @@ interface UserPlan {
 
 export function useUserPlan() {
   return useQuery<UserPlan>({
-    queryKey: ['user-plan'],
+    queryKey: userPlanKeys.detail(),
     queryFn: async () => {
       try {
         const data = await subscriptionService.getSubscriptionStatus();
 
         if (!data.hasActiveSubscription || !data.subscription) {
-          const limits = getPlanLimits('hobby');
+          const limits = getPlanLimits("hobby");
           return {
-            plan: 'hobby',
+            plan: "hobby" as PlanId,
             hasActiveSubscription: false,
             ...limits,
           };
@@ -36,11 +41,10 @@ export function useUserPlan() {
           daysUntilExpiry: data.subscription.daysUntilExpiry,
           ...limits,
         };
-      } catch (error) {
-        // Fallback to hobby plan if API fails
-        const limits = getPlanLimits('hobby');
+      } catch {
+        const limits = getPlanLimits("hobby");
         return {
-          plan: 'hobby',
+          plan: "hobby" as PlanId,
           hasActiveSubscription: false,
           ...limits,
         };

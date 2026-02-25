@@ -40,10 +40,46 @@ export {
 } from "./useElementComments";
 
 // =============================================================================
+// COMMENT MANAGER HOOK
+// =============================================================================
+export { useCommentManager } from "./useCommentManager";
+
+// =============================================================================
+// CHAT HOOK
+// =============================================================================
+export { useChat } from "./useChat";
+
+// =============================================================================
 // UI HOOKS
 // =============================================================================
 export { useInView } from "./ui/useInView";
 export { useIsMobile } from "./ui/use-mobile";
+
+// =============================================================================
+// IMAGE HOOKS
+// =============================================================================
+export {
+  imageKeys,
+  useUserImages,
+  useImage,
+  useUploadImage,
+  useUploadBase64Image,
+  useDeleteImage,
+} from "./images";
+
+// =============================================================================
+// SUBSCRIPTION HOOKS
+// =============================================================================
+export {
+  subscriptionKeys,
+  useSubscriptionStatus,
+  useAllSubscriptions,
+  useCreatePayment,
+  useCancelSubscription,
+  userPlanKeys,
+  useUserPlan,
+} from "./subscription";
+export type { UserPlan } from "./subscription";
 
 // =============================================================================
 // FEATURE HOOKS
@@ -90,7 +126,18 @@ export {
   usePublishProject,
 } from "./features/useProjects";
 export { useDashboard } from "./features/useDashboard";
-export { useAnalytics } from "./features/useAnalytics";
+export { analyticsKeys, useAnalytics } from "./features/useAnalytics";
+
+// =============================================================================
+// NOTIFICATION HOOKS
+// =============================================================================
+export {
+  notificationKeys,
+  useNotifications,
+  useUpdateNotification,
+  useMarkAllAsRead,
+  useCreateProfileUpdateNotification,
+} from "./features/useNotifications";
 
 // =============================================================================
 // COLLABORATION HOOKS

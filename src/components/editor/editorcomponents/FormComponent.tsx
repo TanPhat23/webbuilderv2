@@ -1,47 +1,41 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
-/* EditorElement import removed — useElementStore is no longer generic */
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import { ElementFactory } from "@/lib/utils/element/create/ElementFactory";
-import { useEffect } from "react";
-import { useParams } from "next/navigation";
 import { useAddElement } from "@/globalstore/selectors/element-selectors";
 import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";
-import {
-  FormElement,
-  InputElement,
-  FormSettings,
-} from "@/interfaces/elements.interface";
+import { FormElement, FormSettings } from "@/interfaces/elements.interface";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import ElementLoader from "../ElementLoader";
 import { usePageStore } from "@/globalstore/page-store";
+import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEditorElement, eventsStyle } from "./shared";
 
 export default function FormComponent({ element, data }: EditorComponentProps) {
-  const { id } = useParams();
-  const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-  const addElement = useAddElement();
   const formElement = element as FormElement;
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
+
+  const { getCommonProps } = useElementHandler();
+  const addElement = useAddElement();
   const { currentPage } = usePageStore();
-
   const selectedElement = useSelectedElement();
-  const isSelected = selectedElement?.id === formElement.id;
 
-  const settings = (formElement.settings as FormSettings) || {
+  const isSelected = selectedElement?.id === formElement.id;
+  const settings = (formElement.settings as FormSettings) ?? {
     method: "post",
     action: "",
     target: "_self",
     autoComplete: "on",
   };
+
+  const safeStyles = elementHelper.getSafeStyles(formElement);
 
   const handleAddField = () => {
     const newField = ElementFactory.getInstance().createElement({
@@ -49,20 +43,8 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
       pageId: currentPage?.Id || "",
       parentId: formElement.id,
     });
-    if (!newField) return;
-    addElement(newField);
+    if (newField) addElement(newField);
   };
-
-  const safeStyles = elementHelper.getSafeStyles(formElement);
-
-  // Register events when element events change
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   return (
     <form
@@ -80,8 +62,7 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
         ...safeStyles,
         width: "100%",
         height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
       action={settings.action}
       method={settings.method}

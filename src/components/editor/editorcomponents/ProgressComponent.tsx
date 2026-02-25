@@ -1,26 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
-import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
+import React from "react";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import {
   ProgressElement,
   ProgressSettings,
 } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const ProgressComponent = ({ element }: EditorComponentProps) => {
   const progressElement = element as ProgressElement;
-  const { id } = useParams();
-
-  const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const safeStyles = elementHelper.getSafeStyles(progressElement);
 
@@ -31,14 +25,6 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
   const label = settings.label ?? "Progress";
 
   const percentage = indeterminate ? 0 : Math.min((value / max) * 100, 100);
-
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   return (
     <div
@@ -52,8 +38,7 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
         display: "flex",
         flexDirection: "column",
         gap: "4px",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     >
       {label && (
@@ -68,11 +53,10 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
           }}
         >
           <span>{label}</span>
-          {!indeterminate && (
-            <span>{Math.round(percentage)}%</span>
-          )}
+          {!indeterminate && <span>{Math.round(percentage)}%</span>}
         </div>
       )}
+
       <div
         role="progressbar"
         aria-valuenow={indeterminate ? undefined : value}
@@ -101,18 +85,13 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
           }}
         />
       </div>
+
       {indeterminate && (
         <style>{`
           @keyframes progress-indeterminate {
-            0% {
-              transform: translateX(-100%);
-            }
-            50% {
-              transform: translateX(150%);
-            }
-            100% {
-              transform: translateX(-100%);
-            }
+            0%   { transform: translateX(-100%); }
+            50%  { transform: translateX(150%); }
+            100% { transform: translateX(-100%); }
           }
         `}</style>
       )}

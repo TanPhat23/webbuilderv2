@@ -45,13 +45,32 @@ interface ComponentTooltipProps {
   sideOffset?: number;
 }
 
-const componentInfo: Record<
-  ElementType,
-  { title: string; description: string }
+const componentInfo: Partial<
+  Record<ElementType, { title: string; description: string }>
 > = {
   Text: {
     title: "Text",
     description: "Add text content to your page. Double-click to edit.",
+  },
+  Span: {
+    title: "Span",
+    description: "Inline text span for styling portions of text",
+  },
+  Heading: {
+    title: "Heading",
+    description: "Semantic heading element with multiple levels (H1-H6)",
+  },
+  Label: {
+    title: "Label",
+    description: "Label text for form inputs and accessibility",
+  },
+  Blockquote: {
+    title: "Blockquote",
+    description: "Semantic blockquote for quoted text",
+  },
+  Code: {
+    title: "Code",
+    description: "Preformatted code display",
   },
   Button: {
     title: "Button",
@@ -65,9 +84,33 @@ const componentInfo: Record<
     title: "Image",
     description: "Add images to your page. Supports upload or URL.",
   },
+  Video: {
+    title: "Video",
+    description: "Embed or upload video content",
+  },
+  Audio: {
+    title: "Audio",
+    description: "Embed or upload audio content",
+  },
+  IFrame: {
+    title: "IFrame",
+    description: "Embed external content via iframe",
+  },
   Input: {
     title: "Input Field",
     description: "Text input field for collecting user data",
+  },
+  Textarea: {
+    title: "Textarea",
+    description: "Multi-line text input field",
+  },
+  Checkbox: {
+    title: "Checkbox",
+    description: "Checkbox input for boolean selections",
+  },
+  Radio: {
+    title: "Radio",
+    description: "Radio button for single selection from options",
   },
   Select: {
     title: "Select Dropdown",
@@ -94,7 +137,42 @@ const componentInfo: Record<
     title: "List",
     description: "Repeatable list items for displaying collections of data",
   },
-
+  Separator: {
+    title: "Separator",
+    description: "Horizontal or vertical divider line",
+  },
+  Icon: {
+    title: "Icon",
+    description: "Display an icon from the icon library",
+  },
+  Progress: {
+    title: "Progress",
+    description: "Progress bar for displaying completion status",
+  },
+  Table: {
+    title: "Table",
+    description: "Data table with rows and columns",
+  },
+  Nav: {
+    title: "Navigation",
+    description: "Semantic navigation container",
+  },
+  Header: {
+    title: "Header",
+    description: "Semantic header/page header container",
+  },
+  Footer: {
+    title: "Footer",
+    description: "Semantic footer container",
+  },
+  Article: {
+    title: "Article",
+    description: "Semantic article content container",
+  },
+  Aside: {
+    title: "Aside",
+    description: "Semantic sidebar or complementary content",
+  },
   CMSContentList: {
     title: "CMS Content List",
     description: "Display a list of CMS content items",
@@ -119,7 +197,7 @@ const createMockElement = (type: ElementType): any => {
     styles: { default: {} },
   };
 
-  const mocks: Record<ElementType, any> = {
+  const mocks: Partial<Record<ElementType, unknown>> = {
     Text: {
       ...base,
       content: "Sample text content",
@@ -270,7 +348,237 @@ const createMockElement = (type: ElementType): any => {
         },
       },
     },
-
+    Span: {
+      ...base,
+      content: "Span text",
+      styles: {
+        default: { fontSize: "13px", color: "#374151" },
+      },
+    },
+    Heading: {
+      ...base,
+      content: "Heading",
+      styles: {
+        default: {
+          fontSize: "24px",
+          fontWeight: "700",
+          color: "#1f2937",
+          lineHeight: "1.2",
+        },
+      },
+    },
+    Label: {
+      ...base,
+      content: "Label",
+      styles: {
+        default: {
+          fontSize: "12px",
+          fontWeight: "500",
+          color: "#374151",
+        },
+      },
+    },
+    Blockquote: {
+      ...base,
+      content: "Quoted text",
+      styles: {
+        default: {
+          fontSize: "14px",
+          fontStyle: "italic",
+          color: "#6b7280",
+          borderLeft: "4px solid #d1d5db",
+          paddingLeft: "12px",
+        },
+      },
+    },
+    Code: {
+      ...base,
+      content: "const x = 1;",
+      styles: {
+        default: {
+          fontSize: "12px",
+          fontFamily: "monospace",
+          backgroundColor: "#f3f4f6",
+          padding: "2px 6px",
+          borderRadius: "3px",
+          color: "#1f2937",
+        },
+      },
+    },
+    Video: {
+      ...base,
+      src: "https://example.com/video.mp4",
+      styles: {
+        default: {
+          width: "100%",
+          maxWidth: "320px",
+          height: "180px",
+          borderRadius: "4px",
+          backgroundColor: "#000",
+        },
+      },
+    },
+    Audio: {
+      ...base,
+      src: "https://example.com/audio.mp3",
+      styles: {
+        default: {
+          width: "100%",
+          maxWidth: "300px",
+        },
+      },
+    },
+    IFrame: {
+      ...base,
+      src: "https://example.com",
+      styles: {
+        default: {
+          width: "100%",
+          maxWidth: "320px",
+          height: "240px",
+          borderRadius: "4px",
+          border: "1px solid #d1d5db",
+        },
+      },
+    },
+    Textarea: {
+      ...base,
+      styles: {
+        default: {
+          width: "100%",
+          minHeight: "80px",
+          padding: "8px 10px",
+          border: "1px solid #d1d5db",
+          borderRadius: "4px",
+          fontSize: "13px",
+          fontFamily: "inherit",
+        },
+      },
+      settings: { placeholder: "Enter text...", rows: 4 },
+    },
+    Checkbox: {
+      ...base,
+      styles: {
+        default: {
+          width: "16px",
+          height: "16px",
+          cursor: "pointer",
+        },
+      },
+      settings: { label: "Checkbox" },
+    },
+    Radio: {
+      ...base,
+      styles: {
+        default: {
+          width: "16px",
+          height: "16px",
+          cursor: "pointer",
+        },
+      },
+      settings: { label: "Radio", name: "radio" },
+    },
+    Separator: {
+      ...base,
+      styles: {
+        default: {
+          width: "100%",
+          height: "1px",
+          backgroundColor: "#d1d5db",
+          margin: "16px 0",
+        },
+      },
+    },
+    Icon: {
+      ...base,
+      styles: {
+        default: {
+          width: "24px",
+          height: "24px",
+          color: "#6b7280",
+        },
+      },
+      settings: { name: "Heart" },
+    },
+    Progress: {
+      ...base,
+      styles: {
+        default: {
+          width: "100%",
+          height: "8px",
+          backgroundColor: "#e5e7eb",
+          borderRadius: "4px",
+          overflow: "hidden" as const,
+        },
+      },
+      settings: { value: 65, max: 100 },
+    },
+    Table: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          width: "100%",
+          borderCollapse: "collapse" as const,
+          border: "1px solid #d1d5db",
+        },
+      },
+    },
+    Nav: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          padding: "12px 20px",
+          backgroundColor: "#f9fafb",
+          borderBottom: "1px solid #d1d5db",
+        },
+      },
+    },
+    Header: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          padding: "20px",
+          backgroundColor: "#f3f4f6",
+          borderBottom: "1px solid #d1d5db",
+        },
+      },
+    },
+    Footer: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          padding: "20px",
+          backgroundColor: "#f9fafb",
+          borderTop: "1px solid #d1d5db",
+          fontSize: "12px",
+          color: "#6b7280",
+        },
+      },
+    },
+    Article: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          padding: "20px",
+        },
+      },
+    },
+    Aside: {
+      ...base,
+      elements: [],
+      styles: {
+        default: {
+          padding: "16px",
+          backgroundColor: "#f9fafb",
+          borderLeft: "4px solid #d1d5db",
+        },
+      },
+    },
     CMSContentList: {
       ...base,
       elements: [],
@@ -314,16 +622,36 @@ const createMockElement = (type: ElementType): any => {
 
 const componentMap: Partial<Record<ElementType, React.ComponentType<any>>> = {
   Text: BaseComponent,
+  Span: BaseComponent,
+  Heading: BaseComponent,
+  Label: BaseComponent,
+  Blockquote: BaseComponent,
+  Code: BaseComponent,
   Button: ButtonComponent,
   Section: SectionComponent,
   Image: ImageComponent,
+  Video: BaseComponent,
+  Audio: BaseComponent,
+  IFrame: BaseComponent,
   Input: InputComponent,
+  Textarea: BaseComponent,
+  Checkbox: BaseComponent,
+  Radio: BaseComponent,
   Select: SelectComponent,
   Link: BaseComponent,
   Form: FormComponent,
   Frame: FrameComponent,
   Carousel: CarouselComponent,
   List: ListComponent,
+  Separator: BaseComponent,
+  Icon: BaseComponent,
+  Progress: BaseComponent,
+  Table: BaseComponent,
+  Nav: BaseComponent,
+  Header: BaseComponent,
+  Footer: BaseComponent,
+  Article: BaseComponent,
+  Aside: BaseComponent,
   CMSContentList: CMSContentListComponent,
   CMSContentItem: CMSContentItemComponent,
   CMSContentGrid: CMSContentGridComponent,
@@ -403,6 +731,143 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
     <div className="w-full h-20 border-2 border-dashed border-gray-400 rounded-lg flex flex-col items-center justify-center bg-gray-50 gap-1">
       <Upload className="w-6 h-6 text-gray-400" />
       <span className="text-xs text-gray-500">Drop Zone</span>
+    </div>
+  ),
+  Span: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center px-3">
+      <span className="text-sm text-gray-600">Span text</span>
+    </div>
+  ),
+  Heading: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center px-3">
+      <span className="text-lg font-bold text-gray-900">Heading</span>
+    </div>
+  ),
+  Label: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center px-3">
+      <span className="text-xs font-medium text-gray-600">Label</span>
+    </div>
+  ),
+  Blockquote: (
+    <div className="w-full h-20 bg-gray-50 rounded-lg border-l-4 border-gray-400 flex items-center px-3">
+      <span className="text-sm italic text-gray-600">"Quoted text"</span>
+    </div>
+  ),
+  Code: (
+    <div className="w-full h-16 bg-gray-900 rounded-lg flex items-center px-3">
+      <span className="text-xs font-mono text-green-400">const x = 1;</span>
+    </div>
+  ),
+  Video: (
+    <div className="w-full h-20 bg-black rounded-lg flex items-center justify-center border-2 border-dashed border-gray-600">
+      <div className="flex flex-col items-center gap-1">
+        <FileText className="w-6 h-6 text-gray-500" />
+        <span className="text-xs text-gray-400">Video</span>
+      </div>
+    </div>
+  ),
+  Audio: (
+    <div className="w-full h-16 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 bg-gray-700 rounded-full"></div>
+        <div className="flex gap-0.5">
+          <div className="w-1 h-8 bg-gray-500 rounded-full"></div>
+          <div className="w-1 h-6 bg-gray-500 rounded-full"></div>
+          <div className="w-1 h-10 bg-gray-500 rounded-full"></div>
+        </div>
+      </div>
+    </div>
+  ),
+  IFrame: (
+    <div className="w-full h-20 bg-blue-50 rounded-lg border-2 border-blue-300 flex items-center justify-center">
+      <span className="text-xs text-blue-600 font-medium">IFrame</span>
+    </div>
+  ),
+  Textarea: (
+    <div className="w-full h-20 bg-white rounded-lg border border-gray-300 flex items-center px-3">
+      <div className="flex-1 space-y-1">
+        <div className="h-2 bg-gray-200 rounded w-full"></div>
+        <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+      </div>
+    </div>
+  ),
+  Checkbox: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center gap-2 px-3">
+      <div className="w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center">
+        <div className="w-2 h-2 bg-gray-600 rounded-sm"></div>
+      </div>
+      <span className="text-xs text-gray-600">Checkbox</span>
+    </div>
+  ),
+  Radio: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center gap-2 px-3">
+      <div className="w-4 h-4 border-2 border-gray-400 rounded-full flex items-center justify-center">
+        <div className="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
+      </div>
+      <span className="text-xs text-gray-600">Radio</span>
+    </div>
+  ),
+  Separator: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center justify-center">
+      <div className="w-3/4 h-px bg-gray-400"></div>
+    </div>
+  ),
+  Icon: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center justify-center">
+      <div className="w-6 h-6 text-gray-600">
+        <RefreshCw className="w-6 h-6" />
+      </div>
+    </div>
+  ),
+  Progress: (
+    <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex flex-col items-center justify-center gap-2 px-3">
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="w-2/3 h-full bg-blue-600"></div>
+      </div>
+      <span className="text-xs text-gray-500">65%</span>
+    </div>
+  ),
+  Table: (
+    <div className="w-full h-20 bg-white rounded-lg border border-gray-300 overflow-hidden">
+      <table className="w-full text-xs">
+        <tbody>
+          <tr className="border-b border-gray-300">
+            <td className="px-2 py-1 text-gray-600 font-medium">Header 1</td>
+            <td className="px-2 py-1 text-gray-600 font-medium">Header 2</td>
+          </tr>
+          <tr>
+            <td className="px-2 py-1 text-gray-500">Data 1</td>
+            <td className="px-2 py-1 text-gray-500">Data 2</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  ),
+  Nav: (
+    <div className="w-full h-16 bg-gray-200 rounded-lg border border-gray-400 flex items-center px-3 gap-2">
+      <div className="h-2 bg-gray-400 rounded w-16"></div>
+      <div className="h-2 bg-gray-400 rounded w-12"></div>
+    </div>
+  ),
+  Header: (
+    <div className="w-full h-20 bg-gradient-to-b from-gray-300 to-gray-200 rounded-lg border border-gray-400 flex items-center justify-center">
+      <span className="text-xs text-gray-700 font-medium">Header</span>
+    </div>
+  ),
+  Footer: (
+    <div className="w-full h-16 bg-gray-200 rounded-lg border border-gray-400 flex items-center justify-center">
+      <span className="text-xs text-gray-600">© 2024 Footer</span>
+    </div>
+  ),
+  Article: (
+    <div className="w-full h-20 bg-white rounded-lg border border-gray-300 flex flex-col px-3 py-2 gap-1">
+      <div className="h-2 bg-gray-300 rounded w-2/3"></div>
+      <div className="h-1.5 bg-gray-200 rounded w-full"></div>
+    </div>
+  ),
+  Aside: (
+    <div className="w-full h-20 bg-gray-100 rounded-lg border-l-4 border-gray-400 flex items-center justify-center">
+      <span className="text-xs text-gray-600">Sidebar</span>
     </div>
   ),
 
@@ -494,14 +959,13 @@ export function ComponentTooltip({
   if (!info) return <>{children}</>;
 
   return (
-    <TooltipProvider delayDuration={200}>
+    <TooltipProvider >
       <Tooltip open={isOpen} onOpenChange={setIsOpen}>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent
           side={side}
           sideOffset={sideOffset}
-          className="max-w-[280px] p-0 overflow-hidden"
-          onMouseLeave={() => setIsOpen(false)}
+          className="max-w-70 p-0 overflow-hidden"
         >
           <div className="px-3 py-2 bg-linear-to-r from-gray-50 to-gray-100 border-b">
             <h4 className="font-semibold text-sm text-gray-900">

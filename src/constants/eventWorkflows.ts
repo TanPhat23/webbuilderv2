@@ -49,7 +49,7 @@ export const NODE_TYPE_COLORS = {
   },
 } as const;
 
-export const EVENT_TYPES = [
+export const WORKFLOW_EVENT_TYPES = [
   {
     value: "onClick",
     label: "On Click",
@@ -216,7 +216,7 @@ export const WORKFLOW_EXECUTION_STATUS = {
   CANCELLED: "cancelled",
 } as const;
 
-export const KEYBOARD_SHORTCUTS = {
+export const CANVAS_KEYBOARD_SHORTCUTS = {
   DELETE: ["Delete", "Backspace"],
   SELECT_ALL: ["Control+a", "Meta+a"],
   ZOOM_IN: ["Control+Plus", "Meta+Plus"],
@@ -267,7 +267,7 @@ export const getNodeTypeColor = (nodeType: NodeType) => {
 export const getEventTypesByCategory = (
   category: keyof typeof EVENT_CATEGORIES,
 ) => {
-  return EVENT_TYPES.filter((event) => event.category === category);
+  return WORKFLOW_EVENT_TYPES.filter((event) => event.category === category);
 };
 
 export const isValidConnection = (

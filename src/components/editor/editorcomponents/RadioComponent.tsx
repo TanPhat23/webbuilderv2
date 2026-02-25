@@ -1,27 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
-import {
-  RadioElement,
-  RadioSettings,
-} from "@/interfaces/elements.interface";
+import { RadioElement, RadioSettings } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const RadioComponent = ({ element }: EditorComponentProps) => {
   const radioElement = element as RadioElement;
-  const { id } = useParams();
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(radioElement);
 
   const settings = (radioElement.settings ?? {}) as RadioSettings;
@@ -30,16 +23,7 @@ const RadioComponent = ({ element }: EditorComponentProps) => {
   const required = settings.required ?? false;
   const disabled = settings.disabled ?? false;
   const value = settings.value ?? "";
-  const label =
-    settings.label || radioElement.content || "Radio label";
-
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
+  const label = settings.label || radioElement.content || "Radio label";
 
   const radioId = `radio-${element.id}`;
 
@@ -56,8 +40,7 @@ const RadioComponent = ({ element }: EditorComponentProps) => {
         display: "inline-flex",
         alignItems: "center",
         gap: "8px",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     >
       <input

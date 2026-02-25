@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
-import { TextareaElement, TextareaSettings } from "@/interfaces/elements.interface";
+import {
+  TextareaElement,
+  TextareaSettings,
+} from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const TextareaComponent = ({ element }: EditorComponentProps) => {
   const textareaElement = element as TextareaElement;
-  const { id } = useParams();
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(textareaElement);
   const commonProps = getCommonProps(textareaElement);
 
@@ -35,14 +34,6 @@ const TextareaComponent = ({ element }: EditorComponentProps) => {
   const autoComplete = settings.autoComplete;
   const spellCheck = settings.spellCheck;
   const resize = settings.resize ?? "vertical";
-
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   return (
     <textarea
@@ -68,8 +59,7 @@ const TextareaComponent = ({ element }: EditorComponentProps) => {
         width: "100%",
         height: "100%",
         resize,
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     />
   );

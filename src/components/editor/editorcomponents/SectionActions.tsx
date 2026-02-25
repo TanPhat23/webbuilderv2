@@ -11,26 +11,13 @@ interface SectionActionsProps {
   element: SectionElement;
 }
 
-/**
- * SectionActions Component
- *
- * Handles the "+ Add Section" button for SectionComponent.
- * Isolated in a separate component to avoid putting store dependencies
- * directly in the base SectionComponent, which caused hydration issues.
- */
 export function SectionActions({ element }: SectionActionsProps) {
   const insertElement = useInsertElement();
   const selectedElement = useSelectedElement();
   const { currentPage } = usePageStore();
 
-  // Don't render if this section isn't selected
-  if (!selectedElement || selectedElement.id !== element.id) {
-    return null;
-  }
-
-  if (!insertElement || !currentPage?.Id) {
-    return null;
-  }
+  if (!selectedElement || selectedElement.id !== element.id) return null;
+  if (!insertElement || !currentPage?.Id) return null;
 
   const handleCreateSection = () => {
     const newElement = ElementFactory.getInstance().createElement({

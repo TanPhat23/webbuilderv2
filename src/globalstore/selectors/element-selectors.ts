@@ -4,19 +4,7 @@
  * Provides memoized selectors for the element store to prevent unnecessary
  * re-renders. Components should use these selectors instead of destructuring
  * the full store with `useElementStore()`.
- *
- * @example
- * ```ts
- * // ❌ Bad — re-renders on ANY store change (elements, past, future, callbacks)
- * const { elements, updateElement } = useElementStore();
- *
- * // ✅ Good — only re-renders when `elements` changes
- * const elements = useElements();
- *
- * // ✅ Good — actions are stable refs, never cause re-renders
- * const { updateElement, deleteElement } = useElementActions();
- * ```
- */
+ **/
 
 import { useShallow } from "zustand/react/shallow";
 import { useElementStore } from "@/globalstore/element-store";
@@ -65,24 +53,19 @@ export const useElementActions = () =>
   );
 
 /** Select only the updateElement action. */
-export const useUpdateElement = () =>
-  useElementStore((s) => s.updateElement);
+export const useUpdateElement = () => useElementStore((s) => s.updateElement);
 
 /** Select only the addElement action. */
-export const useAddElement = () =>
-  useElementStore((s) => s.addElement);
+export const useAddElement = () => useElementStore((s) => s.addElement);
 
 /** Select only the deleteElement action. */
-export const useDeleteElement = () =>
-  useElementStore((s) => s.deleteElement);
+export const useDeleteElement = () => useElementStore((s) => s.deleteElement);
 
 /** Select only the insertElement action. */
-export const useInsertElement = () =>
-  useElementStore((s) => s.insertElement);
+export const useInsertElement = () => useElementStore((s) => s.insertElement);
 
 /** Select only the swapElement action. */
-export const useSwapElement = () =>
-  useElementStore((s) => s.swapElement);
+export const useSwapElement = () => useElementStore((s) => s.swapElement);
 
 /** Select undo/redo actions. */
 export const useHistoryActions = () =>

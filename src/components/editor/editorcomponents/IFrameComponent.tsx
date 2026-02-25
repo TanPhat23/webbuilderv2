@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { IFrameElement, IFrameSettings } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
@@ -15,19 +13,16 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const IFrameComponent = ({ element }: EditorComponentProps) => {
   const iframeElement = element as IFrameElement;
-  const { id } = useParams();
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(iframeElement);
 
   const settings = (iframeElement.settings ?? {}) as IFrameSettings;
@@ -38,28 +33,27 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
   const iframeWidth = settings.width ?? "100%";
   const iframeHeight = settings.height ?? 400;
 
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
+  const rootProps = {
+    ref: elementRef as React.RefObject<HTMLDivElement>,
+    "data-element-id": element.id,
+    "data-element-type": element.type,
+    ...getCommonProps(iframeElement),
+    ...eventHandlers,
+    style: {
+      ...safeStyles,
+      width: "100%",
+      height: "100%",
+      ...eventsStyle(eventsActive),
+    },
+  };
 
   if (iframeElement.src) {
     return (
       <div
-        ref={elementRef as React.RefObject<HTMLDivElement>}
-        data-element-id={element.id}
-        data-element-type={element.type}
+        {...rootProps}
         className="relative w-full h-full"
-        {...eventHandlers}
         style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          cursor: eventsActive ? "pointer" : "inherit",
-          userSelect: eventsActive ? "none" : "auto",
+          ...rootProps.style,
           position: "relative",
         }}
       >
@@ -71,12 +65,17 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
           loading={loading}
           referrerPolicy={referrerPolicy}
           style={{
-            width: typeof iframeWidth === "number" ? `${iframeWidth}px` : iframeWidth,
-            height: typeof iframeHeight === "number" ? `${iframeHeight}px` : iframeHeight,
+            width:
+              typeof iframeWidth === "number"
+                ? `${iframeWidth}px`
+                : iframeWidth,
+            height:
+              typeof iframeHeight === "number"
+                ? `${iframeHeight}px`
+                : iframeHeight,
             border: "none",
           }}
         />
-        {/* Overlay to prevent iframe from capturing pointer events in the editor */}
         <div
           className="absolute inset-0"
           style={{
@@ -89,20 +88,7 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
   }
 
   return (
-    <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      className="w-full h-full"
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
-      }}
-    >
+    <div {...rootProps} className="w-full h-full">
       <Empty className="w-full h-full">
         <EmptyHeader>
           <EmptyMedia variant="icon">

@@ -3,9 +3,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEventWorkflowStore } from "@/globalstore/event-workflow-store";
 import { useCreateEventWorkflow } from "@/hooks/editor/eventworkflow/useEventWorkflowMutations";
-// Uses React Query mutation hook; Zustand holds mutation state flags
 import {
   CreateEventWorkflowSchema,
   type CreateEventWorkflowFormData,
@@ -44,7 +42,6 @@ export const WorkflowCreator = ({
   onCancel,
 }: WorkflowCreatorProps) => {
   const createWorkflowMutation = useCreateEventWorkflow();
-  const isCreating = useEventWorkflowStore((state) => state.isCreating);
 
   const form = useForm<CreateEventWorkflowFormData>({
     resolver: zodResolver(CreateEventWorkflowSchema),
@@ -56,7 +53,6 @@ export const WorkflowCreator = ({
   });
 
   const onSubmit = async (data: CreateEventWorkflowFormData) => {
-    console.log(projectId);
     try {
       const result = await createWorkflowMutation.mutateAsync({
         projectId,
@@ -76,7 +72,7 @@ export const WorkflowCreator = ({
     }
   };
 
-  const isLoading = isCreating;
+  const isLoading = createWorkflowMutation.isPending;
 
   return (
     <div className="space-y-4">

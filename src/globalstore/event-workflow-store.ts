@@ -1,8 +1,15 @@
-import { create } from "zustand";
 import { getQueryClient } from "@/client/queryclient";
 import { eventWorkflowService } from "@/services/eventWorkflow.service";
 import { EventWorkflow } from "@/interfaces/eventWorkflow.interface";
 
+// ─── Query Key Factory ────────────────────────────────────────────────────────
+// Hierarchical keys enable React Query filter-based invalidation:
+//   ["eventWorkflows"]                          → matches ALL
+//   ["eventWorkflows", "list"]                  → matches all list queries
+//   ["eventWorkflows", "list", projectId]        → exact project list
+//   ["eventWorkflows", "detail"]                 → matches all detail queries
+//   ["eventWorkflows", "detail", workflowId]     → exact workflow detail
+// ─────────────────────────────────────────────────────────────────────────────
 export const eventWorkflowKeys = {
   all: ["eventWorkflows"] as const,
   lists: () => [...eventWorkflowKeys.all, "list"] as const,
@@ -13,79 +20,17 @@ export const eventWorkflowKeys = {
     [...eventWorkflowKeys.details(), workflowId] as const,
 };
 
-interface EventWorkflowState {
-  isCreating: boolean;
-  isUpdating: boolean;
-  isDeleting: boolean;
-  mutationError: string | null;
-
-  setIsCreating: (value: boolean) => void;
-  setIsUpdating: (value: boolean) => void;
-  setIsDeleting: (value: boolean) => void;
-  setMutationError: (value: string | null) => void;
-
-  resetFlags: () => void;
-
-  // Cache helpers (non-React)
-  invalidateAll: () => void;
-  invalidateList: (projectId?: string) => void;
-  invalidateDetail: (workflowId: string) => void;
-  resetCache: () => void;
-}
-
-export const useEventWorkflowStore = create<EventWorkflowState>((set) => ({
-  isCreating: false,
-  isUpdating: false,
-  isDeleting: false,
-  mutationError: null,
-
-  setIsCreating: (value) => set({ isCreating: value }),
-  setIsUpdating: (value) => set({ isUpdating: value }),
-  setIsDeleting: (value) => set({ isDeleting: value }),
-  setMutationError: (value) => set({ mutationError: value }),
-
-  resetFlags: () =>
-    set({
-      isCreating: false,
-      isUpdating: false,
-      isDeleting: false,
-      mutationError: null,
-    }),
-
-  invalidateAll: () => {
-    const qc = getQueryClient();
-    qc.invalidateQueries({ queryKey: eventWorkflowKeys.all });
-  },
-
-  invalidateList: (projectId?: string) => {
-    const qc = getQueryClient();
-    if (projectId) {
-      qc.invalidateQueries({
-        queryKey: eventWorkflowKeys.list(projectId),
-        exact: true,
-      });
-    } else {
-      qc.invalidateQueries({ queryKey: eventWorkflowKeys.lists() });
-    }
-  },
-
-  invalidateDetail: (workflowId: string) => {
-    const qc = getQueryClient();
-    qc.invalidateQueries({
-      queryKey: eventWorkflowKeys.detail(workflowId),
-      exact: true,
-    });
-  },
-
-  resetCache: () => {
-    const qc = getQueryClient();
-    qc.removeQueries({ queryKey: eventWorkflowKeys.all });
-  },
-}));
+// ─── Non-React Utilities ──────────────────────────────────────────────────────
 
 /**
- * Fetch a single workflow by ID outside of React (e.g. from Zustand actions).
- * Uses queryClient.fetchQuery so the result is cached.
+ * Fetch a single workflow by ID outside of React (e.g. server actions, plain
+ * utilities, or Zustand slices that cannot call hooks).
+ *
+ * Uses `queryClient.fetchQuery` so the result is cached and deduplicated.
+ *
+ * @param workflowId - The workflow to fetch.
+ * @param force      - When `true`, bypasses the stale-time check and always
+ *                     hits the network.
  */
 export async function fetchWorkflowById(
   workflowId: string,
@@ -95,12 +40,11 @@ export async function fetchWorkflowById(
   const qc = getQueryClient();
 
   try {
-    const workflow = await qc.fetchQuery({
+    return await qc.fetchQuery({
       queryKey: eventWorkflowKeys.detail(workflowId),
       queryFn: () => eventWorkflowService.getEventWorkflowById(workflowId),
       staleTime: force ? 0 : 30_000,
     });
-    return workflow;
   } catch (error) {
     console.error("Failed to fetch workflow:", error);
     return null;
@@ -109,7 +53,7 @@ export async function fetchWorkflowById(
 
 /**
  * Read a single workflow from the React Query cache synchronously.
- * Returns undefined if not cached.
+ * Returns `undefined` when the entry is not yet cached.
  */
 export function getWorkflowFromCache(
   workflowId: string,

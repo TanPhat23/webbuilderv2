@@ -3,13 +3,6 @@
 import React from "react";
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useUpdateElement } from "@/globalstore/selectors/element-selectors";
 import { useSelectedElement } from "@/globalstore/selectors/selection-selectors";

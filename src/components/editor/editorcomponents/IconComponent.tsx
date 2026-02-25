@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import { IconElement, IconSettings } from "@/interfaces/elements.interface";
 import { elementHelper } from "@/lib/utils/element/elementhelper";
@@ -16,18 +14,16 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Smile } from "lucide-react";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const IconComponent = ({ element }: EditorComponentProps) => {
   const iconElement = element as IconElement;
-  const { id } = useParams();
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: id as string,
-    });
-
   const safeStyles = elementHelper.getSafeStyles(iconElement);
 
   const settings = (iconElement.settings ?? {}) as IconSettings;
@@ -37,14 +33,6 @@ const IconComponent = ({ element }: EditorComponentProps) => {
   const color = settings.color ?? "currentColor";
   const fill = settings.fill ?? "none";
   const absoluteStrokeWidth = settings.absoluteStrokeWidth ?? false;
-
-  useEffect(() => {
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
 
   const fallback = () => (
     <Empty className="w-full h-full min-h-12">
@@ -65,6 +53,7 @@ const IconComponent = ({ element }: EditorComponentProps) => {
       ref={elementRef as React.RefObject<HTMLDivElement>}
       data-element-id={element.id}
       data-element-type={element.type}
+      {...getCommonProps(iconElement)}
       {...eventHandlers}
       style={{
         ...safeStyles,
@@ -73,8 +62,7 @@ const IconComponent = ({ element }: EditorComponentProps) => {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     >
       <DynamicIcon

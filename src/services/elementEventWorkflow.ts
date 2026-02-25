@@ -30,6 +30,9 @@ interface IElementEventWorkflowService {
   getElementEventWorkflowsByElement(
     elementId: string,
   ): Promise<IElementEventWorkflow[]>;
+  getElementEventWorkflowsByPage(
+    pageId: string,
+  ): Promise<IElementEventWorkflow[]>;
   getElementEventWorkflowByID(id: string): Promise<IElementEventWorkflow>;
   updateElementEventWorkflow(
     id: string,
@@ -63,6 +66,24 @@ export const elementEventWorkflowService: IElementEventWorkflowService = {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.ELEMENT_EVENT_WORKFLOWS.GET_ALL)
       .addQueryParam("elementId", elementId)
+      .build();
+    const response = await apiClient.get(url);
+
+    // Handle response format with data property
+    if (response && typeof response === "object" && "data" in response) {
+      return Array.isArray(response.data)
+        ? (response.data as IElementEventWorkflow[])
+        : [];
+    }
+
+    return Array.isArray(response) ? (response as IElementEventWorkflow[]) : [];
+  },
+
+  getElementEventWorkflowsByPage: async (
+    pageId: string,
+  ): Promise<IElementEventWorkflow[]> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.ELEMENT_EVENT_WORKFLOWS.GET_BY_PAGE(pageId))
       .build();
     const response = await apiClient.get(url);
 

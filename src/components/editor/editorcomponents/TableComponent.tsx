@@ -1,9 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import React from "react";
 import { useElementHandler } from "@/hooks";
-import { useElementEvents } from "@/hooks/editor/eventworkflow/useElementEvents";
 import { EditorComponentProps } from "@/interfaces/editor.interface";
 import {
   TableElement,
@@ -13,19 +11,16 @@ import {
 import { elementHelper } from "@/lib/utils/element/elementhelper";
 import ElementLoader from "../ElementLoader";
 import { cn } from "@/lib/utils";
+import { useEditorElement, eventsStyle } from "./shared";
 
 const TableComponent = ({ element, data }: EditorComponentProps) => {
   const tableElement = element as TableElement;
-  const { id } = useParams();
-  const previousEventsRef = useRef<any>(null);
+  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
+    elementId: element.id,
+    events: element.events,
+  });
 
   const { getCommonProps } = useElementHandler();
-  const { elementRef, registerEvents, createEventHandlers, eventsActive } =
-    useElementEvents({
-      elementId: element.id,
-      projectId: (id as string) || "",
-    });
-
   const safeStyles = elementHelper.getSafeStyles(tableElement);
 
   const settings = (tableElement.settings ?? {}) as TableSettings;
@@ -36,25 +31,11 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
   const compact = settings.compact ?? false;
   const columns: TableColumnDefinition[] = settings.columns ?? [];
 
-  useEffect(() => {
-    const eventsChanged =
-      JSON.stringify(element.events) !==
-      JSON.stringify(previousEventsRef.current);
-
-    if (eventsChanged) {
-      previousEventsRef.current = element.events;
-    }
-
-    if (element.events) {
-      registerEvents(element.events);
-    }
-  }, [element.events, registerEvents]);
-
-  const eventHandlers = createEventHandlers();
-
   const cellPadding = compact ? "6px 10px" : "10px 16px";
 
-  const headerCellStyle = (col: TableColumnDefinition): React.CSSProperties => ({
+  const headerCellStyle = (
+    col: TableColumnDefinition,
+  ): React.CSSProperties => ({
     padding: cellPadding,
     textAlign: (col.align as React.CSSProperties["textAlign"]) ?? "left",
     fontWeight: 600,
@@ -70,8 +51,7 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
       : {}),
   });
 
-  const hasChildren =
-    tableElement.elements && tableElement.elements.length > 0;
+  const hasChildren = tableElement.elements && tableElement.elements.length > 0;
 
   return (
     <div
@@ -86,8 +66,7 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
         height: "100%",
         position: "relative",
         overflow: "auto",
-        cursor: eventsActive ? "pointer" : "inherit",
-        userSelect: eventsActive ? "none" : "auto",
+        ...eventsStyle(eventsActive),
       }}
     >
       <table
@@ -127,14 +106,8 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
         <tbody>
           {hasChildren ? (
             <tr>
-              <td
-                colSpan={columns.length || 1}
-                style={{ padding: 0 }}
-              >
-                <ElementLoader
-                  elements={tableElement.elements}
-                  data={data}
-                />
+              <td colSpan={columns.length || 1} style={{ padding: 0 }}>
+                <ElementLoader elements={tableElement.elements} data={data} />
               </td>
             </tr>
           ) : (
@@ -181,7 +154,6 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
         </tbody>
       </table>
 
-      {/* Striped & hoverable styles */}
       {(striped || hoverable) && (
         <style>{`
           [data-element-id="${element.id}"] tbody tr:nth-child(even) {

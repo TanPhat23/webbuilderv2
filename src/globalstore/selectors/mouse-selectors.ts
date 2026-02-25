@@ -9,19 +9,7 @@
  * positions update at high frequency during collaboration. Using targeted
  * selectors ensures that components only re-render when the specific data
  * they consume actually changes.
- *
- * @example
- * ```ts
- * // ❌ Bad — re-renders on EVERY mouse move from ANY user
- * const { remoteUsers, users } = useMouseStore();
- *
- * // ✅ Good — only re-renders when remote user positions change
- * const remoteUsers = useRemoteUsers();
- *
- * // ✅ Good — only re-renders when the online users record changes
- * const users = useCollaboratorUsers();
- * ```
- */
+ **/
 
 import { useShallow } from "zustand/react/shallow";
 import { useMouseStore } from "@/globalstore/mouse-store";
@@ -29,24 +17,20 @@ import { useMouseStore } from "@/globalstore/mouse-store";
 // ─── Individual State Selectors ──────────────────────────────────────
 
 /** Select only mouse positions. Re-renders only when positions change. */
-export const useMousePositions = () =>
-  useMouseStore((s) => s.mousePositions);
+export const useMousePositions = () => useMouseStore((s) => s.mousePositions);
 
 /** Select only selected elements map. */
 export const useSelectedElements = () =>
   useMouseStore((s) => s.selectedElements);
 
 /** Select only the online collaborator users record. */
-export const useCollaboratorUsers = () =>
-  useMouseStore((s) => s.users);
+export const useCollaboratorUsers = () => useMouseStore((s) => s.users);
 
 /** Select only remote user cursor positions. */
-export const useRemoteUsers = () =>
-  useMouseStore((s) => s.remoteUsers);
+export const useRemoteUsers = () => useMouseStore((s) => s.remoteUsers);
 
 /** Select only the selectedByUser mapping (clientId → elementId). */
-export const useSelectedByUser = () =>
-  useMouseStore((s) => s.selectedByUser);
+export const useSelectedByUser = () => useMouseStore((s) => s.selectedByUser);
 
 // ─── Individual Action Selectors ─────────────────────────────────────
 // Actions are stable references in Zustand — they never change after store
@@ -65,8 +49,7 @@ export const useSyncFromAwareness = () =>
   useMouseStore((s) => s.syncFromAwareness);
 
 /** Select only the clear action. */
-export const useClearMouseStore = () =>
-  useMouseStore((s) => s.clear);
+export const useClearMouseStore = () => useMouseStore((s) => s.clear);
 
 // ─── Combined State Selectors ────────────────────────────────────────
 

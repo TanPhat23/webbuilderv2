@@ -6,21 +6,6 @@ import type { BatchUpdateStyleFn } from "./types";
 const JUSTIFY_VALUES = ["flex-start", "center", "flex-end"] as const;
 const ALIGN_VALUES = ["flex-start", "center", "flex-end"] as const;
 
-type JustifyValue = (typeof JUSTIFY_VALUES)[number];
-type AlignValue = (typeof ALIGN_VALUES)[number];
-
-const JUSTIFY_LABELS: Record<JustifyValue, string> = {
-  "flex-start": "Start",
-  center: "Center",
-  "flex-end": "End",
-};
-
-const ALIGN_LABELS: Record<AlignValue, string> = {
-  "flex-start": "Top",
-  center: "Middle",
-  "flex-end": "Bottom",
-};
-
 interface AlignmentMatrixProps {
   /** Current justifyContent value */
   justifyContent: string | undefined;

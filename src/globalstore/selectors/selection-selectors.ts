@@ -9,16 +9,6 @@
  * ```ts
  * // ❌ Bad — re-renders on ANY selection change (selected, dragging, hovered, draggedOver)
  * const { selectedElement, setSelectedElement } = useSelectionStore();
- *
- * // ✅ Good — only re-renders when `selectedElement` changes
- * const selectedElement = useSelectedElement();
- *
- * // ✅ Good — actions are stable refs, never cause re-renders
- * const setSelectedElement = useSetSelectedElement();
- *
- * // ✅ Good — only re-renders when selected OR hovered changes (shallow compared)
- * const { selectedElement, hoveredElement } = useSelectionState();
- * ```
  */
 
 import { useShallow } from "zustand/react/shallow";

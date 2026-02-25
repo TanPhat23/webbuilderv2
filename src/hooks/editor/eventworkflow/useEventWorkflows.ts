@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { eventWorkflowService } from "@/services/eventWorkflow.service";
 import {
@@ -5,16 +6,16 @@ import {
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
 } from "@/interfaces/eventWorkflow.interface";
-import {
-  eventWorkflowKeys,
-  useEventWorkflowStore,
-} from "@/globalstore/event-workflow-store";
+import { eventWorkflowKeys } from "@/globalstore/event-workflow-store";
+import { getErrorMessage } from "@/lib/utils/hooks/mutationUtils";
 import {
   useCreateEventWorkflow,
   useDeleteEventWorkflow,
   useUpdateEventWorkflow,
   useUpdateEventWorkflowEnabled,
 } from "./useEventWorkflowMutations";
+
+// ─── Query Hooks ──────────────────────────────────────────────────────────────
 
 /**
  * Fetch all workflows for a project.
@@ -35,7 +36,7 @@ export function useEventWorkflows(projectId: string) {
 
 /**
  * Fetch a single workflow by ID.
- * Seeds from the list cache via `initialData` so we can show data
+ * Seeds from the list cache via `initialData` so the UI can show data
  * instantly while the detail query refetches in the background.
  */
 export function useEventWorkflow(workflowId: string, enabled = true) {
@@ -47,7 +48,8 @@ export function useEventWorkflow(workflowId: string, enabled = true) {
     enabled: enabled && !!workflowId,
     staleTime: 30_000,
     gcTime: 5 * 60_000,
-    // Seed from any list cache that already contains this workflow
+    // Seed from any list cache that already contains this workflow so the
+    // component renders immediately rather than showing a loading state.
     initialData: () => {
       const lists = queryClient.getQueriesData<EventWorkflow[]>({
         queryKey: eventWorkflowKeys.lists(),
@@ -61,32 +63,73 @@ export function useEventWorkflow(workflowId: string, enabled = true) {
   });
 }
 
+// ─── Convenience Hook ─────────────────────────────────────────────────────────
+
 /**
- * Convenience hook that returns workflows + mutation actions in one call.
- * Designed as a drop-in replacement for components that need both query data
- * and mutation actions/flags.
+ * Returns workflows + mutation actions + aggregate state flags in one call.
+ *
+ * Mutation flags (`isCreating`, `isUpdating`, `isDeleting`) are derived
+ * directly from TanStack Query's `mutation.isPending` — no Zustand store
+ * is involved. Cache invalidation helpers are created with `useQueryClient`
+ * so they stay in sync with the active QueryClient instance.
  */
 export function useEventWorkflowActions(projectId: string) {
+  const queryClient = useQueryClient();
   const query = useEventWorkflows(projectId);
-  const store = useEventWorkflowStore();
 
   const createMutation = useCreateEventWorkflow();
   const updateMutation = useUpdateEventWorkflow();
   const updateEnabledMutation = useUpdateEventWorkflowEnabled();
   const deleteMutation = useDeleteEventWorkflow();
 
+  // Derive the most recent mutation error (last one wins).
+  const mutationError =
+    createMutation.error ??
+    updateMutation.error ??
+    updateEnabledMutation.error ??
+    deleteMutation.error;
+
+  // ─── Cache helpers ───────────────────────────────────────────────────────
+  const invalidateAll = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: eventWorkflowKeys.all }),
+    [queryClient],
+  );
+
+  const invalidateList = useCallback(
+    (pid?: string) =>
+      pid
+        ? queryClient.invalidateQueries({
+            queryKey: eventWorkflowKeys.list(pid),
+            exact: true,
+          })
+        : queryClient.invalidateQueries({
+            queryKey: eventWorkflowKeys.lists(),
+          }),
+    [queryClient],
+  );
+
+  const invalidateDetail = useCallback(
+    (workflowId: string) =>
+      queryClient.invalidateQueries({
+        queryKey: eventWorkflowKeys.detail(workflowId),
+        exact: true,
+      }),
+    [queryClient],
+  );
+
   return {
-    // React Query data
+    // ── React Query data ────────────────────────────────────────────────────
     workflows: query.data ?? [],
     isLoading: query.isLoading,
     isFetching: query.isFetching,
+    /** Combined error: query error takes priority, then the latest mutation error. */
     error: query.error
-      ? query.error instanceof Error
-        ? query.error.message
-        : "Failed to load workflows"
-      : store.mutationError,
+      ? getErrorMessage(query.error, "Failed to load workflows")
+      : mutationError
+        ? getErrorMessage(mutationError, "Operation failed")
+        : null,
 
-    // Mutation actions
+    // ── Mutation actions ────────────────────────────────────────────────────
     createWorkflow: (input: CreateEventWorkflowInput) =>
       createMutation.mutateAsync({ projectId, input }),
     updateWorkflow: (workflowId: string, input: UpdateEventWorkflowInput) =>
@@ -96,17 +139,18 @@ export function useEventWorkflowActions(projectId: string) {
     deleteWorkflow: (workflowId: string) =>
       deleteMutation.mutateAsync({ workflowId }),
 
-    // Mutation flags (from store)
-    isCreating: store.isCreating,
-    isUpdating: store.isUpdating,
-    isDeleting: store.isDeleting,
+    // ── Mutation flags (derived from TanStack Query, not Zustand) ───────────
+    isCreating: createMutation.isPending,
+    /** True while either the full-update or the enabled-toggle mutation is in flight. */
+    isUpdating: updateMutation.isPending || updateEnabledMutation.isPending,
+    isDeleting: deleteMutation.isPending,
 
-    // Cache helpers
-    invalidateAll: store.invalidateAll,
-    invalidateList: store.invalidateList,
-    invalidateDetail: store.invalidateDetail,
+    // ── Cache helpers ───────────────────────────────────────────────────────
+    invalidateAll,
+    invalidateList,
+    invalidateDetail,
 
-    // Pass-through for components needing the raw query
+    // ── Raw query pass-through ──────────────────────────────────────────────
     refetch: query.refetch,
   };
 }
