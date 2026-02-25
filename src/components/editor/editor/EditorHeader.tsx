@@ -12,8 +12,6 @@ import {
   PenTool,
   LayoutTemplate,
   ChevronRight,
-  Undo2,
-  Redo2,
 } from "lucide-react";
 
 import { Viewport } from "@/hooks";
@@ -101,13 +99,9 @@ function ProjectBreadcrumb() {
           </span>
         </>
       )}
-      
-      
     </div>
   );
 }
-
-
 
 function ViewportToggle({
   currentView,

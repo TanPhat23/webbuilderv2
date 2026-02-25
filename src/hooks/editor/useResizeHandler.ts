@@ -275,6 +275,7 @@ export function useResizeHandler({
   const pendingStylesRef = useRef<ResponsiveStyles | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastOwnerDocRef = useRef<Document | null>(null);
+  const lastOwnerWinRef = useRef<Window | null>(null);
 
   const [isResizing, setIsResizing] = useState(false);
 
@@ -336,8 +337,10 @@ export function useResizeHandler({
     setIsResizing(false);
 
     const ownerDoc = lastOwnerDocRef.current ?? document;
+    const ownerWin = lastOwnerWinRef.current ?? window;
     ownerDoc.removeEventListener("mousemove", domMouseMove);
     ownerDoc.removeEventListener("mouseup", domMouseUp);
+    ownerWin.removeEventListener("mouseup", domMouseUp);
 
     // Cancel any pending DOM-only RAF
     if (rafRef.current !== null) {
@@ -366,6 +369,7 @@ export function useResizeHandler({
       const ownerDoc = targetRef.current.ownerDocument ?? document;
       const ownerWin = ownerDoc.defaultView ?? window;
       lastOwnerDocRef.current = ownerDoc;
+      lastOwnerWinRef.current = ownerWin;
 
       const parentElement =
         targetRef.current.parentElement ??
@@ -393,6 +397,7 @@ export function useResizeHandler({
       setIsResizing(true);
       ownerDoc.addEventListener("mousemove", domMouseMove);
       ownerDoc.addEventListener("mouseup", domMouseUp);
+      ownerWin.addEventListener("mouseup", domMouseUp);
 
       try {
         if (ownerDoc.body) {
@@ -410,9 +415,11 @@ export function useResizeHandler({
   useEffect(() => {
     return () => {
       const ownerDoc = lastOwnerDocRef.current ?? document;
+      const ownerWin = lastOwnerWinRef.current ?? window;
       resizeStateRef.current = null;
       ownerDoc.removeEventListener("mousemove", domMouseMove);
       ownerDoc.removeEventListener("mouseup", domMouseUp);
+      ownerWin.removeEventListener("mouseup", domMouseUp);
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
@@ -420,6 +427,7 @@ export function useResizeHandler({
       pendingStylesRef.current = null;
       restoreBodyStyles(ownerDoc);
       lastOwnerDocRef.current = null;
+      lastOwnerWinRef.current = null;
     };
   }, [domMouseMove, domMouseUp, restoreBodyStyles]);
 

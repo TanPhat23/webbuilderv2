@@ -102,15 +102,21 @@ export default function ResizeTooltip({
     if (!isActive || !pendingStylesRef) return;
 
     let raf: number;
+    let prevTooltipText = "";
     const poll = () => {
       if (pendingStylesRef.current?.default) {
-        setLiveStyles(pendingStylesRef.current.default as CSSStyles);
+        const nextStyles = pendingStylesRef.current.default as CSSStyles;
+        const nextText = getHandleTooltip(direction, nextStyles);
+        if (nextText !== prevTooltipText) {
+          prevTooltipText = nextText;
+          setLiveStyles(nextStyles);
+        }
       }
       raf = requestAnimationFrame(poll);
     };
     raf = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(raf);
-  }, [isActive, pendingStylesRef]);
+  }, [isActive, pendingStylesRef, direction]);
 
   const shouldShowTooltip = !isResizing || direction === currentResizeDirection;
 
