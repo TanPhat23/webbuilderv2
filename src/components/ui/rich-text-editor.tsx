@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Editor } from "@/components/richtexteditor/blocks/editor/editor";
+import { Editor } from "@/features/richtexteditor/blocks/editor/editor";
 import { AIChatbotBubble } from "@/components/ui/ai-chatbot-bubble";
 
 interface RichTextEditorProps {

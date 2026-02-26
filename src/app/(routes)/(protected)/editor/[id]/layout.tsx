@@ -4,7 +4,7 @@ import {
   requirePermission,
   Permission,
   getUserProjectAccess,
-} from "@/lib/rbac";
+} from "@/features/auth";
 import EditorProvider from "@/providers/editorprovider";
 import { auth } from "@clerk/nextjs/server";
 

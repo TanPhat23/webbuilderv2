@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyReturnUrl } from '@/lib/vnpay-utils';
-import vnpayConfig from '@/lib/vnpay-config';
-import { subscriptionDAL } from '@/data/subscription';
+import { verifyReturnUrl } from '@/features/subscription/lib/vnpay-utils';
+import vnpayConfig from '@/features/subscription/lib/vnpay-config';
+import { subscriptionDAL } from '@/features/subscription/data/subscription';
 import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { MarketplaceItemDetail } from "@/components/marketplace/MarketplaceItemDetail";
+import { MarketplaceItemDetail } from "@/features/marketplace";
 import { useMarketplaceItem } from "@/hooks";
 
 interface MarketplaceItemDetailWrapperProps {

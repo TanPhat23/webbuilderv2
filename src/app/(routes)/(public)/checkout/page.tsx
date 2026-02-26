@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { SubscriptionCheckout } from "@/components/checkoutpage/SubscriptionCheckout";
+import { SubscriptionCheckout } from "@/features/subscription";
 import { Loader2 } from "lucide-react";
 
 function CheckoutLoading() {

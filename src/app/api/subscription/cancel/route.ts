@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
-import { subscriptionDAL } from '@/data/subscription'
+import { subscriptionDAL } from '@/features/subscription/data/subscription'
 import prisma from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {

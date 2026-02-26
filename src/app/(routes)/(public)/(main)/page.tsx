@@ -7,15 +7,16 @@ import { useUser } from "@clerk/nextjs";
 
 import { Button } from "@/components/ui/button";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
-import LandingPageHero from "@/components/landingpage/LandingPageHero";
-import LandingPageStats from "@/components/landingpage/LandingPageStats";
-import LandingPageFeature from "@/components/landingpage/LandingPageFeature";
-import LandingPageTestimonials from "@/components/landingpage/LandingPageTestimonials";
-import LandingPagePricing from "@/components/landingpage/LandingPagePricing";
-import LandingPageFAQ from "@/components/landingpage/LandingPageFAQ";
-import LandingPageCTA from "@/components/landingpage/LandingPageCTA";
-import LandingPageFooter from "@/components/landingpage/LandingPageFooter";
-
+import {
+  LandingPageHero,
+  LandingPageStats,
+  LandingPageFeature,
+  LandingPageTestimonials,
+  LandingPagePricing,
+  LandingPageFAQ,
+  LandingPageCTA,
+  LandingPageFooter,
+} from "@/features/landing";
 
 export default function WebBuilderLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -81,7 +82,7 @@ export default function WebBuilderLanding() {
                     Profile
                   </Link>
                 </Button>
-                <Button 
+                <Button
                   className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
                   asChild
                 >
@@ -101,7 +102,7 @@ export default function WebBuilderLanding() {
                 >
                   <Link href="/sign-in">Sign In</Link>
                 </Button>
-                <Button 
+                <Button
                   className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
                   asChild
                 >
@@ -163,7 +164,10 @@ export default function WebBuilderLanding() {
                       Profile
                     </Link>
                   </Button>
-                  <Button className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold" asChild>
+                  <Button
+                    className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold"
+                    asChild
+                  >
                     <Link href="/dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
@@ -176,7 +180,10 @@ export default function WebBuilderLanding() {
                   <Button variant="ghost" className="justify-start" asChild>
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
-                  <Button className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold" asChild>
+                  <Button
+                    className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold"
+                    asChild
+                  >
                     <Link href="/sign-up">Start Free Trial</Link>
                   </Button>
                 </>
@@ -187,7 +194,6 @@ export default function WebBuilderLanding() {
       </header>
 
       <LandingPageHero />
-
 
       <LandingPageStats />
 

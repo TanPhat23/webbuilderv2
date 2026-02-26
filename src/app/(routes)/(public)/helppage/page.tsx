@@ -1,4 +1,4 @@
-import HelpAndSupport from "@/components/helppage/HelpAndSupport";
+import { HelpAndSupport } from "@/features/help";
 
 
 export default function HelpPage() {

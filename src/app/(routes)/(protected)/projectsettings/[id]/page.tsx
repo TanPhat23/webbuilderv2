@@ -1,4 +1,4 @@
-import ProjectSettings from "@/components/projectsettings/ProjectSettings";
+import { ProjectSettings } from "@/features/projectsettings";
 
 export default function ProjectSettingsPage() {
   return <ProjectSettings />;

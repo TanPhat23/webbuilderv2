@@ -1,5 +1,5 @@
 import { getQueryClient } from "@/client/queryclient";
-import { projectService } from "@/services/project";
+import { projectService } from "@/features/projects";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import Editor from "./editor";
 
