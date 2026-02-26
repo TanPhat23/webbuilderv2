@@ -15,14 +15,14 @@ import {
   useElementStore,
   ElementStore,
   type MoveData,
-} from "@/globalstore/element-store";
-import { useMouseStore } from "@/globalstore/mouse-store";
+} from "@/features/editor";
+import { useMouseStore } from "@/features/editor";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
-import { CustomYjsProviderV2 } from "@/lib/yjs/Provider";
+import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
 import type { EditorElement } from "@/types/global.type";
 
-import type { Page } from "@/interfaces/page.interface";
+import type { Page } from "@/features/pages";
 import type {
   WSCollabState,
   WSRoomState,
@@ -30,7 +30,7 @@ import type {
   WSCollaborationConfig,
   RemotePresence,
   PresenceBroadcastPayload,
-} from "@/interfaces/websocket";
+} from "@/features/collaboration";
 
 const DEFAULT_WS_URL = "ws://localhost:8080";
 const PRESENCE_SEND_THROTTLE_MS = 50;

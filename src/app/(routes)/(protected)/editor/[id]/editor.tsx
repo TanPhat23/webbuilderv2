@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useMemo } from "react";
-import EditorHeader from "@/components/editor/editor/EditorHeader";
-import PreviewContainer from "@/components/editor/editor/PreviewContainer";
-import EditorCanvas from "@/components/editor/editor/EditorCanvas";
-import CodeSplit from "@/components/editor/editor/CodeSplit";
+import EditorHeader from "@/features/editor/components/editor/EditorHeader";
+import PreviewContainer from "@/features/editor/components/editor/PreviewContainer";
+import EditorCanvas from "@/features/editor/components/editor/EditorCanvas";
+import CodeSplit from "@/features/editor/components/editor/CodeSplit";
 import { useEditorContext } from "@/providers/editorprovider";
 
 type EditorProps = {

@@ -1,4 +1,4 @@
-import type { ResponsiveStyles } from "@/interfaces/elements.interface";
+import type { ResponsiveStyles } from "@/features/editor";
 
 /**
  * Styles helpers module

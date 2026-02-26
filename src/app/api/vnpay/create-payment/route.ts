@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import moment from 'moment';
-import { createPaymentUrl, convertUSDtoVND } from '@/lib/vnpay-utils';
-import vnpayConfig from '@/lib/vnpay-config';
-import { subscriptionDAL } from '@/data/subscription';
+import { createPaymentUrl, convertUSDtoVND } from '@/features/subscription/lib/vnpay-utils';
+import vnpayConfig from '@/features/subscription/lib/vnpay-config';
+import { subscriptionDAL } from '@/features/subscription/data/subscription';
 
 export async function POST(request: NextRequest) {
   try {

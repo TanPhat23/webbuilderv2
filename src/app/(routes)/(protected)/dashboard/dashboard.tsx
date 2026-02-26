@@ -10,13 +10,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ProjectCard } from "@/components/dashboard/ProjectCard";
-import { ProjectListItem } from "@/components/dashboard/ProjectListItem";
-import { DashboardFilters } from "@/components/dashboard/DashboardFilters";
-import { EmptyState } from "@/components/dashboard/EmptyState";
-import { DeleteProjectDialog } from "@/components/dashboard/DeleteProjectDialog";
-import { PublishProjectDialog } from "@/components/dashboard/PublishProjectDialog";
-import CreateProjectDialog from "@/components/dashboard/CreateProjectDialog";
+import { ProjectCard } from "@/features/dashboard";
+import { ProjectListItem } from "@/features/dashboard";
+import { DashboardFilters } from "@/features/dashboard";
+import { EmptyState } from "@/features/dashboard";
+import { DeleteProjectDialog } from "@/features/dashboard";
+import { PublishProjectDialog } from "@/features/dashboard";
+import { CreateProjectDialog } from "@/features/dashboard";
 import { useDashboard } from "@/hooks";
 
 export default function Dashboard() {

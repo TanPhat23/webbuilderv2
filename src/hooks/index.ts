@@ -6,8 +6,8 @@
 // =============================================================================
 // TABLE MANAGEMENT HOOKS
 // =============================================================================
-export { useTableEditing } from "./table/use-table-editing";
-export { useTableState } from "./table/use-table-state";
+export { useTableEditing } from "@/features/table";
+export { useTableState } from "@/features/table";
 
 // =============================================================================
 // CMS HOOKS
@@ -19,16 +19,16 @@ export {
   getFieldValues,
   useCMSContentTypes,
   useCMSManager,
-} from "./cms";
+} from "@/features/cms";
 
 // =============================================================================
 // EDITOR HOOKS
 // =============================================================================
-export { useEditor } from "./editor/useEditor";
-export type { Viewport } from "./editor/useEditor";
-export { useElementHandler } from "./editor";
-export { useGridEditor } from "./editor/useGridEditor";
-export { useResizeHandler } from "./editor/useResizeHandler";
+export { useEditor } from "@/features/editor/hooks/useEditor";
+export type { Viewport } from "@/features/editor/hooks/useEditor";
+export { useElementHandler } from "@/features/editor/hooks";
+export { useGridEditor } from "@/features/editor/hooks/useGridEditor";
+export { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 
 // =============================================================================
 // ELEMENT COMMENTS HOOKS
@@ -37,23 +37,23 @@ export {
   elementCommentKeys,
   useElementComments,
   useProjectComments,
-} from "./useElementComments";
+} from "@/features/comments";
 
 // =============================================================================
 // COMMENT MANAGER HOOK
 // =============================================================================
-export { useCommentManager } from "./useCommentManager";
+export { useCommentManager } from "@/features/comments";
 
 // =============================================================================
 // CHAT HOOK
 // =============================================================================
-export { useChat } from "./useChat";
+export { useChat } from "@/features/chat";
 
 // =============================================================================
 // UI HOOKS
 // =============================================================================
-export { useInView } from "./ui/useInView";
-export { useIsMobile } from "./ui/use-mobile";
+export { useInView } from "@/features/ui";
+export { useIsMobile } from "@/features/ui";
 
 // =============================================================================
 // IMAGE HOOKS
@@ -65,7 +65,7 @@ export {
   useUploadImage,
   useUploadBase64Image,
   useDeleteImage,
-} from "./images";
+} from "@/features/images";
 
 // =============================================================================
 // SUBSCRIPTION HOOKS
@@ -78,8 +78,8 @@ export {
   useCancelSubscription,
   userPlanKeys,
   useUserPlan,
-} from "./subscription";
-export type { UserPlan } from "./subscription";
+} from "@/features/subscription";
+export type { UserPlan } from "@/features/subscription";
 
 // =============================================================================
 // FEATURE HOOKS
@@ -100,7 +100,7 @@ export {
   useCreateTag,
   useDeleteTag,
   useMarketplaceManager,
-} from "./features/useMarketplace";
+} from "@/features/marketplace";
 export {
   commentKeys,
   useComments,
@@ -114,7 +114,7 @@ export {
   useDeleteReaction,
   useReactions,
   useReactionSummary,
-} from "./features/useComments";
+} from "@/features/comments";
 export {
   projectKeys,
   useUserProjects,
@@ -124,9 +124,9 @@ export {
   useUpdateProject,
   useDeleteProject,
   usePublishProject,
-} from "./features/useProjects";
-export { useDashboard } from "./features/useDashboard";
-export { analyticsKeys, useAnalytics } from "./features/useAnalytics";
+} from "@/features/projects";
+export { useDashboard } from "@/features/dashboard";
+export { useAnalytics } from "@/features/analytics";
 
 // =============================================================================
 // NOTIFICATION HOOKS
@@ -137,7 +137,7 @@ export {
   useUpdateNotification,
   useMarkAllAsRead,
   useCreateProfileUpdateNotification,
-} from "./features/useNotifications";
+} from "@/features/notifications";
 
 // =============================================================================
 // COLLABORATION HOOKS
@@ -151,7 +151,7 @@ export {
   useUpdateInvitationStatus,
   useDeleteInvitation,
   useInvitationManager,
-} from "./features/useInvitations";
+} from "@/features/collaboration";
 export {
   collaboratorKeys,
   useProjectCollaborators,
@@ -159,7 +159,7 @@ export {
   useRemoveCollaborator,
   useLeaveProject,
   useCollaboratorManager,
-} from "./features/useCollaborators";
+} from "@/features/collaboration";
 
 // =============================================================================
 // USER HOOKS
@@ -169,7 +169,7 @@ export {
   useSearchUsers,
   useUserByEmail,
   useUserByUsername,
-} from "./features/useUsers";
+} from "@/features/users";
 
 // =============================================================================
 // RBAC & PERMISSIONS HOOKS
@@ -180,4 +180,4 @@ export {
   useCanDeleteOwnResource,
   useRoleDescription,
   Permission,
-} from "./useProjectPermissions";
+} from "@/features/projects";

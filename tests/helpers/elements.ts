@@ -14,7 +14,7 @@ import type {
   CMSContentListElement,
   CMSContentItemElement,
   CMSContentGridElement,
-} from "@/interfaces/elements.interface";
+} from "@/features/editor";
 
 /**
  * Element helpers module
