@@ -20,40 +20,51 @@ A modern, full-stack web builder application built with Next.js 15, TypeScript, 
 webbuilder/
 ├── public/                      # Static assets (icons, images)
 ├── src/
-│   ├── app/                     # Next.js App Router
-│   │   ├── (auth)/             # Authentication routes
-│   │   │   ├── sign-in/        # Login page with Clerk
-│   │   │   └── sign-up/        # Registration page with Clerk
-│   │   ├── (routes)/           # Main application routes
-│   │   │   ├── (protected)/    # Protected routes (requires auth)
-│   │   │   │   ├── dashboard/  # User dashboard & projects
-│   │   │   │   ├── editor/     # Visual editor interface
-│   │   │   │   └── pricing/    # Pricing page
-│   │   │   └── (public)/       # Public routes
-│   │   │       ├── (main)/     # Home page
-│   │   │       └── preview/    # Project preview pages
-│   │   ├── api/                # API routes
-│   │   │   ├── elements/       # Element management endpoints
-│   │   │   └── gettoken/       # Authentication token endpoint-
-│   │   ├── globals.css         # Global styles & Tailwind config
-│   │   └── layout.tsx          # Root layout with providers
-│   ├── client/                 # React Query client configuration
-│   ├── components/             # Reusable UI components
-│   ├── globalstore/            # Global state management
-│   ├── hooks/                  # Custom React hooks
-│   ├── interfaces/             # TypeScript interfaces
-│   ├── lib/                    # Utility libraries
-│   ├── prisma/                 # Database schema & migrations
-│   ├── providers/              # React context providers
-│   ├── services/               # API service layers
-│   ├── types/                  # TypeScript type definitions
-│   ├── utils/                  # Utility functions
-│   └── middleware.ts           # Clerk authentication middleware
-├── components.json             # Shadcn/ui configuration
-├── next.config.ts              # Next.js configuration
-├── package.json                # Dependencies & scripts
-├── postcss.config.mjs          # PostCSS configuration
-└── tsconfig.json               # TypeScript configuration
+│   ├── app/                     # Next.js App Router (routing only, thin pages/layouts)
+│   │   ├── (routes)/            # Main application routes
+│   │   ├── api/                 # API routes
+│   │   ├── globals.css          # Global styles & Tailwind config
+│   │   └── layout.tsx           # Root layout with providers
+│   ├── features/                # Feature-based modules (components, hooks, services, stores, etc.)
+│   │   ├── ai/
+│   │   ├── analytics/
+│   │   ├── auth/
+│   │   ├── chat/
+│   │   ├── cms/
+│   │   ├── collaboration/
+│   │   ├── comments/
+│   │   ├── dashboard/
+│   │   ├── editor/
+│   │   ├── eventworkflows/
+│   │   ├── help/
+│   │   ├── images/
+│   │   ├── landing/
+│   │   ├── marketplace/
+│   │   ├── notifications/
+│   │   ├── pages/
+│   │   ├── preview/
+│   │   ├── profile/
+│   │   ├── projects/
+│   │   ├── projectsettings/
+│   │   ├── richtexteditor/
+│   │   ├── subscription/
+│   │   ├── table/
+│   │   ├── ui/
+│   │   └── users/
+│   ├── components/              # Shared UI components (shadcn/ui)
+│   ├── lib/                     # Shared utility libraries (prisma, cn)
+│   ├── providers/               # Global React context providers
+│   ├── types/                   # Global TypeScript type definitions
+│   ├── constants/               # Shared constants
+│   ├── hooks/                   # Shared hooks and barrel file
+│   ├── services/                # Shared services (apiclient, token)
+│   ├── utils/                   # Shared utilities (errors, query, urlbuilder)
+│   └── proxy.ts                 # Clerk authentication middleware
+├── components.json              # Shadcn/ui configuration
+├── next.config.ts               # Next.js configuration
+├── package.json                 # Dependencies & scripts
+├── postcss.config.mjs           # PostCSS configuration
+└── tsconfig.json                # TypeScript configuration
 ```
 
 ## 🏗️ Architecture Overview
@@ -107,15 +118,18 @@ The DataLoaderElement enables dynamic data binding by fetching data from APIs an
 #### Data Binding Examples
 
 **Simple Text Binding:**
+
 - Add a Text element inside DataLoader
 - The Text element will display the fetched data as a string
 
 **List Binding:**
+
 - Add a List element inside DataLoader
 - If API returns an array, each item becomes a list item
 - Add Text elements inside the List to display item properties
 
 **Complex Binding:**
+
 ```json
 // API Response: { "title": "Hello World", "items": ["item1", "item2"] }
 {
@@ -230,10 +244,10 @@ bun lint         # Run ESLint
 
 ### Code Organization
 
-- **Route Groups**: Organized by (auth), (protected), (public)
-- **Service Layer**: Abstracted API calls with TypeScript interfaces
-- **Component Structure**: Modular, reusable components
-- **Type Safety**: Comprehensive TypeScript coverage
+- **Feature-Based Architecture**: Code is organized by feature domains (e.g., `editor`, `dashboard`, `marketplace`) under `src/features/`. Each feature encapsulates its own components, hooks, services, stores, schemas, and interfaces.
+- **Thin Routing Layer**: The `src/app/` directory is strictly for routing, layouts, and API endpoints.
+- **Shared Resources**: Global utilities, UI primitives (shadcn), providers, and types are kept at the root of `src/`.
+- **Type Safety**: Comprehensive TypeScript coverage with Zod schemas for validation.
 
 ## 🎯 Future Enhancements
 
