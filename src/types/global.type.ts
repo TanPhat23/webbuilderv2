@@ -2,7 +2,7 @@ import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
   type ElementType,
-} from "@/constants/elements";
+} from "@/features/editor";
 import {
   ArticleElement,
   AsideElement,
@@ -38,7 +38,7 @@ import {
   TextElement,
   TextareaElement,
   VideoElement,
-} from "@/interfaces/elements.interface";
+} from "@/features/editor";
 
 type ContainerElement =
   | FrameElement
@@ -128,4 +128,4 @@ export type {
   ElementTemplate,
 };
 
-export type { ElementTypeMap } from "@/interfaces/elements.interface";
+export type { ElementTypeMap } from "@/features/editor";

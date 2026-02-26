@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Sparkles, Send, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { aiContentService } from "@/services/aicontent";
+import { aiContentService } from "@/features/ai";
 
 interface Message {
     id: string;

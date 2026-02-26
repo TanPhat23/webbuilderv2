@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { codeGenerator } from "@/lib/code/generator";
+import { codeGenerator } from "@/features/editor/lib/code/generator";
 
 export const runtime = "nodejs";
 

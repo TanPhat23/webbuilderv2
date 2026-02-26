@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { MarketplaceHero } from "@/components/marketplace/MarketplaceHero";
-import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
-import { MarketplaceGrid } from "@/components/marketplace/MarketplaceGrid";
-import MarketplaceFooter from "@/components/marketplace/MarketplaceFooter";
+import { MarketplaceHero } from "@/features/marketplace";
+import { MarketplaceFiltersComponent as MarketplaceFilters } from "@/features/marketplace";
+import { MarketplaceGrid } from "@/features/marketplace";
+import { MarketplaceFooter } from "@/features/marketplace";
 
 export default async function MarketplacePage() {
   return (

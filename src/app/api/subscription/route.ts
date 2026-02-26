@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
-import { subscriptionDAL } from '@/data/subscription'
+import { subscriptionDAL } from '@/features/subscription/data/subscription'
 
 export async function GET(request: NextRequest) {
   try {

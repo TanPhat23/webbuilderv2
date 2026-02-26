@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { projectService } from "@/services/project";
-import { elementService } from "@/services/element";
-import PreviewElementLoader from "@/components/preview/PreviewElementLoader";
+import { projectService } from "@/features/projects";
+import { elementService } from "@/features/editor";
+import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
 
 interface PreviewRendererProps {
   projectId: string;

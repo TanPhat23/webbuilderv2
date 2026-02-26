@@ -11,8 +11,8 @@ import AIChatProvider from "./aiprovider";
 import { useEditor } from "@/hooks";
 import { useSearchParams } from "next/navigation";
 import CollaborationProvider from "./collaborationprovider";
-import EditorShell from "@/components/editor/editor/EditorShell";
-import WireframeView from "@/components/editor/editor/WireframeView";
+import EditorShell from "@/features/editor/components/editor/EditorShell";
+import WireframeView from "@/features/editor/components/editor/WireframeView";
 import { toast } from "sonner";
 
 interface EditorProviderProps {
