@@ -7,14 +7,8 @@ import type {
   UpdateCollaboratorRoleRequest,
 } from "@/features/collaboration";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/utils/errors/errorToast";
-import {
-  getErrorMessage,
-  onMutationError,
-} from "@/hooks/utils/mutationUtils";
+import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
+import { getErrorMessage, onMutationError } from "@/hooks/utils/mutationUtils";
 
 // Query keys for collaborators
 export const collaboratorKeys = {

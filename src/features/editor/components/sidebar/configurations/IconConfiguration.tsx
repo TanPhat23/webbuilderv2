@@ -11,10 +11,7 @@ import {
 import { Accordion } from "@/components/ui/accordion";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
-import {
-  IconElement,
-  IconSettings,
-} from "@/features/editor";
+import { IconElement, IconSettings } from "@/features/editor";
 import {
   AccordionSection,
   ConfigField,
@@ -100,9 +97,8 @@ function IconPicker({ value, onChange }: IconPickerProps) {
   const totalMatches = useMemo(() => {
     if (!search.trim()) return ALL_ICON_NAMES.length;
     const query = search.toLowerCase().trim();
-    return ALL_ICON_NAMES.filter((name) =>
-      name.toLowerCase().includes(query),
-    ).length;
+    return ALL_ICON_NAMES.filter((name) => name.toLowerCase().includes(query))
+      .length;
   }, [search]);
 
   const isValidIcon = value && ALL_ICON_NAMES.includes(value as IconName);

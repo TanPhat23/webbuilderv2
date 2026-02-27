@@ -344,7 +344,7 @@ export const ContentItemsTab: React.FC<ContentItemsTabProps> = ({
                         className="w-full justify-start"
                       >
                         {editedData?.fieldValues?.[field.id] ||
-                          fieldValues[field.id] ? (
+                        fieldValues[field.id] ? (
                           <span className="truncate">
                             {editedData?.fieldValues?.[field.id] ||
                               fieldValues[field.id]
@@ -389,7 +389,10 @@ export const ContentItemsTab: React.FC<ContentItemsTabProps> = ({
             } else {
               return (
                 <div className="w-[200px] overflow-hidden">
-                  <span className="block truncate" title={fieldValues[field.id] || "-"}>
+                  <span
+                    className="block truncate"
+                    title={fieldValues[field.id] || "-"}
+                  >
                     {fieldValues[field.id] || "-"}
                   </span>
                 </div>
@@ -586,9 +589,9 @@ export const ContentItemsTab: React.FC<ContentItemsTabProps> = ({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
                   ))}
                 </TableRow>

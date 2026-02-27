@@ -74,8 +74,7 @@ const defaultChartData: TopTemplate[] = [
   },
 ];
 
-interface CalendarDateRangePickerProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+interface CalendarDateRangePickerProps extends React.HTMLAttributes<HTMLDivElement> {
   topTemplates?: TopTemplate[];
 }
 
@@ -105,11 +104,11 @@ export function CalendarDateRangePicker({
 
   const totalViews = chartDataWithColors.reduce(
     (sum, item) => sum + item.views,
-    0
+    0,
   );
   const totalDownloads = chartDataWithColors.reduce(
     (sum, item) => sum + item.downloads,
-    0
+    0,
   );
   const avgConversion = ((totalDownloads / totalViews) * 100).toFixed(1);
 
@@ -195,8 +194,8 @@ export function CalendarDateRangePicker({
                     id="date"
                     variant={"outline"}
                     className={cn(
-                      "w-full sm:w-[300px] justify-start text-left font-normal hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 text-xs sm:text-sm md:text-base",
-                      !date && "text-muted-foreground"
+                      "w-full sm:w-75 justify-start text-left font-normal hover:bg-primary/5 hover:border-primary/30 hover:text-primary transition-all duration-300 text-xs sm:text-sm md:text-base",
+                      !date && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5" />

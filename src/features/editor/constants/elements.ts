@@ -155,157 +155,157 @@ export const elementHolders: readonly ElementHolder[] = ALL_ELEMENT_TYPES.map(
 
 type ComponentMapValue = (props: EditorComponentProps) => any;
 
+const componentMap: Record<ElementType, () => Promise<ComponentMapValue>> = {
+  // Inline / Leaf
+  Text: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.BaseComponent,
+    ),
+  Span: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.BaseComponent,
+    ),
+  Heading: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.HeadingComponent,
+    ),
+  Label: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.BaseComponent,
+    ),
+  Blockquote: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.BlockquoteComponent,
+    ),
+  Code: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CodeComponent,
+    ),
+  Separator: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SeparatorComponent,
+    ),
+  Icon: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.IconComponent,
+    ),
+  // Media
+  Image: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.ImageComponent,
+    ),
+  Video: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.VideoComponent,
+    ),
+  Audio: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.AudioComponent,
+    ),
+  IFrame: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.IFrameComponent,
+    ),
+  // Interactive
+  Button: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.ButtonComponent,
+    ),
+  Link: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.BaseComponent,
+    ),
+  // Form
+  Input: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.InputComponent,
+    ),
+  Textarea: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.TextareaComponent,
+    ),
+  Checkbox: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CheckboxComponent,
+    ),
+  Radio: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.RadioComponent,
+    ),
+  Select: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SelectComponent,
+    ),
+  Form: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.FormComponent,
+    ),
+  Progress: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.ProgressComponent,
+    ),
+  // Table
+  Table: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.TableComponent,
+    ),
+  // Container / Layout
+  Frame: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.FrameComponent,
+    ),
+  Section: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SectionComponent,
+    ),
+  Nav: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SemanticContainerComponent,
+    ),
+  Header: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SemanticContainerComponent,
+    ),
+  Footer: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SemanticContainerComponent,
+    ),
+  Article: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SemanticContainerComponent,
+    ),
+  Aside: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.SemanticContainerComponent,
+    ),
+  // Carousel
+  Carousel: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CarouselComponent,
+    ),
+  // List
+  List: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.ListComponent,
+    ),
+  // CMS
+  CMSContentList: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CMSContentListComponent,
+    ),
+  CMSContentItem: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CMSContentItemComponent,
+    ),
+  CMSContentGrid: () =>
+    import("@/features/editor/components/editorcomponents").then(
+      (m) => m.CMSContentGridComponent,
+    ),
+};
+
 export const getComponentFactory = (
   elementType: ElementType,
 ): (() => Promise<ComponentMapValue>) | undefined => {
-  const componentMap: Record<ElementType, () => Promise<ComponentMapValue>> = {
-    // Inline / Leaf
-    Text: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.BaseComponent,
-      ),
-    Span: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.BaseComponent,
-      ),
-    Heading: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.HeadingComponent,
-      ),
-    Label: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.BaseComponent,
-      ),
-    Blockquote: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.BlockquoteComponent,
-      ),
-    Code: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CodeComponent,
-      ),
-    Separator: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SeparatorComponent,
-      ),
-    Icon: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.IconComponent,
-      ),
-    // Media
-    Image: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.ImageComponent,
-      ),
-    Video: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.VideoComponent,
-      ),
-    Audio: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.AudioComponent,
-      ),
-    IFrame: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.IFrameComponent,
-      ),
-    // Interactive
-    Button: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.ButtonComponent,
-      ),
-    Link: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.BaseComponent,
-      ),
-    // Form
-    Input: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.InputComponent,
-      ),
-    Textarea: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.TextareaComponent,
-      ),
-    Checkbox: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CheckboxComponent,
-      ),
-    Radio: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.RadioComponent,
-      ),
-    Select: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SelectComponent,
-      ),
-    Form: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.FormComponent,
-      ),
-    Progress: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.ProgressComponent,
-      ),
-    // Table
-    Table: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.TableComponent,
-      ),
-    // Container / Layout
-    Frame: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.FrameComponent,
-      ),
-    Section: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SectionComponent,
-      ),
-    Nav: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SemanticContainerComponent,
-      ),
-    Header: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SemanticContainerComponent,
-      ),
-    Footer: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SemanticContainerComponent,
-      ),
-    Article: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SemanticContainerComponent,
-      ),
-    Aside: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.SemanticContainerComponent,
-      ),
-    // Carousel
-    Carousel: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CarouselComponent,
-      ),
-    // List
-    List: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.ListComponent,
-      ),
-    // CMS
-    CMSContentList: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CMSContentListComponent,
-      ),
-    CMSContentItem: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CMSContentItemComponent,
-      ),
-    CMSContentGrid: () =>
-      import("@/features/editor/components/editorcomponents").then(
-        (m) => m.CMSContentGridComponent,
-      ),
-  };
-
   return componentMap[elementType];
 };
 

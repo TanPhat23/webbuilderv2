@@ -6,10 +6,7 @@ import {
   ElementTemplate,
   ElementType,
 } from "@/types/global.type";
-import type {
-  ResponsiveStyles,
-  ElementTypeMap,
-} from "@/features/editor";
+import type { ResponsiveStyles, ElementTypeMap } from "@/features/editor";
 import { v4 as uuidv4 } from "uuid";
 import { getElementStrategy } from "./elementStrategyMap";
 import { BuilderState } from "./elementCreateStrategy";

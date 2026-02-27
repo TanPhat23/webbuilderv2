@@ -47,7 +47,7 @@ const SemanticContainerComponent = ({
     ref: elementRef as React.RefObject<HTMLElement>,
     "data-element-id": element.id,
     "data-element-type": element.type,
-    ...getCommonProps(semanticElement as any),
+    ...getCommonProps(semanticElement),
     ...eventHandlers,
     style: {
       ...safeStyles,

@@ -35,7 +35,9 @@ export const subscriptionDAL = {
   /**
    * Get subscription status for a user
    */
-  getSubscriptionStatus: async (userId: string): Promise<SubscriptionStatus> => {
+  getSubscriptionStatus: async (
+    userId: string,
+  ): Promise<SubscriptionStatus> => {
     const activeSubscription = await prisma?.subscription.findFirst({
       where: {
         UserId: userId,
@@ -58,7 +60,7 @@ export const subscriptionDAL = {
     const now = new Date();
     const endDate = activeSubscription.EndDate!;
     const daysUntilExpiry = Math.ceil(
-      (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     return {
@@ -131,23 +133,29 @@ export const subscriptionDAL = {
   /**
    * Update subscription details
    */
-  updateSubscription: async (subscriptionId: string, updates: UpdateSubscriptionData) => {
+  updateSubscription: async (
+    subscriptionId: string,
+    updates: UpdateSubscriptionData,
+  ) => {
     const fieldMapping: Record<string, string> = {
-      status: 'Status',
-      startDate: 'StartDate',
-      endDate: 'EndDate',
-      bankCode: 'BankCode',
-      cardType: 'CardType',
-      payDate: 'PayDate',
-      transactionNo: 'TransactionNo',
+      status: "Status",
+      startDate: "StartDate",
+      endDate: "EndDate",
+      bankCode: "BankCode",
+      cardType: "CardType",
+      payDate: "PayDate",
+      transactionNo: "TransactionNo",
     };
 
-    const updateData = Object.entries(updates).reduce((acc, [key, value]) => {
-      if (value !== undefined && fieldMapping[key]) {
-        acc[fieldMapping[key]] = value;
-      }
-      return acc;
-    }, { UpdatedAt: new Date() } as Record<string, any>);
+    const updateData = Object.entries(updates).reduce(
+      (acc, [key, value]) => {
+        if (value !== undefined && fieldMapping[key]) {
+          acc[fieldMapping[key]] = value;
+        }
+        return acc;
+      },
+      { UpdatedAt: new Date() } as Record<string, any>,
+    );
 
     return await prisma?.subscription.update({
       where: { Id: subscriptionId },
@@ -199,7 +207,7 @@ export const subscriptionDAL = {
   hasActiveSubscription: async (
     userId: string,
     planId: PlanId,
-    billingPeriod: BillingPeriod
+    billingPeriod: BillingPeriod,
   ): Promise<boolean> => {
     const activeSubscription = await prisma?.subscription.findFirst({
       where: {

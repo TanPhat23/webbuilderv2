@@ -1,21 +1,20 @@
 import z from "zod";
 
 const ElementSchema = z.object({
-  Id: z.string().optional(),
-  Type: z.string().min(1, "Type is required"),
-  Content: z.string().optional().nullable(),
-  Name: z.string().optional().nullable(),
-  Styles: z.record(z.string(), z.unknown()).optional().nullable(), // Json type
-  TailwindStyles: z.string().optional().nullable(),
-  Src: z.string().optional().nullable(),
-  Href: z.string().optional().nullable(),
-  ParentId: z.string().optional().nullable(),
-  PageId: z.string().optional().nullable(),
-  ProjectId: z.string(),
-  Order: z.number().optional().default(0),
-  CreatedAt: z.date().optional(),
-  UpdatedAt: z.date().optional(),
-  DeletedAt: z.date().optional().nullable(),
+  id: z.string().optional(),
+  type: z.string().min(1, "Type is required"),
+  content: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
+  styles: z.record(z.string(), z.unknown()).optional().nullable(), // Json type
+  tailwindStyles: z.string().optional().nullable(),
+  src: z.string().optional().nullable(),
+  parentId: z.string().optional().nullable(),
+  pageId: z.string().optional().nullable(),
+  projectId: z.string(),
+  order: z.number().optional().default(0),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+  deletedAt: z.date().optional().nullable(),
 });
 
 export { ElementSchema };

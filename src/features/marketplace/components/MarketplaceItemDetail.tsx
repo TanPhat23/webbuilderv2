@@ -1,59 +1,70 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Download, Heart, Eye, ArrowLeft, Star, Share2, Code2, Zap, TrendingUp, Loader2 } from "lucide-react"
-import type { MarketplaceItemWithRelations } from "@/features/marketplace"
-import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks"
-import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
-import { CommentSection } from "./CommentSection"
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Download,
+  Heart,
+  Eye,
+  ArrowLeft,
+  Star,
+  Share2,
+  Code2,
+  Zap,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
+import type { MarketplaceItemWithRelations } from "@/features/marketplace";
+import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { CommentSection } from "./CommentSection";
 
 interface MarketplaceItemDetailProps {
-  item: MarketplaceItemWithRelations
+  item: MarketplaceItemWithRelations;
 }
 
 export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
-  const router = useRouter()
-  const [isLiked, setIsLiked] = useState(false)
-  const downloadItem = useDownloadMarketplaceItem()
-  const incrementLikes = useIncrementLikes()
+  const router = useRouter();
+  const [isLiked, setIsLiked] = useState(false);
+  const downloadItem = useDownloadMarketplaceItem();
+  const incrementLikes = useIncrementLikes();
 
   const getTemplateTypeLabel = (type: string) => {
     switch (type) {
       case "full-site":
-        return "Full Site"
+        return "Full Site";
       case "page":
-        return "Page"
+        return "Page";
       case "section":
-        return "Section"
+        return "Section";
       case "block":
-        return "Block"
+        return "Block";
       default:
-        return type
+        return type;
     }
-  }
+  };
 
   const handleDownload = async () => {
     try {
-      const newProject = await downloadItem.mutateAsync(item.id)
-      router.push(`/editor/${newProject.id}`)
+      const newProject = await downloadItem.mutateAsync(item.id);
+      router.push(`/editor/${newProject.id}`);
     } catch (error) {
-      console.error("Failed to download template:", error)
+      console.error("Failed to download template:", error);
     }
-  }
+  };
 
   const handleLike = async () => {
-    if (isLiked) return
+    if (isLiked) return;
     try {
-      await incrementLikes.mutateAsync(item.id)
-      setIsLiked(true)
+      await incrementLikes.mutateAsync(item.id);
+      setIsLiked(true);
     } catch (error) {
-      console.error("Failed to like item:", error)
+      console.error("Failed to like item:", error);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen min-w-screen bg-background">
@@ -106,8 +117,12 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
 
             <div className="space-y-6">
               <div>
-                <h1 className="text-5xl font-bold text-foreground mb-4 leading-tight">{item.title}</h1>
-                <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">{item.description}</p>
+                <h1 className="text-5xl font-bold text-foreground mb-4 leading-tight">
+                  {item.title}
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl">
+                  {item.description}
+                </p>
               </div>
 
               <div className="grid grid-cols-3 gap-6 pt-8 border-t border-border/30">
@@ -116,21 +131,27 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                     <Eye className="h-5 w-5" />
                     <span className="text-sm font-medium">Views</span>
                   </div>
-                  <p className="text-4xl font-bold text-foreground">{(item.downloads || 0).toLocaleString()}</p>
+                  <p className="text-4xl font-bold text-foreground">
+                    {(item.downloads || 0).toLocaleString()}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Download className="h-5 w-5" />
                     <span className="text-sm font-medium">Downloads</span>
                   </div>
-                  <p className="text-4xl font-bold text-foreground">{(item.downloads || 0).toLocaleString()}</p>
+                  <p className="text-4xl font-bold text-foreground">
+                    {(item.downloads || 0).toLocaleString()}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Heart className="h-5 w-5" />
                     <span className="text-sm font-medium">Likes</span>
                   </div>
-                  <p className="text-4xl font-bold text-foreground">{(item.likes || 0).toLocaleString()}</p>
+                  <p className="text-4xl font-bold text-foreground">
+                    {(item.likes || 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
             </div>
@@ -143,34 +164,51 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                     <div className="p-2 rounded-lg bg-primary/10">
                       <Code2 className="h-5 w-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground text-lg">Technical Details</h3>
+                    <h3 className="font-semibold text-foreground text-lg">
+                      Technical Details
+                    </h3>
                   </div>
                   <div className="space-y-4">
                     <div className="flex justify-between items-center py-3 border-b border-border/20">
-                      <span className="text-sm text-muted-foreground font-medium">Type</span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Type
+                      </span>
                       <Badge variant="outline" className="text-xs font-medium">
                         {getTemplateTypeLabel(item.templateType)}
                       </Badge>
                     </div>
                     {item.pageCount && (
                       <div className="flex justify-between items-center py-3 border-b border-border/20">
-                        <span className="text-sm text-muted-foreground font-medium">Pages</span>
-                        <span className="font-semibold text-foreground">{item.pageCount}</span>
+                        <span className="text-sm text-muted-foreground font-medium">
+                          Pages
+                        </span>
+                        <span className="font-semibold text-foreground">
+                          {item.pageCount}
+                        </span>
                       </div>
                     )}
                     <div className="flex justify-between items-center py-3 border-b border-border/20">
-                      <span className="text-sm text-muted-foreground font-medium">Downloads</span>
-                      <span className="font-semibold text-foreground">{(item.downloads || 0).toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Downloads
+                      </span>
+                      <span className="font-semibold text-foreground">
+                        {(item.downloads || 0).toLocaleString()}
+                      </span>
                     </div>
                     {item.createdAt && (
                       <div className="flex justify-between items-center py-3">
-                        <span className="text-sm text-muted-foreground font-medium">Created</span>
+                        <span className="text-sm text-muted-foreground font-medium">
+                          Created
+                        </span>
                         <span className="font-semibold text-foreground">
-                          {new Date(item.createdAt).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(item.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
                     )}
@@ -185,7 +223,9 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                     <div className="p-2 rounded-lg bg-primary/10">
                       <Zap className="h-5 w-5 text-primary" />
                     </div>
-                    <h3 className="font-semibold text-foreground text-lg">Tags & Categories</h3>
+                    <h3 className="font-semibold text-foreground text-lg">
+                      Tags & Categories
+                    </h3>
                   </div>
                   {item.categories && item.categories.length > 0 && (
                     <div>
@@ -194,7 +234,11 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {item.categories.map((category, index) => (
-                          <Badge key={category.id || `category-${index}`} variant="secondary" className="text-xs font-medium">
+                          <Badge
+                            key={category.id || `category-${index}`}
+                            variant="secondary"
+                            className="text-xs font-medium"
+                          >
                             {category.name}
                           </Badge>
                         ))}
@@ -208,8 +252,14 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {item.tags.map((tag: any, index: number) => (
-                          <Badge key={`tag-${typeof tag === 'string' ? tag : tag?.name || tag?.id || index}`} variant="outline" className="text-xs font-medium">
-                            {typeof tag === 'string' ? tag : tag?.name || tag?.id || 'Unknown'}
+                          <Badge
+                            key={`tag-${typeof tag === "string" ? tag : tag?.name || tag?.id || index}`}
+                            variant="outline"
+                            className="text-xs font-medium"
+                          >
+                            {typeof tag === "string"
+                              ? tag
+                              : tag?.name || tag?.id || "Unknown"}
                           </Badge>
                         ))}
                       </div>
@@ -233,8 +283,12 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                         </span>
                       </div>
                       <div>
-                        <p className="font-semibold text-foreground text-base">{item.author.name}</p>
-                        <p className="text-xs text-muted-foreground font-medium">Template Creator</p>
+                        <p className="font-semibold text-foreground text-base">
+                          {item.author.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground font-medium">
+                          Template Creator
+                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -253,7 +307,9 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                   ) : (
                     <Download className="h-5 w-5 mr-2" />
                   )}
-                  {downloadItem.isPending ? "Creating Project..." : "Download Template"}
+                  {downloadItem.isPending
+                    ? "Creating Project..."
+                    : "Download Template"}
                 </Button>
                 <div className="flex gap-3">
                   <Button
@@ -294,19 +350,29 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
                   </div>
                   <div className="space-y-5">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground font-medium">Downloads</span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Downloads
+                      </span>
                       <span className="font-bold text-2xl text-foreground">
                         {(item.downloads || 0).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground font-medium">Likes</span>
-                      <span className="font-bold text-2xl text-foreground">{(item.likes || 0).toLocaleString()}</span>
+                      <span className="text-sm text-muted-foreground font-medium">
+                        Likes
+                      </span>
+                      <span className="font-bold text-2xl text-foreground">
+                        {(item.likes || 0).toLocaleString()}
+                      </span>
                     </div>
                     {item.pageCount && (
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground font-medium">Pages</span>
-                        <span className="font-bold text-2xl text-foreground">{item.pageCount}</span>
+                        <span className="text-sm text-muted-foreground font-medium">
+                          Pages
+                        </span>
+                        <span className="font-bold text-2xl text-foreground">
+                          {item.pageCount}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -321,5 +387,5 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -67,7 +67,9 @@ export function RichTextEditor({
 
   // Combine current value with streaming content for display
   const displayValue = isStreaming
-    ? (value ? `${value}\n${streamingContent}` : streamingContent)
+    ? value
+      ? `${value}\n${streamingContent}`
+      : streamingContent
     : value;
 
   return (

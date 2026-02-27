@@ -114,7 +114,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
 
     this.dispatcher = new MessageDispatcher();
     this.sender = new MessageSender(this.connection, this.dispatcher);
-    this.syncer = new DocumentSyncer(this.doc, options.pageId);
+    this.syncer = new DocumentSyncer();
     this.awarenessController = new AwarenessController(
       this.doc,
       this.userId,

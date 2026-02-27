@@ -97,9 +97,9 @@ function CreateMarketplaceItemDialog({
         templateType: existingItem.templateType,
         featured: existingItem.featured || false,
         pageCount: existingItem.pageCount,
-        tags: (existingItem.tags || []).map((tag: any) => 
-          typeof tag === 'string' ? tag : tag?.name || ''
-        ).filter(Boolean),
+        tags: (existingItem.tags || [])
+          .map((tag: any) => (typeof tag === "string" ? tag : tag?.name || ""))
+          .filter(Boolean),
         categoryIds: existingItem.categories?.map((c) => c.id) || [],
       };
     }
@@ -229,7 +229,9 @@ function CreateMarketplaceItemDialog({
                     Gói Hobby không thể publish lên Marketplace
                   </p>
                   <p className="text-muted-foreground">
-                    Nâng cấp lên <strong>Pro</strong> hoặc <strong>Enterprise</strong> để chia sẻ template với cộng đồng.
+                    Nâng cấp lên <strong>Pro</strong> hoặc{" "}
+                    <strong>Enterprise</strong> để chia sẻ template với cộng
+                    đồng.
                   </p>
                 </div>
               </div>
@@ -473,7 +475,9 @@ function CreateMarketplaceItemDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={!canPublish || createItem.isPending || updateItem.isPending}
+                disabled={
+                  !canPublish || createItem.isPending || updateItem.isPending
+                }
                 className="flex-1 sm:flex-none bg-primary hover:bg-primary/90"
               >
                 {createItem.isPending || updateItem.isPending ? (

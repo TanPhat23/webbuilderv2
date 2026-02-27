@@ -487,5 +487,3 @@ export type ElementTypeMap = {
   // Carousel
   Carousel: CarouselElement;
 };
-
-

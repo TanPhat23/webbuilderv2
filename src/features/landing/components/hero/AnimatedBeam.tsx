@@ -62,7 +62,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
         x2: ["0%", "100%"],
         y1: ["0%", "0%"],
         y2: ["0%", "0%"],
-      }
+      };
 
   useEffect(() => {
     const updatePath = () => {

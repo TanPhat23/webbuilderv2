@@ -7,7 +7,7 @@ import { getComponentFactory } from "@/features/editor";
 
 interface ElementRendererProps {
   element: EditorElement;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 /**

@@ -135,7 +135,7 @@ export function ProjectCard({
 
   // Get views count
   const viewsCount = useMemo(() => {
-    const views = (project as any).views ?? 0;
+    const views = project.views ?? 0;
     return (views as number).toLocaleString();
   }, [project]);
 
@@ -217,7 +217,9 @@ export function ProjectCard({
                   >
                     <Upload className="mr-2 h-4 w-4" />
                     Upload to Marketplace
-                    {!canPublish && <Crown className="ml-auto h-4 w-4 text-yellow-500" />}
+                    {!canPublish && (
+                      <Crown className="ml-auto h-4 w-4 text-yellow-500" />
+                    )}
                   </DropdownMenuItem>
                 ) : null}
 

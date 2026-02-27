@@ -1,6 +1,10 @@
 import { Project } from "@/features/projects";
 import prisma from "@/lib/prisma";
-import { getUserProjectAccess, Permission, hasPermission } from "@/features/auth";
+import {
+  getUserProjectAccess,
+  Permission,
+  hasPermission,
+} from "@/features/auth";
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 

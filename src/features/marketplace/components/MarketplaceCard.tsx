@@ -3,13 +3,7 @@
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Download,
-  Heart,
-  CheckCircle2,
-  Layers,
-  Eye,
-} from "lucide-react";
+import { Download, Heart, CheckCircle2, Layers, Eye } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketplaceItemWithRelations } from "@/features/marketplace";
@@ -121,8 +115,14 @@ export function MarketplaceCard({ item }: MarketplaceCardProps) {
           {item.tags && item.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-3">
               {item.tags.slice(0, 3).map((tag: any, index: number) => (
-                <Badge key={`tag-${typeof tag === 'string' ? tag : tag?.name || tag?.id || index}`} variant="outline" className="text-xs">
-                  {typeof tag === 'string' ? tag : tag?.name || tag?.id || 'Unknown'}
+                <Badge
+                  key={`tag-${typeof tag === "string" ? tag : tag?.name || tag?.id || index}`}
+                  variant="outline"
+                  className="text-xs"
+                >
+                  {typeof tag === "string"
+                    ? tag
+                    : tag?.name || tag?.id || "Unknown"}
                 </Badge>
               ))}
               {item.tags.length > 3 && (

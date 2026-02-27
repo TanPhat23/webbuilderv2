@@ -18,10 +18,7 @@ import {
 } from "@/components/ui/accordion";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
-import {
-  TextareaElement,
-  TextareaSettings,
-} from "@/features/editor";
+import { TextareaElement, TextareaSettings } from "@/features/editor";
 import {
   AccordionSection,
   ConfigField,
@@ -45,17 +42,37 @@ import {
 /* ─── Wrap Options ─── */
 
 const WRAP_OPTIONS = [
-  { value: "soft", label: "Soft", description: "Wraps visually, no newlines added on submit" },
-  { value: "hard", label: "Hard", description: "Inserts newlines at wrap points on submit (requires cols)" },
-  { value: "off", label: "Off", description: "No wrapping — horizontal scrollbar instead" },
+  {
+    value: "soft",
+    label: "Soft",
+    description: "Wraps visually, no newlines added on submit",
+  },
+  {
+    value: "hard",
+    label: "Hard",
+    description: "Inserts newlines at wrap points on submit (requires cols)",
+  },
+  {
+    value: "off",
+    label: "Off",
+    description: "No wrapping — horizontal scrollbar instead",
+  },
 ] as const;
 
 /* ─── Resize Options ─── */
 
 const RESIZE_OPTIONS = [
   { value: "both", label: "Both", description: "Resize in any direction" },
-  { value: "vertical", label: "Vertical", description: "Resize vertically only" },
-  { value: "horizontal", label: "Horizontal", description: "Resize horizontally only" },
+  {
+    value: "vertical",
+    label: "Vertical",
+    description: "Resize vertically only",
+  },
+  {
+    value: "horizontal",
+    label: "Horizontal",
+    description: "Resize horizontally only",
+  },
   { value: "none", label: "None", description: "Disable resizing" },
 ] as const;
 
@@ -240,7 +257,8 @@ export default function TextareaConfiguration() {
               <div className="flex items-center gap-1.5 pl-0.5 pt-0.5 animate-in fade-in-0 duration-150">
                 <Hash className="h-3 w-3 text-muted-foreground/40" />
                 <span className="text-[10px] text-muted-foreground/50 font-mono">
-                  {settings.rows ?? "auto"} rows × {settings.cols ?? "auto"} cols
+                  {settings.rows ?? "auto"} rows × {settings.cols ?? "auto"}{" "}
+                  cols
                 </span>
               </div>
             )}
@@ -397,7 +415,9 @@ export default function TextareaConfiguration() {
                 <div className="flex items-center gap-1.5 pl-0.5 pt-0.5 animate-in fade-in-0 duration-150">
                   <Hash className="h-3 w-3 text-muted-foreground/40" />
                   <span className="text-[10px] text-muted-foreground/50 font-mono">
-                    {settings.minLength !== undefined ? settings.minLength : "0"}
+                    {settings.minLength !== undefined
+                      ? settings.minLength
+                      : "0"}
                     {" → "}
                     {settings.maxLength !== undefined
                       ? `${settings.maxLength} chars`

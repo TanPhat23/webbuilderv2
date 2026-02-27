@@ -2,10 +2,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { EditorElement, ElementType } from "@/types/global.type";
-import {
-  useDragState,
-  useDragActions,
-} from "@/features/editor";
+import { useDragState, useDragActions } from "@/features/editor";
 import {
   useSwapElement,
   useInsertElement,

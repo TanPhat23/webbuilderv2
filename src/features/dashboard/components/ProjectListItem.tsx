@@ -78,10 +78,7 @@ export function ProjectListItem({
             <div className="flex items-center space-x-4 text-sm text-muted-foreground">
               <div className="flex items-center">
                 <Eye className="mr-1 h-4 w-4" />
-                {(
-                  ((project as any).views ?? 0) as number
-                ).toLocaleString()}{" "}
-                views
+                {(project.views ?? 0).toLocaleString()} views
               </div>
               <div className="flex items-center">
                 <Calendar className="mr-1 h-4 w-4" />

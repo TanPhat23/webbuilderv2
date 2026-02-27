@@ -93,9 +93,7 @@ export function registerComponentImport(
 /**
  * Gets the import statement for a specific component
  */
-export function getComponentImport(
-  componentType: string,
-): string | undefined {
+export function getComponentImport(componentType: string): string | undefined {
   return COMPONENT_IMPORTS[componentType];
 }
 
