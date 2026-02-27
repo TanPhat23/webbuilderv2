@@ -49,14 +49,12 @@ interface UseTableStateReturn {
  * Reusable hook for managing table state (sorting, filtering, etc.)
  */
 export function useTableState(
-  options: UseTableStateOptions = {}
+  options: UseTableStateOptions = {},
 ): UseTableStateReturn {
   const [sorting, setSorting] = useState<SortingState>(
-    options.initialSorting ?? []
+    options.initialSorting ?? [],
   );
-  const [globalFilter, setGlobalFilter] = useState(
-    options.initialFilter ?? ""
-  );
+  const [globalFilter, setGlobalFilter] = useState(options.initialFilter ?? "");
 
   const hasActiveFilters = useMemo(() => {
     return globalFilter.length > 0 || sorting.length > 0;

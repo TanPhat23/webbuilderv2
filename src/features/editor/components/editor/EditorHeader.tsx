@@ -31,6 +31,7 @@ import { useElementCommentStore } from "@/features/editor";
 import { useProjectStore } from "@/features/editor";
 import { usePageStore } from "@/features/editor";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 type EditorHeaderProps = {
   currentView: Viewport;
@@ -55,10 +56,6 @@ function useNavigationShortcut(onToggle: () => void) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onToggle]);
-}
-
-function HeaderDivider() {
-  return <div className="h-4 w-px bg-border shrink-0" aria-hidden="true" />;
 }
 
 function PillGroup({
@@ -95,7 +92,7 @@ function ProjectBreadcrumb() {
         <>
           <ChevronRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />
           <span className="text-sm text-muted-foreground truncate max-w-24">
-            {currentPage.Name}
+            {currentPage.Name || "Home"}
           </span>
         </>
       )}
@@ -282,7 +279,6 @@ function LeftSection({
   return (
     <div className="flex items-center gap-2 min-w-0">
       <ProjectBreadcrumb />
-      <HeaderDivider />
       <NavigateButton onClick={onNavigate} />
       <CollaboratorIndicator projectId={projectId} />
       <CollaborationButton projectId={projectId} />
@@ -296,11 +292,10 @@ function RightSection({
 }: Pick<EditorHeaderProps, "currentView" | "setCurrentView">) {
   return (
     <div className="flex items-center gap-1.5 ml-auto">
-      <HeaderDivider />
       <EventModeToggle />
       <EditingModeToggle />
       <CommentToggleButton />
-      <HeaderDivider />
+      <Separator orientation="vertical"/>
       <ViewportToggle
         currentView={currentView}
         setCurrentView={setCurrentView}

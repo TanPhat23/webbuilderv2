@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyReturnUrl } from '@/features/subscription/lib/vnpay-utils';
-import vnpayConfig from '@/features/subscription/lib/vnpay-config';
-import { subscriptionDAL } from '@/features/subscription/data/subscription';
-import prisma from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { verifyReturnUrl } from "@/features/subscription/lib/vnpay-utils";
+import vnpayConfig from "@/features/subscription/lib/vnpay-config";
+import { subscriptionDAL } from "@/features/subscription/data/subscription";
+import prisma from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,36 +20,55 @@ export async function GET(request: NextRequest) {
     if (!isValid) {
       // Redirect to checkout with error
       return NextResponse.redirect(
-        new URL('/checkout?payment=failed&reason=invalid_signature', request.url)
+        new URL(
+          "/checkout?payment=failed&reason=invalid_signature",
+          request.url,
+        ),
       );
     }
 
-    const transactionId = vnp_Params['vnp_TxnRef'];
-    const responseCode = vnp_Params['vnp_ResponseCode'];
-    const transactionNo = vnp_Params['vnp_TransactionNo'];
-    const bankCode = vnp_Params['vnp_BankCode'];
-    const cardType = vnp_Params['vnp_CardType'];
-    const payDate = vnp_Params['vnp_PayDate']; // Format: YYYYMMDDHHmmss
-    const amount = parseInt(vnp_Params['vnp_Amount']) / 100;
+    const transactionId = vnp_Params["vnp_TxnRef"];
+    const responseCode = vnp_Params["vnp_ResponseCode"];
+    const transactionNo = vnp_Params["vnp_TransactionNo"];
+    const bankCode = vnp_Params["vnp_BankCode"];
+    const cardType = vnp_Params["vnp_CardType"];
+    const payDate = vnp_Params["vnp_PayDate"]; // Format: YYYYMMDDHHmmss
+    const amount = parseInt(vnp_Params["vnp_Amount"]) / 100;
 
     // Find the subscription using DAL
-    const subscription = await subscriptionDAL.getSubscriptionById(transactionId);
+    const subscription =
+      await subscriptionDAL.getSubscriptionById(transactionId);
 
     if (!subscription) {
       return NextResponse.redirect(
-        new URL('/checkout?payment=failed&reason=transaction_not_found', request.url)
+        new URL(
+          "/checkout?payment=failed&reason=transaction_not_found",
+          request.url,
+        ),
       );
     }
 
     // Update subscription based on response code
-    if (responseCode === '00') {
+    if (responseCode === "00") {
       // Payment successful
-      console.log('[VNPay Return] Payment successful for transaction:', transactionId);
-      
+      console.log(
+        "[VNPay Return] Payment successful for transaction:",
+        transactionId,
+      );
+
       const startDate = new Date();
-      const endDate = subscription.BillingPeriod === 'yearly'
-        ? new Date(startDate.getFullYear() + 1, startDate.getMonth(), startDate.getDate())
-        : new Date(startDate.getFullYear(), startDate.getMonth() + 1, startDate.getDate());
+      const endDate =
+        subscription.BillingPeriod === "yearly"
+          ? new Date(
+              startDate.getFullYear() + 1,
+              startDate.getMonth(),
+              startDate.getDate(),
+            )
+          : new Date(
+              startDate.getFullYear(),
+              startDate.getMonth() + 1,
+              startDate.getDate(),
+            );
 
       // Parse pay date from VNPay format (YYYYMMDDHHmmss)
       let payDateTime: Date | undefined = undefined;
@@ -64,9 +83,12 @@ export async function GET(request: NextRequest) {
       }
 
       // Cancel all other active subscriptions for this user using DAL
-      await subscriptionDAL.cancelAllActiveSubscriptions(subscription.UserId, transactionId);
+      await subscriptionDAL.cancelAllActiveSubscriptions(
+        subscription.UserId,
+        transactionId,
+      );
 
-      console.log('[VNPay Return] Updating subscription to active:', {
+      console.log("[VNPay Return] Updating subscription to active:", {
         transactionId,
         startDate,
         endDate,
@@ -75,66 +97,89 @@ export async function GET(request: NextRequest) {
         cardType,
       });
 
-      const updatedSubscription = await subscriptionDAL.updateSubscription(transactionId, {
-        status: 'active',
-        startDate,
-        endDate,
-        transactionNo,
-        bankCode,
-        cardType,
-        payDate: payDateTime || undefined,
-      });
+      const updatedSubscription = await subscriptionDAL.updateSubscription(
+        transactionId,
+        {
+          status: "active",
+          startDate,
+          endDate,
+          transactionNo,
+          bankCode,
+          cardType,
+          payDate: payDateTime || undefined,
+        },
+      );
 
-      console.log('[VNPay Return] Subscription updated successfully:', updatedSubscription);
-      
+      console.log(
+        "[VNPay Return] Subscription updated successfully:",
+        updatedSubscription,
+      );
+
       // Create notification for successful payment
       try {
         await prisma.notification.create({
           data: {
             UserId: subscription.UserId,
-            Type: 'alert',
-            Title: 'Payment Successful',
-            Description: `Your ${subscription.PlanId} plan subscription (${subscription.BillingPeriod}) has been activated successfully. Amount: ${(subscription.Amount).toLocaleString()} ${subscription.Currency}. Valid until ${endDate.toLocaleDateString('vi-VN')}.`,
+            Type: "alert",
+            Title: "Payment Successful",
+            Description: `Your ${subscription.PlanId} plan subscription (${subscription.BillingPeriod}) has been activated successfully. Amount: ${subscription.Amount.toLocaleString()} ${subscription.Currency}. Valid until ${endDate.toLocaleDateString("vi-VN")}.`,
           },
         });
-        console.log('[VNPay Return] Payment success notification created');
+        console.log("[VNPay Return] Payment success notification created");
       } catch (notifError) {
-        console.error('[VNPay Return] Error creating notification:', notifError);
+        console.error(
+          "[VNPay Return] Error creating notification:",
+          notifError,
+        );
       }
 
       // Redirect to success page
       return NextResponse.redirect(
-        new URL(`/checkout/success?transactionId=${transactionId}&amount=${amount}`, request.url)
+        new URL(
+          `/checkout/success?transactionId=${transactionId}&amount=${amount}`,
+          request.url,
+        ),
       );
     } else {
       // Payment failed
-      console.log('[VNPay Return] Payment failed for transaction:', transactionId);
-      await subscriptionDAL.updateSubscription(transactionId, { status: 'cancelled' });
-      
+      console.log(
+        "[VNPay Return] Payment failed for transaction:",
+        transactionId,
+      );
+      await subscriptionDAL.updateSubscription(transactionId, {
+        status: "cancelled",
+      });
+
       // Create notification for failed payment
       try {
         await prisma.notification.create({
           data: {
             UserId: subscription.UserId,
-            Type: 'alert',
-            Title: 'Payment Failed',
+            Type: "alert",
+            Title: "Payment Failed",
             Description: `Your ${subscription.PlanId} plan subscription payment (${subscription.BillingPeriod}) failed. Please try again or contact support if the issue persists.`,
           },
         });
-        console.log('[VNPay Return] Payment failed notification created');
+        console.log("[VNPay Return] Payment failed notification created");
       } catch (notifError) {
-        console.error('[VNPay Return] Error creating notification:', notifError);
+        console.error(
+          "[VNPay Return] Error creating notification:",
+          notifError,
+        );
       }
 
       // Redirect to checkout with error
       return NextResponse.redirect(
-        new URL(`/checkout?payment=failed&reason=payment_declined&code=${responseCode}`, request.url)
+        new URL(
+          `/checkout?payment=failed&reason=payment_declined&code=${responseCode}`,
+          request.url,
+        ),
       );
     }
   } catch (error) {
-    console.error('Error processing VNPay return:', error);
+    console.error("Error processing VNPay return:", error);
     return NextResponse.redirect(
-      new URL('/checkout?payment=failed&reason=server_error', request.url)
+      new URL("/checkout?payment=failed&reason=server_error", request.url),
     );
   }
 }

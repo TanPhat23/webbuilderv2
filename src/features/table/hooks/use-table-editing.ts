@@ -80,10 +80,12 @@ interface UseTableEditingReturn<T> {
  * Handles both editing existing rows and creating new rows
  */
 export function useTableEditing<T extends { id: string }>(
-  options?: UseTableEditingOptions<T>
+  options?: UseTableEditingOptions<T>,
 ): UseTableEditingReturn<T> {
   const [editingRows, setEditingRows] = useState<string[]>([]);
-  const [editedValues, setEditedValues] = useState<Record<string, Record<string, any>>>({});
+  const [editedValues, setEditedValues] = useState<
+    Record<string, Record<string, any>>
+  >({});
   const [newRow, setNewRow] = useState<Record<string, any> | null>(null);
 
   const editingRowsSet = useMemo(() => new Set(editingRows), [editingRows]);
@@ -98,7 +100,7 @@ export function useTableEditing<T extends { id: string }>(
       }
       setEditingRows((prev) => [...prev, itemId]);
     },
-    [options]
+    [options],
   );
 
   const stopEditing = useCallback((itemId: string) => {
@@ -110,21 +112,24 @@ export function useTableEditing<T extends { id: string }>(
     });
   }, []);
 
-  const updateField = useCallback((itemId: string, field: string, value: any) => {
-    setEditedValues((prev) => ({
-      ...prev,
-      [itemId]: {
-        ...prev[itemId],
-        [field]: value,
-      },
-    }));
-  }, []);
+  const updateField = useCallback(
+    (itemId: string, field: string, value: any) => {
+      setEditedValues((prev) => ({
+        ...prev,
+        [itemId]: {
+          ...prev[itemId],
+          [field]: value,
+        },
+      }));
+    },
+    [],
+  );
 
   const getFieldValue = useCallback(
     (itemId: string, field: string, originalValue: any) => {
       return editedValues[itemId]?.[field] ?? originalValue;
     },
-    [editedValues]
+    [editedValues],
   );
 
   const startNewRow = useCallback((initialValues: Record<string, any> = {}) => {
@@ -146,19 +151,22 @@ export function useTableEditing<T extends { id: string }>(
     });
   }, []);
 
-  const clearEditingState = useCallback((itemId?: string) => {
-    if (itemId) {
-      stopEditing(itemId);
-    } else {
-      setEditingRows([]);
-      setEditedValues({});
-      setNewRow(null);
-    }
-  }, [stopEditing]);
+  const clearEditingState = useCallback(
+    (itemId?: string) => {
+      if (itemId) {
+        stopEditing(itemId);
+      } else {
+        setEditingRows([]);
+        setEditedValues({});
+        setNewRow(null);
+      }
+    },
+    [stopEditing],
+  );
 
   const isEditing = useCallback(
     (itemId: string) => editingRowsSet.has(itemId),
-    [editingRowsSet]
+    [editingRowsSet],
   );
 
   return {

@@ -15,10 +15,7 @@ import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
-import {
-  showErrorToast,
-  PERMISSION_ERRORS,
-} from "@/utils/errors/errorToast";
+import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import type { ResponsiveStyles } from "@/features/editor";
 
 /**

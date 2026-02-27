@@ -1,65 +1,73 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import { motion } from "framer-motion"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Lock, Mail, Wallet, ShieldCheck } from "lucide-react"
-import type { Plan } from "./SubscriptionCheckout"
-import type { BillingPeriod } from "../interfaces/subscription.interface"
-import type { PaymentMethod } from "./PaymentMethod"
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Lock, Mail, Wallet, ShieldCheck } from "lucide-react";
+import type { Plan } from "./SubscriptionCheckout";
+import type { BillingPeriod } from "../interfaces/subscription.interface";
+import type { PaymentMethod } from "./PaymentMethod";
 
 interface CheckoutFormProps {
-  selectedPlan: Plan
-  billingPeriod: BillingPeriod
-  paymentMethod: PaymentMethod
-  onBillingPeriodChange: (period: BillingPeriod) => void
-  onSubmit: (data: any) => void
+  selectedPlan: Plan;
+  billingPeriod: BillingPeriod;
+  paymentMethod: PaymentMethod;
+  onBillingPeriodChange: (period: BillingPeriod) => void;
+  onSubmit: (data: any) => void;
 }
 
-export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
+export function CheckoutForm({ paymentMethod, onSubmit }: CheckoutFormProps) {
   const [formData, setFormData] = useState({
     email: "",
     acceptTerms: false,
-  })
+  });
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     // Basic validation
-    const newErrors: Record<string, string> = {}
-    
-    if (!formData.email) newErrors.email = "Vui lòng nhập email"
-    if (!formData.acceptTerms) newErrors.acceptTerms = "Bạn phải chấp nhận điều khoản"
-    
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.email) newErrors.email = "Vui lòng nhập email";
+    if (!formData.acceptTerms)
+      newErrors.acceptTerms = "Bạn phải chấp nhận điều khoản";
+
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
+      setErrors(newErrors);
+      return;
     }
-    
-    console.log("[Checkout] Processing VNPay payment...", { formData, paymentMethod })
-    onSubmit(formData)
-  }
+
+    console.log("[Checkout] Processing VNPay payment...", {
+      formData,
+      paymentMethod,
+    });
+    onSubmit(formData);
+  };
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[field]
-        return newErrors
-      })
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
-  }
+  };
 
   const renderPaymentForm = () => {
     return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <Card className="p-4 sm:p-6 bg-card/50 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <h2 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
@@ -76,9 +84,12 @@ export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
             <div className="p-4 sm:p-6 bg-secondary/50 rounded-lg border border-border">
               <div className="text-center mb-4">
                 <Wallet className="w-12 h-12 sm:w-16 sm:h-16 text-primary mx-auto mb-3" />
-                <h3 className="font-semibold mb-2">Thanh toán an toàn với VNPay</h3>
+                <h3 className="font-semibold mb-2">
+                  Thanh toán an toàn với VNPay
+                </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay để hoàn tất giao dịch một cách an toàn.
+                  Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay để hoàn tất
+                  giao dịch một cách an toàn.
                 </p>
               </div>
 
@@ -107,13 +118,21 @@ export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
           </div>
         </Card>
       </motion.div>
-    )
-  }
+    );
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <form id="checkout-form" onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+      <form
+        id="checkout-form"
+        onSubmit={handleSubmit}
+        className="space-y-4 sm:space-y-6"
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
           <Card className="p-4 sm:p-6 bg-card/50 backdrop-blur-sm">
             <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 flex items-center gap-2">
               <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
@@ -121,7 +140,10 @@ export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
             </h2>
             <div className="space-y-3 sm:space-y-4">
               <div>
-                <Label htmlFor="email" className="text-xs sm:text-sm font-medium">
+                <Label
+                  htmlFor="email"
+                  className="text-xs sm:text-sm font-medium"
+                >
                   Địa chỉ email
                 </Label>
                 <Input
@@ -133,9 +155,13 @@ export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
                   className="mt-1.5 h-9 sm:h-10 text-sm sm:text-base"
                 />
                 {errors.email && (
-                  <p className="text-xs text-destructive mt-1">{errors.email}</p>
+                  <p className="text-xs text-destructive mt-1">
+                    {errors.email}
+                  </p>
                 )}
-                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5">Chúng tôi sẽ gửi hóa đơn và thông tin tài khoản đến email này</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1.5">
+                  Chúng tôi sẽ gửi hóa đơn và thông tin tài khoản đến email này
+                </p>
               </div>
             </div>
           </Card>
@@ -152,27 +178,40 @@ export function CheckoutForm({  paymentMethod, onSubmit }: CheckoutFormProps) {
           <Checkbox
             id="terms"
             checked={formData.acceptTerms}
-            onCheckedChange={(checked: boolean) => handleInputChange("acceptTerms", checked === true)}
+            onCheckedChange={(checked: boolean) =>
+              handleInputChange("acceptTerms", checked === true)
+            }
             className="mt-0.5 sm:mt-1"
           />
           <div className="flex-1">
-            <label htmlFor="terms" className="text-xs sm:text-sm text-muted-foreground leading-relaxed cursor-pointer">
+            <label
+              htmlFor="terms"
+              className="text-xs sm:text-sm text-muted-foreground leading-relaxed cursor-pointer"
+            >
               Tôi đồng ý với{" "}
-              <a href="#" className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+              <a
+                href="#"
+                className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+              >
                 Điều khoản dịch vụ
               </a>{" "}
               và{" "}
-              <a href="#" className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
+              <a
+                href="#"
+                className="text-primary underline underline-offset-2 hover:text-primary/80 transition-colors"
+              >
                 Chính sách bảo mật
               </a>
               . Gói đăng ký sẽ tự động gia hạn và tôi có thể hủy bất cứ lúc nào.
             </label>
             {errors.acceptTerms && (
-              <p className="text-xs text-destructive mt-1">{errors.acceptTerms}</p>
+              <p className="text-xs text-destructive mt-1">
+                {errors.acceptTerms}
+              </p>
             )}
           </div>
         </motion.div>
       </form>
     </div>
-  )
+  );
 }

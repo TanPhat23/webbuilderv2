@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +22,16 @@ interface UpdateMetadataDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function UpdateMetadataDialog({ open, onOpenChange }: UpdateMetadataDialogProps) {
+export function UpdateMetadataDialog({
+  open,
+  onOpenChange,
+}: UpdateMetadataDialogProps) {
   const { user, isLoaded } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
-  
+
   const getInitialFormData = () => ({
-    bio: (user?.unsafeMetadata?.bio as string) || '',
-    address: (user?.unsafeMetadata?.address as string) || '',
+    bio: (user?.unsafeMetadata?.bio as string) || "",
+    address: (user?.unsafeMetadata?.address as string) || "",
   });
 
   const [formData, setFormData] = useState(getInitialFormData());
@@ -89,9 +92,7 @@ export function UpdateMetadataDialog({ open, onOpenChange }: UpdateMetadataDialo
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Additional Information</DialogTitle>
-          <DialogDescription>
-            Update your bio and location
-          </DialogDescription>
+          <DialogDescription>Update your bio and location</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -100,7 +101,9 @@ export function UpdateMetadataDialog({ open, onOpenChange }: UpdateMetadataDialo
             <Textarea
               id="bio"
               value={formData.bio}
-              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, bio: e.target.value })
+              }
               placeholder="Tell us about yourself..."
               rows={4}
               disabled={isUpdating}
@@ -116,7 +119,9 @@ export function UpdateMetadataDialog({ open, onOpenChange }: UpdateMetadataDialo
             <Input
               id="address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
               placeholder="e.g., San Francisco, CA"
               disabled={isUpdating}
               maxLength={100}
@@ -132,17 +137,14 @@ export function UpdateMetadataDialog({ open, onOpenChange }: UpdateMetadataDialo
           >
             Cancel
           </Button>
-          <Button
-            onClick={handleUpdate}
-            disabled={isUpdating}
-          >
+          <Button onClick={handleUpdate} disabled={isUpdating}>
             {isUpdating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
               </>
             ) : (
-              'Save Changes'
+              "Save Changes"
             )}
           </Button>
         </DialogFooter>

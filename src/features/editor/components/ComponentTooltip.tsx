@@ -959,7 +959,7 @@ export function ComponentTooltip({
   if (!info) return <>{children}</>;
 
   return (
-    <TooltipProvider >
+    <TooltipProvider>
       <Tooltip open={isOpen} onOpenChange={setIsOpen}>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent

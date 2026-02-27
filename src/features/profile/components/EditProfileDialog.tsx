@@ -90,7 +90,7 @@ export function EditProfileDialog({
     // Validate username
     if (formData.username && !/^[a-zA-Z0-9_]{3,20}$/.test(formData.username)) {
       toast.error(
-        "Username must be 3-20 characters, letters, numbers, and underscores only"
+        "Username must be 3-20 characters, letters, numbers, and underscores only",
       );
       return;
     }
@@ -123,9 +123,10 @@ export function EditProfileDialog({
       if (formData.username) updates.push(`username`);
       if (imageFile) updates.push(`profile picture`);
 
-      const description = updates.length > 0
-        ? `You updated your ${updates.join(', ')}.`
-        : 'You updated your profile information.';
+      const description =
+        updates.length > 0
+          ? `You updated your ${updates.join(", ")}.`
+          : "You updated your profile information.";
 
       await createProfileNotification.mutateAsync({ description });
 

@@ -10,7 +10,10 @@ import { ElementComment } from "@/features/comments";
 import { CommentCard } from "./CommentCard";
 import { ElementCommentGroup } from "./ElementCommentGroup";
 import { EmptyState } from "./EmptyState";
-import { getEmptyStateMessage, ViewMode } from "@/features/comments/utils/comments";
+import {
+  getEmptyStateMessage,
+  ViewMode,
+} from "@/features/comments/utils/comments";
 
 interface CommentsListViewProps {
   comments: ElementComment[];

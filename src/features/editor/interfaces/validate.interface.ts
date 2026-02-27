@@ -1,56 +1,55 @@
 export type RuleType =
-    | "minLength"
-    | "maxLength"
-    | "pattern"
-    | "required"
-    | "min"
-    | "max"
-    | "custom";
+  | "minLength"
+  | "maxLength"
+  | "pattern"
+  | "required"
+  | "min"
+  | "max"
+  | "custom";
 
 interface BaseValidationRule<T = any> {
-    rule: RuleType;
-    message: string;
+  rule: RuleType;
+  message: string;
 }
 
 interface ValueRule<T> extends BaseValidationRule<T> {
-    value: T;
+  value: T;
 }
 
 export interface MinLengthRule extends ValueRule<number> {
-    rule: "minLength";
+  rule: "minLength";
 }
 
 export interface MaxLengthRule extends ValueRule<number> {
-    rule: "maxLength";
+  rule: "maxLength";
 }
 
 export interface PatternRule extends ValueRule<RegExp | string> {
-    rule: "pattern";
+  rule: "pattern";
 }
 
 export interface RequiredRule extends BaseValidationRule {
-    rule: "required";
+  rule: "required";
 }
 
 export interface MinRule extends ValueRule<number> {
-    rule: "min";
+  rule: "min";
 }
 
 export interface MaxRule extends ValueRule<number> {
-    rule: "max";
+  rule: "max";
 }
 
 export interface CustomRule<T = any> extends BaseValidationRule<T> {
-    rule: "custom";
-    validateFn: (value: T) => boolean;
+  rule: "custom";
+  validateFn: (value: T) => boolean;
 }
 
 export type ValidationRule<T = any> =
-    | RequiredRule
-    | MinLengthRule
-    | MaxLengthRule
-    | PatternRule
-    | MinRule
-    | MaxRule
-    | CustomRule<T>;
-
+  | RequiredRule
+  | MinLengthRule
+  | MaxLengthRule
+  | PatternRule
+  | MinRule
+  | MaxRule
+  | CustomRule<T>;

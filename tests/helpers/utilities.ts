@@ -73,17 +73,14 @@ export async function waitForNoThrow(
   fn: () => void | Promise<void>,
   timeoutMs: number = 3000,
 ): Promise<void> {
-  return waitFor(
-    () => {
-      try {
-        fn();
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    timeoutMs,
-  );
+  return waitFor(() => {
+    try {
+      fn();
+      return true;
+    } catch {
+      return false;
+    }
+  }, timeoutMs);
 }
 
 // ============================================================================
@@ -156,8 +153,8 @@ export function createSpy<T extends (...args: any[]) => any>(fn: T) {
     calls,
     getCallCount: () => calls.length,
     wasCalledWith: (...expectedArgs: any[]) => {
-      return calls.some((args) =>
-        JSON.stringify(args) === JSON.stringify(expectedArgs),
+      return calls.some(
+        (args) => JSON.stringify(args) === JSON.stringify(expectedArgs),
       );
     },
   };
@@ -243,7 +240,10 @@ export function flattenArray<T>(arr: any[]): T[] {
 /**
  * Groups array items by a key function.
  */
-export function groupBy<T>(arr: T[], keyFn: (item: T) => string): Record<string, T[]> {
+export function groupBy<T>(
+  arr: T[],
+  keyFn: (item: T) => string,
+): Record<string, T[]> {
   return arr.reduce(
     (acc, item) => {
       const key = keyFn(item);
@@ -340,9 +340,10 @@ export function tryCatch<T, E extends Error = Error>(
 /**
  * Measures execution time of a function.
  */
-export function measureExecutionTime<T>(
-  fn: () => T,
-): { result: T; duration: number } {
+export function measureExecutionTime<T>(fn: () => T): {
+  result: T;
+  duration: number;
+} {
   const start = performance.now();
   const result = fn();
   const duration = performance.now() - start;
@@ -368,13 +369,16 @@ export function createBenchmark(name: string) {
   const measurements: { name: string; duration: number }[] = [];
 
   return {
-    measure: <T,>(label: string, fn: () => T): T => {
+    measure: <T>(label: string, fn: () => T): T => {
       const { result, duration } = measureExecutionTime(fn);
       measurements.push({ name: label, duration });
       return result;
     },
 
-    measureAsync: async <T,>(label: string, fn: () => Promise<T>): Promise<T> => {
+    measureAsync: async <T>(
+      label: string,
+      fn: () => Promise<T>,
+    ): Promise<T> => {
       const { result, duration } = await measureAsyncExecutionTime(fn);
       measurements.push({ name: label, duration });
       return result;

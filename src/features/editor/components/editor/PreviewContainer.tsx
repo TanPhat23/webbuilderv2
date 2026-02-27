@@ -49,7 +49,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   const content = isLoading ? (
     <ElementLoading count={6} variant="mixed" />
   ) : (
-    React.cloneElement(children, { iframeRef } as any)
+    React.cloneElement(children, { iframeRef } as React.ComponentProps<any>)
   );
 
   return (

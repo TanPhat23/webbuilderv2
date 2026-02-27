@@ -83,7 +83,7 @@ export function SaveElementDialog({
 
       setSavedElementName(trimmedName);
       setShowSuccessDialog(true);
-    } catch (error: any) {
+    } catch (error: Error | any) {
       console.error("Error saving element:", error);
       if (
         error.message?.includes("409") ||

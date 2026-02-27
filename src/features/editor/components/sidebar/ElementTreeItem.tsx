@@ -4,10 +4,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useUpdateElement } from "@/features/editor";
 import { useSelectedElementWithSetter } from "@/features/editor";
 import { cn } from "@/lib/utils";
-import { EditorElement } from "@/types/global.type";
+import { ContainerElement, EditorElement } from "@/types/global.type";
 import {
   BarChart2,
   ChevronDown,
@@ -87,7 +86,6 @@ export default function ElementTreeItem({
   element: EditorElement;
   level?: number;
 }) {
-  const updateElement = useUpdateElement();
   const { selectedElement, setSelectedElement } =
     useSelectedElementWithSetter();
   const [isOpen, setIsOpen] = React.useState(true);
@@ -145,13 +143,15 @@ export default function ElementTreeItem({
         {hasChildren && (
           <CollapsibleContent>
             <div>
-              {(element as any).elements.map((child: EditorElement) => (
-                <ElementTreeItem
-                  key={child.id}
-                  element={child}
-                  level={level + 1}
-                />
-              ))}
+              {(element as ContainerElement).elements.map(
+                (child: EditorElement) => (
+                  <ElementTreeItem
+                    key={child.id}
+                    element={child}
+                    level={level + 1}
+                  />
+                ),
+              )}
             </div>
           </CollapsibleContent>
         )}

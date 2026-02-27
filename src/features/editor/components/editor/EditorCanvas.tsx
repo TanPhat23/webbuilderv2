@@ -23,7 +23,6 @@ type EditorCanvasProps = {
   selectedElement: EditorElement | null;
   addNewSection: () => void;
   userId: string;
-  sendMessage?: (message: any) => boolean;
   isReadOnly?: boolean;
   isLocked?: boolean;
   showAddSectionButton?: boolean;
@@ -39,7 +38,6 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   selectedElement,
   addNewSection,
   userId,
-  sendMessage,
   isReadOnly = false,
   isLocked = false,
   showAddSectionButton = true,

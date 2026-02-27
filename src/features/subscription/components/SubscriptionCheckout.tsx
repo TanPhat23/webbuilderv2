@@ -1,24 +1,52 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { useUser } from "@clerk/nextjs"
-import { useSearchParams, useRouter } from "next/navigation"
-import { LandingPagePricing } from "@/features/landing"
-import { PaymentMethodSelector, type PaymentMethod } from "./PaymentMethod"
-import { CheckoutForm } from "./CheckoutForm"
-import { OrderSummary } from "./OrderSummary"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowLeft, Check, Loader2, Sparkles, Menu, X, AlertCircle, User, LayoutDashboard} from "lucide-react"
-import { pricingPlans, getNumericPrice, requiresAuthentication, type PricingPlan } from "../constants/pricing"
-import type { BillingPeriod, PlanId } from "../interfaces/subscription.interface"
-import Link from "next/link"
-import ThemeSwitcher from "@/components/ThemeSwitcher"
-import { useSubscriptionStatus, useCreatePayment, useCancelSubscription } from "../hooks/useSubscription"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import { useSearchParams, useRouter } from "next/navigation";
+import { LandingPagePricing } from "@/features/landing";
+import { PaymentMethodSelector, type PaymentMethod } from "./PaymentMethod";
+import { CheckoutForm } from "./CheckoutForm";
+import { OrderSummary } from "./OrderSummary";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Check,
+  Loader2,
+  Sparkles,
+  Menu,
+  X,
+  AlertCircle,
+  User,
+  LayoutDashboard,
+} from "lucide-react";
+import {
+  pricingPlans,
+  getNumericPrice,
+  requiresAuthentication,
+  type PricingPlan,
+} from "../constants/pricing";
+import type {
+  BillingPeriod,
+  PlanId,
+} from "../interfaces/subscription.interface";
+import Link from "next/link";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
+import {
+  useSubscriptionStatus,
+  useCreatePayment,
+  useCancelSubscription,
+} from "../hooks/useSubscription";
+import { toast } from "sonner";
 
 // Use the same interface as pricing plans for consistency
 export interface Plan extends PricingPlan {
@@ -26,113 +54,115 @@ export interface Plan extends PricingPlan {
   yearlyPrice: number;
 }
 
-type CheckoutStep = "plans" | "payment-method" | "checkout"
+type CheckoutStep = "plans" | "payment-method" | "checkout";
 
 // Convert pricing plan to checkout plan format
 function convertToCheckoutPlan(pricingPlan: PricingPlan): Plan {
   return {
     ...pricingPlan,
-    monthlyPrice: getNumericPrice(pricingPlan, 'monthly'),
-    yearlyPrice: getNumericPrice(pricingPlan, 'yearly'),
+    monthlyPrice: getNumericPrice(pricingPlan, "monthly"),
+    yearlyPrice: getNumericPrice(pricingPlan, "yearly"),
   };
 }
 
 export function SubscriptionCheckout() {
-  const { user, isLoaded } = useUser()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  
-  const [step, setStep] = useState<CheckoutStep>("plans")
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly")
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("vnpay")
-  const [discount, setDiscount] = useState<number>(0)
-  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const { user, isLoaded } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [step, setStep] = useState<CheckoutStep>("plans");
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [billingPeriod, setBillingPeriod] = useState<BillingPeriod>("yearly");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("vnpay");
+  const [discount, setDiscount] = useState<number>(0);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // Fetch subscription status
-  const { data: subscriptionStatus, isLoading: isLoadingSubscription } = useSubscriptionStatus()
-  const createPayment = useCreatePayment()
-  const cancelSubscription = useCancelSubscription()
+  const { data: subscriptionStatus, isLoading: isLoadingSubscription } =
+    useSubscriptionStatus();
+  const createPayment = useCreatePayment();
+  const cancelSubscription = useCancelSubscription();
 
   useEffect(() => {
-    if (!isLoaded) return
+    if (!isLoaded) return;
 
-    const planId = searchParams.get('plan')
-    const frequency = searchParams.get('frequency') as BillingPeriod || 'yearly'
+    const planId = searchParams.get("plan");
+    const frequency =
+      (searchParams.get("frequency") as BillingPeriod) || "yearly";
 
     if (planId) {
-      const pricingPlan = pricingPlans.find(p => p.id === planId)
-      
+      const pricingPlan = pricingPlans.find((p) => p.id === planId);
+
       if (!pricingPlan) {
-        router.push('/checkout')
-        return
+        router.push("/checkout");
+        return;
       }
 
       if (requiresAuthentication(planId as PlanId) && !user) {
-        setShowAuthPrompt(true)
-        setIsInitializing(false)
-        return
+        setShowAuthPrompt(true);
+        setIsInitializing(false);
+        return;
       }
 
-      if (planId === 'hobby') {
+      if (planId === "hobby") {
         if (!user) {
-          router.push('/sign-up')
-          return
+          router.push("/sign-up");
+          return;
         }
-        router.push('/dashboard')
-        return
+        router.push("/dashboard");
+        return;
       }
 
-      if (planId === 'enterprise') {
-        router.push('/contact-us')
-        return
+      if (planId === "enterprise") {
+        router.push("/contact-us");
+        return;
       }
 
       if (user) {
-        setSelectedPlan(convertToCheckoutPlan(pricingPlan))
-        setBillingPeriod(frequency)
-        setStep("payment-method")
+        setSelectedPlan(convertToCheckoutPlan(pricingPlan));
+        setBillingPeriod(frequency);
+        setStep("payment-method");
       }
     }
 
-    setIsInitializing(false)
-  }, [isLoaded, user, searchParams, router])
+    setIsInitializing(false);
+  }, [isLoaded, user, searchParams, router]);
 
   // Handle scroll effect for header
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50)
-    }
+      setScrolled(window.scrollY > 50);
+    };
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const handleAuthRequired = () => {
-    const currentPlan = searchParams.get('plan')
-    const currentFrequency = searchParams.get('frequency')
-    const redirectUrl = `/checkout?plan=${currentPlan}&frequency=${currentFrequency}`
-    
-    router.push(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`)
-  }
+    const currentPlan = searchParams.get("plan");
+    const currentFrequency = searchParams.get("frequency");
+    const redirectUrl = `/checkout?plan=${currentPlan}&frequency=${currentFrequency}`;
+
+    router.push(`/sign-in?redirect_url=${encodeURIComponent(redirectUrl)}`);
+  };
 
   const handleBack = () => {
     if (step === "checkout") {
-      setStep("payment-method")
+      setStep("payment-method");
     } else if (step === "payment-method") {
-      setStep("plans")
+      setStep("plans");
     }
-  }
+  };
 
   const handlePaymentMethodContinue = () => {
-    setStep("checkout")
-  }
+    setStep("checkout");
+  };
 
   const handleCompleteCheckout = async (formData: any) => {
     if (!selectedPlan) return;
@@ -143,23 +173,27 @@ export function SubscriptionCheckout() {
       amount: total,
       email: formData.email,
     });
-  }
+  };
 
   const currentPrice = selectedPlan
     ? billingPeriod === "monthly"
       ? selectedPlan.monthlyPrice
       : selectedPlan.yearlyPrice
-    : 0
+    : 0;
 
-  const subtotal = currentPrice
-  const discountAmount = (subtotal * discount) / 100
-  const total = subtotal - discountAmount
+  const subtotal = currentPrice;
+  const discountAmount = (subtotal * discount) / 100;
+  const total = subtotal - discountAmount;
 
   const steps = [
     { id: "plans", label: "Choose Plan", completed: step !== "plans" },
-    { id: "payment-method", label: "Payment Method", completed: step === "checkout" },
+    {
+      id: "payment-method",
+      label: "Payment Method",
+      completed: step === "checkout",
+    },
     { id: "checkout", label: "Complete Purchase", completed: false },
-  ]
+  ];
 
   // Show loading screen while initializing
   if (isInitializing || isLoadingSubscription) {
@@ -170,7 +204,7 @@ export function SubscriptionCheckout() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -223,7 +257,7 @@ export function SubscriptionCheckout() {
                     Profile
                   </Link>
                 </Button>
-                <Button 
+                <Button
                   className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
                   asChild
                 >
@@ -243,7 +277,7 @@ export function SubscriptionCheckout() {
                 >
                   <Link href="/sign-in">Sign In</Link>
                 </Button>
-                <Button 
+                <Button
                   className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all duration-300 hover:scale-105"
                   asChild
                 >
@@ -305,7 +339,10 @@ export function SubscriptionCheckout() {
                       Profile
                     </Link>
                   </Button>
-                  <Button className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold" asChild>
+                  <Button
+                    className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold"
+                    asChild
+                  >
                     <Link href="/dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
@@ -318,7 +355,10 @@ export function SubscriptionCheckout() {
                   <Button variant="ghost" className="justify-start" asChild>
                     <Link href="/sign-in">Sign In</Link>
                   </Button>
-                  <Button className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold" asChild>
+                  <Button
+                    className="bg-linear-to-r from-primary to-accent text-primary-foreground font-semibold"
+                    asChild
+                  >
                     <Link href="/sign-up">Start Free Trial</Link>
                   </Button>
                 </>
@@ -337,15 +377,25 @@ export function SubscriptionCheckout() {
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-sm mb-1">Gói đăng ký hiện tại</h3>
+                  <h3 className="font-semibold text-sm mb-1">
+                    Gói đăng ký hiện tại
+                  </h3>
                   <p className="text-sm text-muted-foreground mb-2">
-                    Bạn đang có gói <strong className="text-foreground">{subscriptionStatus.subscription?.planId}</strong> đang hoạt động 
-                    (còn <strong className="text-foreground">{subscriptionStatus.subscription?.daysUntilExpiry}</strong> ngày). 
+                    Bạn đang có gói{" "}
+                    <strong className="text-foreground">
+                      {subscriptionStatus.subscription?.planId}
+                    </strong>{" "}
+                    đang hoạt động (còn{" "}
+                    <strong className="text-foreground">
+                      {subscriptionStatus.subscription?.daysUntilExpiry}
+                    </strong>{" "}
+                    ngày).
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {selectedPlan?.id === subscriptionStatus.subscription?.planId 
-                      ? 'Bạn đang chọn cùng gói hiện tại. Chọn gói khác hoặc hủy gói hiện tại để đăng ký lại.'
-                      : 'Việc thanh toán gói mới sẽ tự động hủy và thay thế gói hiện tại.'}
+                    {selectedPlan?.id ===
+                    subscriptionStatus.subscription?.planId
+                      ? "Bạn đang chọn cùng gói hiện tại. Chọn gói khác hoặc hủy gói hiện tại để đăng ký lại."
+                      : "Việc thanh toán gói mới sẽ tự động hủy và thay thế gói hiện tại."}
                   </p>
                 </div>
               </div>
@@ -357,7 +407,9 @@ export function SubscriptionCheckout() {
                   disabled={cancelSubscription.isPending}
                   className="text-xs"
                 >
-                  {cancelSubscription.isPending ? 'Đang hủy...' : 'Hủy gói hiện tại'}
+                  {cancelSubscription.isPending
+                    ? "Đang hủy..."
+                    : "Hủy gói hiện tại"}
                 </Button>
               </div>
             </div>
@@ -384,12 +436,18 @@ export function SubscriptionCheckout() {
                             : "bg-secondary text-muted-foreground",
                       )}
                     >
-                      {s.completed ? <Check className="w-4 h-4 sm:w-5 sm:h-5" /> : index + 1}
+                      {s.completed ? (
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                      ) : (
+                        index + 1
+                      )}
                     </div>
                     <span
                       className={cn(
                         "text-xs sm:text-sm font-medium hidden sm:block whitespace-nowrap",
-                        step === s.id ? "text-foreground" : "text-muted-foreground",
+                        step === s.id
+                          ? "text-foreground"
+                          : "text-muted-foreground",
                       )}
                     >
                       {s.label}
@@ -429,7 +487,12 @@ export function SubscriptionCheckout() {
               transition={{ duration: 0.3 }}
               className="max-w-6xl mx-auto"
             >
-              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4 sm:mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="mb-4 sm:mb-6"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="hidden xs:inline">Back to plans</span>
                 <span className="xs:hidden">Back</span>
@@ -437,7 +500,10 @@ export function SubscriptionCheckout() {
 
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] xl:grid-cols-[1fr_400px] gap-6 lg:gap-8">
                 <div className="space-y-4 sm:space-y-6 order-2 lg:order-1">
-                  <PaymentMethodSelector selectedMethod={paymentMethod} onMethodChange={setPaymentMethod} />
+                  <PaymentMethodSelector
+                    selectedMethod={paymentMethod}
+                    onMethodChange={setPaymentMethod}
+                  />
                   <Button
                     onClick={handlePaymentMethodContinue}
                     size="lg"
@@ -469,7 +535,12 @@ export function SubscriptionCheckout() {
               transition={{ duration: 0.3 }}
               className="max-w-7xl mx-auto"
             >
-              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-4 sm:mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="mb-4 sm:mb-6"
+              >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="hidden xs:inline">Back to payment method</span>
                 <span className="xs:hidden">Back</span>
@@ -507,23 +578,26 @@ export function SubscriptionCheckout() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Sign in required</DialogTitle>
-            <DialogDescription>You need to sign in to subscribe to a paid plan. After signing in, you'll be redirected back to complete your purchase.</DialogDescription>
+            <DialogDescription>
+              You need to sign in to subscribe to a paid plan. After signing in,
+              you'll be redirected back to complete your purchase.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <Button onClick={handleAuthRequired} className="w-full" size="lg">
               Sign in
             </Button>
-            <Button 
-              variant="outline" 
-              className="w-full bg-transparent" 
+            <Button
+              variant="outline"
+              className="w-full bg-transparent"
               size="lg"
-              onClick={() => router.push('/sign-up')}
+              onClick={() => router.push("/sign-up")}
             >
               Create account
             </Button>
-            <Button 
-              variant="ghost" 
-              className="w-full" 
+            <Button
+              variant="ghost"
+              className="w-full"
               size="sm"
               onClick={() => setShowAuthPrompt(false)}
             >
@@ -542,15 +616,22 @@ export function SubscriptionCheckout() {
               Hủy gói đăng ký
             </DialogTitle>
             <DialogDescription>
-              Bạn có chắc muốn hủy gói <strong>{subscriptionStatus?.subscription?.planId?.toUpperCase()}</strong>?
-              Hành động này không thể hoàn tác.
+              Bạn có chắc muốn hủy gói{" "}
+              <strong>
+                {subscriptionStatus?.subscription?.planId?.toUpperCase()}
+              </strong>
+              ? Hành động này không thể hoàn tác.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <h4 className="font-medium text-destructive mb-2">Điều gì sẽ xảy ra:</h4>
+              <h4 className="font-medium text-destructive mb-2">
+                Điều gì sẽ xảy ra:
+              </h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• Bạn sẽ mất quyền truy cập các tính năng premium ngay lập tức</li>
+                <li>
+                  • Bạn sẽ mất quyền truy cập các tính năng premium ngay lập tức
+                </li>
                 <li>• Tài khoản sẽ chuyển về gói miễn phí (Hobby)</li>
                 <li>• Bạn có thể đăng ký lại bất cứ lúc nào</li>
               </ul>
@@ -567,14 +648,16 @@ export function SubscriptionCheckout() {
                 variant="destructive"
                 onClick={() => {
                   if (subscriptionStatus?.subscription?.id) {
-                    cancelSubscription.mutate(subscriptionStatus.subscription.id)
-                    setShowCancelDialog(false)
+                    cancelSubscription.mutate(
+                      subscriptionStatus.subscription.id,
+                    );
+                    setShowCancelDialog(false);
                   }
                 }}
                 disabled={cancelSubscription.isPending}
                 className="flex-1"
               >
-                {cancelSubscription.isPending ? 'Đang hủy...' : 'Xác nhận hủy'}
+                {cancelSubscription.isPending ? "Đang hủy..." : "Xác nhận hủy"}
               </Button>
             </div>
           </div>
@@ -586,14 +669,25 @@ export function SubscriptionCheckout() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
               Payment Successful!
             </DialogTitle>
             <DialogDescription asChild>
               <div className="space-y-3 pt-4">
-                Your subscription to the <strong>{selectedPlan?.name} plan</strong> has been confirmed.
+                Your subscription to the{" "}
+                <strong>{selectedPlan?.name} plan</strong> has been confirmed.
                 <div className="p-4 bg-primary/5 rounded-lg space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Plan:</span>
@@ -601,7 +695,9 @@ export function SubscriptionCheckout() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Billing:</span>
-                    <span className="font-semibold capitalize">{billingPeriod}</span>
+                    <span className="font-semibold capitalize">
+                      {billingPeriod}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Amount:</span>
@@ -615,9 +711,9 @@ export function SubscriptionCheckout() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-4">
-            <Button 
-              onClick={() => router.push('/dashboard')} 
-              className="w-full" 
+            <Button
+              onClick={() => router.push("/dashboard")}
+              className="w-full"
               size="lg"
             >
               Go to Dashboard
@@ -626,5 +722,5 @@ export function SubscriptionCheckout() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }

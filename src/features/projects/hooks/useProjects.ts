@@ -4,14 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectService } from "@/features/projects";
 import type { Project } from "@/features/projects";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/utils/errors/errorToast";
-import {
-  getErrorMessage,
-  onMutationError,
-} from "@/hooks/utils/mutationUtils";
+import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
+import { getErrorMessage, onMutationError } from "@/hooks/utils/mutationUtils";
 
 // Query keys
 export const projectKeys = {

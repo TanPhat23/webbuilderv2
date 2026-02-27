@@ -14,4 +14,5 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+  views: number;
 }
