@@ -53,6 +53,10 @@ export type ElementStore = {
   ) => ElementStore;
   deleteElement: (id: string) => ElementStore;
   addElement: (...newElements: EditorElement[]) => ElementStore;
+  remoteUpdate: (id: string, patch: Partial<EditorElement>) => void;
+  remoteDelete: (id: string) => void;
+  remoteAdd: (element: EditorElement) => void;
+  remoteMove: (id: string, newParentId: string | null, order: number) => void;
   updateAllElements: (update: Partial<EditorElement>) => ElementStore;
   insertElement: (
     parentElement: EditorElement,
@@ -110,6 +114,47 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         triggerYjsCallback();
       }
       return get();
+    },
+
+    remoteUpdate: (id: string, patch: Partial<EditorElement>) => {
+      const { elements } = get();
+      const updated = elementHelper.mapUpdateById(
+        elements,
+        id,
+        (el) => ({ ...el, ...patch }) as EditorElement,
+      );
+      set({ elements: updated });
+    },
+
+    remoteDelete: (id: string) => {
+      const { elements } = get();
+      set({ elements: elementHelper.mapDeleteById(elements, id) });
+    },
+
+    remoteAdd: (element: EditorElement) => {
+      const { elements } = get();
+      set({
+        elements: elementHelper.mapAddChildById(
+          elements,
+          element.parentId,
+          element,
+        ),
+      });
+    },
+
+    remoteMove: (id: string, newParentId: string | null, order: number) => {
+      const { elements } = get();
+      const elementToMove = elementHelper.findById(elements, id);
+      if (!elementToMove) return;
+      const without = elementHelper.mapDeleteById(elements, id);
+      const moved: EditorElement = {
+        ...elementToMove,
+        parentId: newParentId ?? undefined,
+        order,
+      };
+      set({
+        elements: elementHelper.mapAddChildById(without, moved.parentId, moved),
+      });
     },
 
     updateElement: (id: string, updatedElement: Partial<EditorElement>) => {

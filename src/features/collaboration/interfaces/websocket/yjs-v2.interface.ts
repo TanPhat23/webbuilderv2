@@ -86,14 +86,9 @@ export type BaseMessage = WSEnvelope<unknown>;
 // local duplicate definitions.
 
 // ============================================================================
-// Server → Client Broadcast types (kept for DocumentSyncer compat)
+// Server → Client Broadcast types
 // ============================================================================
 
-/**
- * Replaces the old `ElementOperationSuccess`.
- * The Provider maps incoming server broadcasts into this shape
- * so DocumentSyncer can apply them to the Y.Doc.
- */
 export interface ElementOperationResult {
   operationType: OperationType;
   /** Present for create/update broadcasts */
