@@ -11,25 +11,7 @@ export default function RootProviders({
 }: {
   children: React.ReactNode;
 }) {
-  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-  if (!clerkPublishableKey) {
-    return (
-      <QueryProvider>
-        <SidebarProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </SidebarProvider>
-      </QueryProvider>
-    );
-  }
-
+  
   return (
     <ClerkProvider
       appearance={{

@@ -39,7 +39,7 @@ export function ProjectListItem({
   const router = useRouter();
 
   const handleClick = () => {
-    router.push(`/analytics/${project.id}`);
+    router.push(`/editor/${project.id}`);
   };
 
   const handleEditClick = (e: React.MouseEvent) => {

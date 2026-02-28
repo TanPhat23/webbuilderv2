@@ -1,19 +1,3 @@
-// Consolidated re-exports for the WebSocket collaboration types.
-//
-// This module provides a single import surface for all websocket-related
-// collaboration types used across the codebase.
-//
-// Prefer importing from "@/features/collaboration" instead of reaching into the
-// individual files.
-//
-// Examples:
-//   import { WSEnvelope, WSMessage, SendMessagePayload } from "@/features/collaboration";
-//   import { CustomYjsProviderV2, UseYjsCollabV2Return } from "@/features/collaboration";
-//
-// NOTE: `ws-collab.interface.ts` is considered the canonical source for the
-// envelope/payload shapes. This file re-exports those types and also selectively
-// exports Yjs-specific provider and hook types that live in `yjs-v2.interface.ts`.
-
 export * from "./ws-collab.interface";
 
 export type {
@@ -25,11 +9,6 @@ export type {
   // Operation result shapes
   ElementOperationResult,
   PageOperationResult,
-  ElementOperationSuccess,
-  PageOperationSuccess,
-
-  // Backwards-compatible message aliases
-  InitialSyncMessage,
   ErrorMessage,
 
   // Awareness / presence helpers

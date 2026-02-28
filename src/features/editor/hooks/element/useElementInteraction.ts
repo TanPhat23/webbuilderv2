@@ -130,50 +130,38 @@ export function useElementInteraction({
 
   const handleMouseEnter = useCallback(
     (e: React.MouseEvent, element: EditorElement) => {
-      e.stopPropagation();
-      e.preventDefault();
-
-      // If the user is actively editing content elsewhere, don't change hover
       if (
-        document.activeElement &&
-        (document.activeElement as HTMLElement).contentEditable === "true"
+        selectedElement &&
+        elementHelper.isEditableElement(selectedElement) &&
+        (document.activeElement as HTMLElement)?.contentEditable === "true"
       ) {
         return;
       }
 
-      // Avoid changing hover if there is an active editable selection
-      if (selectedElement && elementHelper.isEditableElement(selectedElement)) {
-        return;
-      }
-
-      // If a different element is selected, don't change hover to this one.
-      if (selectedElement && selectedElement.id !== element.id) {
-        return;
-      }
-
       setHoveredElement(element);
+      e.stopPropagation();
     },
     [selectedElement, setHoveredElement],
   );
 
   const handleMouseLeave = useCallback(
     (e: React.MouseEvent, element: EditorElement) => {
-      e.stopPropagation();
-
-      // Don't clear hover if the selected element is a text editor
-      if (selectedElement && elementHelper.isEditableElement(selectedElement)) {
-        return;
-      }
-
+      // Don't clear hover while actively typing in a text element
       if (
-        (document.activeElement &&
-          (document.activeElement as HTMLElement).contentEditable === "true") ||
-        (hoveredElement && hoveredElement.id !== element.id) ||
-        (selectedElement && selectedElement.id === element.id)
+        selectedElement &&
+        elementHelper.isEditableElement(selectedElement) &&
+        (document.activeElement as HTMLElement)?.contentEditable === "true"
       ) {
         return;
       }
-      setHoveredElement(undefined);
+
+      // Only clear if this element is the current hovered one.
+      // When moving to a child, the child's mouseenter fires first and
+      // updates hoveredElement, so this guard prevents the parent's
+      // mouseleave from wiping it.
+      if (hoveredElement?.id === element.id) {
+        setHoveredElement(undefined);
+      }
     },
     [hoveredElement, selectedElement, setHoveredElement],
   );

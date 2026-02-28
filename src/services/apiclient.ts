@@ -1,152 +1,94 @@
 import getToken from "./token";
 
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+
 class ApiClient {
   private static instance: ApiClient;
 
   private constructor() {}
 
-  public static getInstance(): ApiClient {
+  static getInstance(): ApiClient {
     if (!ApiClient.instance) {
       ApiClient.instance = new ApiClient();
     }
     return ApiClient.instance;
   }
 
-  async get<T>(url: string, options: RequestInit = {}): Promise<T> {
+  private async execute<TResponse>(
+    method: HttpMethod,
+    url: string,
+    data?: unknown,
+    options: RequestInit = {},
+  ): Promise<TResponse> {
     const token = await getToken();
 
     const response = await fetch(url, {
       ...options,
+      method,
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
+        ...(options.headers ?? {}),
       },
+      body: data !== undefined ? JSON.stringify(data) : undefined,
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("[API] GET failed:", {
-        url,
+      console.error(`[API] ${method} ${url} failed:`, {
         status: response.status,
         error: errorText,
       });
-      throw new Error(`Failed to fetch: ${url} (${response.status})`);
+      throw new Error(`${method} ${url} failed (${response.status})`);
     }
 
-    const data = await response.json();
-    return data;
-  }
-
-  async post<T = unknown>(
-    url: string,
-    data: unknown,
-    options: RequestInit = {},
-  ): Promise<T> {
-    const token = await getToken();
-
-    const response = await fetch(url, {
-      ...options,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to post: ${url} (${response.status})`);
-    }
-
-    if (response.status === 204) return undefined as unknown as T;
+    if (response.status === 204) return undefined as unknown as TResponse;
 
     const text = await response.text();
-    if (!text) return undefined as unknown as T;
+    if (!text) return undefined as unknown as TResponse;
 
     try {
-      return JSON.parse(text) as T;
+      return JSON.parse(text) as TResponse;
     } catch {
-      return text as unknown as T;
+      return text as unknown as TResponse;
     }
   }
 
-  async put<T>(url: string, data: T, options: RequestInit = {}): Promise<T> {
-    const token = await getToken();
-
-    const response = await fetch(url, {
-      ...options,
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to update: ${url} (${response.status})`);
-    }
-    return response.json();
+  get<TResponse>(url: string, options?: RequestInit): Promise<TResponse> {
+    return this.execute<TResponse>("GET", url, undefined, options);
   }
 
-  async patch<T>(
+  post<TResponse = unknown, TBody = unknown>(
     url: string,
-    data: Partial<T>,
-    options: RequestInit = {},
-  ): Promise<T> {
-    const token = await getToken();
-
-    const response = await fetch(url, {
-      ...options,
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to patch: ${url} (${response.status})`);
-    }
-    return response.json();
+    data: TBody,
+    options?: RequestInit,
+  ): Promise<TResponse> {
+    return this.execute<TResponse>("POST", url, data, options);
   }
 
-  async delete(url: string, options: RequestInit = {}): Promise<boolean> {
-    const token = await getToken();
+  put<TResponse, TBody = TResponse>(
+    url: string,
+    data: TBody,
+    options?: RequestInit,
+  ): Promise<TResponse> {
+    return this.execute<TResponse>("PUT", url, data, options);
+  }
 
-    const response = await fetch(url, {
-      ...options,
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
-    });
-    if (
-      !response.status ||
-      (response.status !== 200 && response.status !== 204)
-    ) {
-      throw new Error(`Failed to delete: ${url} (${response.status})`);
-    }
+  patch<TResponse, TData = Partial<TResponse>>(
+    url: string,
+    data: TData,
+    options?: RequestInit,
+  ): Promise<TResponse> {
+    return this.execute<TResponse>("PATCH", url, data, options);
+  }
+
+  async delete(url: string, options?: RequestInit): Promise<boolean> {
+    await this.execute<void>("DELETE", url, undefined, options);
     return true;
   }
 
-  async getPublic<T>(url: string, options: RequestInit = {}): Promise<T> {
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-    });
-    if (!response.ok) {
-      throw new Error(`Failed to fetch: ${url} (${response.status})`);
-    }
-    return response.json();
+  getPublic<TResponse>(url: string, options?: RequestInit): Promise<TResponse> {
+    return this.execute<TResponse>("GET", url, undefined, options);
   }
 }
 
