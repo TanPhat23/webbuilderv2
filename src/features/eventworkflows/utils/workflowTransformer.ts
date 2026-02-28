@@ -5,7 +5,7 @@ import {
   WorkflowData,
   WorkflowNode,
   Connection,
-} from "@/features/editor/components/sidebar/eventworkflow/types/workflow.types";
+} from "@/features/eventworkflows/components/types/workflow.types";
 import {
   EventType,
   EVENT_TYPES,

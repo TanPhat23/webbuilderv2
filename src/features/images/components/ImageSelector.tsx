@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ImageIcon, Plus, X, GripVertical } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ImageDragDataSchema } from "@/features/images/schema/imageupload";
-import { ImageManagerDialog } from "@/features/editor/components/sidebar/imageupload/ImageManagerDialog";
+import { ImageManagerDialog } from "@/features/images/components/ImageManagerDialog";
 
 export function ImageSelector() {
   const [dialogOpen, setDialogOpen] = useState(false);

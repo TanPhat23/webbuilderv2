@@ -10,7 +10,7 @@ import {
   WorkflowNode,
   CanvasState,
   SelectionState,
-} from "@/features/editor/components/sidebar/eventworkflow";
+} from "@/features/eventworkflows/components";
 
 interface WorkflowCanvasStore {
   // State

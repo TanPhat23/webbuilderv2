@@ -52,14 +52,16 @@ const CMSManager = React.lazy(
 );
 const SnapshotManager = React.lazy(() => import("./SnapshotManager"));
 const ImageSelector = React.lazy(() =>
-  import("./imageupload/ImageSelector").then((m) => ({
+  import("@/features/images/components/ImageSelector").then((m) => ({
     default: m.ImageSelector,
   })),
 );
 const EventWorkflowManagerDialog = React.lazy(() =>
-  import("./eventworkflow/EventWorkflowManagerDialog").then((m) => ({
-    default: m.EventWorkflowManagerDialog,
-  })),
+  import("@/features/eventworkflows/components/EventWorkflowManagerDialog").then(
+    (m) => ({
+      default: m.EventWorkflowManagerDialog,
+    }),
+  ),
 );
 
 function PanelFallback() {

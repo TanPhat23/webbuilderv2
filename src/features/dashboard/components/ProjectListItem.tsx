@@ -54,11 +54,10 @@ export function ProjectListItem({
           <Image
             src={"/placeholder.svg"}
             alt={project.name ?? "Project thumbnail"}
-            width={64}
-            height={64}
+            width={120}
+            height={120}
             className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleClick}
-            unoptimized
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">

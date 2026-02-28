@@ -13,7 +13,7 @@
 import {
   WorkflowNode,
   NodeType,
-} from "@/features/editor/components/sidebar/eventworkflow/types/workflow.types";
+} from "@/features/eventworkflows/components/types/workflow.types";
 
 /**
  * Builds a schema-compliant action config based on action type
