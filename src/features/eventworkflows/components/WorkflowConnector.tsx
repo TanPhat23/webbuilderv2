@@ -25,7 +25,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft,
   Trash2,
   Link as LinkIcon,
   Zap,
@@ -93,11 +92,6 @@ export const WorkflowConnector = ({
   if (!selectedElement) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Workflows
-        </Button>
-
         <Card className="border-accent bg-accent/10 dark:border-accent dark:bg-accent/20">
           <CardContent className="pt-6">
             <div className="flex gap-3">
@@ -120,11 +114,6 @@ export const WorkflowConnector = ({
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
-        <ArrowLeft className="h-4 w-4" />
-        Back to Workflows
-      </Button>
-
       {/* Element Info */}
       <Card>
         <CardHeader>
@@ -232,7 +221,7 @@ export const WorkflowConnector = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[calc(100vh-500px)]">
+          <ScrollArea className="h-full">
             <div className="space-y-3">
               {WORKFLOW_EVENT_TYPES.map((event) => {
                 const connectedWorkflows = getConnectedWorkflows(

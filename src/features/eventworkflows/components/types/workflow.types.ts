@@ -1,13 +1,9 @@
-/**
- * Workflow Canvas Types and Interfaces
- * Similar to n8n's node-based workflow system
- */
-
 export enum NodeType {
   TRIGGER = "trigger",
   ACTION = "action",
   CONDITION = "condition",
   OUTPUT = "output",
+  ELEMENT = "element",
 }
 
 export interface Position {
@@ -23,7 +19,12 @@ export interface WorkflowNode {
     label: string;
     description?: string;
     icon?: string;
-    config?: Record<string, any>;
+    config?: Record<string, unknown>;
+    // Element node specific
+    elementId?: string;
+    elementName?: string;
+    elementType?: string;
+    connectedEvents?: string[]; // event types wired from this element node
   };
   inputs?: {
     port: string;
@@ -37,7 +38,7 @@ export interface Connection {
   id: string;
   source: string; // node id
   target: string; // node id
-  sourcePort?: string;
+  sourcePort?: string; // event type when source is an ELEMENT node (e.g. "onClick")
   targetPort?: string;
 }
 
@@ -55,6 +56,10 @@ export interface DragData {
   nodeType: NodeType;
   label: string;
   icon?: string;
+  // Element drag data
+  elementId?: string;
+  elementName?: string;
+  elementType?: string;
 }
 
 export interface SelectionState {

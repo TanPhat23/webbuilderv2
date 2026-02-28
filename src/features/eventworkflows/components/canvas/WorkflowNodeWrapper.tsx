@@ -102,18 +102,18 @@ export const WorkflowNodeWrapper: React.FC<NodeProps<WorkflowNodeData>> = ({
       )}
       style={{ transitionDuration: `${ANIMATION_DURATIONS.normal}ms` }}
     >
-      {data.type !== NodeType.TRIGGER ? (
-        <Handle
-          type="target"
-          position={Position.Left}
-          isConnectable={true}
-          className={cn(
-            "w-3 h-3 rounded-full transition-all",
-            showPorts || selected ? "opacity-100" : "opacity-0",
-            "bg-accent border-2 border-white dark:border-slate-900",
-          )}
-        />
-      ) : null}
+      <Handle
+        type="target"
+        position={Position.Left}
+        isConnectable={true}
+        className={cn(
+          "w-3 h-3 rounded-full transition-all",
+          showPorts || selected ? "opacity-100" : "opacity-0",
+          data.type === NodeType.TRIGGER
+            ? "bg-primary border-2 border-white dark:border-slate-900"
+            : "bg-accent border-2 border-white dark:border-slate-900",
+        )}
+      />
 
       <div className="flex items-center gap-2 mb-2">
         <div

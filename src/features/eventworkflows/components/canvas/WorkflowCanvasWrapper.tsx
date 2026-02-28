@@ -6,13 +6,15 @@ import { WorkflowCanvas } from "./WorkflowCanvas";
 
 interface WorkflowCanvasWrapperProps {
   readOnly?: boolean;
-  onWorkflowChange?: (workflow: any) => void;
+  workflowId?: string;
+  onWorkflowChange?: (workflow: unknown) => void;
   onNodeConfigure?: (nodeId: string) => void;
   className?: string;
 }
 
 export const WorkflowCanvasWrapper = ({
   readOnly = false,
+  workflowId,
   onWorkflowChange,
   onNodeConfigure,
   className,
@@ -21,6 +23,7 @@ export const WorkflowCanvasWrapper = ({
     <ReactFlowProvider>
       <WorkflowCanvas
         readOnly={readOnly}
+        workflowId={workflowId}
         onWorkflowChange={onWorkflowChange}
         onNodeConfigure={onNodeConfigure}
         className={className}
