@@ -7,13 +7,13 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import AIChatProvider from "./aiprovider";
 import { useEditor } from "@/hooks";
 import { useSearchParams } from "next/navigation";
 import CollaborationProvider from "./collaborationprovider";
 import EditorShell from "@/features/editor/components/editor/EditorShell";
 import WireframeView from "@/features/editor/components/editor/WireframeView";
 import { toast } from "sonner";
+import AIChatProvider from "./aiprovider";
 
 interface EditorProviderProps {
   children: React.ReactNode;

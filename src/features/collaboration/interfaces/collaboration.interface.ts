@@ -16,6 +16,13 @@ export interface Invitation {
   acceptedAt?: string | null;
 }
 
+interface ColalboratorUser {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+}
+
 export interface Collaborator {
   id: string;
   projectId: string;
@@ -24,12 +31,7 @@ export interface Collaborator {
   invitedBy: string;
   createdAt: string;
   updatedAt: string;
-  user?: {
-    id: string;
-    email: string;
-    firstName?: string | null;
-    lastName?: string | null;
-  };
+  user?: ColalboratorUser;
 }
 
 export interface CreateInvitationRequest {

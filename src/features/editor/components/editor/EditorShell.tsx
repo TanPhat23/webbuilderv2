@@ -4,10 +4,10 @@ import React from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { EditorSideBar } from "@/features/editor/components/sidebar/EditorSideBar";
 import LayoutSideBar from "@/features/editor/components/sidebar/LayoutSideBar";
-import AIChatPanel from "@/features/editor/components/ai/AiChatPanel";
 import { ElementCommentsPanel } from "@/features/editor/components/comments/ElementCommentsPanel";
 import { useAiChat } from "@/providers/aiprovider";
 import { useEditorContext } from "@/providers/editorprovider";
+import { AIChat } from "@/features/ai";
 
 function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
   const { chatOpen } = useAiChat();
@@ -26,7 +26,7 @@ function LeftSidebarWrapper({ children }: { children: React.ReactNode }) {
       }
     >
       {showSidebars && <EditorSideBar />}
-      {showSidebars && chatOpen && <AIChatPanel />}
+      {showSidebars && chatOpen && <AIChat />}
       {children}
     </SidebarProvider>
   );

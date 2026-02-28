@@ -1,11 +1,4 @@
-import React, {
-  useEffect,
-  useRef,
-  useMemo,
-  useState,
-  useCallback,
-  memo,
-} from "react";
+import React, { useEffect, useRef, useMemo, useState, memo } from "react";
 import { MousePointer } from "lucide-react";
 import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/features/editor/components/ElementLoader";
@@ -192,7 +185,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       ))}
       <div
         ref={innerContentRef}
-        className="overflow-y-auto overflow-x-hidden h-full w-full scrollbar-hide p-4"
+        className="overflow-y-auto overflow-x-hidden flex-1 w-full scrollbar-hide p-4"
       >
         {isLoading ? null : (
           <ElementLoader
@@ -201,16 +194,18 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
             iframeRef={iframeRef}
           />
         )}
-        {!selectedElement && showAddSectionButton && (
+      </div>
+      {!selectedElement && showAddSectionButton && (
+        <div className="p-4 shrink-0">
           <Button
-            className="mb-4 w-full"
+            className="w-full"
             onClick={addNewSection}
             disabled={isReadOnly || isLocked}
           >
             + Add new section
           </Button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

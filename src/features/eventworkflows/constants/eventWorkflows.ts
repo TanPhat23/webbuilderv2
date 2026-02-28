@@ -1,4 +1,4 @@
-import { NodeType } from "@/features/editor/components/sidebar/eventworkflow/types/workflow.types";
+import { NodeType } from "@/features/eventworkflows/components/types/workflow.types";
 
 export const NODE_TYPE_LABELS: Record<NodeType, string> = {
   [NodeType.TRIGGER]: "Trigger",
