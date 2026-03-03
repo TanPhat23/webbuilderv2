@@ -1,5 +1,3 @@
-"use client";
-
 import { EventHandler, EventActionConfig } from "@/features/editor";
 import {
   WorkflowData,
@@ -13,276 +11,149 @@ import {
   ACTION_TYPES,
 } from "@/features/editor";
 
-/**
- * Map of node IDs to workflow nodes for efficient lookup
- */
-interface WorkflowNodeMap {
-  [nodeId: string]: WorkflowNode;
-}
+type NodeMap = Record<string, WorkflowNode>;
+type ConnectionMap = Map<string, string[]>;
 
-/**
- * Transform workflow canvas data (nodes and connections) into EventHandler array
- *
- * This function is the main entry point for workflow transformation. It:
- * 1. Finds all trigger nodes (entry points for execution)
- * 2. For each trigger, creates separate handler chains for parallel paths
- * 3. Recursively builds handler chains with proper condition branching
- * 4. Prevents infinite loops using visited sets
- *
- * @param workflowData - The workflow canvas data containing nodes and connections
- * @returns Array of root-level EventHandler objects ready for execution
- *
- * @example
- * ```ts
- * const workflow = { nodes: [...], connections: [...] };
- * const handlers = transformWorkflowToEventHandlers(workflow);
- * // handlers can now be registered to element events
- * ```
- */
 export function transformWorkflowToEventHandlers(
   workflowData: WorkflowData,
 ): EventHandler[] {
-  if (!workflowData.nodes || workflowData.nodes.length === 0) {
-    return [];
-  }
+  if (!workflowData.nodes?.length) return [];
 
-  const nodeMap = createNodeMap(workflowData.nodes);
-  const connectionMap = createConnectionMap(workflowData.connections || []);
-
-  // Find trigger nodes (entry points)
-  const triggerNodes = workflowData.nodes.filter(
-    (node) => node.type === "trigger",
-  );
-
+  const nodeMap = buildNodeMap(workflowData.nodes);
+  const connectionMap = buildConnectionMap(workflowData.connections ?? []);
+  const triggerNodes = workflowData.nodes.filter((n) => n.type === "trigger");
   const handlers: EventHandler[] = [];
 
-  // Process each trigger - supports multiple execution paths
-  for (const triggerNode of triggerNodes) {
-    const triggerEventType = getValidEventType(
-      triggerNode.data?.config?.eventType,
+  for (const trigger of triggerNodes) {
+    const eventType = resolveEventType(
+      trigger.data?.config?.eventType as string | undefined,
     );
+    const nextIds = connectionMap.get(trigger.id) ?? [];
 
-    // Get all nodes connected from this trigger (supports parallel paths)
-    const nextNodeIds = connectionMap.get(triggerNode.id) || [];
-
-    // Build handler chain for each path from trigger
-    for (const nextNodeId of nextNodeIds) {
-      const nextNode = nodeMap[nextNodeId];
-      if (!nextNode) continue;
-
+    for (const nextId of nextIds) {
+      const next = nodeMap[nextId];
+      if (!next) continue;
       const chain = buildHandlerChain(
-        nextNode,
+        next,
         nodeMap,
         connectionMap,
-        triggerEventType,
-        new Set(), // Fresh visited set for each path
+        eventType,
+        new Set(),
       );
-
-      if (chain) {
-        handlers.push(chain);
-      }
+      if (chain) handlers.push(chain);
     }
   }
 
   return handlers;
 }
 
-/**
- * Create a map of node IDs to nodes for quick lookup
- */
-function createNodeMap(nodes: WorkflowNode[]): WorkflowNodeMap {
-  return nodes.reduce((map, node) => {
-    map[node.id] = node;
-    return map;
-  }, {} as WorkflowNodeMap);
+export function getTriggerEventType(workflowData: WorkflowData): string {
+  const trigger = workflowData.nodes?.find((n) => n.type === "trigger");
+  return (trigger?.data?.config?.eventType as string | undefined) ?? "onClick";
 }
 
-/**
- * Create a connection map for quick lookup of downstream nodes
- */
-function createConnectionMap(connections: Connection[]): Map<string, string[]> {
-  const map = new Map<string, string[]>();
+function buildNodeMap(nodes: WorkflowNode[]): NodeMap {
+  return Object.fromEntries(nodes.map((n) => [n.id, n])) as NodeMap;
+}
 
-  for (const connection of connections) {
-    const sourceId = connection.source;
-    if (!map.has(sourceId)) {
-      map.set(sourceId, []);
-    }
-    map.get(sourceId)!.push(connection.target);
+function buildConnectionMap(connections: Connection[]): ConnectionMap {
+  const map: ConnectionMap = new Map();
+  for (const { source, target } of connections) {
+    const existing = map.get(source) ?? [];
+    map.set(source, [...existing, target]);
   }
-
   return map;
 }
 
-/**
- * Build a handler chain by traversing the workflow graph recursively
- *
- * This function creates a linked chain of event handlers by:
- * - Tracking visited nodes to prevent cycles
- * - Delegating to specialized handlers for actions and conditions
- * - Skipping trigger nodes (handled at root level)
- *
- * @param node - Current workflow node to process
- * @param nodeMap - Map of all nodes for lookup
- * @param connectionMap - Map of connections for traversal
- * @param eventType - Event type from the trigger
- * @param visited - Set of visited node IDs to prevent infinite loops
- * @returns EventHandler or null if node cannot be processed
- */
 function buildHandlerChain(
   node: WorkflowNode,
-  nodeMap: WorkflowNodeMap,
-  connectionMap: Map<string, string[]>,
+  nodeMap: NodeMap,
+  connectionMap: ConnectionMap,
   eventType: EventType,
-  visited: Set<string> = new Set(),
+  visited: Set<string>,
 ): EventHandler | null {
-  // Prevent infinite loops
-  if (visited.has(node.id)) {
-    return null;
-  }
+  if (visited.has(node.id) || node.type === "trigger") return null;
   visited.add(node.id);
 
-  // Trigger nodes should not appear in chains (handled at root level)
-  if (node.type === "trigger") {
-    return null;
-  }
-
-  // Create handler from action or condition node
-  if (node.type === "action") {
-    return createActionHandler(
+  if (node.type === "action")
+    return buildActionHandler(node, nodeMap, connectionMap, eventType, visited);
+  if (node.type === "condition")
+    return buildConditionHandler(
       node,
-      eventType,
       nodeMap,
       connectionMap,
-      visited,
-    );
-  }
-
-  if (node.type === "condition") {
-    return createConditionHandler(
-      node,
       eventType,
-      nodeMap,
-      connectionMap,
       visited,
     );
-  }
-
   return null;
 }
 
-/**
- * Create an action handler from an action node
- *
- * Action handlers execute concrete actions (navigate, API call, etc.)
- * and chain to subsequent handlers using nextHandlers.
- *
- * @param node - Action workflow node
- * @param eventType - Event type from trigger
- * @param nodeMap - Map of all nodes
- * @param connectionMap - Map of connections
- * @param visited - Set of visited nodes
- * @returns EventHandler configured for the action
- */
-function createActionHandler(
-  node: WorkflowNode,
+function buildNextHandlers(
+  nodeId: string,
+  nodeMap: NodeMap,
+  connectionMap: ConnectionMap,
   eventType: EventType,
-  nodeMap: WorkflowNodeMap,
-  connectionMap: Map<string, string[]>,
+  visited: Set<string>,
+): EventHandler[] {
+  const nextIds = connectionMap.get(nodeId) ?? [];
+  return nextIds.flatMap((id) => {
+    const node = nodeMap[id];
+    if (!node || visited.has(id)) return [];
+    const handler = buildHandlerChain(
+      node,
+      nodeMap,
+      connectionMap,
+      eventType,
+      new Set(visited),
+    );
+    return handler ? [handler] : [];
+  });
+}
+
+function buildActionHandler(
+  node: WorkflowNode,
+  nodeMap: NodeMap,
+  connectionMap: ConnectionMap,
+  eventType: EventType,
   visited: Set<string>,
 ): EventHandler {
-  const config = node.data?.config || {};
-  const nextNodeIds = connectionMap.get(node.id) || [];
-  const nextHandlers: EventHandler[] = [];
-
-  // Build next handlers in chain
-  for (const nextNodeId of nextNodeIds) {
-    const nextNode = nodeMap[nextNodeId];
-    if (nextNode && !visited.has(nextNodeId)) {
-      const nextHandler = buildHandlerChain(
-        nextNode,
-        nodeMap,
-        connectionMap,
-        eventType,
-        new Set(visited),
-      );
-      if (nextHandler) {
-        nextHandlers.push(nextHandler);
-      }
-    }
-  }
-
-  // Get valid action type
-  const actionType = getValidActionTypeEvent(config.actionType);
-
-  // Create properly typed config based on action type
-  const eventActionConfig = createEventActionConfig(actionType, config);
+  const config = node.data?.config ?? {};
+  const actionType = resolveActionType(config.actionType);
+  const nextHandlers = buildNextHandlers(
+    node.id,
+    nodeMap,
+    connectionMap,
+    eventType,
+    visited,
+  );
 
   return {
     id: node.id,
     eventType,
     actionType,
-    config: eventActionConfig,
+    config: buildActionConfig(actionType, config),
     enabled: true,
     nextHandlers: nextHandlers.length > 0 ? nextHandlers : undefined,
   };
 }
 
-/**
- * Create a condition handler from a condition node
- *
- * Condition handlers evaluate boolean logic and branch execution:
- * - Uses customCode action type to execute condition logic
- * - Generates executable condition code from node config
- * - Builds trueHandlers for paths to execute when condition passes
- * - Builds falseHandlers for paths to execute when condition fails (future)
- *
- * Currently, all connected nodes are treated as true branch.
- * TODO: Support labeled ports for explicit true/false path routing
- *
- * @param node - Condition workflow node
- * @param eventType - Event type from trigger
- * @param nodeMap - Map of all nodes
- * @param connectionMap - Map of connections
- * @param visited - Set of visited nodes
- * @returns EventHandler with conditional branching logic
- */
-function createConditionHandler(
+function buildConditionHandler(
   node: WorkflowNode,
+  nodeMap: NodeMap,
+  connectionMap: ConnectionMap,
   eventType: EventType,
-  nodeMap: WorkflowNodeMap,
-  connectionMap: Map<string, string[]>,
   visited: Set<string>,
 ): EventHandler {
-  const config = node.data?.config || {};
-  const nextNodeIds = connectionMap.get(node.id) || [];
-  const trueHandlers: EventHandler[] = [];
-  const falseHandlers: EventHandler[] = [];
+  const config = node.data?.config ?? {};
+  const trueHandlers = buildNextHandlers(
+    node.id,
+    nodeMap,
+    connectionMap,
+    eventType,
+    visited,
+  );
 
-  // Build handler chains for connected nodes
-  // Currently all connections from condition node are treated as true branch
-  // Future enhancement: Support connection port labels (sourceHandle: 'true'/'false')
-  // to enable explicit true/false branch routing in the visual editor
-  for (const nextNodeId of nextNodeIds) {
-    const nextNode = nodeMap[nextNodeId];
-    if (nextNode && !visited.has(nextNodeId)) {
-      // Create fresh visited set for each branch to allow diamond patterns
-      const nextHandler = buildHandlerChain(
-        nextNode,
-        nodeMap,
-        connectionMap,
-        eventType,
-        new Set(visited), // Fresh copy prevents false-positive cycle detection
-      );
-      if (nextHandler) {
-        trueHandlers.push(nextHandler);
-      }
-    }
-  }
-
-  // Generate executable condition code
-  // The code returns a boolean that determines which branch to execute
-  const eventActionConfig: EventActionConfig = {
+  const conditionConfig: EventActionConfig = {
     type: "customCode",
     code: generateConditionCode(config),
   };
@@ -291,26 +162,13 @@ function createConditionHandler(
     id: node.id,
     eventType,
     actionType: ACTION_TYPES.CUSTOM_CODE,
-    config: eventActionConfig,
+    config: conditionConfig,
     enabled: true,
-    // Conditional branching: executor will check result and execute appropriate branch
     trueHandlers: trueHandlers.length > 0 ? trueHandlers : undefined,
-    falseHandlers: falseHandlers.length > 0 ? falseHandlers : undefined,
   };
 }
 
-/**
- * Create properly typed EventActionConfig based on action type
- *
- * This function ensures all action configs have valid defaults and proper types.
- * It mirrors the logic in workflowUtils.buildActionConfig but produces
- * EventActionConfig for runtime execution.
- *
- * @param actionType - The type of action to create config for
- * @param config - Base configuration object from workflow node
- * @returns Fully typed and validated EventActionConfig
- */
-function createEventActionConfig(
+function buildActionConfig(
   actionType: ActionTypeEvent,
   config: Record<string, unknown>,
 ): EventActionConfig {
@@ -318,8 +176,8 @@ function createEventActionConfig(
     case ACTION_TYPES.NAVIGATE:
       return {
         type: "navigate",
-        value: String(config.value || ""),
-        target: (config.target as "url" | "page" | "external") || "url",
+        value: String(config.value ?? ""),
+        target: (config.target as "url" | "page" | "external") ?? "url",
         openInNewTab: Boolean(config.openInNewTab),
         replaceHistory: Boolean(config.replaceHistory),
       };
@@ -327,13 +185,13 @@ function createEventActionConfig(
     case ACTION_TYPES.API_CALL:
       return {
         type: "apiCall",
-        url: String(config.url || ""),
+        url: String(config.url ?? ""),
         method:
-          (config.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH") ||
+          (config.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH") ??
           "GET",
-        headers: (config.headers as Record<string, string>) || {},
+        headers: (config.headers as Record<string, string>) ?? {},
         body: config.body as Record<string, unknown>,
-        bodyType: (config.bodyType as "json" | "formData") || "json",
+        bodyType: (config.bodyType as "json" | "formData") ?? "json",
         storeResponseAs: config.storeResponseAs as string,
         timeout: Number(config.timeout) || 5000,
       };
@@ -341,25 +199,22 @@ function createEventActionConfig(
     case ACTION_TYPES.SHOW_NOTIFICATION:
       return {
         type: "showNotification",
-        message: String(config.message || ""),
+        message: String(config.message ?? ""),
         notificationType:
           (config.notificationType as
             | "success"
             | "error"
             | "info"
-            | "warning") || "info",
+            | "warning") ?? "info",
       };
 
     case ACTION_TYPES.CUSTOM_CODE:
-      return {
-        type: "customCode",
-        code: String(config.code || ""),
-      };
+      return { type: "customCode", code: String(config.code ?? "") };
 
     case ACTION_TYPES.SET_DATA:
       return {
         type: "setData",
-        dataPath: String(config.dataPath || ""),
+        dataPath: String(config.dataPath ?? ""),
         value: config.value,
       };
 
@@ -368,29 +223,29 @@ function createEventActionConfig(
     case ACTION_TYPES.TOGGLE_ELEMENT:
       return {
         type: actionType,
-        elementId: String(config.elementId || ""),
+        elementId: String(config.elementId ?? ""),
         animationDuration: Number(config.animationDuration) || 300,
       };
 
     case ACTION_TYPES.SCROLL_TO:
       return {
         type: "scrollTo",
-        target: (config.target as "elementId" | "position") || "elementId",
-        value: String(config.value || ""),
-        behavior: (config.behavior as "smooth" | "auto") || "smooth",
+        target: (config.target as "elementId" | "position") ?? "elementId",
+        value: String(config.value ?? ""),
+        behavior: (config.behavior as "smooth" | "auto") ?? "smooth",
       };
 
     case ACTION_TYPES.MODAL:
       return {
         type: "modal",
-        action: (config.action as "open" | "close") || "open",
+        action: (config.action as "open" | "close") ?? "open",
         modalId: config.modalId as string,
       };
 
     case ACTION_TYPES.PLAY_ANIMATION:
       return {
         type: "playAnimation",
-        elementId: String(config.elementId || ""),
+        elementId: String(config.elementId ?? ""),
         animationType:
           (config.animationType as
             | "fadeIn"
@@ -398,7 +253,7 @@ function createEventActionConfig(
             | "bounce"
             | "pulse"
             | "shake"
-            | "spin") || "fadeIn",
+            | "spin") ?? "fadeIn",
         duration: Number(config.duration) || 1000,
       };
 
@@ -407,8 +262,8 @@ function createEventActionConfig(
     case ACTION_TYPES.REMOVE_CLASS:
       return {
         type: actionType,
-        elementId: String(config.elementId || ""),
-        className: String(config.className || ""),
+        elementId: String(config.elementId ?? ""),
+        className: String(config.className ?? ""),
       };
 
     case ACTION_TYPES.SUBMIT_FORM:
@@ -424,20 +279,16 @@ function createEventActionConfig(
       };
 
     case ACTION_TYPES.COPY_TO_CLIPBOARD:
-      return {
-        type: "copyToClipboard",
-        text: String(config.text || ""),
-      };
+      return { type: "copyToClipboard", text: String(config.text ?? "") };
 
     case ACTION_TYPES.DOWNLOAD_FILE:
       return {
         type: "downloadFile",
-        url: String(config.url || ""),
+        url: String(config.url ?? ""),
         filename: config.filename as string,
       };
 
     default:
-      // Fallback to custom code for unknown actions
       return {
         type: "customCode",
         code: `// Unknown action type: ${actionType}`,
@@ -445,89 +296,39 @@ function createEventActionConfig(
   }
 }
 
-/**
- * Generate executable JavaScript condition code from condition config
- *
- * The generated code is executed in a safe context with access to:
- * - state: Element state object
- * - element: DOM element
- *
- * @param config - Condition configuration from workflow node
- * @returns JavaScript code string that returns a boolean
- */
 function generateConditionCode(config: Record<string, unknown>): string {
-  const conditionType = config.conditionType as string;
-
-  switch (conditionType) {
+  switch (config.conditionType as string) {
     case "always":
       return "return true;";
-
-    case "stateEquals":
-      const left = config.left as string;
-      const right = config.right;
-      const operator = config.operator as string;
+    case "stateEquals": {
+      const { left, right, operator } = config as Record<string, unknown>;
       return `return state.${left} ${operator} ${JSON.stringify(right)};`;
-
+    }
     case "customCode":
-      return String(config.customCode || "return false;");
-
+      return String(config.customCode ?? "return false;");
     default:
       return "return false;";
   }
 }
 
-/**
- * Validate and return a valid EventType, with fallback to onClick
- *
- * @param eventTypeString - Event type string from workflow node
- * @returns Valid EventType constant
- */
-function getValidEventType(eventTypeString: string | undefined): EventType {
-  if (!eventTypeString) {
-    return EVENT_TYPES.CLICK;
-  }
-
-  // Check if the string is a valid EventType
-  const validEventTypes = Object.values(EVENT_TYPES);
-  if (validEventTypes.includes(eventTypeString as EventType)) {
-    return eventTypeString as EventType;
-  }
-
-  // Default to onClick if invalid
-  return EVENT_TYPES.CLICK;
+function resolveValid<T extends string>(
+  value: string | undefined,
+  validValues: readonly T[],
+  fallback: T,
+): T {
+  return value && (validValues as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
 }
 
-/**
- * Validate and return a valid ActionTypeEvent, with fallback to navigate
- *
- * @param actionTypeString - Action type string from workflow node
- * @returns Valid ActionTypeEvent constant
- */
-function getValidActionTypeEvent(actionTypeString: string | undefined): ActionTypeEvent {
-  if (!actionTypeString) {
-    return ACTION_TYPES.NAVIGATE;
-  }
-
-  // Check if the string is a valid ActionTypeEvent
-  const validActionTypeEvents = Object.values(ACTION_TYPES);
-  if (validActionTypeEvents.includes(actionTypeString as ActionTypeEvent)) {
-    return actionTypeString as ActionTypeEvent;
-  }
-
-  // Default to navigate if invalid
-  return ACTION_TYPES.NAVIGATE;
+function resolveEventType(value: string | undefined): EventType {
+  return resolveValid(value, Object.values(EVENT_TYPES), EVENT_TYPES.CLICK);
 }
 
-/**
- * Extract the trigger event type from workflow data
- *
- * @param workflowData - Complete workflow data
- * @returns Event type string from first trigger node, or 'onClick' as default
- */
-export function getTriggerEventType(workflowData: WorkflowData): string {
-  const triggerNode = workflowData.nodes?.find(
-    (node) => node.type === "trigger",
+function resolveActionType(value: unknown): ActionTypeEvent {
+  return resolveValid(
+    typeof value === "string" ? value : undefined,
+    Object.values(ACTION_TYPES),
+    ACTION_TYPES.NAVIGATE,
   );
-  return triggerNode?.data?.config?.eventType || "onClick";
 }
-

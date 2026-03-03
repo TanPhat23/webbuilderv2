@@ -5,6 +5,7 @@ export const NODE_TYPE_LABELS: Record<NodeType, string> = {
   [NodeType.ACTION]: "Action",
   [NodeType.CONDITION]: "Condition",
   [NodeType.OUTPUT]: "Output",
+  [NodeType.ELEMENT]: "Element",
 };
 
 export const NODE_TYPE_DESCRIPTIONS: Record<NodeType, string> = {
@@ -12,6 +13,7 @@ export const NODE_TYPE_DESCRIPTIONS: Record<NodeType, string> = {
   [NodeType.ACTION]: "Perform an action or task",
   [NodeType.CONDITION]: "Branch based on conditions",
   [NodeType.OUTPUT]: "End point of the workflow",
+  [NodeType.ELEMENT]: "Canvas element event source",
 };
 
 export const NODE_TYPE_COLORS = {
@@ -252,6 +254,7 @@ export const DEFAULT_NODE_CONFIG: Record<NodeType, Record<string, any>> = {
     format: "json",
     includeMetadata: true,
   },
+  [NodeType.ELEMENT]: {},
 } as const;
 
 export const getNodeTypeColor = (nodeType: NodeType) => {
@@ -260,6 +263,7 @@ export const getNodeTypeColor = (nodeType: NodeType) => {
     [NodeType.ACTION]: "action",
     [NodeType.CONDITION]: "condition",
     [NodeType.OUTPUT]: "output",
+    [NodeType.ELEMENT]: "trigger",
   };
   return NODE_TYPE_COLORS[colorMap[nodeType]];
 };

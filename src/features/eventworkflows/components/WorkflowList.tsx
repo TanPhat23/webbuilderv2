@@ -30,7 +30,6 @@ import {
   Plus,
   Loader2,
   Workflow,
-  Link as LinkIcon,
   Info,
   AlertCircle,
 } from "lucide-react";
@@ -46,14 +45,12 @@ import {
 interface WorkflowListProps {
   projectId: string;
   onEdit: (workflowId: string, workflowName: string) => void;
-  onConnect: (workflowId: string) => void;
   onCreate: () => void;
 }
 
 export const WorkflowList = ({
   projectId,
   onEdit,
-  onConnect,
   onCreate,
 }: WorkflowListProps) => {
   const { workflows, isLoading, error, isDeleting, deleteWorkflow } =
@@ -173,7 +170,7 @@ export const WorkflowList = ({
       )}
 
       {/* Workflow List */}
-      <ScrollArea className="h-[calc(100vh-400px)]">
+      <ScrollArea className="h-full">
         {filteredWorkflows.length === 0 && searchQuery ? (
           <div className="text-center py-12">
             <p className="text-sm text-muted-foreground">
@@ -241,22 +238,6 @@ export const WorkflowList = ({
 
                     <div className="flex items-center gap-1 shrink-0">
                       <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onConnect(workflow.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <LinkIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            Connect to element events
-                          </TooltipContent>
-                        </Tooltip>
-
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button

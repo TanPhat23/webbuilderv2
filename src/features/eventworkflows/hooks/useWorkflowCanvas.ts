@@ -31,7 +31,11 @@ interface WorkflowCanvasStore {
   getNode: (nodeId: string) => WorkflowNode | undefined;
 
   // Connection operations
-  addConnection: (source: string, target: string) => string;
+  addConnection: (
+    source: string,
+    target: string,
+    sourcePort?: string,
+  ) => string;
   deleteConnection: (connectionId: string) => void;
   getConnectionsForNode: (nodeId: string) => Connection[];
 
@@ -135,7 +139,7 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
   },
 
   // Connection operations
-  addConnection: (source: string, target: string) => {
+  addConnection: (source: string, target: string, sourcePort?: string) => {
     const connectionId = uuidv4();
     const sourceNode = get().getNode(source);
     const targetNode = get().getNode(target);
@@ -149,7 +153,7 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
       id: connectionId,
       source,
       target,
-      sourcePort: `${source}-output`,
+      sourcePort: sourcePort ?? `${source}-output`,
       targetPort: `${target}-input`,
     };
 

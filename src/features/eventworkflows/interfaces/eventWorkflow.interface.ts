@@ -27,6 +27,7 @@ export interface CreateEventWorkflowInput {
 }
 
 export interface UpdateEventWorkflowInput {
+  handlers: EventHandler[]; // Full list of handlers to replace existing ones
   name?: string;
   description?: string;
   canvasData?: WorkflowData;

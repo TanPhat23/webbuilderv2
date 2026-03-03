@@ -75,10 +75,16 @@ export type ElementStore = {
 };
 
 const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
+  const MAX_HISTORY = 50;
+
   const takeSnapshot = () => {
     const { elements, past } = get();
+    const next = [...past, cloneDeep(elements)];
     set({
-      past: [...past, cloneDeep(elements)],
+      past:
+        next.length > MAX_HISTORY
+          ? next.slice(next.length - MAX_HISTORY)
+          : next,
       future: [],
     });
   };

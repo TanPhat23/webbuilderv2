@@ -185,6 +185,7 @@ export default function CollaborationProvider({
         ...s,
         roomState,
         error: status === "error" ? "Connection failed" : s.error,
+        pendingUpdates: providerRef.current?.pendingUpdates ?? s.pendingUpdates,
       }));
       if (status === "connected") latest.current.onReconnect?.();
       else if (status === "disconnected") latest.current.onDisconnect?.();
@@ -244,16 +245,6 @@ export default function CollaborationProvider({
       setUsers({ ...existingUsers, ...usersRecord });
     });
 
-    // Periodically update pending count in state
-    const pendingInterval = setInterval(() => {
-      if (providerRef.current) {
-        const count = providerRef.current.pendingUpdates;
-        setState((s: WSCollabState) =>
-          s.pendingUpdates !== count ? { ...s, pendingUpdates: count } : s,
-        );
-      }
-    }, 500);
-
     // Wire up the element store's collaborative callback so that local user
     // actions (create/update/delete/move) are sent over the provider.
     ElementStore.getState().setCollaborativeCallback(async (type, id, data) => {
@@ -293,7 +284,6 @@ export default function CollaborationProvider({
 
     // Cleanup
     return () => {
-      clearInterval(pendingInterval);
       unsubPresence();
       // Remove Y.Text observer
       try {
@@ -306,6 +296,7 @@ export default function CollaborationProvider({
       ElementStore.getState().setYjsUpdateCallback(null);
       provider.destroy();
       providerRef.current = null;
+      persistence?.destroy();
     };
   }, [
     pageId,

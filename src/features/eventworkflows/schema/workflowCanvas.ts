@@ -19,6 +19,14 @@ const BaseNodeDataSchema = z.object({
   config: z.record(z.string(), z.unknown()).optional(),
 });
 
+// Element node data schema (superset of base — includes element-specific fields)
+const ElementNodeDataSchema = BaseNodeDataSchema.extend({
+  elementId: z.string().optional(),
+  elementName: z.string().optional(),
+  elementType: z.string().optional(),
+  connectedEvents: z.array(z.string()).optional(),
+});
+
 // Discriminated node schemas (keeps shape consistent and allows per-type checks)
 const TriggerNodeSchema = z.object({
   id: z.string().min(1, "Node id is required"),
@@ -48,11 +56,19 @@ const OutputNodeSchema = z.object({
   data: BaseNodeDataSchema,
 });
 
+const ElementNodeSchema = z.object({
+  id: z.string().min(1, "Node id is required"),
+  type: z.literal("element"),
+  position: PositionSchema,
+  data: ElementNodeDataSchema,
+});
+
 export const WorkflowNodeSchema = z.discriminatedUnion("type", [
   TriggerNodeSchema,
   ActionNodeSchema,
   ConditionNodeSchema,
   OutputNodeSchema,
+  ElementNodeSchema,
 ]);
 
 // Connection schema
@@ -67,9 +83,7 @@ export const ConnectionSchema = z.object({
 // Workflow canvas schema: nodes + connections + optional metadata
 export const WorkflowCanvasSchema = z
   .object({
-    nodes: z
-      .array(WorkflowNodeSchema)
-      .min(1, "Workflow must contain at least one node"),
+    nodes: z.array(WorkflowNodeSchema),
     connections: z.array(ConnectionSchema).optional().default([]),
     metadata: z
       .object({
@@ -79,23 +93,31 @@ export const WorkflowCanvasSchema = z
       .optional(),
   })
   .superRefine((data: z.infer<typeof WorkflowCanvasSchema>, ctx) => {
-    if (!data.nodes.some((n) => n.type === "trigger")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Workflow must contain at least one trigger node",
-      });
-    }
+    // Only validate trigger/action requirements when there are non-element nodes present
+    const workflowNodes = data.nodes.filter((n) => n.type !== "element");
 
-    if (!data.nodes.some((n) => n.type === "action")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Workflow must contain at least one action node",
-      });
+    if (workflowNodes.length > 0) {
+      if (!workflowNodes.some((n) => n.type === "trigger")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Workflow must contain at least one trigger node",
+        });
+      }
+
+      if (!workflowNodes.some((n) => n.type === "action")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Workflow must contain at least one action node",
+        });
+      }
     }
 
     // Best-effort per-node config checks (provide clearer messages for common misconfigurations)
     data.nodes.forEach(
       (node: z.infer<typeof WorkflowNodeSchema>, idx: number) => {
+        // Skip element nodes — they have no config requirements
+        if (node.type === "element") return;
+
         const cfg = node.data?.config;
         if (node.type === "trigger") {
           if (
@@ -146,8 +168,6 @@ export const WorkflowCanvasSchema = z
 export function validateWorkflowCanvas(data: unknown) {
   return WorkflowCanvasSchema.safeParse(data);
 }
-
-
 
 export type WorkflowCanvasZodIssue = z.ZodIssue;
 export type WorkflowCanvas = z.infer<typeof WorkflowCanvasSchema>;

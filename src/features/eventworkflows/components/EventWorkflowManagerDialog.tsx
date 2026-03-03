@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { WorkflowList } from "./WorkflowList";
 import { WorkflowCreator } from "./WorkflowCreator";
-import { WorkflowConnector } from "./WorkflowConnector";
 import { WorkflowEditor } from "./WorkflowEditor";
-import { WorkflowData } from "./types/workflow.types";
-import { useEventWorkflow } from "@/features/eventworkflows/hooks/useEventWorkflows";
-import { useUpdateEventWorkflow } from "@/features/eventworkflows/hooks/useEventWorkflowMutations";
-import { toast } from "sonner";
-import type { ZodIssue } from "zod";
-import { WorkflowCanvasSchema } from "@/features/eventworkflows/schema/workflowCanvas";
+import { useWorkflowManager } from "@/features/eventworkflows/hooks/useWorkflowManager";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { Zap, List, Plus, X, Loader2, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface EventWorkflowManagerDialogProps {
   projectId: string;
@@ -20,207 +26,250 @@ interface EventWorkflowManagerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type ViewState =
-  | { type: "list" }
-  | { type: "create" }
-  | {
-      type: "edit";
-      workflowId: string;
-      workflowName: string;
-      initialData?: WorkflowData;
-    }
-  | { type: "connect"; workflowId?: string };
+// ─── Nav items ────────────────────────────────────────────────────────────────
+
+type NavViewType = "list" | "create";
+
+type NavItem = {
+  id: NavViewType;
+  label: string;
+  icon: React.ReactNode;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  {
+    id: "list",
+    label: "Workflows",
+    icon: <List className="h-4 w-4" />,
+  },
+  {
+    id: "create",
+    label: "New Workflow",
+    icon: <Plus className="h-4 w-4" />,
+  },
+];
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+interface HeaderProps {
+  view: ReturnType<typeof useWorkflowManager>["view"];
+}
+
+function getDialogTitle(view: HeaderProps["view"]): string {
+  if (view.type === "create") return "Create New Workflow";
+  if (view.type === "edit")
+    return `Edit Workflow: ${view.workflowName || "Untitled"}`;
+  return "Workflow Manager";
+}
+
+function ManagerHeader({ view }: HeaderProps) {
+  const crumbs: string[] = ["Workflows"];
+  if (view.type === "create") crumbs.push("New Workflow");
+  if (view.type === "edit") crumbs.push(view.workflowName || "Edit");
+
+  return (
+    <div className="flex items-center justify-between h-12 px-4 border-b border-border bg-card shrink-0">
+      <div className="flex items-center gap-1.5 text-sm">
+        <Zap className="h-4 w-4 text-primary shrink-0" />
+        {crumbs.map((crumb, i) => (
+          <span key={i} className="flex items-center gap-1.5">
+            {i > 0 && (
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            )}
+            <span
+              className={cn(
+                i === crumbs.length - 1
+                  ? "font-semibold text-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
+              {crumb}
+            </span>
+          </span>
+        ))}
+        {view.type === "edit" && (
+          <Badge variant="secondary" className="ml-1 text-xs h-5">
+            editing
+          </Badge>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+
+interface SidebarProps {
+  activeViewType: string;
+  onNavigate: (viewType: NavViewType) => void;
+}
+
+function ManagerSidebar({ activeViewType, onNavigate }: SidebarProps) {
+  return (
+    <aside className="w-52 shrink-0 flex flex-col border-r border-border bg-card">
+      <div className="px-3 pt-4 pb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground px-2">
+          Navigation
+        </p>
+      </div>
+
+      <nav className="flex-1 px-2 space-y-0.5">
+        {NAV_ITEMS.map((item) => {
+          const isActive =
+            activeViewType === item.id ||
+            (activeViewType === "edit" && item.id === "list");
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => onNavigate(item.id)}
+              className={cn(
+                "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left",
+                isActive
+                  ? "bg-primary/10 text-primary font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <span
+                className={cn(
+                  "shrink-0",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {item.icon}
+              </span>
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <Separator />
+
+      <div className="p-3">
+        <div className="rounded-lg bg-muted/50 border border-border p-3 space-y-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Quick tips
+          </p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+            <li>Drag elements onto the canvas</li>
+            <li>Click + to add elements directly</li>
+            <li>Wire event handles to triggers</li>
+            <li>Del key removes selection</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// ─── Loading screen ───────────────────────────────────────────────────────────
+
+function WorkflowLoadingScreen() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm">Loading workflow…</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Content area ─────────────────────────────────────────────────────────────
+
+interface ContentAreaProps {
+  manager: ReturnType<typeof useWorkflowManager>;
+}
+
+function ContentArea({ manager }: ContentAreaProps) {
+  const {
+    view,
+    projectId,
+    goToList,
+    goToCreate,
+    goToEdit,
+    onWorkflowCreated,
+    isLoadingWorkflow,
+    currentWorkflowId,
+    currentWorkflowName,
+    initialData,
+  } = manager;
+
+  if (view.type === "list") {
+    return (
+      <WorkflowList
+        projectId={projectId}
+        onEdit={goToEdit}
+        onCreate={goToCreate}
+      />
+    );
+  }
+
+  if (view.type === "create") {
+    return (
+      <WorkflowCreator
+        projectId={projectId}
+        onSuccess={onWorkflowCreated}
+        onCancel={goToList}
+      />
+    );
+  }
+
+  if (view.type === "edit") {
+    if (isLoadingWorkflow) return <WorkflowLoadingScreen />;
+
+    return (
+      <WorkflowEditor
+        workflowId={currentWorkflowId}
+        workflowName={currentWorkflowName}
+        initialWorkflow={initialData ?? { nodes: [], connections: [] }}
+        onBack={goToList}
+        className="h-full"
+      />
+    );
+  }
+
+  return null;
+}
+
+// ─── Dialog ───────────────────────────────────────────────────────────────────
 
 export const EventWorkflowManagerDialog = ({
   projectId,
   isOpen,
   onOpenChange,
 }: EventWorkflowManagerDialogProps) => {
-  const [viewState, setViewState] = useState<ViewState>({ type: "list" });
-  const [workflowData, setWorkflowData] = useState<WorkflowData>({
-    nodes: [],
-    connections: [],
-  });
+  const manager = useWorkflowManager({ projectId, isOpen });
+  const { view, goToList, goToCreate } = manager;
 
-  const updateWorkflowMutation = useUpdateEventWorkflow();
-
-  const editingWorkflowId =
-    viewState.type === "edit" ? viewState.workflowId : "";
-  const isEditView = viewState.type === "edit";
-
-  // React Query hook for fetching single workflow (enabled only in edit mode)
-  const workflowQuery = useEventWorkflow(editingWorkflowId, isEditView);
-
-  // Reset to list view when dialog opens
-  useEffect(() => {
-    if (isOpen) {
-      setViewState({ type: "list" });
-    }
-  }, [isOpen]);
-
-  // Load canvas data when workflow query resolves
-  useEffect(() => {
-    if (
-      viewState.type === "edit" &&
-      workflowQuery.data?.canvasData &&
-      !viewState.initialData
-    ) {
-      setViewState((prev) =>
-        prev.type === "edit"
-          ? { ...prev, initialData: workflowQuery.data!.canvasData }
-          : prev,
-      );
-      setWorkflowData(workflowQuery.data.canvasData);
-    }
-  }, [workflowQuery.data, viewState]);
-
-  const handleCreateWorkflow = () => {
-    setViewState({ type: "create" });
+  const handleNavigate = (viewType: NavViewType) => {
+    if (viewType === "list") goToList();
+    else if (viewType === "create") goToCreate();
   };
 
-  const handleWorkflowCreated = (workflowId: string) => {
-    setViewState({
-      type: "edit",
-      workflowId,
-      workflowName: "New Workflow",
-    });
-  };
-
-  const handleEditWorkflow = (workflowId: string, workflowName: string) => {
-    console.log("Opening workflow for edit:", { workflowId, workflowName });
-    setViewState({
-      type: "edit",
-      workflowId,
-      workflowName,
-      initialData: undefined,
-    });
-  };
-
-  const handleConnectWorkflow = (workflowId?: string) => {
-    setViewState({ type: "connect", workflowId });
-  };
-
-  const handleSaveWorkflow = async (workflow: WorkflowData) => {
-    if (viewState.type !== "edit") return;
-
-    const validation = WorkflowCanvasSchema.safeParse(workflow);
-    if (!validation.success) {
-      const errors =
-        validation.error?.issues.map((issue: ZodIssue) => issue.message) ?? [];
-      const errorMsg = errors.join("\n• ");
-      toast.error(`Workflow validation failed:\n• ${errorMsg}`);
-      console.error("Validation errors:", validation.error);
-      return;
-    }
-
-    console.log("Validation successful:", {
-      nodeCount: workflow.nodes.length,
-    });
-
-    // Save canvas data only
-    try {
-      const result = await updateWorkflowMutation.mutateAsync({
-        workflowId: viewState.workflowId,
-        input: {
-          name: workflow.metadata?.name,
-          description: workflow.metadata?.description,
-          canvasData: workflow, // Save the complete canvas state
-          enabled: true,
-        },
-      });
-
-      toast.success("Workflow saved successfully!");
-      console.log("Workflow saved with canvas data");
-    } catch (error) {
-      const errorMessage =
-        updateWorkflowMutation.error instanceof Error
-          ? updateWorkflowMutation.error.message
-          : error instanceof Error
-            ? error.message
-            : "Failed to save workflow";
-      console.error("Failed to save workflow:", error);
-      toast.error(`Error saving workflow:\n${errorMessage}`);
-    }
-  };
-
-  const handleBackToList = () => {
-    setViewState({ type: "list" });
-  };
-
-  const handleNameChange = (name: string) => {
-    setWorkflowData((prev) => ({
-      ...prev,
-      metadata: { ...prev.metadata, name },
-    }));
-  };
-
-  const isFullScreenView = viewState.type === "edit";
+  const isEditView = view.type === "edit";
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={
-          isFullScreenView
-            ? "max-w-[95vw]! h-[95vh] p-0"
-            : "max-w-4xl! max-h-[90vh]"
-        }
-      >
+      <DialogContent className="max-w-[95vw]! h-full p-0 flex flex-col gap-0 ">
         <VisuallyHidden>
-          <DialogTitle>Workflow Manager</DialogTitle>
+          <DialogTitle>{getDialogTitle(view)}</DialogTitle>
         </VisuallyHidden>
-        <div
-          className={
-            isFullScreenView
-              ? "h-full"
-              : "max-h-[calc(90vh-2rem)] overflow-y-auto p-6"
-          }
-        >
-          {viewState.type === "list" && (
-            <WorkflowList
-              projectId={projectId}
-              onEdit={handleEditWorkflow}
-              onConnect={handleConnectWorkflow}
-              onCreate={handleCreateWorkflow}
+        <ManagerHeader view={view} />
+        <div className="flex flex-1 overflow-hidden">
+          {!isEditView && (
+            <ManagerSidebar
+              activeViewType={view.type}
+              onNavigate={handleNavigate}
             />
           )}
 
-          {viewState.type === "create" && (
-            <WorkflowCreator
-              projectId={projectId}
-              onSuccess={handleWorkflowCreated}
-              onCancel={handleBackToList}
-            />
-          )}
-
-          {viewState.type === "edit" && (
-            <div className="h-full">
-              {workflowQuery.isLoading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading workflow...</p>
-                  </div>
-                </div>
-              ) : (
-                <WorkflowEditor
-                  workflowName={viewState.workflowName}
-                  initialWorkflow={viewState.initialData || workflowData}
-                  onSave={handleSaveWorkflow}
-                  onNameChange={handleNameChange}
-                  onBack={handleBackToList}
-                  className="h-full"
-                />
-              )}
+          <main className="flex-1 min-w-0 h-full">
+            <div className={cn("h-full", isEditView ? "" : "p-4")}>
+              <ContentArea manager={manager} />
             </div>
-          )}
-
-          {viewState.type === "connect" && (
-            <WorkflowConnector
-              projectId={projectId}
-              workflowId={viewState.workflowId}
-              onBack={handleBackToList}
-            />
-          )}
+          </main>
         </div>
       </DialogContent>
     </Dialog>

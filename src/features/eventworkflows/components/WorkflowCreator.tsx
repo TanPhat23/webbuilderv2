@@ -27,7 +27,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Zap, ArrowLeft } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 interface WorkflowCreatorProps {
@@ -76,17 +76,6 @@ export const WorkflowCreator = ({
 
   return (
     <div className="space-y-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onCancel}
-        className="gap-2 mb-2"
-        disabled={isLoading}
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Workflows
-      </Button>
-
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">

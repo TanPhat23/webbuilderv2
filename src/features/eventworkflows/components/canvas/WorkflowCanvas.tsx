@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Node,
   Edge,
@@ -13,19 +13,14 @@ import ReactFlow, {
   useReactFlow,
   NodeMouseHandler,
   EdgeMouseHandler,
+  OnConnect,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { NodeType } from "../types/workflow.types";
 import { WorkflowNodeWrapper } from "./WorkflowNodeWrapper";
+import { ElementNode } from "../nodes/ElementNode";
 import { Button } from "@/components/ui/button";
-import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Trash2,
-  Plus,
-  Grid3x3,
-} from "lucide-react";
+import { ZoomIn, RotateCcw, Trash2, Plus, Grid3x3 } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkflowCanvas } from "@/features/editor/hooks";
 import { cn } from "@/lib/utils";
@@ -33,23 +28,34 @@ import {
   VALIDATION_ERRORS,
   NODE_TYPE_LABELS,
   CONNECTION_CONFIG,
-  ANIMATION_DURATIONS,
 } from "@/features/eventworkflows";
-import { getDefaultNodeConfig } from "@/features/eventworkflows/utils/workflowBuild";
+
+import {
+  createReactFlowNode,
+  mapWorkflowNodeToReactFlow,
+} from "@/features/eventworkflows/utils/createNodeStrategy";
+import {
+  useConnectElementEventWorkflow,
+  useDisconnectElementEventWorkflow,
+} from "@/features/eventworkflows/hooks/useElementEventWorkflowMutations";
+import { useSelectionStore } from "@/features/editor";
 
 interface WorkflowCanvasProps {
   readOnly?: boolean;
-  onWorkflowChange?: (workflow: any) => void;
+  workflowId?: string;
+  onWorkflowChange?: (workflow: unknown) => void;
   onNodeConfigure?: (nodeId: string) => void;
   className?: string;
 }
 
 const nodeTypes = {
   workflow: WorkflowNodeWrapper,
+  element: ElementNode,
 };
 
 export const WorkflowCanvas = ({
   readOnly = false,
+  workflowId,
   onWorkflowChange,
   onNodeConfigure,
   className,
@@ -69,31 +75,73 @@ export const WorkflowCanvas = ({
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const selectedElement = useSelectionStore((state) => state.selectedElement);
+
   const { fitView } = useReactFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
 
+  const connectMutation = useConnectElementEventWorkflow();
+  const disconnectMutation = useDisconnectElementEventWorkflow();
+
+  // Derive which events are wired per element node by inspecting connections
+  const getConnectedEventsForNode = useCallback(
+    (nodeId: string): string[] => {
+      return workflow.connections
+        .filter((c) => c.source === nodeId && c.sourcePort)
+        .map((c) => c.sourcePort as string);
+    },
+    [workflow.connections],
+  );
+
+  const addedElementIds = useRef<Set<string>>(new Set());
+
   useEffect(() => {
-    const workflowNodes: Node[] = workflow.nodes.map((node) => ({
-      id: node.id,
-      data: {
-        label: node.data.label,
-        description: node.data.description,
-        icon: node.data.icon,
-        type: node.type,
+    if (!selectedElement) return;
+
+    const alreadyOnCanvas = workflow.nodes.some(
+      (n) =>
+        n.type === NodeType.ELEMENT && n.data.elementId === selectedElement.id,
+    );
+
+    if (!alreadyOnCanvas && !addedElementIds.current.has(selectedElement.id)) {
+      addedElementIds.current.add(selectedElement.id);
+      const label = selectedElement.name || selectedElement.type || "Element";
+      addNode(
+        NodeType.ELEMENT,
+        { x: 50, y: 50 },
+        {
+          label,
+          elementId: selectedElement.id,
+          elementName: label,
+          elementType: selectedElement.type,
+          connectedEvents: [],
+        },
+      );
+    }
+  }, [selectedElement, workflow.nodes, addNode]);
+
+  useEffect(() => {
+    const workflowNodes: Node[] = workflow.nodes.map((node) =>
+      mapWorkflowNodeToReactFlow({
+        node,
+        connectedEvents: getConnectedEventsForNode(node.id),
         onSelect: () => selectNode(node.id),
         onConfigure: onNodeConfigure,
-      },
-      position: node.position,
-      type: "workflow",
-    }));
+      }),
+    );
 
     const workflowEdges: Edge[] = workflow.connections.map((conn) => ({
       id: conn.id,
       source: conn.source,
       target: conn.target,
+      sourceHandle: conn.sourcePort,
+      targetHandle: conn.targetPort,
       animated: selection.selectedConnectionId === conn.id,
+      label: conn.sourcePort ?? undefined,
+      labelStyle: { fontSize: 10, fill: "var(--color-muted-foreground)" },
+      labelBgStyle: { fill: "var(--color-card)", fillOpacity: 0.8 },
       style: {
         stroke:
           selection.selectedConnectionId === conn.id
@@ -114,15 +162,14 @@ export const WorkflowCanvas = ({
     selection.selectedConnectionId,
     setNodes,
     setEdges,
-    selectNode,
     onNodeConfigure,
+    getConnectedEventsForNode,
   ]);
 
   const handleNodesChange = useCallback(
-    (changes: any) => {
+    (changes: Parameters<typeof onNodesChange>[0]) => {
       onNodesChange(changes);
-
-      changes.forEach((change: any) => {
+      changes.forEach((change) => {
         if (change.type === "position" && change.position) {
           moveNode(change.id, change.position);
         }
@@ -131,42 +178,87 @@ export const WorkflowCanvas = ({
     [onNodesChange, moveNode],
   );
 
-  const handleConnect = useCallback(
-    (connection: Connection) => {
-      if (connection.source && connection.target) {
-        if (connection.source === connection.target) {
-          toast.error(VALIDATION_ERRORS.selfConnection);
-          return;
-        }
+  const handleConnect: OnConnect = useCallback(
+    async (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
 
-        const sourceNode = workflow.nodes.find(
-          (n) => n.id === connection.source,
-        );
-        const targetNode = workflow.nodes.find(
-          (n) => n.id === connection.target,
-        );
-
-        if (!sourceNode || !targetNode) return;
-
-        if (sourceNode.type === NodeType.OUTPUT) {
-          toast.error(VALIDATION_ERRORS.outputAsSource);
-          return;
-        }
-
-        if (targetNode.type === NodeType.TRIGGER) {
-          toast.error(VALIDATION_ERRORS.triggerAsTarget);
-          return;
-        }
-
-        addConnection(connection.source, connection.target);
-        toast.success("Nodes connected!");
+      if (connection.source === connection.target) {
+        toast.error(VALIDATION_ERRORS.selfConnection);
+        return;
       }
+
+      const sourceNode = workflow.nodes.find((n) => n.id === connection.source);
+      const targetNode = workflow.nodes.find((n) => n.id === connection.target);
+
+      if (!sourceNode || !targetNode) return;
+
+      // Element → Trigger connection: persist as elementEventWorkflow
+      if (
+        sourceNode.type === NodeType.ELEMENT &&
+        targetNode.type === NodeType.TRIGGER
+      ) {
+        const eventType = connection.sourceHandle;
+        const elementId = sourceNode.data.elementId;
+
+        if (!eventType || !elementId) {
+          toast.error("Invalid element connection — missing event or element.");
+          return;
+        }
+
+        if (!workflowId) {
+          toast.error("Save the workflow first before connecting elements.");
+          return;
+        }
+
+        // Check for duplicate on the canvas
+        const duplicate = workflow.connections.find(
+          (c) =>
+            c.source === connection.source &&
+            c.target === connection.target &&
+            c.sourcePort === eventType,
+        );
+        if (duplicate) {
+          toast.error("This event is already connected to that trigger.");
+          return;
+        }
+
+        try {
+          await connectMutation.mutateAsync({
+            elementId,
+            eventType,
+            workflowId,
+          });
+          addConnection(connection.source, connection.target, eventType);
+          toast.success(`Connected "${eventType}" → workflow trigger`);
+        } catch {
+          // errors handled by mutation
+        }
+        return;
+      }
+
+      // Standard workflow node → node connection
+      if (sourceNode.type === NodeType.OUTPUT) {
+        toast.error(VALIDATION_ERRORS.outputAsSource);
+        return;
+      }
+
+      if (targetNode.type === NodeType.TRIGGER) {
+        toast.error(VALIDATION_ERRORS.triggerAsTarget);
+        return;
+      }
+
+      addConnection(
+        connection.source,
+        connection.target,
+        connection.sourceHandle ?? undefined,
+      );
+      toast.success("Nodes connected!");
     },
-    [workflow.nodes, addConnection],
+    [workflow.nodes, workflow.connections, addConnection, connectMutation],
   );
 
   const handleNodeClick: NodeMouseHandler = useCallback(
-    (event, node) => {
+    (_event, node) => {
       selectNode(node.id);
       setSelectedNodeId(node.id);
     },
@@ -174,7 +266,7 @@ export const WorkflowCanvas = ({
   );
 
   const handleEdgeClick: EdgeMouseHandler = useCallback(
-    (event, edge) => {
+    (_event, edge) => {
       selectConnection(edge.id);
       setSelectedEdgeId(edge.id);
     },
@@ -188,37 +280,119 @@ export const WorkflowCanvas = ({
   }, [deselectAll]);
 
   const handleAddNode = (type: NodeType) => {
-    const nodeLabel = `${type.charAt(0).toUpperCase()}${type.slice(1)}`;
-    const defaultConfig = getDefaultNodeConfig(type);
-
-    const randomX = Math.random() * 300;
-    const randomY = Math.random() * 300;
-
-    addNode(
-      type,
-      { x: randomX, y: randomY },
-      {
-        label: nodeLabel,
-        description: `New ${type} node`,
-        config: defaultConfig,
-      },
-    );
+    const position = { x: Math.random() * 300, y: Math.random() * 300 };
+    const node = createReactFlowNode(type, {
+      id: crypto.randomUUID(),
+      position,
+      label: `${type.charAt(0).toUpperCase()}${type.slice(1)}`,
+    });
+    addNode(type, position, node.data);
   };
 
-  const handleDeleteSelected = () => {
+  const handleDeleteSelected = useCallback(async () => {
     if (selectedNodeId) {
+      const node = workflow.nodes.find((n) => n.id === selectedNodeId);
+
+      // When deleting an element node, also disconnect all its element-event connections
+      if (
+        node?.type === NodeType.ELEMENT &&
+        node.data.elementId &&
+        workflowId
+      ) {
+        const elementConnections = workflow.connections.filter(
+          (c) => c.source === selectedNodeId && c.sourcePort,
+        );
+
+        for (const conn of elementConnections) {
+          if (conn.sourcePort) {
+            try {
+              await disconnectMutation.mutateAsync({
+                elementId: node.data.elementId,
+                eventType: conn.sourcePort,
+                workflowId,
+              });
+            } catch {
+              // best-effort
+            }
+          }
+        }
+      }
+
       deleteNode(selectedNodeId);
       toast.success("Node deleted");
       setSelectedNodeId(null);
     } else if (selectedEdgeId) {
+      // When deleting an element→trigger edge, also disconnect the service connection
+      const conn = workflow.connections.find((c) => c.id === selectedEdgeId);
+      if (conn?.sourcePort && workflowId) {
+        const sourceNode = workflow.nodes.find((n) => n.id === conn.source);
+        const targetNode = workflow.nodes.find((n) => n.id === conn.target);
+
+        if (
+          sourceNode?.type === NodeType.ELEMENT &&
+          targetNode?.type === NodeType.TRIGGER &&
+          sourceNode.data.elementId
+        ) {
+          try {
+            await disconnectMutation.mutateAsync({
+              elementId: sourceNode.data.elementId,
+              eventType: conn.sourcePort,
+              workflowId,
+            });
+          } catch {
+            // best-effort
+          }
+        }
+      }
+
       deleteConnection(selectedEdgeId);
       toast.success("Connection deleted");
       setSelectedEdgeId(null);
     }
-  };
+  }, [
+    selectedNodeId,
+    selectedEdgeId,
+    workflow.nodes,
+    workflow.connections,
+    deleteNode,
+    deleteConnection,
+    disconnectMutation,
+  ]);
 
-  const handleResetView = () => {
-    fitView({ padding: 0.2, duration: 200 });
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const nodeType = e.dataTransfer.getData("nodeType") as NodeType;
+      const elementId = e.dataTransfer.getData("elementId");
+      const elementName = e.dataTransfer.getData("elementName");
+      const elementType = e.dataTransfer.getData("elementType");
+
+      if (!nodeType) return;
+
+      const bounds = e.currentTarget.getBoundingClientRect();
+      const position = {
+        x: e.clientX - bounds.left - 110,
+        y: e.clientY - bounds.top - 60,
+      };
+
+      const node = createReactFlowNode(nodeType, {
+        id: crypto.randomUUID(),
+        position,
+        label:
+          elementName ||
+          `${nodeType.charAt(0).toUpperCase()}${nodeType.slice(1)}`,
+        elementId: elementId || undefined,
+        elementName: elementName || undefined,
+        elementType: elementType || undefined,
+      });
+      addNode(nodeType, position, node.data);
+    },
+    [addNode],
+  );
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
   };
 
   useEffect(() => {
@@ -227,10 +401,9 @@ export const WorkflowCanvas = ({
         handleDeleteSelected();
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedNodeId, selectedEdgeId]);
+  }, [handleDeleteSelected]);
 
   useEffect(() => {
     onWorkflowChange?.(workflow);
@@ -242,6 +415,8 @@ export const WorkflowCanvas = ({
         "relative w-full h-full bg-background overflow-hidden",
         className,
       )}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
     >
       <ReactFlow
         nodes={nodes}
@@ -260,26 +435,14 @@ export const WorkflowCanvas = ({
         <Controls />
         <MiniMap />
 
-        {/* Top Toolbar */}
+        {/* Top toolbar */}
         <div className="absolute top-4 left-4 z-40 flex gap-2">
           <div className="bg-card border border-border rounded-lg p-2 shadow-lg flex gap-1">
             <Button
               size="sm"
               variant="ghost"
               className="h-9 w-9 p-0"
-              onClick={() => {
-                toast.info("Use Ctrl+Scroll to zoom");
-              }}
-              title="Zoom in (Ctrl + Scroll)"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
-            <div className="w-px bg-border" />
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-9 w-9 p-0"
-              onClick={handleResetView}
+              onClick={() => fitView({ padding: 0.2, duration: 200 })}
               title="Reset view"
             >
               <RotateCcw className="h-4 w-4" />
@@ -287,56 +450,35 @@ export const WorkflowCanvas = ({
           </div>
         </div>
 
-        {/* Right Toolbar - Node Creation */}
+        {/* Right toolbar — workflow node creation */}
         {!readOnly && (
-          <div className="absolute top-4 right-4 z-40 flex gap-2">
+          <div className="absolute top-4 right-4 z-40">
             <div className="bg-card border border-border rounded-lg p-2 shadow-lg flex flex-col gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 gap-2 text-xs"
-                onClick={() => handleAddNode(NodeType.TRIGGER)}
-                title="Add trigger node"
-              >
-                <Plus className="h-4 w-4" />
-                {NODE_TYPE_LABELS[NodeType.TRIGGER]}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 gap-2 text-xs"
-                onClick={() => handleAddNode(NodeType.ACTION)}
-                title="Add action node"
-              >
-                <Plus className="h-4 w-4" />
-                {NODE_TYPE_LABELS[NodeType.ACTION]}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 gap-2 text-xs"
-                onClick={() => handleAddNode(NodeType.CONDITION)}
-                title="Add condition node"
-              >
-                <Plus className="h-4 w-4" />
-                {NODE_TYPE_LABELS[NodeType.CONDITION]}
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-9 gap-2 text-xs"
-                onClick={() => handleAddNode(NodeType.OUTPUT)}
-                title="Add output node"
-              >
-                <Plus className="h-4 w-4" />
-                {NODE_TYPE_LABELS[NodeType.OUTPUT]}
-              </Button>
+              {(
+                [
+                  NodeType.TRIGGER,
+                  NodeType.ACTION,
+                  NodeType.CONDITION,
+                  NodeType.OUTPUT,
+                ] as NodeType[]
+              ).map((type) => (
+                <Button
+                  key={type}
+                  size="sm"
+                  variant="outline"
+                  className="h-9 gap-2 text-xs justify-start"
+                  onClick={() => handleAddNode(type)}
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  {NODE_TYPE_LABELS[type]}
+                </Button>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Bottom Toolbar - Actions */}
-        <div className="absolute bottom-4 left-4 z-40 flex gap-2">
+        {/* Bottom toolbar — delete selected */}
+        <div className="absolute bottom-4 left-4 z-40">
           {(selectedNodeId || selectedEdgeId) && (
             <Button
               size="sm"
@@ -351,8 +493,8 @@ export const WorkflowCanvas = ({
           )}
         </div>
 
-        {/* Empty State */}
-        {workflow.nodes.length === 0 && (
+        {/* Empty state */}
+        {nodes.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
               <Grid3x3 className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-50" />
@@ -360,7 +502,8 @@ export const WorkflowCanvas = ({
                 No nodes yet
               </h3>
               <p className="text-sm text-muted-foreground">
-                Use the buttons on the right to add nodes
+                Add workflow nodes from the right panel, or drag elements from
+                the palette
               </p>
             </div>
           </div>

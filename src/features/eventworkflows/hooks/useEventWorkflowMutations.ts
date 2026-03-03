@@ -80,7 +80,6 @@ export const useUpdateEventWorkflow = () => {
       eventWorkflowService.updateEventWorkflow(workflowId, input),
 
     onSuccess: (updated, { workflowId }) => {
-      // Update the detail cache entry.
       queryClient.setQueryData(eventWorkflowKeys.detail(workflowId), updated);
 
       // Patch every list cache entry that contains this workflow.
