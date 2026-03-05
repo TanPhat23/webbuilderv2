@@ -235,32 +235,54 @@ export const cmsService: ICmsService = {
     );
   },
 
-  // Public Content
+  // Public Content — reuses the existing items endpoint with client-side sort/limit
   getPublicContent: async (params?: {
     contentTypeId?: string;
     limit?: number;
     sortBy?: string;
     sortOrder?: string;
   }): Promise<ContentItem[]> => {
-    const builder = new URLBuilder("api").setPath(
-      API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET,
+    if (!params?.contentTypeId) return [];
+
+    const items: ContentItem[] = await apiClient.get(
+      new URLBuilder("api")
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_CONTENT_TYPE(
+            params.contentTypeId,
+          ),
+        )
+        .build(),
     );
-    if (params?.contentTypeId)
-      builder.addQueryParam("contentTypeId", params.contentTypeId);
-    if (params?.limit) builder.addQueryParam("limit", params.limit.toString());
-    if (params?.sortBy) builder.addQueryParam("sortBy", params.sortBy);
-    if (params?.sortOrder) builder.addQueryParam("sortOrder", params.sortOrder);
-    return apiClient.get(builder.build());
+
+    const sortBy = params.sortBy ?? "createdAt";
+    const sortOrder = params.sortOrder ?? "desc";
+
+    const sorted = [...items].sort((a, b) => {
+      const aVal = (a as unknown as Record<string, unknown>)[sortBy];
+      const bVal = (b as unknown as Record<string, unknown>)[sortBy];
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+      const cmp = String(aVal).localeCompare(String(bVal));
+      return sortOrder === "asc" ? cmp : -cmp;
+    });
+
+    return params.limit ? sorted.slice(0, params.limit) : sorted;
   },
 
   getPublicContentItem: async (
     contentTypeId: string,
     slug: string,
   ): Promise<ContentItem> => {
-    return apiClient.get(
+    const items: ContentItem[] = await apiClient.get(
       new URLBuilder("api")
-        .setPath(API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET_ITEM(contentTypeId, slug))
+        .setPath(
+          API_ENDPOINTS.CMS.CONTENT_ITEMS.GET_BY_CONTENT_TYPE(contentTypeId),
+        )
         .build(),
     );
+    const item = items.find((i) => i.slug === slug);
+    if (!item) throw new Error(`Content item with slug "${slug}" not found`);
+    return item;
   },
 };

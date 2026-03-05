@@ -56,7 +56,6 @@ export const ModelName = {
   Project: 'Project',
   Page: 'Page',
   EventWorkflow: 'EventWorkflow',
-  Setting: 'Setting',
   Snapshot: 'Snapshot',
   User: 'User',
   Subscription: 'Subscription',
@@ -108,7 +107,8 @@ export const ElementScalarFieldEnum = {
   TailwindStyles: 'TailwindStyles',
   Type: 'Type',
   PageId: 'PageId',
-  IsLocked: 'IsLocked'
+  IsLocked: 'IsLocked',
+  Settings: 'Settings'
 } as const
 
 export type ElementScalarFieldEnum = (typeof ElementScalarFieldEnum)[keyof typeof ElementScalarFieldEnum]
@@ -171,17 +171,6 @@ export const EventWorkflowScalarFieldEnum = {
 } as const
 
 export type EventWorkflowScalarFieldEnum = (typeof EventWorkflowScalarFieldEnum)[keyof typeof EventWorkflowScalarFieldEnum]
-
-
-export const SettingScalarFieldEnum = {
-  ElementId: 'ElementId',
-  Id: 'Id',
-  Name: 'Name',
-  SettingType: 'SettingType',
-  Settings: 'Settings'
-} as const
-
-export type SettingScalarFieldEnum = (typeof SettingScalarFieldEnum)[keyof typeof SettingScalarFieldEnum]
 
 
 export const SnapshotScalarFieldEnum = {

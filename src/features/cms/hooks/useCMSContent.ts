@@ -15,6 +15,7 @@ export interface UseCMSContentResult {
   contentItems: ContentItem[];
   contentTypes: ContentType[];
   isLoading: boolean;
+  isFetching: boolean;
   error: Error | null;
   refetch: () => void;
 }
@@ -27,6 +28,7 @@ export const useCMSContent = (
   const {
     data: contentItemsData,
     isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery({
@@ -45,8 +47,9 @@ export const useCMSContent = (
 
   return {
     contentItems,
-    contentTypes: [], // Could be populated if needed
+    contentTypes: [],
     isLoading,
+    isFetching,
     error,
     refetch,
   };
@@ -55,6 +58,7 @@ export const useCMSContent = (
 export interface UseCMSContentItemResult {
   contentItem: ContentItem | undefined;
   isLoading: boolean;
+  isFetching: boolean;
   error: Error | null;
   refetch: () => void;
 }
@@ -65,7 +69,7 @@ export const useCMSContentItem = (
 ): UseCMSContentItemResult => {
   const {
     data: contentItem,
-    isLoading,
+    isFetching,
     error,
     refetch,
   } = useQuery({
@@ -77,7 +81,8 @@ export const useCMSContentItem = (
 
   return {
     contentItem,
-    isLoading,
+    isLoading: isFetching,
+    isFetching,
     error,
     refetch,
   };

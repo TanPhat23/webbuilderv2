@@ -99,7 +99,6 @@
     "react-resizable-panels": "^4",
     "reactflow": "^11.11.4",
     "recharts": "2.15.4",
-    "socket.io-client": "^4.8.3",
     "sonner": "^2.0.7",
     "svix": "^1.84.1",
     "tailwind-merge": "^3.4.0",

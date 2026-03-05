@@ -43,11 +43,6 @@ export type Page = Prisma.PageModel
  */
 export type EventWorkflow = Prisma.EventWorkflowModel
 /**
- * Model Setting
- * 
- */
-export type Setting = Prisma.SettingModel
-/**
  * Model Snapshot
  * 
  */

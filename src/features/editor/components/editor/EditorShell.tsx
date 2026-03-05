@@ -53,7 +53,11 @@ function RightSidebarWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function EditorShell({ children }: { children: React.ReactNode }) {
+export default function EditorShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex h-screen w-screen overflow-hidden">
       <LeftSidebarWrapper>

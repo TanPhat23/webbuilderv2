@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -59,64 +59,30 @@ export function ProjectCard({
 
   const deleteItem = useDeleteMarketplaceItem();
   const { data: userPlan } = useUserPlan();
-
-  // Fetch marketplace items using the proper hook
   const { data: marketplaceItems } = useMarketplaceItems();
 
-  // Find associated marketplace item
-  const marketplaceItem = useMemo(
-    () => marketplaceItems?.find((item) => item.projectId === project.id),
-    [marketplaceItems, project.id],
+  const marketplaceItem = marketplaceItems?.find(
+    (item) => item.projectId === project.id,
   );
 
   const canPublish = userPlan?.canPublishToMarketplace ?? false;
 
-  // Memoized handlers
-  const handleCardClick = useCallback(() => {
-    router.push(`/analytics/${project.id}`);
-  }, [router, project.id]);
+  const handleNavigate = (path: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(path);
+  };
 
-  const handleEditClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      router.push(`/editor/${project.id}`);
-    },
-    [router, project.id],
-  );
+  const handlePublishToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPublish(project.id ?? "", !!project.published);
+  };
 
-  const handleAnalyticsClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      router.push(`/analytics/${project.id}`);
-    },
-    [router, project.id],
-  );
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(project.id ?? "");
+  };
 
-  const handleSettingsClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      router.push(`/projectsettings/${project.id}`);
-    },
-    [router, project.id],
-  );
-
-  const handlePublishToggle = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onPublish(project.id ?? "", !!project.published);
-    },
-    [onPublish, project.id, project.published],
-  );
-
-  const handleDelete = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onDelete(project.id ?? "");
-    },
-    [onDelete, project.id],
-  );
-
-  const handleMarketplaceDelete = useCallback(async () => {
+  const handleMarketplaceDelete = async () => {
     if (!marketplaceItem?.id) return;
 
     try {
@@ -125,19 +91,13 @@ export function ProjectCard({
     } catch (error) {
       console.error("Failed to delete marketplace item:", error);
     }
-  }, [deleteItem, marketplaceItem?.id]);
+  };
 
-  // Format date
-  const formattedDate = useMemo(() => {
-    if (!project.updatedAt) return "—";
-    return new Date(String(project.updatedAt)).toLocaleDateString();
-  }, [project.updatedAt]);
+  const formattedDate = project.updatedAt
+    ? new Date(String(project.updatedAt)).toLocaleDateString()
+    : "—";
 
-  // Get views count
-  const viewsCount = useMemo(() => {
-    const views = project.views ?? 0;
-    return (views as number).toLocaleString();
-  }, [project]);
+  const viewsCount = ((project.views ?? 0) as number).toLocaleString();
 
   return (
     <>
@@ -150,7 +110,7 @@ export function ProjectCard({
               src="/placeholder.svg"
               alt={project.name ?? "Project thumbnail"}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
-              onClick={handleCardClick}
+              onClick={() => router.push(`/editor/${project.id}`)}
               unoptimized
             />
             <div className="absolute top-2 right-2">
@@ -165,7 +125,7 @@ export function ProjectCard({
           <div className="flex items-start justify-between mb-2">
             <h3
               className="font-semibold text-lg truncate pr-2 cursor-pointer hover:text-primary"
-              onClick={handleCardClick}
+              onClick={() => router.push(`/editor/${project.id}`)}
             >
               {project.name}
             </h3>
@@ -178,17 +138,23 @@ export function ProjectCard({
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleEditClick}>
+                <DropdownMenuItem
+                  onClick={handleNavigate(`/editor/${project.id}`)}
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   Edit Project
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={handleAnalyticsClick}>
+                <DropdownMenuItem
+                  onClick={handleNavigate(`/editor/${project.id}`)}
+                >
                   <BarChart3 className="mr-2 h-4 w-4" />
                   View Analytics
                 </DropdownMenuItem>
 
-                <DropdownMenuItem onClick={handleSettingsClick}>
+                <DropdownMenuItem
+                  onClick={handleNavigate(`/projectsettings/${project.id}`)}
+                >
                   <Settings className="mr-2 h-4 w-4" />
                   Project Settings
                 </DropdownMenuItem>

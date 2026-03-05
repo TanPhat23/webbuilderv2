@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/command";
 import { FileText } from "lucide-react";
 import { usePageStore } from "@/features/editor";
+import { Page } from "@/features/pages";
+import { useParams, useRouter } from "next/navigation";
 
 interface PageNavigationCommandProps {
   open: boolean;
@@ -19,10 +21,13 @@ export function PageNavigationCommand({
   setOpen,
   open,
 }: PageNavigationCommandProps) {
+  const { id } = useParams();
   const { pages, setCurrentPage, currentPage } = usePageStore();
+  const router = useRouter();
 
-  const handleSelect = (page: any) => {
+  const handleSelect = (page: Page) => {
     setCurrentPage(page);
+    router.push(`/editor/${id}?page=${page.Id}`);
     setOpen(false);
   };
 

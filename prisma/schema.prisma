@@ -7,9 +7,8 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
 model Element {
-  Content        String?
+  Content        String?                @db.VarChar(2048)
   Href           String?                @db.VarChar(2048)
   Id             String                 @id @map("Id")
   Name           String?                @db.VarChar(255)
@@ -21,12 +20,12 @@ model Element {
   Type           String                 @db.VarChar(32)
   PageId         String?
   IsLocked       Boolean                @default(false)
+  Settings       Json?
   Page           Page?                  @relation(fields: [PageId], references: [Id], onDelete: Cascade)
   Parent         Element?               @relation("ElementChildren", fields: [ParentId], references: [Id], onDelete: Cascade)
   Elements       Element[]              @relation("ElementChildren")
   Comments       ElementComment[]
   EventWorkflows ElementEventWorkflow[]
-  Settings       Setting?               @relation("ElementSettings")
 
   @@index([ParentId])
   @@index([PageId])
@@ -119,15 +118,6 @@ model EventWorkflow {
   @@index([ProjectId, Enabled])
 }
 
-model Setting {
-  ElementId   String  @unique
-  Id          String  @id(map: "PK_Settings")
-  Name        String  @db.VarChar(255)
-  SettingType String  @db.VarChar(100)
-  Settings    Json
-  Element     Element @relation("ElementSettings", fields: [ElementId], references: [Id], onDelete: Cascade, onUpdate: NoAction, map: "FK_Settings_Elements_ElementId")
-}
-
 model Snapshot {
   Id        String       @id @map("Id")
   ProjectId String
@@ -145,7 +135,7 @@ model Snapshot {
 
 model User {
   CreatedAt        DateTime          @db.Timestamptz(6)
-  Email            String            @db.VarChar(255) @unique
+  Email            String            @unique @db.VarChar(255)
   FirstName        String?           @db.VarChar(100)
   Id               String            @id(map: "PK_Users")
   ImageUrl         String?           @db.VarChar(2048)

@@ -23,7 +23,7 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   const settings = cmsElement.settings || {};
   const { contentTypeId, itemSlug } = settings;
 
-  const { contentItem } = useCMSContentItem(
+  const { contentItem, isFetching } = useCMSContentItem(
     contentTypeId || "",
     itemSlug || "",
   );
@@ -54,6 +54,16 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
     );
   }
 
+  if (!itemSlug) {
+    return (
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content Item"
+        description="Select an item in settings"
+      />
+    );
+  }
+
   return (
     <div {...rootProps}>
       {cmsElement.elements?.length ? (
@@ -61,6 +71,10 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
           elements={cmsElement.elements}
           data={itemToRender as unknown as Record<string, unknown>}
         />
+      ) : isFetching ? (
+        <div className="flex items-center justify-center p-8 text-muted-foreground text-sm">
+          Loading...
+        </div>
       ) : itemToRender ? (
         <article className="max-w-4xl mx-auto">
           <header className="mb-6">
@@ -97,8 +111,8 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
           </footer>
         </article>
       ) : (
-        <div className="flex items-center justify-center text-gray-500">
-          Loading content item...
+        <div className="flex items-center justify-center p-8 text-muted-foreground text-sm">
+          Item not found
         </div>
       )}
     </div>

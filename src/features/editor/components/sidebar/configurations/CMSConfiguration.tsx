@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import {
   AccordionContent,
   AccordionItem,
@@ -75,27 +75,34 @@ const CMSConfiguration: React.FC = () => {
   const updateElement = useUpdateElement();
   const element = selectedElement;
 
-  if (!element) return null;
-
-  const settings = (element.settings as CMSContentSettings) || {};
+  const settings = (element?.settings as CMSContentSettings) || {};
   const isListOrGrid =
-    element.type === "CMSContentList" || element.type === "CMSContentGrid";
-  const isItem = element.type === "CMSContentItem";
-  const isGrid = element.type === "CMSContentGrid";
+    element?.type === "CMSContentList" || element?.type === "CMSContentGrid";
+  const isItem = element?.type === "CMSContentItem";
+  const isGrid = element?.type === "CMSContentGrid";
 
   const { data: contentTypes = [], isLoading: isLoadingTypes } =
     useCMSContentTypes();
 
-  const { contentItems, isLoading: isLoadingItems } = useCMSContent({
+  const { contentItems, isFetching: isLoadingItems } = useCMSContent({
     contentTypeId: settings.contentTypeId,
     enabled: !!settings.contentTypeId && isItem,
   });
 
-  const updateSettings = (newSettings: Partial<CMSContentSettings>) => {
-    updateElement(element.id, {
-      settings: { ...settings, ...newSettings },
-    });
-  };
+  const updateSettings = useCallback(
+    (newSettings: Partial<CMSContentSettings>) => {
+      if (!element) return;
+      updateElement(element.id, {
+        settings: {
+          ...(element.settings as CMSContentSettings),
+          ...newSettings,
+        },
+      });
+    },
+    [element, updateElement],
+  );
+
+  if (!element) return null;
 
   /* ─── Derived State ─── */
 
