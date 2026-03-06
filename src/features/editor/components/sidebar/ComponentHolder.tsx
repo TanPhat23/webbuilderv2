@@ -1,4 +1,3 @@
-"use client";
 
 import { ElementType } from "@/types/global.type";
 import { Component } from "lucide-react";

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@clerk/themes/shadcn.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:is(.dark *));
 

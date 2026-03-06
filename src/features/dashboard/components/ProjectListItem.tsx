@@ -1,6 +1,4 @@
-"use client";
 
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +21,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import type { Project } from "@/features/projects";
-import { useRouter } from "next/navigation";
+import { useNavigate } from '@tanstack/react-router';
 
 interface ProjectListItemProps {
   project: Project;
@@ -36,26 +34,24 @@ export function ProjectListItem({
   onDelete,
   onPublish,
 }: ProjectListItemProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleClick = () => {
-    router.push(`/editor/${project.id}`);
+    navigate({ to: `/editor/${project.id}` });
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/editor/${project.id}`);
+    navigate({ to: `/editor/${project.id}` });
   };
 
   return (
     <Card className="hover:shadow-md transition-shadow duration-200">
       <CardContent className="p-4">
         <div className="flex items-center space-x-4">
-          <Image
+          <img
             src={"/placeholder.svg"}
             alt={project.name ?? "Project thumbnail"}
-            width={120}
-            height={120}
             className="w-16 h-16 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleClick}
           />
@@ -101,7 +97,7 @@ export function ProjectListItem({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/analytics/${project.id}`);
+                  navigate({ to: `/analytics/${project.id}` });
                 }}
               >
                 <BarChart3 className="mr-2 h-4 w-4" />
@@ -110,7 +106,7 @@ export function ProjectListItem({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  router.push(`/projectsettings/${project.id}`);
+                  navigate({ to: `/projectsettings/${project.id}` });
                 }}
               >
                 <Settings className="mr-2 h-4 w-4" />

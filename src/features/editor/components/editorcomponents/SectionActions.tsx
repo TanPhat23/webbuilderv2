@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { useInsertElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";

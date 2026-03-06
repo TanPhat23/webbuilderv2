@@ -1,7 +1,6 @@
-"use client";
 
 import React from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/tanstack-react-start';
 import {
   Edit2,
   Trash2,

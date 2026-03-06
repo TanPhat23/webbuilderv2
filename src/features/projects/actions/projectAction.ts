@@ -1,24 +1,31 @@
-"use server";
+import { createServerFn } from "@tanstack/react-start";
 import { projectDAL } from "@/features/projects/data/project";
 import { Project } from "@/features/projects";
-import { auth } from "@clerk/nextjs/server";
-import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/tanstack-react-start/server";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
 
-export default async function createProject(project: Partial<Project>) {
-  const { userId } = await auth();
+const CreateProjectSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+});
 
-  if (!project) {
-    throw new Error("Project data is required");
-  }
+export const createProject = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => CreateProjectSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { userId } = await auth();
 
-  if (!userId) {
-    throw new Error("User not authenticated");
-  }
+    if (!userId) {
+      throw new Error("User not authenticated");
+    }
 
-  project.id ??= uuidv4();
+    const project: Partial<Project> = {
+      ...data,
+      id: data.id ?? uuidv4(),
+    };
 
-  await projectDAL.createProject(project as Project, userId);
+    await projectDAL.createProject(project as Project, userId);
 
-  revalidatePath("/dashboard");
-}
+    return { success: true, projectId: project.id };
+  });

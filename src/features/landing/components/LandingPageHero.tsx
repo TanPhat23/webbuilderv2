@@ -1,4 +1,3 @@
-"use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
@@ -20,7 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { FloatingParticle } from "./hero/FloatingParticle";
@@ -215,7 +214,7 @@ export default function LandingPageHero() {
               className="group relative h-12 min-w-40 overflow-hidden rounded-full text-base font-semibold shadow-[0_0_40px_-10px_rgba(var(--primary-rgb),0.5)] hover:shadow-[0_0_60px_-15px_rgba(var(--primary-rgb),0.6)] hover:scale-105 transition-all duration-300"
               asChild
             >
-              <Link href="/editor">
+              <Link to="/dashboard">
                 {/* Shimmer Effect */}
                 <motion.span
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent z-10"

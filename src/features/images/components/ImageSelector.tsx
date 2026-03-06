@@ -1,7 +1,5 @@
-"use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useImageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -82,13 +80,11 @@ export function ImageSelector() {
                   onDragStart={(e) => handleDragStart(e, image)}
                   className="group relative aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-primary cursor-grab active:cursor-grabbing transition-all"
                 >
-                  <Image
+                  <img
                     src={image.imageLink}
                     alt={image.imageName || "Selected image"}
-                    fill
-                    className="object-cover"
+                    className="object-cover w-full h-full"
                     draggable={false}
-                    unoptimized
                   />
 
                   {/* Drag Indicator */}

@@ -1,4 +1,3 @@
-"use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { elementCommentService } from "@/features/comments";
@@ -7,7 +6,7 @@ import {
   CreateElementCommentRequest,
   UpdateElementCommentRequest,
 } from "@/features/comments";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/tanstack-react-start';
 import { useProjectStore } from "@/features/editor";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showSuccessToast } from "@/utils/errors/errorToast";

@@ -1,7 +1,6 @@
-"use client";
 
 import React, { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/tanstack-react-start';
 import { ChevronDown, Layers, MousePointerClick } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";

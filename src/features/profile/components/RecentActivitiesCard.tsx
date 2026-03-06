@@ -1,4 +1,3 @@
-"use client";
 
 import { motion } from "framer-motion";
 import { Activity, Edit2, FileText, Award, Heart, Upload } from "lucide-react";

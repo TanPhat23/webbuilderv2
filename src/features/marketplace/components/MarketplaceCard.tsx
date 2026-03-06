@@ -1,16 +1,14 @@
-"use client";
-
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Download, Heart, CheckCircle2, Layers, Eye } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
+
 import { MarketplaceItemWithRelations } from "@/features/marketplace";
 import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from '@tanstack/react-router';
 
 interface MarketplaceCardProps {
   item: MarketplaceItemWithRelations;
@@ -20,7 +18,7 @@ export function MarketplaceCard({ item }: MarketplaceCardProps) {
   const [isLiked, setIsLiked] = useState(false);
   const downloadItem = useDownloadMarketplaceItem();
   const incrementLikes = useIncrementLikes();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const getTemplateTypeLabel = (type: string) => {
     switch (type) {
@@ -43,7 +41,7 @@ export function MarketplaceCard({ item }: MarketplaceCardProps) {
 
     try {
       const newProject = await downloadItem.mutateAsync(item.id);
-      router.push(`/editor/${newProject.id}`);
+      navigate({ to: `/editor/${newProject.id}` });
     } catch (error) {
       console.error("Failed to download template:", error);
     }
@@ -64,14 +62,13 @@ export function MarketplaceCard({ item }: MarketplaceCardProps) {
   };
 
   return (
-    <Link href={`/marketplace/${item.id}`}>
+    <Link to="/marketplace/$id" params={{ id: item.id }}>
       <Card className="group overflow-hidden hover:shadow-lg transition-all duration-300 border-border bg-card p-0 h-full flex flex-col cursor-pointer">
         <div className="relative aspect-video overflow-hidden bg-muted">
-          <Image
+          <img
             src={item.preview || "/placeholder.svg"}
             alt={item.title}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-300" />
           <div className="absolute top-3 left-3">
@@ -154,7 +151,7 @@ export function MarketplaceCard({ item }: MarketplaceCardProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                router.push(`/marketplace/${item.id}`);
+                navigate({ to: `/marketplace/${item.id}` });
               }}
               className="flex items-center gap-1 hover:text-foreground transition-colors"
             >

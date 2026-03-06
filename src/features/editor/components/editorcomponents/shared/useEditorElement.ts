@@ -1,7 +1,6 @@
-"use client";
 
 import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 import { useElementEvents } from "@/features/eventworkflows/hooks/useElementEvents";
 import type { ElementEvents } from "@/features/editor";
 
@@ -11,7 +10,7 @@ interface UseEditorElementOptions {
 }
 
 export function useEditorElement({ elementId, events }: UseEditorElementOptions) {
-  const { id: projectId } = useParams<{ id: string }>();
+  const { id: projectId } = useParams({ strict: false });
 
   const { elementRef, registerEvents, createEventHandlers, eventsActive } =
     useElementEvents({

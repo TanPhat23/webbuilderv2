@@ -3,18 +3,18 @@ export type URLType = "ai" | "api" | "export" | "next" | "none";
 const urlMap: Record<Exclude<URLType, "none">, string> = {
   api:
     process.env.GO_SERVER_URL ||
-    process.env.NEXT_PUBLIC_GO_SERVER_URL ||
+    import.meta.env.VITE_GO_SERVER_URL ||
     "http://localhost:8080",
   ai:
     process.env.AI_SERVER_URL ||
-    process.env.NEXT_PUBLIC_AI_SERVER_URL ||
+    import.meta.env.VITE_AI_SERVER_URL ||
     "http://localhost:3001",
   export:
     process.env.AI_EXPORT_SERVER_URL ||
-    process.env.NEXT_PUBLIC_AI_EXPORT_SERVER_URL ||
+    import.meta.env.VITE_AI_EXPORT_SERVER_URL ||
     "http://localhost:5001",
   next:
-    process.env.NEXT_PUBLIC_BASE_URL ||
+    import.meta.env.VITE_BASE_URL ||
     process.env.NEXTAUTH_URL ||
     "http://localhost:3000",
 };

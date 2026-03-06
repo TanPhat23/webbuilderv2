@@ -1,9 +1,8 @@
-"use client";
 
 import { useState, useMemo } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/tanstack-react-start';
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 import {
   Download,
   FileText,
@@ -139,7 +138,7 @@ export function ProfileContent() {
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
           <p className="text-lg font-semibold">Unable to load profile</p>
-          <Link href="/dashboard">
+          <Link to="/dashboard">
             <Button variant="outline">Back to Dashboard</Button>
           </Link>
         </div>
@@ -200,7 +199,7 @@ export function ProfileContent() {
         </div>
 
         <div className="flex justify-end pt-4">
-          <Link href="/dashboard">
+          <Link to="/dashboard">
             <Button variant="outline" className="gap-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

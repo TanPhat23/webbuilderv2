@@ -1,4 +1,3 @@
-"use client";
 
 import type { EditorElement } from "@/types/global.type";
 import type { ResizeDirection } from "@/features/editor";

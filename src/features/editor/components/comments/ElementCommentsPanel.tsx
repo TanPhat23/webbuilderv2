@@ -1,7 +1,6 @@
-"use client";
 
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/tanstack-react-start';
 import { Eye, MousePointer } from "lucide-react";
 import { motion } from "framer-motion";
 

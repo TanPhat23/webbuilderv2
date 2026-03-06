@@ -1,4 +1,3 @@
-"use client";
 import { useAddElement } from "@/features/editor";
 import {
   useSetSelectedElement,
@@ -12,7 +11,7 @@ import {
   showErrorToast,
   PERMISSION_ERRORS,
 } from "@/utils/errors/errorToast";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearch } from "@tanstack/react-router";
 
 /** Shape of the JSON payload received when an image is dropped onto the canvas. */
 interface ImageDropPayload {
@@ -26,8 +25,9 @@ export function useElementCreator() {
   const setSelectedElement = useSetSelectedElement();
   const setDraggedOverElement = useSetDraggedOverElement();
 
-  const params = useParams();
-  const pageId = useSearchParams().get("page") as string;
+  const params = useParams({ strict: false });
+  const search = useSearch({ strict: false }) as { page?: string };
+  const pageId = search.page ?? "";
   const projectId = params?.id as string;
   const permissions = useEditorPermissions(projectId ?? null);
 

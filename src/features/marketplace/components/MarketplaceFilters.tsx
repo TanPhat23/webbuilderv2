@@ -1,7 +1,5 @@
-"use client";
-
 import React, { useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, Loader2 } from "lucide-react";
@@ -17,30 +15,30 @@ const TEMPLATE_TYPES = [
 ] as const;
 
 export function MarketplaceFilters() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as {
+    templateType?: string;
+    categoryId?: string;
+    featured?: string;
+  };
 
-  // Fetch categories with React Query
   const { data: categories, isLoading: isCategoriesLoading } = useCategories();
 
-  // Get current filter state from URL
-  const currentTemplateType = searchParams.get("templateType");
-  const currentCategoryId = searchParams.get("categoryId");
-  const currentFeatured = searchParams.get("featured") === "true";
+  const currentTemplateType = search.templateType;
+  const currentCategoryId = search.categoryId;
+  const currentFeatured = search.featured === "true";
 
   const updateFilter = useCallback(
     (key: string, value: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
-
+      const next = { ...search };
       if (value === null) {
-        params.delete(key);
+        delete (next as Record<string, string | undefined>)[key];
       } else {
-        params.set(key, value);
+        (next as Record<string, string>)[key] = value;
       }
-
-      router.push(`/marketplace?${params.toString()}`);
+      navigate({ to: "/marketplace", search: next });
     },
-    [searchParams, router],
+    [search, navigate],
   );
 
   const toggleTemplateType = (type: string) => {
@@ -68,7 +66,7 @@ export function MarketplaceFilters() {
   };
 
   const clearAllFilters = () => {
-    router.push("/marketplace");
+    navigate({ to: "/marketplace" });
   };
 
   const hasActiveFilters =

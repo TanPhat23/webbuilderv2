@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState } from "react";
 import { useEventWorkflowActions } from "@/features/eventworkflows/hooks/useEventWorkflows";

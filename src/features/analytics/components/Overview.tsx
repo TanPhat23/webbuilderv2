@@ -1,4 +1,3 @@
-"use client";
 
 import { motion } from "framer-motion";
 import { TrendingUp, Eye, Download, Heart } from "lucide-react";

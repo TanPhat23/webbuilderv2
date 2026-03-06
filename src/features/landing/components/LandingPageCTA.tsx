@@ -1,7 +1,6 @@
-"use client";
 
 import { ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 import { Button } from "@/components/ui/button";
 import { useInView } from "@/hooks";
 
@@ -41,7 +40,7 @@ export default function LandingPageCTA() {
               className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold text-xl px-12 py-6 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-105 group"
               asChild
             >
-              <Link href="/sign-up">
+              <Link to="/sign-up">
                 Start Your Free Trial
                 <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>

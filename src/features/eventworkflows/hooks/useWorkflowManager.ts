@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useEventWorkflow } from "@/features/eventworkflows/hooks/useEventWorkflows";

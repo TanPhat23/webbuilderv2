@@ -1,4 +1,3 @@
-"use client";
 
 import { useUpdateElement } from "@/features/editor";
 import { useDragAndSelectionState } from "@/features/editor";

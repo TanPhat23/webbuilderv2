@@ -1,4 +1,3 @@
-"use client";
 
 import { projectService } from "@/features/projects";
 import { create } from "zustand";

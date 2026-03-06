@@ -1,7 +1,6 @@
-"use client";
 
 import { Sparkles } from "lucide-react";
-import Link from "next/link";
+
 import { useInView } from "@/hooks";
 
 const footerSections = [
@@ -67,12 +66,12 @@ export function MarketplaceFooter() {
               <ul className="space-y-3">
                 {section.links.map((link, linkIndex) => (
                   <li key={linkIndex}>
-                    <Link
+                    <a
                       href="#"
                       className="text-muted-foreground hover:text-foreground transition-all duration-300 hover:translate-x-1 inline-block"
                     >
                       {link}
-                    </Link>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -90,7 +89,7 @@ export function MarketplaceFooter() {
           </p>
           <div className="flex space-x-8">
             {socialLinks.map((social, index) => (
-              <Link
+              <a
                 key={social}
                 href="#"
                 className={`text-muted-foreground hover:text-foreground transition-all duration-500 hover:scale-110 ${
@@ -103,7 +102,7 @@ export function MarketplaceFooter() {
                 }}
               >
                 {social}
-              </Link>
+              </a>
             ))}
           </div>
         </div>

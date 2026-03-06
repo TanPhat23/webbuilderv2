@@ -1,4 +1,3 @@
-"use client";
 
 import * as React from "react";
 import {
@@ -14,7 +13,7 @@ import {
   ChevronUp,
   Store,
 } from "lucide-react";
-import { useUser, SignOutButton } from "@clerk/nextjs";
+import { useUser, SignOutButton } from '@clerk/tanstack-react-start';
 
 import {
   Sidebar,
@@ -38,7 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateProjectDialog } from "./CreateProjectDialog";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 
 // Navigation items
 const navigationItems = [
@@ -154,7 +153,7 @@ export function DashboardSidebar({ ...props }: DashboardSidebarProps) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
-                <Link href="/dashboard">
+                <Link to="/dashboard">
                   <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                     <BarChart3 className="size-4" />
                   </div>
@@ -176,7 +175,7 @@ export function DashboardSidebar({ ...props }: DashboardSidebarProps) {
                 {navigationItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={item.isActive}>
-                      <Link href={item.url}>
+                      <Link to={item.url}>
                         <item.icon />
                         <span>{item.title}</span>
                       </Link>
@@ -209,7 +208,7 @@ export function DashboardSidebar({ ...props }: DashboardSidebarProps) {
                   ) : (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild>
-                        <Link href={item.url}>
+                        <Link to={item.url}>
                           <item.icon />
                           <span>{item.title}</span>
                         </Link>
@@ -259,13 +258,13 @@ export function DashboardSidebar({ ...props }: DashboardSidebarProps) {
                   sideOffset={4}
                 >
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">
+                    <Link to="/profile">
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings">
+                    <Link to="/profile">
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </Link>

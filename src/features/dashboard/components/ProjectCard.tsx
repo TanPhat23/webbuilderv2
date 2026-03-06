@@ -1,8 +1,6 @@
-"use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useNavigate } from '@tanstack/react-router';
 import {
   MoreHorizontal,
   Eye,
@@ -53,7 +51,7 @@ export function ProjectCard({
   onDelete,
   onPublish,
 }: ProjectCardProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -69,7 +67,7 @@ export function ProjectCard({
 
   const handleNavigate = (path: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(path);
+    navigate({ to: path });
   };
 
   const handlePublishToggle = (e: React.MouseEvent) => {
@@ -104,14 +102,11 @@ export function ProjectCard({
       <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer p-0">
         <CardHeader className="p-0">
           <div className="relative overflow-hidden rounded-t-lg">
-            <Image
-              width={400}
-              height={200}
+            <img
               src="/placeholder.svg"
               alt={project.name ?? "Project thumbnail"}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
-              onClick={() => router.push(`/editor/${project.id}`)}
-              unoptimized
+              onClick={() => navigate({ to: `/editor/${project.id}` })}
             />
             <div className="absolute top-2 right-2">
               <Badge variant={project.published ? "default" : "secondary"}>
@@ -125,7 +120,7 @@ export function ProjectCard({
           <div className="flex items-start justify-between mb-2">
             <h3
               className="font-semibold text-lg truncate pr-2 cursor-pointer hover:text-primary"
-              onClick={() => router.push(`/editor/${project.id}`)}
+              onClick={() => navigate({ to: `/editor/${project.id}` })}
             >
               {project.name}
             </h3>

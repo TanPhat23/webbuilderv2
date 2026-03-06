@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";

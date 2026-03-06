@@ -1,6 +1,5 @@
-"use client";
 
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 import {
   CollaboratorRole,
   Collaborator,

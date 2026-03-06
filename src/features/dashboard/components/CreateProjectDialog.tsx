@@ -1,4 +1,3 @@
-"use client";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import createProject from "@/features/projects/actions/projectAction";
+import { createProject } from "@/features/projects/actions/projectAction";
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "@/hooks";
@@ -48,12 +47,10 @@ export function CreateProjectDialog({
   const createProjectMutation = useMutation({
     mutationFn: async (data: z.infer<typeof projectSchema>) => {
       await createProject({
-        name: data.name,
-        description: data.description ?? "",
-        subdomain: data.subdomain ?? "",
-        published: data.published ?? false,
-        styles: {},
-        header: { cssStyles: "" },
+        data: {
+          name: data.name,
+          description: data.description ?? "",
+        },
       });
     },
     onSuccess: () => {

@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useProjectStore } from "@/features/editor";
-import Link from "next/link";
+
 
 type Props = {
   maxInlineSize?: number;
@@ -229,12 +228,14 @@ export default function CssTextareaImporter({
             <code>globals.css</code>) or upload a .css file. You can go to
             TweakCN from link provided to build custom Tailwind CSS files.
           </DialogDescription>
-          <Link
-            href={"https://tweakcn.com"}
+          <a
+            href="https://tweakcn.com"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hover:text-accent-foreground"
           >
             https://tweakcn.com
-          </Link>
+          </a>
         </DialogHeader>
 
         <div className="mt-2">

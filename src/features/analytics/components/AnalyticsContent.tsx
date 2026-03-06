@@ -1,7 +1,6 @@
-"use client";
 
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Overview } from "./Overview";
 import { RecentVisits } from "./RecentVisits";
@@ -251,7 +250,7 @@ export function AnalyticsContent() {
 
         {/* Back Button */}
         <div className="flex justify-end pt-4">
-          <Link href="/dashboard">
+          <Link to="/dashboard">
             <Button variant="outline" className="gap-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"

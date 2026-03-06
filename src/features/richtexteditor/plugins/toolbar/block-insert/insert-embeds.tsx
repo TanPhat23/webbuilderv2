@@ -1,4 +1,3 @@
-"use client"
 
 import { INSERT_EMBED_COMMAND } from "@lexical/react/LexicalAutoEmbedPlugin"
 

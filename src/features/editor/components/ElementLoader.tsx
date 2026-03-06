@@ -1,6 +1,5 @@
-"use client";
 import React, { useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 import ElementRenderer from "./ElementRenderer";
 import type { EditorElement } from "@/types/global.type";
 
@@ -44,7 +43,7 @@ export default function ElementLoader({
   iframeRef,
   isExport = false,
 }: ElementLoaderProps = {}) {
-  const { id } = useParams();
+  const { id } = useParams({ strict: false });
 
   const {
     items,

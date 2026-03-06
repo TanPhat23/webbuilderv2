@@ -1,11 +1,9 @@
-"use client"
 
 import { motion } from "framer-motion"
 import { Card } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
-import Image from "next/image"
 
 export type PaymentMethod = "vnpay"
 

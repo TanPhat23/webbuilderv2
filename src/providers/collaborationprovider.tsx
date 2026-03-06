@@ -1,4 +1,3 @@
-"use client";
 
 import React, {
   createContext,
@@ -9,7 +8,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 
 import {
   useElementStore,

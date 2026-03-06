@@ -1,4 +1,3 @@
-"use client";
 
 import { motion } from "framer-motion";
 import { Bell, CheckCheck, Clock, TrendingUp } from "lucide-react";

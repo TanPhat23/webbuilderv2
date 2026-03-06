@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MarketplaceCard } from "./MarketplaceCard";
 import { Button } from "@/components/ui/button";
 import { MarketplaceFilters } from "@/features/marketplace";
@@ -25,46 +23,48 @@ import {
 import { MarketplaceCardSkeleton } from "./MarketplaceCardSkeleton";
 
 export function MarketplaceGrid() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
+  const navigate = useNavigate();
+  const searchParams = useSearch({ strict: false }) as {
+    templateType?: string;
+    featured?: string;
+    categoryId?: string;
+    tags?: string;
+    search?: string;
+    authorId?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  };
   const [displayCount, setDisplayCount] = useState(12);
 
-  // Build filters from URL params
   const filters: MarketplaceFilters = useMemo(() => {
     const params: MarketplaceFilters = {};
 
-    const templateType = searchParams.get("templateType");
-    if (templateType) {
-      params.templateType = templateType as
+    if (searchParams.templateType) {
+      params.templateType = searchParams.templateType as
         | "full-site"
         | "page"
         | "section"
         | "block";
     }
 
-    const featured = searchParams.get("featured");
-    if (featured !== null) {
-      params.featured = featured === "true";
+    if (searchParams.featured != null) {
+      params.featured = searchParams.featured === "true";
     }
 
-    const categoryId = searchParams.get("categoryId");
-    if (categoryId) {
-      params.categoryId = categoryId;
+    if (searchParams.categoryId) {
+      params.categoryId = searchParams.categoryId;
     }
 
-    const tags = searchParams.get("tags");
-    if (tags) {
-      params.tags = tags.split(",").filter(Boolean);
+    if (searchParams.tags) {
+      params.tags = searchParams.tags.split(",").filter(Boolean);
     }
 
-    const search = searchParams.get("search");
-    if (search) {
-      params.search = search;
+    if (searchParams.search) {
+      params.search = searchParams.search;
     }
 
-    const authorId = searchParams.get("authorId");
-    if (authorId) {
-      params.authorId = authorId;
+    if (searchParams.authorId) {
+      params.authorId = searchParams.authorId;
     }
 
     return params;
@@ -82,39 +82,22 @@ export function MarketplaceGrid() {
   const itemsArray = Array.isArray(items) ? items : [];
 
   const handleSortChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
+    const sortMap: Record<string, { sortBy?: string; sortOrder?: string }> = {
+      popular:    { sortBy: "downloads", sortOrder: "desc" },
+      recent:     { sortBy: "createdAt", sortOrder: "desc" },
+      downloads:  { sortBy: "downloads", sortOrder: "desc" },
+      likes:      { sortBy: "likes",     sortOrder: "desc" },
+      "title-asc":  { sortBy: "title",  sortOrder: "asc" },
+      "title-desc": { sortBy: "title",  sortOrder: "desc" },
+    };
 
-    switch (value) {
-      case "popular":
-        params.set("sortBy", "downloads");
-        params.set("sortOrder", "desc");
-        break;
-      case "recent":
-        params.set("sortBy", "createdAt");
-        params.set("sortOrder", "desc");
-        break;
-      case "downloads":
-        params.set("sortBy", "downloads");
-        params.set("sortOrder", "desc");
-        break;
-      case "likes":
-        params.set("sortBy", "likes");
-        params.set("sortOrder", "desc");
-        break;
-      case "title-asc":
-        params.set("sortBy", "title");
-        params.set("sortOrder", "asc");
-        break;
-      case "title-desc":
-        params.set("sortBy", "title");
-        params.set("sortOrder", "desc");
-        break;
-      default:
-        params.delete("sortBy");
-        params.delete("sortOrder");
+    const next = { ...searchParams, ...(sortMap[value] ?? {}) };
+    if (!sortMap[value]) {
+      delete next.sortBy;
+      delete next.sortOrder;
     }
 
-    router.push(`/marketplace?${params.toString()}`);
+    navigate({ to: "/marketplace", search: next });
   };
 
   const loadMore = () => {
@@ -122,14 +105,13 @@ export function MarketplaceGrid() {
   };
 
   const getCurrentSort = () => {
-    const sortBy = searchParams.get("sortBy");
-    const sortOrder = searchParams.get("sortOrder");
+    const { sortBy, sortOrder } = searchParams;
 
     if (sortBy === "downloads" && sortOrder === "desc") return "downloads";
-    if (sortBy === "likes" && sortOrder === "desc") return "likes";
+    if (sortBy === "likes"     && sortOrder === "desc") return "likes";
     if (sortBy === "createdAt" && sortOrder === "desc") return "recent";
-    if (sortBy === "title" && sortOrder === "asc") return "title-asc";
-    if (sortBy === "title" && sortOrder === "desc") return "title-desc";
+    if (sortBy === "title"     && sortOrder === "asc")  return "title-asc";
+    if (sortBy === "title"     && sortOrder === "desc") return "title-desc";
 
     return "popular";
   };
@@ -188,7 +170,7 @@ export function MarketplaceGrid() {
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button variant="outline" onClick={() => router.push("/marketplace")}>
+          <Button variant="outline" onClick={() => navigate({ to: "/marketplace" })}>
             Clear Filters
           </Button>
         </EmptyContent>

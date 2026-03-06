@@ -1,7 +1,5 @@
-"use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useUserImages, useUploadImage, useDeleteImage } from "@/features/images";
 import { useImageStore } from "@/features/editor";
 import { Image as ImageType } from "@/features/images";
@@ -197,12 +195,10 @@ export function ImageManagerDialog({
                           }`}
                           onClick={() => handleImageClick(image)}
                         >
-                          <Image
+                          <img
                             src={image.imageLink}
                             alt={image.imageName || "Uploaded image"}
-                            fill
-                            className="object-cover"
-                            unoptimized
+                            className="object-cover w-full h-full"
                           />
                           {selected && (
                             <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
@@ -258,12 +254,10 @@ export function ImageManagerDialog({
                         key={image.imageId}
                         className="group relative aspect-square overflow-hidden rounded-lg border-2 border-primary ring-2 ring-primary ring-offset-2"
                       >
-                        <Image
+                        <img
                           src={image.imageLink}
                           alt={image.imageName || "Selected image"}
-                          fill
-                          className="object-cover"
-                          unoptimized
+                          className="object-cover w-full h-full"
                         />
                         <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
                           <Check className="h-4 w-4" />

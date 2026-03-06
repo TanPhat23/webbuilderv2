@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Users, UserPlus } from "lucide-react";
 import { CollaborationManager } from "@/features/collaboration";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 import { useProjectStore } from "@/features/editor";
 
 interface CollaborationButtonProps {

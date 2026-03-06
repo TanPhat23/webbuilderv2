@@ -1,4 +1,3 @@
-"use client";
 
 import React, { Suspense, useState } from "react";
 import {
@@ -31,7 +30,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from '@tanstack/react-router';
 import { useAiChat } from "@/providers/aiprovider";
 import { useEditorContext } from "@/providers/editorprovider";
 import { ProjectPageCommand } from "../ProjectPageCommand";
@@ -305,7 +304,7 @@ export function EditorSideBar() {
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Settings">
               <Link
-                href="/settings/preferences"
+                to="/profile"
                 className="flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />

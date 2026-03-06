@@ -1,4 +1,3 @@
-"use client";
 
 import React, { ChangeEvent } from "react";
 import { Accordion } from "@/components/ui/accordion";

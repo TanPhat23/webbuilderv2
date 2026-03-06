@@ -1,8 +1,7 @@
-"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 import { Message, OnlineUser, ChatState, ChatActions } from "../interfaces/chat.interface";
 
 export function useChat(): ChatState & ChatActions {
@@ -60,7 +59,7 @@ export function useChat(): ChatState & ChatActions {
       const token = await getToken();
       if (!token) return;
 
-      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+      const socketUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";
       const newSocket = io(socketUrl, {
         auth: { token },
         transports: ["websocket", "polling"],

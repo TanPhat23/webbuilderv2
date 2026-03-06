@@ -1,4 +1,3 @@
-"use client";
 
 import Editor from "@monaco-editor/react";
 import { useMonacoEditor } from "@/features/editor/hooks/useMonacoEditor";

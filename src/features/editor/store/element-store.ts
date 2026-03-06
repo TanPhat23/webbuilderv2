@@ -1,5 +1,5 @@
 import { create, type StateCreator } from "zustand";
-import { cloneDeep } from "lodash";
+import { cloneDeep } from 'lodash-es';
 import { SelectionStore } from "./selection-store";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";

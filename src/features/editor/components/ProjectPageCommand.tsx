@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState } from "react";
 import {
@@ -21,7 +20,7 @@ import {
 import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 import {
   Form,
   FormControl,
@@ -43,7 +42,7 @@ import {
 } from "@/components/ui/select";
 import { PageSchema } from "@/features/projects/schema/page";
 import { Page } from "@/features/pages";
-import createPage from "@/features/projects/actions/pageAction";
+import { createPage } from "@/features/projects/actions/pageAction";
 
 const createPageSchema = z.object({
   name: z.string().min(1, "Page name is required"),
@@ -53,7 +52,7 @@ type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
 function CreatePageDialog() {
   const { addPage } = usePageStore();
-  const { id } = useParams();
+  const { id } = useParams({ strict: false });
   const [open, setOpen] = useState(false);
 
   const form = useForm<CreatePageFormValues>({
@@ -83,7 +82,7 @@ function CreatePageDialog() {
       return;
     }
 
-    const response = await createPage(newPage.data);
+    const response = await createPage({ data: newPage.data });
     if (response) {
       addPage(response);
     }
@@ -216,7 +215,7 @@ function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
 // Main component using the dialogs
 export function ProjectPageCommand() {
   const { pages, deletePage } = usePageStore();
-  const { id } = useParams();
+  const { id } = useParams({ strict: false });
 
   return (
     <Command className="rounded-lg border shadow-md">

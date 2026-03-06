@@ -1,4 +1,3 @@
-"use client";
 
 import React, { Suspense } from "react";
 import { LayoutTemplate, PenTool } from "lucide-react";

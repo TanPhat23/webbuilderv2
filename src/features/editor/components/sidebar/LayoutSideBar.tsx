@@ -1,7 +1,6 @@
-"use client";
 
 import React, { Suspense, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 import {
   Sidebar,
   SidebarContent,
@@ -56,7 +55,7 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
 ];
 
 function LayoutSideBar() {
-  const params = useParams();
+  const params = useParams({ strict: false });
   const { toggleSidebar, state, setOpen } = useSidebar();
   const { toggleChat } = useAiChat();
   const selectedElement = useSelectedElement();

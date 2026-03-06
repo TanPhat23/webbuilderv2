@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useCallback, useMemo } from "react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";

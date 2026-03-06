@@ -1,4 +1,3 @@
-"use client";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +18,7 @@ import type { MarketplaceItemWithRelations } from "@/features/marketplace";
 import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { useNavigate } from '@tanstack/react-router';
 import { CommentSection } from "./CommentSection";
 
 interface MarketplaceItemDetailProps {
@@ -27,7 +26,7 @@ interface MarketplaceItemDetailProps {
 }
 
 export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
   const downloadItem = useDownloadMarketplaceItem();
   const incrementLikes = useIncrementLikes();
@@ -50,7 +49,7 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
   const handleDownload = async () => {
     try {
       const newProject = await downloadItem.mutateAsync(item.id);
-      router.push(`/editor/${newProject.id}`);
+      navigate({ to: `/editor/${newProject.id}` });
     } catch (error) {
       console.error("Failed to download template:", error);
     }
@@ -74,7 +73,7 @@ export function MarketplaceItemDetail({ item }: MarketplaceItemDetailProps) {
             variant="ghost"
             size="sm"
             className="text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => router.push("/marketplace")}
+            onClick={() => navigate({ to: "/marketplace" })}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Marketplace

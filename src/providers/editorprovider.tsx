@@ -1,5 +1,3 @@
-"use client";
-
 import React, {
   createContext,
   useContext,
@@ -8,7 +6,7 @@ import React, {
   useMemo,
 } from "react";
 import { useEditor } from "@/hooks";
-import { useSearchParams } from "next/navigation";
+import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorShell from "@/features/editor/components/editor/EditorShell";
 import WireframeView from "@/features/editor/components/editor/WireframeView";
@@ -49,17 +47,12 @@ export default function EditorProvider({
   projectId,
   userId,
 }: EditorProviderProps) {
-  const searchParams = useSearchParams();
-  const pageId = searchParams.get("page") || "";
-  const [isMounted, setIsMounted] = useState(false);
+  const search = useSearch({ strict: false }) as { page?: string };
+  const pageId = search.page || "";
   const [mode, setMode] = useState<"editor" | "wireframe">("editor");
   const [editingMode, setEditingMode] = useState<"visual" | "code">("visual");
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const collabEnabled = isMounted && !!userId;
+  const collabEnabled = !!userId;
 
   const editorData = useEditor(projectId || "", pageId, {
     enableCollab: false,
@@ -86,7 +79,7 @@ export default function EditorProvider({
         config={{
           projectId: projectId || "",
           pageId,
-          wsUrl: process.env.NEXT_PUBLIC_COLLAB_WS_URL || "ws://localhost:8080",
+          wsUrl: import.meta.env.VITE_COLLAB_WS_URL || "ws://localhost:8080",
           enabled: collabEnabled,
           onSync: () => {
             toast.dismiss("collab-offline");

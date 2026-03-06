@@ -1,43 +1,94 @@
-'use client';
+import React from "react";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Check, Sparkles, ArrowRight, Zap, Star, Building2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import NumberFlow from "@number-flow/react";
+import { cn } from "@/lib/utils";
+import { useNavigate } from "@tanstack/react-router";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, Sparkles, ArrowRight } from 'lucide-react';
-import NumberFlow from '@number-flow/react';
-import { cn } from '@/lib/utils';
-import { pricingPlans, requiresAuthentication } from '@/features/subscription';
-import { useAuth } from '@clerk/nextjs';
-import type { PlanId } from '@/features/subscription';
+type PricingPlan = {
+  id: string;
+  name: string;
+  price: { monthly: number | string; yearly: number | string };
+  description: string;
+  features: string[];
+  popular: boolean;
+  icon: LucideIcon;
+  cta: string;
+};
+
+const pricingPlans: PricingPlan[] = [
+  {
+    id: "hobby",
+    name: "Hobby",
+    price: { monthly: 0, yearly: 0 },
+    description: "Perfect for personal projects",
+    features: ["5 projects", "Basic components", "Community support"],
+    popular: false,
+    icon: Zap,
+    cta: "Get Started Free",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: { monthly: 12, yearly: 99 },
+    description: "For professional developers",
+    features: [
+      "Unlimited projects",
+      "All components",
+      "Priority support",
+      "Custom domains",
+    ],
+    popular: true,
+    icon: Star,
+    cta: "Start Pro Trial",
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: { monthly: 49, yearly: 399 },
+    description: "For teams and organizations",
+    features: [
+      "Everything in Pro",
+      "Team collaboration",
+      "SSO",
+      "Dedicated support",
+      "SLA",
+    ],
+    popular: false,
+    icon: Building2,
+    cta: "Contact Sales",
+  },
+];
 
 export default function LandingPagePricing() {
-  const [frequency, setFrequency] = React.useState<'monthly' | 'yearly'>('monthly');
+  const [frequency, setFrequency] = React.useState<"monthly" | "yearly">(
+    "monthly",
+  );
   const [mounted, setMounted] = React.useState(false);
-  const { isSignedIn } = useAuth();
+  const navigate = useNavigate();
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
   const handlePlanSelect = (planId: string) => {
-    if (requiresAuthentication(planId as PlanId) && !isSignedIn) {
-      window.location.href = `/sign-in?redirect_url=${encodeURIComponent('/checkout?plan=' + planId + '&frequency=' + frequency)}`;
+    if (planId === "hobby") {
+      navigate({ to: "/sign-up" });
       return;
     }
-  
-    if (planId === 'hobby') {
-      window.location.href = '/sign-up';
-      return;
-    }
-
-    if (planId === 'enterprise') {
-      window.location.href = '/contact-us';
-      return;
-    }
-    window.location.href = `/checkout?plan=${planId}&frequency=${frequency}`;
+    navigate({ to: "/sign-up" });
   };
 
   if (!mounted) return null;
@@ -74,7 +125,8 @@ export default function LandingPagePricing() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-muted-foreground max-w-md pt-2 text-lg"
           >
-            Simple, transparent pricing that scales with your business. No hidden fees, no surprises.
+            Simple, transparent pricing that scales with your business. No
+            hidden fees, no surprises.
           </motion.p>
         </div>
 
@@ -85,7 +137,7 @@ export default function LandingPagePricing() {
         >
           <Tabs
             defaultValue={frequency}
-            onValueChange={val => setFrequency(val as 'monthly' | 'yearly')}
+            onValueChange={(val) => setFrequency(val as "monthly" | "yearly")}
             className="bg-muted/30 inline-block rounded-full p-1 shadow-sm"
           >
             <TabsList className="bg-transparent">
@@ -123,12 +175,12 @@ export default function LandingPagePricing() {
             >
               <Card
                 className={cn(
-                  'bg-secondary/20 relative h-full w-full text-left transition-all duration-300 hover:shadow-lg',
+                  "bg-secondary/20 relative h-full w-full text-left transition-all duration-300 hover:shadow-lg",
                   plan.popular
-                    ? 'ring-primary/50 dark:shadow-primary/10 shadow-md ring-2'
-                    : 'hover:border-primary/30',
+                    ? "ring-primary/50 dark:shadow-primary/10 shadow-md ring-2"
+                    : "hover:border-primary/30",
                   plan.popular &&
-                    'from-primary/[0.03] bg-gradient-to-b to-transparent',
+                    "from-primary/[0.03] bg-gradient-to-b to-transparent",
                 )}
               >
                 {plan.popular && (
@@ -139,22 +191,22 @@ export default function LandingPagePricing() {
                     </Badge>
                   </div>
                 )}
-                <CardHeader className={cn('pb-4', plan.popular && 'pt-8')}>
+                <CardHeader className={cn("pb-4", plan.popular && "pt-8")}>
                   <div className="flex items-center gap-2">
                     <div
                       className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-full',
+                        "flex h-8 w-8 items-center justify-center rounded-full",
                         plan.popular
-                          ? 'bg-primary/10 text-primary'
-                          : 'bg-secondary text-foreground',
+                          ? "bg-primary/10 text-primary"
+                          : "bg-secondary text-foreground",
                       )}
                     >
                       <plan.icon className="h-4 w-4" />
                     </div>
                     <CardTitle
                       className={cn(
-                        'text-xl font-bold',
-                        plan.popular && 'text-primary',
+                        "text-xl font-bold",
+                        plan.popular && "text-primary",
                       )}
                     >
                       {plan.name}
@@ -165,16 +217,16 @@ export default function LandingPagePricing() {
                     <div className="pt-2">
                       {typeof plan.price[
                         frequency as keyof typeof plan.price
-                      ] === 'number' ? (
+                      ] === "number" ? (
                         <div className="flex items-baseline">
                           <NumberFlow
                             className={cn(
-                              'text-3xl font-bold',
-                              plan.popular ? 'text-primary' : 'text-foreground',
+                              "text-3xl font-bold",
+                              plan.popular ? "text-primary" : "text-foreground",
                             )}
                             format={{
-                              style: 'currency',
-                              currency: 'USD',
+                              style: "currency",
+                              currency: "USD",
                               maximumFractionDigits: 0,
                             }}
                             value={
@@ -190,8 +242,8 @@ export default function LandingPagePricing() {
                       ) : (
                         <span
                           className={cn(
-                            'text-2xl font-bold',
-                            plan.popular ? 'text-primary' : 'text-foreground',
+                            "text-2xl font-bold",
+                            plan.popular ? "text-primary" : "text-foreground",
                           )}
                         >
                           {plan.price[frequency as keyof typeof plan.price]}
@@ -211,10 +263,10 @@ export default function LandingPagePricing() {
                     >
                       <div
                         className={cn(
-                          'flex h-5 w-5 items-center justify-center rounded-full',
+                          "flex h-5 w-5 items-center justify-center rounded-full",
                           plan.popular
-                            ? 'bg-primary/10 text-primary'
-                            : 'bg-secondary text-secondary-foreground',
+                            ? "bg-primary/10 text-primary"
+                            : "bg-secondary text-secondary-foreground",
                         )}
                       >
                         <Check className="h-3.5 w-3.5" />
@@ -222,8 +274,8 @@ export default function LandingPagePricing() {
                       <span
                         className={
                           plan.popular
-                            ? 'text-foreground'
-                            : 'text-muted-foreground'
+                            ? "text-foreground"
+                            : "text-muted-foreground"
                         }
                       >
                         {feature}
@@ -233,12 +285,12 @@ export default function LandingPagePricing() {
                 </CardContent>
                 <CardFooter>
                   <Button
-                    variant={plan.popular ? 'default' : 'outline'}
+                    variant={plan.popular ? "default" : "outline"}
                     className={cn(
-                      'w-full font-medium transition-all duration-300 group',
+                      "w-full font-medium transition-all duration-300 group",
                       plan.popular
-                        ? 'bg-primary hover:bg-primary/90 hover:shadow-primary/20 hover:shadow-md'
-                        : 'hover:border-primary/30 hover:bg-primary/5 hover:text-primary',
+                        ? "bg-primary hover:bg-primary/90 hover:shadow-primary/20 hover:shadow-md"
+                        : "hover:border-primary/30 hover:bg-primary/5 hover:text-primary",
                     )}
                     onClick={() => handlePlanSelect(plan.id)}
                   >

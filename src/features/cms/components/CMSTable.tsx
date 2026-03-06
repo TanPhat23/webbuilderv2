@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";

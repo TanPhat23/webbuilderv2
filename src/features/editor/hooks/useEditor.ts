@@ -1,8 +1,7 @@
-"use client";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
+import { useNavigate } from '@tanstack/react-router';
+import { useAuth } from '@clerk/tanstack-react-start';
 import { useAddElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { usePageStore } from "@/features/editor";
@@ -59,7 +58,7 @@ export const useEditor = (
 ): UseEditorReturn => {
   const [currentView, setCurrentView] = useState<Viewport>("desktop");
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   const { userId } = useAuth();
   const effectiveUserId = userId ?? undefined;
 
@@ -101,27 +100,27 @@ export const useEditor = (
 
       const defaultPage = pagesList.find((p) => p.Name === "");
       if (defaultPage) {
-        router.push(`/editor/${id}?page=${defaultPage.Id}`);
+        navigate({ to: `/editor/${id}?page=${defaultPage.Id}` });
       } else if (!pageId) {
-        router.push(`/editor/${id}`);
+        navigate({ to: `/editor/${id}` });
       }
     },
-    [loadPages, pageId, setCurrentPage, router, id],
+    [loadPages, pageId, setCurrentPage, navigate, id],
   );
 
   useEffect(() => {
     if (!projectPages || projectPages.length === 0) return;
     redirectToDefaultOrRequestedPage(projectPages);
-  }, [projectPages, loadPages, pageId, setCurrentPage, router, id]);
+  }, [projectPages, loadPages, pageId, setCurrentPage, navigate, id]);
 
   useEffect(() => {
     if (!project) return;
     if (project.deletedAt) {
-      router.push("/dashboard");
+      navigate({ to: "/dashboard" });
       return;
     }
     loadProject(project as Project);
-  }, [project, loadProject, router]);
+  }, [project, loadProject, navigate]);
 
   const showReadOnlyError = useCallback(() => {
     showErrorToast(PERMISSION_ERRORS.cannotAdd);

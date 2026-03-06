@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { get, isUndefined, isNull, isString, isNumber, includes } from "lodash";
+import { get, isUndefined, isNull, isString, isNumber, includes } from 'lodash-es';
 import { ResponsiveStyles } from "@/features/editor";
 
 function computeTailwindFromStylesSingle(

@@ -1,4 +1,3 @@
-"use client";
 
 import React from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Users } from "lucide-react";
 import { useCollaboratorUsers } from "@/features/editor";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 
 // Helper functions for user display
 const getFullName = (user: { userName: string; email: string }) => {

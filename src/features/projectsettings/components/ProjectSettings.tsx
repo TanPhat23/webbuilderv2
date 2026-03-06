@@ -1,7 +1,6 @@
-"use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -224,8 +223,8 @@ const SHADOW_OPTIONS = [
 ];
 
 export function ProjectSettings() {
-  const params = useParams();
-  const router = useRouter();
+  const params = useParams({ strict: false });
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { updateProject } = useProjectStore();
   const projectId = params.id as string;
@@ -478,7 +477,7 @@ export function ProjectSettings() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.back()}
+              onClick={() => navigate({ to: "/dashboard" })}
               className="flex items-center gap-2 rounded-[var(--radius)]"
             >
               <ArrowLeft className="w-4 h-4" />

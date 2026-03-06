@@ -1,6 +1,5 @@
-"use client";
 import React, { useCallback, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 import { EditorElement, ElementType } from "@/types/global.type";
 import { useDragState, useDragActions } from "@/features/editor";
 import {
@@ -84,7 +83,7 @@ export function useElementDragHandlers({
   isLocked = false,
   projectId = null,
 }: UseElementDragHandlersOptions = {}): UseElementDragHandlersReturn {
-  const params = useParams();
+  const params = useParams({ strict: false });
   const routeId = (params as { id?: string | undefined })?.id;
   const effectiveProjectId = projectId ?? routeId ?? null;
 

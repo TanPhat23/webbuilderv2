@@ -10,7 +10,7 @@ import {
 import { FileText } from "lucide-react";
 import { usePageStore } from "@/features/editor";
 import { Page } from "@/features/pages";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useNavigate } from '@tanstack/react-router';
 
 interface PageNavigationCommandProps {
   open: boolean;
@@ -21,13 +21,13 @@ export function PageNavigationCommand({
   setOpen,
   open,
 }: PageNavigationCommandProps) {
-  const { id } = useParams();
+  const { id } = useParams({ strict: false });
   const { pages, setCurrentPage, currentPage } = usePageStore();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   const handleSelect = (page: Page) => {
     setCurrentPage(page);
-    router.push(`/editor/${id}?page=${page.Id}`);
+    navigate({ to: `/editor/${id}?page=${page.Id}` });
     setOpen(false);
   };
 

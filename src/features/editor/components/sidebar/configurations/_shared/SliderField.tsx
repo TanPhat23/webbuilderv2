@@ -1,4 +1,3 @@
-"use client";
 
 import React, { useCallback, useMemo } from "react";
 import { Slider } from "@/components/ui/slider";

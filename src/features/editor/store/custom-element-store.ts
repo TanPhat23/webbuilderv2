@@ -1,4 +1,3 @@
-"use client";
 
 import { create } from "zustand";
 import type { CustomElement } from "@/features/editor";

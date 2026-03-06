@@ -1,4 +1,3 @@
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -35,7 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 
 interface CommentItemProps {
   comment: Comment;

@@ -5,16 +5,15 @@
  * Integrates with both server-side RBAC and client-side hooks
  */
 
-"use client";
 
 import { useCallback, useMemo } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth } from '@clerk/tanstack-react-start';
 import {
   useProjectPermissions,
   Permission,
 } from "@/features/projects";
 import { CollaboratorRole } from "@/features/collaboration";
-import { useParams } from "next/navigation";
+import { useParams } from '@tanstack/react-router';
 
 /**
  * Editor-specific permission result
@@ -115,7 +114,7 @@ export function useEditorPermissions(
   projectId?: string | null,
   enabled = true,
 ): EditorPermissions {
-  const { id } = useParams();
+  const { id } = useParams({ strict: false });
   const effectiveProjectId = projectId || id;
   const perms = useProjectPermissions(
     effectiveProjectId as string | null,

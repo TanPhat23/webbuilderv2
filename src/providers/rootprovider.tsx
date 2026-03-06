@@ -1,23 +1,15 @@
-"use client";
-
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/tanstack-react-start";
 import QueryProvider from "./queryprovider";
 import { ThemeProvider } from "./themeprovider";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { shadcn } from "@clerk/themes";
 
 export default function RootProviders({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  
   return (
-    <ClerkProvider
-      appearance={{
-        baseTheme: shadcn as any,
-      }}
-    >
+    <ClerkProvider>
       <QueryProvider>
         <SidebarProvider>
           <ThemeProvider

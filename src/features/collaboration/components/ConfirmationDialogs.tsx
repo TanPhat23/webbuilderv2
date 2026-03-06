@@ -1,4 +1,3 @@
-"use client";
 
 import { Collaborator } from "@/features/collaboration";
 import {

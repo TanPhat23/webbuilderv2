@@ -1,7 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "ES2020",
     "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["vite/client"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -12,24 +13,11 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "incremental": true,
-    "plugins": [
-      {
-        "name": "next",
-      },
-    ],
     "paths": {
       "@/*": ["./src/*"],
-      "tests/*": ["./tests/*"],
-    },
+      "tests/*": ["./tests/*"]
+    }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "prisma/generated/**/*.ts",
-  ],
-  "exclude": ["node_modules"],
+  "include": ["**/*.ts", "**/*.tsx", "prisma/generated/**/*.ts"],
+  "exclude": ["node_modules", ".output", ".vinxi"]
 }

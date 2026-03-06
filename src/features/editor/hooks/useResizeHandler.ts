@@ -1,7 +1,6 @@
-"use client";
 
 import { useRef, useEffect, useCallback, useState } from "react";
-import { clamp } from "lodash";
+import { clamp } from 'lodash-es';
 import type { EditorElement } from "@/types/global.type";
 import type { ResizeDirection } from "@/features/editor";
 import { ResponsiveStyles } from "@/features/editor";

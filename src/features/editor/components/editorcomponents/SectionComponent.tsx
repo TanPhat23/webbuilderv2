@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { useElementHandler } from "@/hooks";

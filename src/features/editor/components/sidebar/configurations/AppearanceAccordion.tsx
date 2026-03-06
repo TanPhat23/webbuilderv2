@@ -1,4 +1,3 @@
-"use client";
 
 import { Accordion } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
