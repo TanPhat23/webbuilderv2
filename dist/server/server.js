@@ -427,7 +427,7 @@ function getResponse() {
   return event.res;
 }
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-Caxigprs.js");
+  const { tsrStartManifest } = await import("./assets/_tanstack-start-manifest_v-DNuoYE1v.js");
   const startManifest = tsrStartManifest();
   const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {};
   rootRoute.assets = rootRoute.assets || [];
@@ -583,16 +583,31 @@ function createMultiplexedStream(jsonStream, rawStreams) {
 }
 const manifest = { "4e76fa5d97766bcab4dfbf483338c1327081ed3b31aa33ecf57450aab56d8514": {
   functionName: "checkEditorAccess_createServerFn_handler",
-  importer: () => import("./assets/editor._id-B-lRYeTC.js")
+  importer: () => import("./assets/editor._id-zD3EWyNv.js")
 }, "88d5d58f001fd825f4c5fcff598166a8d2276446ffd1cacf558ba926f8fce389": {
   functionName: "authStateFn_createServerFn_handler",
   importer: () => import("./assets/api-DJGzpMLK.js")
-}, "6a0643ddc1f5eef517e083f878a467ea542d48a4b3071275fda2bb775bf45ee7": {
+}, "088e3590a036a69f21ef706f3dee067be8532815f9549ae63682971a715860c9": {
+  functionName: "getUserProjects_createServerFn_handler",
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "80f93c8c77588990ba7445942bf00878b1aeea698b58d866a46b06be45d44db9": {
+  functionName: "getProjectById_createServerFn_handler",
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "470aa1ecade0f8858e74189813ff09c3015246b20c18f8a0cccded1f6efcc41d": {
   functionName: "createProject_createServerFn_handler",
-  importer: () => import("./assets/projectAction-DzbPqgkA.js")
-}, "6b94caa9dcfaf35534753be4d9a0f6a175e99f65f5df024f44f31fb3d823d596": {
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "72a6c6d49e7228b011ab970eb137fcbed93ac6e064228074fbe75ca13e50ec3f": {
+  functionName: "updateProject_createServerFn_handler",
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "a088bdb405b9acad39183cfb0565c78327ac0eecbeb1aa4d1ddb71559389d79f": {
+  functionName: "deleteProject_createServerFn_handler",
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "439af23a6a8749f42db8230f866c47df2417a4ab285f06482b72a52ded6d637b": {
+  functionName: "getProjectPages_createServerFn_handler",
+  importer: () => import("./assets/project-DRgJYmsO.js")
+}, "bee9b852639754c0e8a9a42d0a18f21c6bc8fe6bda2ac5c166da31e03432bbd6": {
   functionName: "createPage_createServerFn_handler",
-  importer: () => import("./assets/pageAction-VHIPPS-u.js")
+  importer: () => import("./assets/page-B31JDjd5.js")
 } };
 async function getServerFnById(id) {
   const serverFnInfo = manifest[id];
@@ -1015,7 +1030,7 @@ let entriesPromise;
 let baseManifestPromise;
 let cachedFinalManifestPromise;
 async function loadEntries() {
-  const routerEntry = await import("./assets/router-C8tq5DJa.js").then((n) => n.r);
+  const routerEntry = await import("./assets/router-BlPuUPbX.js").then((n) => n.r);
   const startEntry = await import("./assets/start-Co0gWSbB.js");
   return { startEntry, routerEntry };
 }

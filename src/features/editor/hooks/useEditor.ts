@@ -1,24 +1,19 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { useNavigate } from '@tanstack/react-router';
-import { useAuth } from '@clerk/tanstack-react-start';
+import { useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@clerk/tanstack-react-start";
 import { useAddElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { usePageStore } from "@/features/editor";
 import { useProjectStore } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import { EditorElement, ElementType } from "@/types/global.type";
-import { SectionElement } from "@/features/editor";
-import type { Project } from "@/features/projects";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/hooks";
-import {
-  showErrorToast,
-  PERMISSION_ERRORS,
-} from "@/utils/errors/errorToast";
+import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { Page } from "@/features/pages";
+import type { Project } from "@/features/projects";
 
 export type Viewport = "mobile" | "tablet" | "desktop";
 

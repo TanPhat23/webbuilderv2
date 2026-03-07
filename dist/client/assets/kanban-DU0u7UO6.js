@@ -1,1 +1,0 @@
-import{bB as a}from"./main-DgIhHc0_.js";const e=[["path",{d:"M5 3v14",key:"9nsxs2"}],["path",{d:"M12 3v8",key:"1h2ygw"}],["path",{d:"M19 3v18",key:"1sk56x"}]],t=a("kanban",e);export{e as __iconNode,t as default};

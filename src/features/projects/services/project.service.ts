@@ -4,115 +4,54 @@ import { Project } from "@/features/projects";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import apiClient from "@/services/apiclient";
 
-interface IProjectService {
-  getProjects: () => Promise<Project[]>;
-  getUserProjects: () => Promise<Project[]>;
-  getProjectById: (id: string) => Promise<Project>;
-  createProject: (project: Project) => Promise<Project>;
-  updateProject: (project: Project) => Promise<Project>;
-  updateProjectPartial: (
-    projectId: string,
-    project: Partial<Project>,
-  ) => Promise<Project>;
-  deleteProject: (id: string) => Promise<boolean>;
-  getProjectPages: (id: string) => Promise<Page[]>;
-  deleteProjectPage: (projectId: string, pageId: string) => Promise<boolean>;
-  getProjectPublic: (id: string) => Promise<Project>;
-  getFonts: () => Promise<string[]>;
-}
+export const projectService = {
+  getUserProjects: (token: string): Promise<Project[]> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.GET_USER).build();
+    return apiClient.get<Project[]>(url, undefined, token);
+  },
 
-export const projectService: IProjectService = {
-  getProjects: async (): Promise<Project[]> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC)
-      .build();
+  getProjectById: (id: string, token: string): Promise<Project> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.GET_BY_ID(id)).build();
+    return apiClient.get<Project>(url, undefined, token);
+  },
+
+  getProjectPages: (id: string, token: string): Promise<Page[]> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id)).build();
+    return apiClient.get<Page[]>(url, undefined, token);
+  },
+
+  getProjectPublic: (id: string): Promise<Project> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id)).build();
+    return apiClient.getPublic<Project>(url);
+  },
+
+  getProjects: (): Promise<Project[]> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC).build();
     return apiClient.getPublic<Project[]>(url);
   },
 
-  getUserProjects: async (): Promise<Project[]> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.GET_USER)
-      .build();
-    return apiClient.get<Project[]>(url);
+  createProject: (project: Project, token: string): Promise<Project> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.CREATE).build();
+    return apiClient.post<Project>(url, project, undefined, token);
   },
 
-  getProjectById: async (id: string): Promise<Project> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.GET_BY_ID(id))
-      .build();
-    return apiClient.get<Project>(url);
+  updateProject: (project: Project, token: string): Promise<Project> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.UPDATE(project.id)).build();
+    return apiClient.put<Project>(url, project, undefined, token);
   },
 
-  deleteProject: async (id: string): Promise<boolean> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.DELETE(id))
-      .build();
-    return apiClient.delete(url);
+  updateProjectPartial: (projectId: string, updates: Partial<Project>, token: string): Promise<Project> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.UPDATE(projectId)).build();
+    return apiClient.patch<Project>(url, updates, undefined, token);
   },
 
-  createProject: async (project: Project) => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.CREATE)
-      .build();
-    return await apiClient.post<Project>(url, project);
+  deleteProject: (id: string, token: string): Promise<boolean> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.DELETE(id)).build();
+    return apiClient.delete(url, undefined, token);
   },
 
-  updateProject: async (project: Project) => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.UPDATE(project.id))
-      .build();
-    return await apiClient.put<Project>(url, project);
-  },
-
-  getProjectPages: async (id: string): Promise<Page[]> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id))
-      .build();
-    return apiClient.get<Page[]>(url);
-  },
-
-  updateProjectPartial: async (
-    projectId: string,
-    project: Partial<Project>,
-  ): Promise<Project> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.UPDATE(projectId))
-      .build();
-    return apiClient.patch<Project>(url, project);
-  },
-
-  deleteProjectPage: async (
-    projectId: string,
-    pageId: string,
-  ): Promise<boolean> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.DELETE_PAGE(projectId, pageId))
-      .build();
-    return apiClient.delete(url);
-  },
-
-  getFonts: async (): Promise<string[]> => {
-    const apiKey = import.meta.env.VITE_GOOGLE_FONTS_API_KEY;
-    const response = await fetch(
-      `https://www.googleapis.com/webfonts/v1/webfonts?key=${apiKey}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch fonts");
-    }
-    const data = await response.json();
-    return data.items.map((font: { family: string }) => font.family);
-  },
-
-  getProjectPublic: async (id: string): Promise<Project> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id))
-      .build();
-    return apiClient.getPublic<Project>(url);
+  deleteProjectPage: (projectId: string, pageId: string, token: string): Promise<boolean> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.PROJECTS.DELETE_PAGE(projectId, pageId)).build();
+    return apiClient.delete(url, undefined, token);
   },
 };

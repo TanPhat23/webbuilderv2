@@ -19,15 +19,16 @@ class ApiClient {
     url: string,
     data?: unknown,
     options: RequestInit = {},
+    token?: string,
   ): Promise<TResponse> {
-    const token = await getToken();
+    const resolvedToken = token ?? await getToken();
 
     const response = await fetch(url, {
       ...options,
       method,
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
         ...(options.headers ?? {}),
       },
       body: data !== undefined ? JSON.stringify(data) : undefined,
@@ -54,36 +55,39 @@ class ApiClient {
     }
   }
 
-  get<TResponse>(url: string, options?: RequestInit): Promise<TResponse> {
-    return this.execute<TResponse>("GET", url, undefined, options);
+  get<TResponse>(url: string, options?: RequestInit, token?: string): Promise<TResponse> {
+    return this.execute<TResponse>("GET", url, undefined, options, token);
   }
 
   post<TResponse = unknown, TBody = unknown>(
     url: string,
     data: TBody,
     options?: RequestInit,
+    token?: string,
   ): Promise<TResponse> {
-    return this.execute<TResponse>("POST", url, data, options);
+    return this.execute<TResponse>("POST", url, data, options, token);
   }
 
   put<TResponse, TBody = TResponse>(
     url: string,
     data: TBody,
     options?: RequestInit,
+    token?: string,
   ): Promise<TResponse> {
-    return this.execute<TResponse>("PUT", url, data, options);
+    return this.execute<TResponse>("PUT", url, data, options, token);
   }
 
   patch<TResponse, TData = Partial<TResponse>>(
     url: string,
     data: TData,
     options?: RequestInit,
+    token?: string,
   ): Promise<TResponse> {
-    return this.execute<TResponse>("PATCH", url, data, options);
+    return this.execute<TResponse>("PATCH", url, data, options, token);
   }
 
-  async delete(url: string, options?: RequestInit): Promise<boolean> {
-    await this.execute<void>("DELETE", url, undefined, options);
+  async delete(url: string, options?: RequestInit, token?: string): Promise<boolean> {
+    await this.execute<void>("DELETE", url, undefined, options, token);
     return true;
   }
 

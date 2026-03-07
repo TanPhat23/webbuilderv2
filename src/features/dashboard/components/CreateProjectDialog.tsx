@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { createProject } from "@/features/projects/actions/projectAction";
+import { createProject } from "@/features/projects/api/project";
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectKeys } from "@/hooks";
