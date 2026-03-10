@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './app/__root'
 import { Route as HelppageRouteImport } from './app/helppage'
 import { Route as ProtectedRouteImport } from './app/_protected'
-import { Route as AuthRouteImport } from './app/_auth'
 import { Route as IndexRouteImport } from './app/index'
+import { Route as SignUpIndexRouteImport } from './app/sign-up/index'
+import { Route as SignInIndexRouteImport } from './app/sign-in/index'
+import { Route as SignUpSplatRouteImport } from './app/sign-up/$'
+import { Route as SignInSplatRouteImport } from './app/sign-in/$'
 import { Route as PreviewIdRouteImport } from './app/preview/$id'
 import { Route as ApiGettokenRouteImport } from './app/api/gettoken'
 import { Route as ApiGenerateCodeRouteImport } from './app/api/generate-code'
@@ -24,8 +27,6 @@ import { Route as ProtectedHelpRouteImport } from './app/_protected/help'
 import { Route as ProtectedDashboardRouteImport } from './app/_protected/dashboard'
 import { Route as ProtectedAnalyticsRouteImport } from './app/_protected/analytics'
 import { Route as ProtectedAcceptInvitationRouteImport } from './app/_protected/accept-invitation'
-import { Route as AuthSignUpRouteImport } from './app/_auth/sign-up'
-import { Route as AuthSignInRouteImport } from './app/_auth/sign-in'
 import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
 import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
 import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protected/notifications/index'
@@ -47,13 +48,29 @@ const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/_auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpIndexRoute = SignUpIndexRouteImport.update({
+  id: '/sign-up/',
+  path: '/sign-up/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInIndexRoute = SignInIndexRouteImport.update({
+  id: '/sign-in/',
+  path: '/sign-in/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpSplatRoute = SignUpSplatRouteImport.update({
+  id: '/sign-up/$',
+  path: '/sign-up/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewIdRoute = PreviewIdRouteImport.update({
@@ -112,16 +129,6 @@ const ProtectedAcceptInvitationRoute =
     path: '/accept-invitation',
     getParentRoute: () => ProtectedRoute,
   } as any)
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => AuthRoute,
-} as any)
-const AuthSignInRoute = AuthSignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => AuthRoute,
-} as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
   id: '/api/notifications/',
   path: '/api/notifications/',
@@ -185,8 +192,6 @@ const ProtectedEditorIdIndexRoute = ProtectedEditorIdIndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/helppage': typeof HelppageRoute
-  '/sign-in': typeof AuthSignInRoute
-  '/sign-up': typeof AuthSignUpRoute
   '/accept-invitation': typeof ProtectedAcceptInvitationRoute
   '/analytics': typeof ProtectedAnalyticsRouteWithChildren
   '/dashboard': typeof ProtectedDashboardRouteWithChildren
@@ -198,6 +203,10 @@ export interface FileRoutesByFullPath {
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
+  '/sign-in/': typeof SignInIndexRoute
+  '/sign-up/': typeof SignUpIndexRoute
   '/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
@@ -213,14 +222,16 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/helppage': typeof HelppageRoute
-  '/sign-in': typeof AuthSignInRoute
-  '/sign-up': typeof AuthSignUpRoute
   '/accept-invitation': typeof ProtectedAcceptInvitationRoute
   '/help': typeof ProtectedHelpRoute
   '/api/analytics': typeof ApiAnalyticsRoute
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
+  '/sign-in': typeof SignInIndexRoute
+  '/sign-up': typeof SignUpIndexRoute
   '/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
@@ -235,11 +246,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_auth': typeof AuthRouteWithChildren
   '/_protected': typeof ProtectedRouteWithChildren
   '/helppage': typeof HelppageRoute
-  '/_auth/sign-in': typeof AuthSignInRoute
-  '/_auth/sign-up': typeof AuthSignUpRoute
   '/_protected/accept-invitation': typeof ProtectedAcceptInvitationRoute
   '/_protected/analytics': typeof ProtectedAnalyticsRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRouteWithChildren
@@ -251,6 +259,10 @@ export interface FileRoutesById {
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
+  '/sign-in/': typeof SignInIndexRoute
+  '/sign-up/': typeof SignUpIndexRoute
   '/_protected/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/_protected/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/_protected/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
@@ -268,8 +280,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/helppage'
-    | '/sign-in'
-    | '/sign-up'
     | '/accept-invitation'
     | '/analytics'
     | '/dashboard'
@@ -281,6 +291,10 @@ export interface FileRouteTypes {
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/sign-in/'
+    | '/sign-up/'
     | '/editor/$id'
     | '/marketplace/$id'
     | '/projectsettings/$id'
@@ -296,14 +310,16 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/helppage'
-    | '/sign-in'
-    | '/sign-up'
     | '/accept-invitation'
     | '/help'
     | '/api/analytics'
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/sign-in'
+    | '/sign-up'
     | '/marketplace/$id'
     | '/projectsettings/$id'
     | '/api/notifications/profile-update'
@@ -317,11 +333,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/_auth'
     | '/_protected'
     | '/helppage'
-    | '/_auth/sign-in'
-    | '/_auth/sign-up'
     | '/_protected/accept-invitation'
     | '/_protected/analytics'
     | '/_protected/dashboard'
@@ -333,6 +346,10 @@ export interface FileRouteTypes {
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
+    | '/sign-in/$'
+    | '/sign-up/$'
+    | '/sign-in/'
+    | '/sign-up/'
     | '/_protected/editor/$id'
     | '/_protected/marketplace/$id'
     | '/_protected/projectsettings/$id'
@@ -348,13 +365,16 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthRoute: typeof AuthRouteWithChildren
   ProtectedRoute: typeof ProtectedRouteWithChildren
   HelppageRoute: typeof HelppageRoute
   ApiAnalyticsRoute: typeof ApiAnalyticsRoute
   ApiGenerateCodeRoute: typeof ApiGenerateCodeRoute
   ApiGettokenRoute: typeof ApiGettokenRoute
   PreviewIdRoute: typeof PreviewIdRoute
+  SignInSplatRoute: typeof SignInSplatRoute
+  SignUpSplatRoute: typeof SignUpSplatRoute
+  SignInIndexRoute: typeof SignInIndexRoute
+  SignUpIndexRoute: typeof SignUpIndexRoute
   ApiNotificationsProfileUpdateRoute: typeof ApiNotificationsProfileUpdateRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
 }
@@ -375,18 +395,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/': {
+      id: '/sign-up/'
+      path: '/sign-up'
+      fullPath: '/sign-up/'
+      preLoaderRoute: typeof SignUpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/': {
+      id: '/sign-in/'
+      path: '/sign-in'
+      fullPath: '/sign-in/'
+      preLoaderRoute: typeof SignInIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/$': {
+      id: '/sign-up/$'
+      path: '/sign-up/$'
+      fullPath: '/sign-up/$'
+      preLoaderRoute: typeof SignUpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview/$id': {
@@ -465,20 +506,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/accept-invitation'
       preLoaderRoute: typeof ProtectedAcceptInvitationRouteImport
       parentRoute: typeof ProtectedRoute
-    }
-    '/_auth/sign-up': {
-      id: '/_auth/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof AuthRoute
-    }
-    '/_auth/sign-in': {
-      id: '/_auth/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof AuthSignInRouteImport
-      parentRoute: typeof AuthRoute
     }
     '/api/notifications/': {
       id: '/api/notifications/'
@@ -559,18 +586,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthRouteChildren {
-  AuthSignInRoute: typeof AuthSignInRoute
-  AuthSignUpRoute: typeof AuthSignUpRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthSignInRoute: AuthSignInRoute,
-  AuthSignUpRoute: AuthSignUpRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface ProtectedAnalyticsRouteChildren {
   ProtectedAnalyticsIndexRoute: typeof ProtectedAnalyticsIndexRoute
@@ -673,13 +688,16 @@ const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthRoute: AuthRouteWithChildren,
   ProtectedRoute: ProtectedRouteWithChildren,
   HelppageRoute: HelppageRoute,
   ApiAnalyticsRoute: ApiAnalyticsRoute,
   ApiGenerateCodeRoute: ApiGenerateCodeRoute,
   ApiGettokenRoute: ApiGettokenRoute,
   PreviewIdRoute: PreviewIdRoute,
+  SignInSplatRoute: SignInSplatRoute,
+  SignUpSplatRoute: SignUpSplatRoute,
+  SignInIndexRoute: SignInIndexRoute,
+  SignUpIndexRoute: SignUpIndexRoute,
   ApiNotificationsProfileUpdateRoute: ApiNotificationsProfileUpdateRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
 }
