@@ -32,6 +32,7 @@ yarn.lock
 next-env.d.ts
 
 # production
+/dist
 /build
 /build/
 /api/
