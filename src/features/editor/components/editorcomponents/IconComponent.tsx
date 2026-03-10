@@ -1,6 +1,5 @@
-
 import React from "react";
-import { DynamicIcon, type IconName } from "lucide-react/dynamic";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic.mjs";
 import { useElementHandler } from "@/hooks";
 import { EditorComponentProps } from "@/features/editor";
 import { IconElement, IconSettings } from "@/features/editor";

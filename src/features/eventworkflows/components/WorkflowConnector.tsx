@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   useEventWorkflowActions,
@@ -35,6 +34,8 @@ import {
   WORKFLOW_EVENT_TYPES,
   CONNECTION_CONFIG,
 } from "@/features/eventworkflows";
+import type { EventWorkflow } from "@/features/eventworkflows";
+import type { EditorElement } from "@/types/global.type";
 
 interface WorkflowConnectorProps {
   projectId: string;
@@ -47,11 +48,11 @@ export const WorkflowConnector = ({
   workflowId,
   onBack,
 }: WorkflowConnectorProps) => {
-  const { workflows } = useEventWorkflowActions(projectId);
+  const { workflows = [] } = useEventWorkflowActions(projectId);
   const selectedElement = useSelectedElement();
   const [selectedEvent, setSelectedEvent] = useState<string>("");
 
-  const element = selectedElement as any;
+  const element = selectedElement as EditorElement | undefined;
   const elementId = element?.id;
 
   const {
@@ -123,7 +124,7 @@ export const WorkflowConnector = ({
           <CardDescription>
             Selected:{" "}
             <span className="font-semibold">
-              {element.name || "Unnamed Element"}
+              {element?.name || "Unnamed Element"}
             </span>
           </CardDescription>
         </CardHeader>
@@ -225,7 +226,7 @@ export const WorkflowConnector = ({
               {WORKFLOW_EVENT_TYPES.map((event) => {
                 const connectedWorkflows = getConnectedWorkflows(
                   event.value,
-                  workflows,
+                  workflows as EventWorkflow[],
                 );
                 const hasConnections = connectedWorkflows.length > 0;
 
@@ -305,14 +306,14 @@ export const WorkflowConnector = ({
                           <SelectValue placeholder="+ Add workflow" />
                         </SelectTrigger>
                         <SelectContent>
-                          {workflows
+                          {(workflows as EventWorkflow[])
                             .filter(
-                              (w) =>
+                              (w: EventWorkflow) =>
                                 !connectedWorkflows.some(
                                   (cw) => cw && cw.id === w.id,
                                 ),
                             )
-                            .map((workflow) => (
+                            .map((workflow: EventWorkflow) => (
                               <SelectItem key={workflow.id} value={workflow.id}>
                                 <div className="flex items-center gap-2">
                                   <Zap className="h-3.5 w-3.5 text-accent" />

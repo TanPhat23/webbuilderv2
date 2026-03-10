@@ -28,7 +28,7 @@ function mapPage(row: PrismaPage): Page {
     Id: row.Id,
     Name: row.Name,
     Type: row.Type,
-    Styles: (row.Styles as Record<string, unknown>) ?? null,
+    Styles: (row.Styles as Page["Styles"]) ?? null,
     ProjectId: row.ProjectId,
     CreatedAt: row.CreatedAt,
     UpdatedAt: row.UpdatedAt,

@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useEffect,
@@ -137,10 +136,7 @@ export const WorkflowEditor = ({
     setShowConfigPanel(true);
   };
 
-  const handleSaveNodeConfig = (
-    nodeId: string,
-    config: Record<string, unknown>,
-  ) => {
+  const handleSaveNodeConfig = (nodeId: string, config: Record<string, {}>) => {
     const existingNode = workflow.nodes.find((n) => n.id === nodeId);
     const existingLabel = existingNode?.data?.label ?? "";
     const existingDescription = existingNode?.data?.description;

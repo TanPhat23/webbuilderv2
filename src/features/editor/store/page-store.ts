@@ -1,5 +1,5 @@
 import { Page } from "@/features/pages";
-import { projectService } from "@/features/projects";
+import { deleteProject } from "@/features/projects/api/project.api";
 import { create } from "zustand";
 
 type PageCollaborativeData = Partial<Page> | Page | undefined;
@@ -95,11 +95,10 @@ export const usePageStore = create<PageStore>((set, get) => {
         pages: state.pages.filter((page) => page.Id !== id),
       }));
       if (pageToDelete) {
-        const result = await projectService.deleteProjectPage(
-          pageToDelete?.ProjectId,
-          id,
-        );
-        if (!result) {
+        const result = await deleteProject({
+          data: { projectId: pageToDelete.ProjectId },
+        });
+        if (!result?.success) {
           set({ pages: pagesCopy });
         } else {
           triggerCollaborativeCallback("delete", id);

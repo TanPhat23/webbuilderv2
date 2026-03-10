@@ -1,7 +1,7 @@
-
-import { projectService } from "@/features/projects";
 import { create } from "zustand";
 import type { Project } from "@/features/projects";
+import { updateProject as updateProjectServer } from "@/features/projects/api/project.api";
+import type { ProjectUpdateFields } from "@/features/projects/schema/project";
 
 /**
  * ProjectStore (client / optimistic)
@@ -29,7 +29,7 @@ type ProjectStoreState = {
   setProject: (project: Project | null) => void;
 
   updateProject: (
-    updates: Partial<Project>,
+    updates: ProjectUpdateFields,
     id?: string,
   ) => Promise<Project | null>;
 };
@@ -54,7 +54,7 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => {
       set({ project });
     },
 
-    updateProject: async (updates: Partial<Project>, id?: string) => {
+    updateProject: async (updates: ProjectUpdateFields, id?: string) => {
       const current = get().project;
       const projectId =
         id ?? (updates as Partial<Project & { id?: string }>).id ?? current?.id;
@@ -74,10 +74,12 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => {
       set({ project: optimistic, isUpdating: true, errorMessage: null });
 
       try {
-        const serverProject = await projectService.updateProjectPartial(
-          projectId,
-          updates,
-        );
+        const serverProject = await updateProjectServer({
+          data: {
+            projectId,
+            updates,
+          },
+        });
 
         if (serverProject) {
           const mergedProject: Project = {

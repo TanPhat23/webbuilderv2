@@ -1,16 +1,12 @@
-import { EventHandler } from "@/features/eventworkflows/schema/eventSchemas";
-import {
-  WorkflowData,
-  WorkflowNode,
-  Connection,
-} from "@/features/eventworkflows/components/types/workflow.types";
+import type { EventHandler } from "@/features/eventworkflows/schema/eventSchemas";
+import type { WorkflowData } from "@/features/eventworkflows/components/types/workflow.types";
 
 export interface EventWorkflow {
   id: string;
   projectId: string;
   name: string;
   description?: string;
-  canvasData?: WorkflowData; // Stores nodes, connections, and metadata
+  canvasData?: WorkflowData;
   enabled: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -21,20 +17,20 @@ export interface ElementEventWorkflowReference {
 }
 
 export interface CreateEventWorkflowInput {
+  handlers?: EventHandler[];
   name: string;
   description?: string;
   canvasData?: WorkflowData;
 }
 
 export interface UpdateEventWorkflowInput {
-  handlers: EventHandler[]; // Full list of handlers to replace existing ones
+  handlers?: EventHandler[];
   name?: string;
   description?: string;
   canvasData?: WorkflowData;
   enabled?: boolean;
 }
 
-// Workflow with full canvas data for editing
 export interface WorkflowWithCanvas extends EventWorkflow {
   canvasData: WorkflowData;
 }

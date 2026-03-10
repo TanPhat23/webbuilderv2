@@ -1,265 +1,440 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { cmsService } from "@/features/cms";
+import { useCallback, useMemo, useState } from "react";
 import {
-  ContentType,
-  ContentItem,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+} from "@tanstack/react-query";
+import {
+  createContentField,
+  createContentItem,
+  createContentType,
+  deleteContentField,
+  deleteContentItem,
+  deleteContentType,
+  getContentFieldsByContentType,
+  getContentItemsByContentType,
+  getContentTypes,
+  updateContentField,
+  updateContentItem,
+  updateContentType,
+} from "@/features/cms";
+import type {
   ContentField,
+  ContentFieldValueInput,
+  ContentItem,
+  ContentType,
 } from "@/features/cms";
 import {
-  ContentTypeFormSchema,
   ContentFieldFormSchema,
   ContentItemFormSchema,
+  ContentTypeFormSchema,
 } from "@/features/cms/schema/cms";
-import { z } from "zod";
+import type { z } from "zod";
 
 type ContentTypeFormValues = z.infer<typeof ContentTypeFormSchema>;
 type ContentFieldFormValues = z.infer<typeof ContentFieldFormSchema>;
 type ContentItemFormValues = z.infer<typeof ContentItemFormSchema>;
+
+type ContentItemMutationInput = ContentItemFormValues & {
+  fieldValues?: ContentFieldValueInput[];
+};
+
+type UpdateContentTypeVariables = {
+  id: string;
+  data: Partial<ContentType>;
+};
+
+type DeleteContentTypeVariables = {
+  id: string;
+};
+
+type CreateContentFieldVariables = {
+  contentTypeId: string;
+  data: ContentFieldFormValues;
+};
+
+type UpdateContentFieldVariables = {
+  contentTypeId: string;
+  fieldId: string;
+  data: Partial<ContentField>;
+};
+
+type DeleteContentFieldVariables = {
+  contentTypeId: string;
+  fieldId: string;
+};
+
+type CreateContentItemVariables = {
+  contentTypeId: string;
+  data: ContentItemMutationInput;
+};
+
+type UpdateContentItemVariables = {
+  contentTypeId: string;
+  itemId: string;
+  data: Partial<ContentItem> & {
+    fieldValues?: ContentFieldValueInput[];
+  };
+};
+
+type DeleteContentItemVariables = {
+  contentTypeId: string;
+  itemId: string;
+};
+
+const cmsKeys = {
+  all: ["cms"] as const,
+  contentTypes: () => [...cmsKeys.all, "contentTypes"] as const,
+  contentFields: (contentTypeId: string) =>
+    [...cmsKeys.all, "contentFields", contentTypeId] as const,
+  contentItems: (contentTypeId: string) =>
+    [...cmsKeys.all, "contentItems", contentTypeId] as const,
+  publicContent: () => [...cmsKeys.all, "public-content"] as const,
+  publicContentItem: () => [...cmsKeys.all, "public-content-item"] as const,
+};
+
+function invalidateContentTypeDependencies(
+  queryClient: ReturnType<typeof useQueryClient>,
+  contentTypeId: string,
+) {
+  void queryClient.invalidateQueries({
+    queryKey: cmsKeys.contentFields(contentTypeId),
+    exact: true,
+  });
+  void queryClient.invalidateQueries({
+    queryKey: cmsKeys.contentItems(contentTypeId),
+    exact: true,
+  });
+  void queryClient.invalidateQueries({
+    queryKey: cmsKeys.publicContent(),
+  });
+  void queryClient.invalidateQueries({
+    queryKey: cmsKeys.publicContentItem(),
+  });
+}
 
 export const useCMSManager = () => {
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
 
   const queryClient = useQueryClient();
 
-  // Queries
-  const { data: contentTypes = [], isLoading: typesLoading } = useQuery({
-    queryKey: ["contentTypes"],
-    queryFn: cmsService.getContentTypes,
+  const contentTypesQuery = useQuery<ContentType[], Error>({
+    queryKey: cmsKeys.contentTypes(),
+    queryFn: () => getContentTypes(),
   });
 
-  const { data: contentFields = [], isLoading: fieldsLoading } = useQuery({
-    queryKey: ["contentFields", selectedTypeId],
-    queryFn: () => cmsService.getContentFieldsByContentType(selectedTypeId),
-    enabled: !!selectedTypeId,
+  const contentFieldsQuery = useQuery<ContentField[], Error>({
+    queryKey: cmsKeys.contentFields(selectedTypeId),
+    queryFn: () =>
+      getContentFieldsByContentType({
+        data: { contentTypeId: selectedTypeId },
+      }),
+    enabled: selectedTypeId.length > 0,
   });
 
-  const { data: contentItems = [], isLoading: itemsLoading } = useQuery({
-    queryKey: ["contentItems", selectedTypeId],
-    queryFn: () => cmsService.getContentItemsByContentType(selectedTypeId),
-    enabled: !!selectedTypeId,
+  const contentItemsQuery = useQuery<ContentItem[], Error>({
+    queryKey: cmsKeys.contentItems(selectedTypeId),
+    queryFn: () =>
+      getContentItemsByContentType({
+        data: { contentTypeId: selectedTypeId },
+      }),
+    enabled: selectedTypeId.length > 0,
   });
 
-  // Mutations
-  const createTypeMutation = useMutation({
-    mutationFn: cmsService.createContentType,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contentTypes"] });
-      console.log("Content type created successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to create content type");
-    },
-  });
-
-  const updateTypeMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ContentType> }) =>
-      cmsService.updateContentType(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contentTypes"] });
-      console.log("Content type updated successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to update content type");
-    },
-  });
-
-  const deleteTypeMutation = useMutation({
-    mutationFn: cmsService.deleteContentType,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contentTypes"] });
-      if (selectedTypeId) setSelectedTypeId("");
-      console.log("Content type deleted successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to delete content type");
+  const createTypeMutation = useMutation<
+    ContentType,
+    Error,
+    ContentTypeFormValues
+  >({
+    mutationFn: (data) =>
+      createContentType({
+        data,
+      }),
+    onSuccess: (createdType) => {
+      queryClient.setQueryData<ContentType[]>(
+        cmsKeys.contentTypes(),
+        (previous) => [...(previous ?? []), createdType],
+      );
     },
   });
 
-  const createFieldMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      data,
-    }: {
-      contentTypeId: string;
-      data: Partial<ContentField>;
-    }) => cmsService.createContentField(contentTypeId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentFields", selectedTypeId],
-      });
-      console.log("Content field created successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to create content field");
-    },
-  });
-
-  const updateFieldMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      fieldId,
-      data,
-    }: {
-      contentTypeId: string;
-      fieldId: string;
-      data: Partial<ContentField>;
-    }) => cmsService.updateContentField(contentTypeId, fieldId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentFields", selectedTypeId],
-      });
-      console.log("Content field updated successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to update content field");
+  const updateTypeMutation = useMutation<
+    ContentType,
+    Error,
+    UpdateContentTypeVariables
+  >({
+    mutationFn: ({ id, data }) =>
+      updateContentType({
+        data: { id, data },
+      }),
+    onSuccess: (updatedType, variables) => {
+      queryClient.setQueryData<ContentType[]>(
+        cmsKeys.contentTypes(),
+        (previous) =>
+          previous?.map((type) =>
+            type.id === variables.id ? updatedType : type,
+          ) ?? [],
+      );
     },
   });
 
-  const deleteFieldMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      fieldId,
-    }: {
-      contentTypeId: string;
-      fieldId: string;
-    }) => cmsService.deleteContentField(contentTypeId, fieldId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentFields", selectedTypeId],
+  const deleteTypeMutation = useMutation<
+    { success: true },
+    Error,
+    DeleteContentTypeVariables
+  >({
+    mutationFn: ({ id }) =>
+      deleteContentType({
+        data: { id },
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData<ContentType[]>(
+        cmsKeys.contentTypes(),
+        (previous) =>
+          previous?.filter((type) => type.id !== variables.id) ?? [],
+      );
+
+      queryClient.removeQueries({
+        queryKey: cmsKeys.contentFields(variables.id),
+        exact: true,
       });
-      console.log("Content field deleted successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to delete content field");
+      queryClient.removeQueries({
+        queryKey: cmsKeys.contentItems(variables.id),
+        exact: true,
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: cmsKeys.publicContent(),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: cmsKeys.publicContentItem(),
+      });
+
+      if (selectedTypeId === variables.id) {
+        setSelectedTypeId("");
+      }
     },
   });
 
-  const createItemMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      data,
-    }: {
-      contentTypeId: string;
-      data: Partial<ContentItem>;
-    }) => cmsService.createContentItem(contentTypeId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentItems", selectedTypeId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content-item"],
-      });
-      console.log("Content item created successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to create content item:", error);
+  const createFieldMutation = useMutation<
+    ContentField,
+    Error,
+    CreateContentFieldVariables
+  >({
+    mutationFn: ({ contentTypeId, data }) =>
+      createContentField({
+        data: { contentTypeId, data },
+      }),
+    onSuccess: (createdField, variables) => {
+      queryClient.setQueryData<ContentField[]>(
+        cmsKeys.contentFields(variables.contentTypeId),
+        (previous) => [...(previous ?? []), createdField],
+      );
     },
   });
 
-  const updateItemMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      itemId,
-      data,
-    }: {
-      contentTypeId: string;
-      itemId: string;
-      data: Partial<ContentItem>;
-    }) => cmsService.updateContentItem(contentTypeId, itemId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentItems", selectedTypeId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content-item"],
-      });
-      console.log("Content item updated successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to update content item");
+  const updateFieldMutation = useMutation<
+    ContentField,
+    Error,
+    UpdateContentFieldVariables
+  >({
+    mutationFn: ({ contentTypeId, fieldId, data }) =>
+      updateContentField({
+        data: { contentTypeId, fieldId, data },
+      }),
+    onSuccess: (updatedField, variables) => {
+      queryClient.setQueryData<ContentField[]>(
+        cmsKeys.contentFields(variables.contentTypeId),
+        (previous) =>
+          previous?.map((field) =>
+            field.id === variables.fieldId ? updatedField : field,
+          ) ?? [],
+      );
     },
   });
 
-  const deleteItemMutation = useMutation({
-    mutationFn: ({
-      contentTypeId,
-      itemId,
-    }: {
-      contentTypeId: string;
-      itemId: string;
-    }) => cmsService.deleteContentItem(contentTypeId, itemId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["contentItems", selectedTypeId],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content"],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["cms-public-content-item"],
-      });
-      console.log("Content item deleted successfully");
-    },
-    onError: (error) => {
-      console.error("Failed to delete content item");
+  const deleteFieldMutation = useMutation<
+    { success: true },
+    Error,
+    DeleteContentFieldVariables
+  >({
+    mutationFn: ({ contentTypeId, fieldId }) =>
+      deleteContentField({
+        data: { contentTypeId, fieldId },
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData<ContentField[]>(
+        cmsKeys.contentFields(variables.contentTypeId),
+        (previous) =>
+          previous?.filter((field) => field.id !== variables.fieldId) ?? [],
+      );
+
+      invalidateContentTypeDependencies(queryClient, variables.contentTypeId);
     },
   });
 
-  // Handlers
-  const handleCreateType = (data: ContentTypeFormValues) => {
-    createTypeMutation.mutate(data);
-  };
+  const createItemMutation = useMutation<
+    ContentItem,
+    Error,
+    CreateContentItemVariables
+  >({
+    mutationFn: ({ contentTypeId, data }) =>
+      createContentItem({
+        data: { contentTypeId, data },
+      }),
+    onSuccess: (createdItem, variables) => {
+      queryClient.setQueryData<ContentItem[]>(
+        cmsKeys.contentItems(variables.contentTypeId),
+        (previous) => [...(previous ?? []), createdItem],
+      );
 
-  const handleCreateField = (data: ContentFieldFormValues) => {
-    if (selectedTypeId) {
-      createFieldMutation.mutate({ contentTypeId: selectedTypeId, data });
-    }
-  };
+      invalidateContentTypeDependencies(queryClient, variables.contentTypeId);
+    },
+  });
 
-  const handleCreateItem = (data: ContentItemFormValues) => {
-    if (selectedTypeId) {
-      createItemMutation.mutate({ contentTypeId: selectedTypeId, data });
-    }
-  };
+  const updateItemMutation = useMutation<
+    ContentItem,
+    Error,
+    UpdateContentItemVariables
+  >({
+    mutationFn: ({ contentTypeId, itemId, data }) =>
+      updateContentItem({
+        data: { contentTypeId, itemId, data },
+      }),
+    onSuccess: (updatedItem, variables) => {
+      queryClient.setQueryData<ContentItem[]>(
+        cmsKeys.contentItems(variables.contentTypeId),
+        (previous) =>
+          previous?.map((item) =>
+            item.id === variables.itemId ? updatedItem : item,
+          ) ?? [],
+      );
 
-  const selectType = (typeId: string) => {
+      invalidateContentTypeDependencies(queryClient, variables.contentTypeId);
+    },
+  });
+
+  const deleteItemMutation = useMutation<
+    { success: true },
+    Error,
+    DeleteContentItemVariables
+  >({
+    mutationFn: ({ contentTypeId, itemId }) =>
+      deleteContentItem({
+        data: { contentTypeId, itemId },
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData<ContentItem[]>(
+        cmsKeys.contentItems(variables.contentTypeId),
+        (previous) =>
+          previous?.filter((item) => item.id !== variables.itemId) ?? [],
+      );
+
+      invalidateContentTypeDependencies(queryClient, variables.contentTypeId);
+    },
+  });
+
+  const handleCreateType = useCallback(
+    (data: ContentTypeFormValues) => {
+      createTypeMutation.mutate(data);
+    },
+    [createTypeMutation],
+  );
+
+  const handleCreateField = useCallback(
+    (data: ContentFieldFormValues) => {
+      if (!selectedTypeId) {
+        return;
+      }
+
+      createFieldMutation.mutate({
+        contentTypeId: selectedTypeId,
+        data,
+      });
+    },
+    [createFieldMutation, selectedTypeId],
+  );
+
+  const handleCreateItem = useCallback(
+    (data: ContentItemMutationInput) => {
+      if (!selectedTypeId) {
+        return;
+      }
+
+      const validatedItem = ContentItemFormSchema.parse({
+        title: data.title,
+        slug: data.slug,
+        published: data.published,
+      });
+
+      createItemMutation.mutate({
+        contentTypeId: selectedTypeId,
+        data: {
+          ...validatedItem,
+          fieldValues: data.fieldValues,
+        },
+      });
+    },
+    [createItemMutation, selectedTypeId],
+  );
+
+  const selectType = useCallback((typeId: string) => {
     setSelectedTypeId(typeId);
-  };
+  }, []);
+
+  const contentTypes = contentTypesQuery.data ?? [];
+  const contentFields = contentFieldsQuery.data ?? [];
+  const contentItems = contentItemsQuery.data ?? [];
+
+  const selectedType = useMemo(
+    () => contentTypes.find((type) => type.id === selectedTypeId),
+    [contentTypes, selectedTypeId],
+  );
 
   return {
-    // State
     selectedTypeId,
+    selectedType,
 
-    // Data
     contentTypes,
     contentFields,
     contentItems,
-    typesLoading,
-    fieldsLoading,
-    itemsLoading,
 
-    // Mutations
+    typesLoading: contentTypesQuery.isLoading,
+    fieldsLoading: contentFieldsQuery.isLoading,
+    itemsLoading: contentItemsQuery.isLoading,
+
+    typesFetching: contentTypesQuery.isFetching,
+    fieldsFetching: contentFieldsQuery.isFetching,
+    itemsFetching: contentItemsQuery.isFetching,
+
+    contentTypesError: contentTypesQuery.error,
+    contentFieldsError: contentFieldsQuery.error,
+    contentItemsError: contentItemsQuery.error,
+
     createTypeMutation,
     updateTypeMutation,
     deleteTypeMutation,
+
     createFieldMutation,
     updateFieldMutation,
     deleteFieldMutation,
+
     createItemMutation,
     updateItemMutation,
     deleteItemMutation,
 
-    // Handlers
     handleCreateType,
     handleCreateField,
     handleCreateItem,
     selectType,
   };
 };
+
+export type CMSManagerResult = ReturnType<typeof useCMSManager>;
+
+export type CMSMutationResult<TData, TVariables> = UseMutationResult<
+  TData,
+  Error,
+  TVariables
+>;

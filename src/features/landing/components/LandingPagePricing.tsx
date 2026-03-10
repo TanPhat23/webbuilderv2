@@ -11,7 +11,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, Sparkles, ArrowRight, Zap, Star, Building2 } from "lucide-react";
+import {
+  Check,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Star,
+  Building2,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
@@ -76,12 +83,7 @@ export default function LandingPagePricing() {
   const [frequency, setFrequency] = React.useState<"monthly" | "yearly">(
     "monthly",
   );
-  const [mounted, setMounted] = React.useState(false);
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handlePlanSelect = (planId: string) => {
     if (planId === "hobby") {
@@ -90,8 +92,6 @@ export default function LandingPagePricing() {
     }
     navigate({ to: "/sign-up" });
   };
-
-  if (!mounted) return null;
 
   return (
     <section className="relative w-full overflow-hidden px-4 py-24 text-center sm:px-8">

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useEventWorkflowActions } from "@/features/eventworkflows/hooks/useEventWorkflows";
 import { Button } from "@/components/ui/button";
@@ -52,16 +51,18 @@ export const WorkflowList = ({
   onEdit,
   onCreate,
 }: WorkflowListProps) => {
-  const { workflows, isLoading, error, isDeleting, deleteWorkflow } =
-    useEventWorkflowActions(projectId);
+  const {
+    workflows = [],
+    isLoading,
+    error,
+    isDeleting,
+    deleteWorkflow,
+  } = useEventWorkflowActions(projectId);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Ensure workflows is always an array
-  const workflowsArray = Array.isArray(workflows) ? workflows : [];
-
-  const filteredWorkflows = workflowsArray.filter((workflow) =>
+  const filteredWorkflows = workflows.filter((workflow) =>
     workflow.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
@@ -156,7 +157,7 @@ export const WorkflowList = ({
       </Card>
 
       {/* Search */}
-      {workflowsArray.length > 0 && (
+      {workflows.length > 0 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

@@ -1,1 +1,0 @@
-import{bB as c}from"./main-D4yBFWaP.js";const e=[["circle",{cx:"12",cy:"12",r:"10",key:"1mglay"}],["path",{d:"M7 10h10",key:"1101jm"}],["path",{d:"M7 14h10",key:"1mhdw3"}]],o=c("circle-equal",e);export{e as __iconNode,o as default};

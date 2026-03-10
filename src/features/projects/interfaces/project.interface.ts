@@ -2,6 +2,12 @@ interface Header {
   cssStyles?: string;
 }
 
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+type JsonObject = {
+  [key: string]: JsonValue;
+};
+
 export interface Project {
   id: string;
   name: string;
@@ -9,7 +15,7 @@ export interface Project {
   subdomain?: string | null;
   published: boolean;
   ownerId: string;
-  styles?: Record<string, unknown> | null;
+  styles?: JsonObject | null;
   header?: Header | null;
   createdAt: string;
   updatedAt: string;

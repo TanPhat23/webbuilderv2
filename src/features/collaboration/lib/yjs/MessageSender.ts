@@ -12,7 +12,7 @@
  * and encapsulates transport/queue behavior in one place.
  */
 
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import { ConnectionManager } from "./ConnectionManager";
 import { MessageDispatcher } from "./MessageDispatcher";
 import type { WSEnvelope } from "@/features/collaboration";

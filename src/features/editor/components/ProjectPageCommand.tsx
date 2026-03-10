@@ -1,5 +1,3 @@
-
-
 import React, { useState } from "react";
 import {
   Command,
@@ -21,7 +19,7 @@ import {
 import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
-import { useParams } from '@tanstack/react-router';
+import { useParams } from "@tanstack/react-router";
 import {
   Form,
   FormControl,
@@ -41,14 +39,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PageSchema } from "@/features/projects/schema/page";
+import { CreatePageSchema } from "@/features/projects/schema/page";
 import { Page } from "@/features/pages";
-import { createPage } from "@/features/projects/api/page";
+import { createPage } from "@/features/projects/api/page.api";
 
 const createPageSchema = z.object({
   name: z.string().min(1, "Page name is required"),
-  type: z.enum(["sp", "dp"])
-})
+  type: z.enum(["sp", "dp"]),
+});
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
 function CreatePageDialog() {
@@ -65,28 +63,21 @@ function CreatePageDialog() {
   });
 
   const onSubmit = async (data: CreatePageFormValues) => {
-    const newPageData = {
+    const newPage = CreatePageSchema.safeParse({
       Id: uuidv4(),
       Name: data.name,
       ProjectId: id as string,
       Styles: {},
-      Type: data.type as "sp" | "dp",
-      DeletedAt: undefined,
-      CreatedAt: new Date(),
-      UpdatedAt: new Date(),
-    };
-
-    const newPage = PageSchema.safeParse(newPageData);
+      Type: data.type,
+    });
 
     if (!newPage.success) {
       console.error("Validation failed:", newPage.error);
       return;
     }
 
-    const response = await createPage({ data: newPage.data });
-    if (response) {
-      addPage(response);
-    }
+    const response = (await createPage({ data: newPage.data })) as Page;
+    addPage(response);
     setOpen(false);
     form.reset();
   };

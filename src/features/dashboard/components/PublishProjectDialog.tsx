@@ -28,7 +28,6 @@ export function PublishProjectDialog({
   projectName,
   currentlyPublished,
 }: PublishProjectDialogProps) {
-  const action = currentlyPublished ? "unpublish" : "publish";
   const ActionIcon = currentlyPublished ? EyeOff : Globe;
 
   return (

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "node .output/server/index.mjs",
+    "preview": "vite preview",
+    "start": "node server.mjs",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "postinstall": "prisma generate",

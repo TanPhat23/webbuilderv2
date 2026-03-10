@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useMemo } from "react";
 import { useCMSManager } from "@/features/cms";
 import { CMSContextValue } from "../components/types";
@@ -47,7 +46,7 @@ export function CMSProvider({ children }: { children: React.ReactNode }) {
       handleCreateItem: manager.handleCreateItem,
 
       handleDeleteType: (id: string) =>
-        manager.deleteTypeMutation.mutate(id),
+        manager.deleteTypeMutation.mutate({ id }),
 
       handleDeleteField: (contentTypeId: string, fieldId: string) =>
         manager.deleteFieldMutation.mutate({ contentTypeId, fieldId }),

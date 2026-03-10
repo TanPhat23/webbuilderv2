@@ -17,8 +17,13 @@
  */
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { eventWorkflowService } from "@/features/eventworkflows";
 import {
+  createEventWorkflow,
+  deleteEventWorkflow,
+  updateEventWorkflow,
+  updateEventWorkflowEnabled,
+} from "@/features/eventworkflows";
+import type {
   EventWorkflow,
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
@@ -54,8 +59,23 @@ export const useCreateEventWorkflow = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, input }: CreateWorkflowVariables) =>
-      eventWorkflowService.createEventWorkflow(projectId, input),
+    mutationFn: ({
+      projectId,
+      input,
+    }: CreateWorkflowVariables): Promise<EventWorkflow> => {
+      const requestInput = {
+        name: input.name,
+        description: input.description,
+        handlers: input.handlers ?? [],
+      };
+
+      return createEventWorkflow({
+        data: {
+          projectId,
+          input: requestInput,
+        },
+      });
+    },
 
     onSuccess: (created, { projectId }) => {
       // Append to the project list (avoids a full refetch).
@@ -76,8 +96,13 @@ export const useUpdateEventWorkflow = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workflowId, input }: UpdateWorkflowVariables) =>
-      eventWorkflowService.updateEventWorkflow(workflowId, input),
+    mutationFn: ({
+      workflowId,
+      input,
+    }: UpdateWorkflowVariables): Promise<EventWorkflow> =>
+      updateEventWorkflow({
+        data: { workflowId, input },
+      }),
 
     onSuccess: (updated, { workflowId }) => {
       queryClient.setQueryData(eventWorkflowKeys.detail(workflowId), updated);
@@ -98,8 +123,13 @@ export const useUpdateEventWorkflowEnabled = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ workflowId, enabled }: UpdateWorkflowEnabledVariables) =>
-      eventWorkflowService.updateEventWorkflowEnabled(workflowId, enabled),
+    mutationFn: ({
+      workflowId,
+      enabled,
+    }: UpdateWorkflowEnabledVariables): Promise<EventWorkflow> =>
+      updateEventWorkflowEnabled({
+        data: { workflowId, enabled },
+      }),
 
     onSuccess: (updated, { workflowId }) => {
       queryClient.setQueryData(eventWorkflowKeys.detail(workflowId), updated);
@@ -119,9 +149,10 @@ export const useDeleteEventWorkflow = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ workflowId }: DeleteWorkflowVariables) => {
-      await eventWorkflowService.deleteEventWorkflow(workflowId);
-      // Return the id so onSuccess can reference it without closing over variables.
+    mutationFn: async ({
+      workflowId,
+    }: DeleteWorkflowVariables): Promise<string> => {
+      await deleteEventWorkflow({ data: { workflowId } });
       return workflowId;
     },
 

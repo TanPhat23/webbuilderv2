@@ -1,4 +1,3 @@
-
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -11,25 +10,24 @@ import {
   SelectionState,
 } from "@/features/eventworkflows/components";
 
+type WorkflowNodeData = WorkflowNode["data"];
+
 interface WorkflowCanvasStore {
-  // State
   workflow: WorkflowData;
   selection: SelectionState;
   zoom: number;
   panX: number;
   panY: number;
 
-  // Node operations
   addNode: (
     type: NodeType,
     position: Position,
-    data: Omit<WorkflowNode["data"], "">,
+    data: WorkflowNodeData,
   ) => string;
   updateNode: (nodeId: string, updates: Partial<WorkflowNode>) => void;
   deleteNode: (nodeId: string) => void;
   getNode: (nodeId: string) => WorkflowNode | undefined;
 
-  // Connection operations
   addConnection: (
     source: string,
     target: string,
@@ -38,22 +36,18 @@ interface WorkflowCanvasStore {
   deleteConnection: (connectionId: string) => void;
   getConnectionsForNode: (nodeId: string) => Connection[];
 
-  // Selection operations
   selectNode: (nodeId: string | undefined) => void;
   selectConnection: (connectionId: string | undefined) => void;
   deselectAll: () => void;
 
-  // Canvas operations
   setZoom: (zoom: number) => void;
   setPan: (x: number, y: number) => void;
   resetView: () => void;
 
-  // Workflow operations
   loadWorkflow: (workflow: WorkflowData) => void;
   getWorkflow: () => WorkflowData;
   clearWorkflow: () => void;
 
-  // Batch operations
   deleteNodeWithConnections: (nodeId: string) => void;
   moveNode: (nodeId: string, position: Position) => void;
 }
@@ -76,7 +70,6 @@ const initialState: CanvasState = {
 export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
   ...initialState,
 
-  // Node operations
   addNode: (type, position, data) => {
     const nodeId = uuidv4();
     const newNode: WorkflowNode = {
@@ -137,7 +130,6 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     );
   },
 
-  // Connection operations
   addConnection: (source: string, target: string, sourcePort?: string) => {
     const connectionId = uuidv4();
     const sourceNode = get().getNode(source);
@@ -188,7 +180,6 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     );
   },
 
-  // Selection operations
   selectNode: (nodeId: string | undefined) => {
     set({
       selection: {
@@ -216,7 +207,6 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     });
   },
 
-  // Canvas operations
   setZoom: (zoom: number) => {
     set({ zoom: Math.max(0.5, Math.min(zoom, 3)) });
   },
@@ -233,7 +223,6 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     });
   },
 
-  // Workflow operations
   loadWorkflow: (workflow: WorkflowData) => {
     set({
       workflow,
@@ -265,7 +254,6 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     });
   },
 
-  // Batch operations
   deleteNodeWithConnections: (nodeId: string) => {
     set((state) => ({
       workflow: {

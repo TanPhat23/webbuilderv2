@@ -1,4 +1,3 @@
-
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
@@ -19,7 +18,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from '@tanstack/react-router';
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { FloatingParticle } from "./hero/FloatingParticle";
@@ -105,6 +104,9 @@ export default function LandingPageHero() {
         y="70%"
         Icon={Code2}
         color="text-blue-500/30"
+        drift={15}
+        rotation={25}
+        duration={13}
       />
       <FloatingParticle
         delay={2}
@@ -112,6 +114,9 @@ export default function LandingPageHero() {
         y="60%"
         Icon={FileType}
         color="text-purple-500/30"
+        drift={-12}
+        rotation={-30}
+        duration={11}
       />
       <FloatingParticle
         delay={4}
@@ -119,6 +124,9 @@ export default function LandingPageHero() {
         y="30%"
         Icon={Hash}
         color="text-green-500/30"
+        drift={18}
+        rotation={40}
+        duration={14}
       />
       <FloatingParticle
         delay={1}
@@ -126,6 +134,9 @@ export default function LandingPageHero() {
         y="20%"
         Icon={LayoutTemplate}
         color="text-orange-500/30"
+        drift={-8}
+        rotation={-20}
+        duration={10}
       />
       <FloatingParticle
         delay={5}
@@ -134,6 +145,9 @@ export default function LandingPageHero() {
         Icon={Sparkles}
         color="text-yellow-500/20"
         size="w-4 h-4"
+        drift={10}
+        rotation={35}
+        duration={15}
       />
 
       <div className="relative z-10 container mx-auto px-4 flex flex-col items-center select-none">

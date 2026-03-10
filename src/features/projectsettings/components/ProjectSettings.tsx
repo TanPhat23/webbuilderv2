@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -34,7 +33,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Project } from "@/features/projects";
-import { projectService } from "@/features/projects";
+import {
+  getProjectById,
+  updateProject as updateProjectServer,
+} from "@/features/projects/api/project.api";
+import type {
+  JsonRecord,
+  ProjectUpdateFields,
+} from "@/features/projects/schema/project";
 import { ProjectPreview } from "./ProjectPreview";
 import { ColorInput } from "./ColorInput";
 import {
@@ -226,7 +232,7 @@ export function ProjectSettings() {
   const params = useParams({ strict: false });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { updateProject } = useProjectStore();
+  const { updateProject: updateProjectStore } = useProjectStore();
   const projectId = params.id as string;
 
   const [customCSS, setCustomCSS] = useState("");
@@ -343,19 +349,20 @@ export function ProjectSettings() {
     isLoading,
   } = useQuery({
     queryKey: ["project", projectId],
-    queryFn: () => projectService.getProjectById(projectId),
+    queryFn: () => getProjectById({ data: { projectId } }),
     enabled: !!projectId,
   });
 
   const updateProjectMutation = useMutation({
-    mutationFn: (updatedProject: Partial<Project> & { id: string }) => {
-      const { id, createdAt, updatedAt, deletedAt, ownerId, ...body } =
-        updatedProject;
-      return projectService.updateProjectPartial(id, body as Partial<Project>);
+    mutationFn: (updatedProject: ProjectUpdateFields & { id: string }) => {
+      const { id, ...updates } = updatedProject;
+      return updateProjectServer({ data: { projectId: id, updates } });
     },
     onSuccess: (updatedProject) => {
       queryClient.setQueryData(["project", projectId], updatedProject);
-      updateProject(updatedProject);
+      if (updatedProject) {
+        updateProjectStore(updatedProject);
+      }
       console.log("Project updated successfully!");
     },
     onError: (error: unknown) => {
@@ -389,7 +396,7 @@ export function ProjectSettings() {
         setCustomCSS(project.header.cssStyles || "");
       }
       if (project.styles && typeof project.styles === "object") {
-        const styles = project.styles as Record<string, unknown>;
+        const styles = project.styles as JsonRecord;
         setSelectedColors({
           primary: (styles.primary as string) || "#3b82f6",
           primaryForeground: (styles.primaryForeground as string) || "#ffffff",
@@ -442,13 +449,9 @@ export function ProjectSettings() {
     const updatedProject = {
       id: projectId,
       name: projectName,
-      description: projectDescription,
+      description: projectDescription || null,
       published: isPublished,
-      subdomain,
-      header: {
-        ...project?.header,
-        cssStyles: combinedCSS,
-      },
+      subdomain: subdomain || null,
       styles: {
         ...selectedColors,
         fontFamily,
@@ -456,8 +459,8 @@ export function ProjectSettings() {
         spacing,
         letterTracking,
         shadowStyle,
-      } as unknown as Record<string, unknown>,
-    };
+      } satisfies JsonRecord,
+    } satisfies ProjectUpdateFields & { id: string };
     updateProjectMutation.mutate(updatedProject);
   };
 

@@ -211,10 +211,6 @@ export const AI_EXPORT_ENDPOINTS = {
 };
 
 export const NEXT_API_ENDPOINTS = {
-  ELEMENTS: {
-    UPDATE: (id: string) => `/api/elements/${id}`,
-    DELETE: (id: string) => `/api/elements/${id}`,
-  },
   PROJECTS: {
     DELETE: (id: string) => `/api/projects/${id}`,
     UPDATE: (id: string) => `/api/projects/${id}`,

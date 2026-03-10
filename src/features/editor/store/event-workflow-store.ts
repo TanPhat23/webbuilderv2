@@ -1,5 +1,5 @@
 import { getQueryClient } from "@/client/queryclient";
-import { eventWorkflowService } from "@/features/eventworkflows";
+import { getEventWorkflowById } from "@/features/eventworkflows";
 import { EventWorkflow } from "@/features/eventworkflows";
 
 // ─── Query Key Factory ────────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ export async function fetchWorkflowById(
   try {
     return await qc.fetchQuery({
       queryKey: eventWorkflowKeys.detail(workflowId),
-      queryFn: () => eventWorkflowService.getEventWorkflowById(workflowId),
+      queryFn: () => getEventWorkflowById({ data: { workflowId } }),
       staleTime: force ? 0 : 30_000,
     });
   } catch (error) {

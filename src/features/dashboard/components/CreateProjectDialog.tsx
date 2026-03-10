@@ -19,11 +19,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { createProject } from "@/features/projects/api/project";
 import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { projectKeys } from "@/hooks";
+import { useCreateProject } from "@/features/projects/hooks/useProjects";
+import {
+  CreateProjectSchema,
+  type CreateProjectInput,
+} from "@/features/projects/schema/project";
 
 type CreateProjectDialogProps = {
   children?: React.ReactNode;
@@ -31,46 +32,28 @@ type CreateProjectDialogProps = {
   setIsCreateDialogOpen: (open: boolean) => void;
 };
 
-export const projectSchema = z.object({
-  name: z.string().min(2, "Project name must be at least 2 characters long"),
-  subdomain: z.string().optional(),
-  description: z.string().optional(),
-  published: z.boolean().optional(),
-});
 export function CreateProjectDialog({
   children,
   isCreateDialogOpen,
   setIsCreateDialogOpen,
 }: CreateProjectDialogProps) {
-  const queryClient = useQueryClient();
+  const { mutate: createProject, isPending } = useCreateProject();
 
-  const createProjectMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof projectSchema>) => {
-      await createProject({
-        data: {
-          name: data.name,
-          description: data.description ?? "",
-        },
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
-      setIsCreateDialogOpen(false);
-    },
-  });
-
-  const form = useForm<z.infer<typeof projectSchema>>({
-    resolver: zodResolver(projectSchema),
+  const form = useForm<CreateProjectInput>({
+    resolver: zodResolver(CreateProjectSchema),
     defaultValues: {
       name: "",
-      subdomain: "",
       description: "",
-      published: false,
     },
   });
 
-  const handleSubmit = async (data: z.infer<typeof projectSchema>) => {
-    createProjectMutation.mutate(data);
+  const handleSubmit = (data: CreateProjectInput) => {
+    createProject(data, {
+      onSuccess: () => {
+        setIsCreateDialogOpen(false);
+        form.reset();
+      },
+    });
   };
 
   return (
@@ -123,19 +106,6 @@ export function CreateProjectDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="subdomain"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Subdomain (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="my-awesome-site" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 type="button"
@@ -144,10 +114,8 @@ export function CreateProjectDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createProjectMutation.isPending}>
-                {createProjectMutation.isPending
-                  ? "Creating..."
-                  : "Create Project"}
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Creating..." : "Create Project"}
               </Button>
             </div>
           </form>

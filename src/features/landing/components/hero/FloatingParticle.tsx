@@ -1,4 +1,3 @@
-
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
@@ -10,6 +9,9 @@ interface FloatingParticleProps {
   Icon: LucideIcon;
   color?: string;
   size?: string;
+  drift?: number;
+  rotation?: number;
+  duration?: number;
 }
 
 export const FloatingParticle = ({
@@ -19,20 +21,23 @@ export const FloatingParticle = ({
   Icon,
   color = "text-primary/20",
   size = "w-6 h-6",
+  drift = 10,
+  rotation = 30,
+  duration = 12,
 }: FloatingParticleProps) => (
   <motion.div
     initial={{ opacity: 0, y: 0, scale: 0.5 }}
     animate={{
       opacity: [0, 0.8, 0],
       y: -150,
-      x: [0, Math.random() * 40 - 20],
+      x: [0, drift],
       scale: [0.5, 1.2, 0.5],
-      rotate: [0, Math.random() * 90 - 45],
+      rotate: [0, rotation],
     }}
     transition={{
-      duration: Math.random() * 5 + 10,
+      duration,
       repeat: Infinity,
-      delay: delay,
+      delay,
       ease: "easeInOut",
     }}
     style={{ left: x, top: y }}

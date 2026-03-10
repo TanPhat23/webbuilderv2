@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import {
   EventHandler,
@@ -12,10 +11,13 @@ import { useEventWorkflows } from "@/features/eventworkflows/hooks/useEventWorkf
 import { transformWorkflowToEventHandlers } from "@/features/eventworkflows/utils/workflowTransformer";
 import { usePageStore } from "@/features/editor";
 
+type ElementEventStateValue = unknown;
+type ElementEventState = Record<string, ElementEventStateValue>;
+
 interface UseElementEventsOptions {
   elementId: string;
-  onStateChange?: (newState: Record<string, any>) => void;
-  globalState?: Record<string, any>;
+  onStateChange?: (newState: ElementEventState) => void;
+  globalState?: ElementEventState;
   enableEventsOverride?: boolean;
   projectId?: string;
 }
@@ -31,8 +33,8 @@ export function useElementEvents(options: UseElementEventsOptions) {
 
   const pageId = usePageStore((state) => state.currentPage?.Id);
 
-  const [elementState, setElementState] = useState<Record<string, any>>({});
-  const elementStateRef = useRef<Record<string, any>>({});
+  const [elementState, setElementState] = useState<ElementEventState>({});
+  const elementStateRef = useRef<ElementEventState>({});
   const elementRef = useRef<HTMLElement | null>(null);
   const eventsMapRef = useRef<Map<string, EventHandler[]>>(new Map());
   const previousWorkflowHandlersRef = useRef<ElementEvents | null>(null);

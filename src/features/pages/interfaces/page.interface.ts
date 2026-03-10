@@ -1,8 +1,14 @@
+import type {
+  CreatePageInput as SchemaCreatePageInput,
+  JsonRecord,
+  JsonValue as PageStyleValue,
+} from "@/features/projects/schema/page";
+
 export interface Page {
   Id: string;
   Name: string;
   Type: string;
-  Styles: Record<string, unknown> | null;
+  Styles: JsonRecord | null;
   ProjectId: string;
   CreatedAt: Date;
   UpdatedAt: Date;
@@ -22,3 +28,6 @@ export type CreatePageInput = Omit<
 export type UpdatePageInput = Partial<Omit<Page, "Id">> & {
   Id: string;
 };
+
+export type PageCreateInput = SchemaCreatePageInput;
+export type { PageStyleValue };

@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import type { ConnectionOptions } from "@/features/collaboration";
 import { URLBuilder } from "@/utils/urlbuilder";
 

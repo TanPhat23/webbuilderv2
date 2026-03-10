@@ -19,7 +19,7 @@ export interface WorkflowNode {
     label: string;
     description?: string;
     icon?: string;
-    config?: Record<string, unknown>;
+    config?: Record<string, {}>;
     // Element node specific
     elementId?: string;
     elementName?: string;

@@ -1,7 +1,10 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { eventWorkflowService } from "@/features/eventworkflows";
 import {
+  getEventWorkflowById,
+  getEventWorkflows,
+} from "@/features/eventworkflows";
+import type {
   EventWorkflow,
   CreateEventWorkflowInput,
   UpdateEventWorkflowInput,
@@ -15,6 +18,14 @@ import {
   useUpdateEventWorkflowEnabled,
 } from "./useEventWorkflowMutations";
 
+const fetchEventWorkflows = async (
+  projectId: string,
+): Promise<EventWorkflow[]> => getEventWorkflows({ data: { projectId } });
+
+const fetchEventWorkflowById = async (
+  workflowId: string,
+): Promise<EventWorkflow> => getEventWorkflowById({ data: { workflowId } });
+
 // ─── Query Hooks ──────────────────────────────────────────────────────────────
 
 /**
@@ -22,15 +33,10 @@ import {
  * Uses React Query cache with 30 s stale time.
  */
 export function useEventWorkflows(projectId: string) {
-  return useQuery({
+  return useQuery<EventWorkflow[]>({
     queryKey: eventWorkflowKeys.list(projectId),
-    queryFn: async () => {
-      const result = await eventWorkflowService.getEventWorkflows(projectId);
-      return Array.isArray(result) ? result : [];
-    },
-    enabled: !!projectId,
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+    queryFn: () => fetchEventWorkflows(projectId),
+    enabled: projectId.length > 0,
   });
 }
 
@@ -42,22 +48,25 @@ export function useEventWorkflows(projectId: string) {
 export function useEventWorkflow(workflowId: string, enabled = true) {
   const queryClient = useQueryClient();
 
-  return useQuery({
+  return useQuery<EventWorkflow>({
     queryKey: eventWorkflowKeys.detail(workflowId),
-    queryFn: () => eventWorkflowService.getEventWorkflowById(workflowId),
-    enabled: enabled && !!workflowId,
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
-    // Seed from any list cache that already contains this workflow so the
-    // component renders immediately rather than showing a loading state.
+    queryFn: () => fetchEventWorkflowById(workflowId),
+    enabled: enabled && workflowId.length > 0,
     initialData: () => {
       const lists = queryClient.getQueriesData<EventWorkflow[]>({
         queryKey: eventWorkflowKeys.lists(),
       });
+
       for (const [, data] of lists) {
-        const found = data?.find((w) => w.id === workflowId);
-        if (found) return found;
+        const foundWorkflow = data?.find(
+          (workflow) => workflow.id === workflowId,
+        );
+
+        if (foundWorkflow) {
+          return foundWorkflow;
+        }
       }
+
       return undefined;
     },
   });
@@ -75,21 +84,19 @@ export function useEventWorkflow(workflowId: string, enabled = true) {
  */
 export function useEventWorkflowActions(projectId: string) {
   const queryClient = useQueryClient();
-  const query = useEventWorkflows(projectId);
+  const workflowsQuery = useEventWorkflows(projectId);
 
   const createMutation = useCreateEventWorkflow();
   const updateMutation = useUpdateEventWorkflow();
   const updateEnabledMutation = useUpdateEventWorkflowEnabled();
   const deleteMutation = useDeleteEventWorkflow();
 
-  // Derive the most recent mutation error (last one wins).
   const mutationError =
     createMutation.error ??
     updateMutation.error ??
     updateEnabledMutation.error ??
     deleteMutation.error;
 
-  // ─── Cache helpers ───────────────────────────────────────────────────────
   const invalidateAll = useCallback(
     () => queryClient.invalidateQueries({ queryKey: eventWorkflowKeys.all }),
     [queryClient],
@@ -117,40 +124,48 @@ export function useEventWorkflowActions(projectId: string) {
     [queryClient],
   );
 
+  const createWorkflow = useCallback(
+    (input: CreateEventWorkflowInput) =>
+      createMutation.mutateAsync({ projectId, input }),
+    [createMutation, projectId],
+  );
+
+  const updateWorkflow = useCallback(
+    (workflowId: string, input: UpdateEventWorkflowInput) =>
+      updateMutation.mutateAsync({ workflowId, input }),
+    [updateMutation],
+  );
+
+  const updateWorkflowEnabled = useCallback(
+    (workflowId: string, enabled: boolean) =>
+      updateEnabledMutation.mutateAsync({ workflowId, enabled }),
+    [updateEnabledMutation],
+  );
+
+  const deleteWorkflow = useCallback(
+    (workflowId: string) => deleteMutation.mutateAsync({ workflowId }),
+    [deleteMutation],
+  );
+
   return {
-    // ── React Query data ────────────────────────────────────────────────────
-    workflows: query.data ?? [],
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    /** Combined error: query error takes priority, then the latest mutation error. */
-    error: query.error
-      ? getErrorMessage(query.error, "Failed to load workflows")
+    workflows: workflowsQuery.data ?? [],
+    isLoading: workflowsQuery.isLoading,
+    isFetching: workflowsQuery.isFetching,
+    error: workflowsQuery.error
+      ? getErrorMessage(workflowsQuery.error, "Failed to load workflows")
       : mutationError
         ? getErrorMessage(mutationError, "Operation failed")
         : null,
-
-    // ── Mutation actions ────────────────────────────────────────────────────
-    createWorkflow: (input: CreateEventWorkflowInput) =>
-      createMutation.mutateAsync({ projectId, input }),
-    updateWorkflow: (workflowId: string, input: UpdateEventWorkflowInput) =>
-      updateMutation.mutateAsync({ workflowId, input }),
-    updateWorkflowEnabled: (workflowId: string, enabled: boolean) =>
-      updateEnabledMutation.mutateAsync({ workflowId, enabled }),
-    deleteWorkflow: (workflowId: string) =>
-      deleteMutation.mutateAsync({ workflowId }),
-
-    // ── Mutation flags (derived from TanStack Query, not Zustand) ───────────
+    createWorkflow,
+    updateWorkflow,
+    updateWorkflowEnabled,
+    deleteWorkflow,
     isCreating: createMutation.isPending,
-    /** True while either the full-update or the enabled-toggle mutation is in flight. */
     isUpdating: updateMutation.isPending || updateEnabledMutation.isPending,
     isDeleting: deleteMutation.isPending,
-
-    // ── Cache helpers ───────────────────────────────────────────────────────
     invalidateAll,
     invalidateList,
     invalidateDetail,
-
-    // ── Raw query pass-through ──────────────────────────────────────────────
-    refetch: query.refetch,
+    refetch: workflowsQuery.refetch,
   };
 }

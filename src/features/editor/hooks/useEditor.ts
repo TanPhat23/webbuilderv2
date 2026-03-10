@@ -104,8 +104,9 @@ export const useEditor = (
   );
 
   useEffect(() => {
-    if (!projectPages || projectPages.length === 0) return;
-    redirectToDefaultOrRequestedPage(projectPages);
+    const pages = projectPages as Page[] | undefined;
+    if (!pages || pages.length === 0) return;
+    redirectToDefaultOrRequestedPage(pages);
   }, [projectPages, loadPages, pageId, setCurrentPage, navigate, id]);
 
   useEffect(() => {

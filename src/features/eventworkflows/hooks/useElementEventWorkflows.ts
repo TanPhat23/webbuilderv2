@@ -1,7 +1,10 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { elementEventWorkflowService } from "@/features/eventworkflows";
-import { EventWorkflow } from "@/features/eventworkflows";
+import {
+  getElementEventWorkflowsByElement,
+  getElementEventWorkflowsByPage,
+  type EventWorkflow,
+} from "@/features/eventworkflows";
 import {
   elementEventWorkflowKeys,
   type IElementEventWorkflowConnection,
@@ -17,45 +20,58 @@ import {
   useDisconnectElementEventWorkflow,
 } from "./useElementEventWorkflowMutations";
 
+const fetchPageElementConnections = async (
+  pageId: string,
+): Promise<IElementEventWorkflowConnection[]> =>
+  getElementEventWorkflowsByPage({
+    data: { pageId },
+  });
+
+const fetchElementConnections = async (
+  elementId: string,
+): Promise<IElementEventWorkflowConnection[]> =>
+  getElementEventWorkflowsByElement({
+    data: { elementId },
+  });
+
 export function usePageElementConnections(pageId: string | undefined) {
   const queryClient = useQueryClient();
   const { setPageConnections, setPageLoading } = useElementEventWorkflowStore();
 
-  return useQuery({
+  return useQuery<IElementEventWorkflowConnection[]>({
     queryKey: elementEventWorkflowKeys.byPage(pageId ?? ""),
     queryFn: async () => {
-      setPageLoading(pageId!, true);
-
-      const response =
-        await elementEventWorkflowService.getElementEventWorkflowsByPage(
-          pageId!,
-        );
-
-      const connections = Array.isArray(response)
-        ? (response as IElementEventWorkflowConnection[])
-        : [];
-
-      const grouped = new Map<string, IElementEventWorkflowConnection[]>();
-      for (const conn of connections) {
-        const bucket = grouped.get(conn.elementId) ?? [];
-        bucket.push(conn);
-        grouped.set(conn.elementId, bucket);
+      if (!pageId) {
+        return [];
       }
 
-      grouped.forEach((elementConnections, elementId) => {
+      setPageLoading(pageId, true);
+
+      const connections = await fetchPageElementConnections(pageId);
+      const groupedConnections = new Map<
+        string,
+        IElementEventWorkflowConnection[]
+      >();
+
+      for (const connection of connections) {
+        const existingConnections =
+          groupedConnections.get(connection.elementId) ?? [];
+        existingConnections.push(connection);
+        groupedConnections.set(connection.elementId, existingConnections);
+      }
+
+      groupedConnections.forEach((elementConnections, elementId) => {
         queryClient.setQueryData<IElementEventWorkflowConnection[]>(
           elementEventWorkflowKeys.byElement(elementId),
           elementConnections,
         );
       });
 
-      setPageConnections(pageId!, connections);
+      setPageConnections(pageId, connections);
 
       return connections;
     },
-    enabled: !!pageId,
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+    enabled: pageId !== undefined && pageId.length > 0,
   });
 }
 
@@ -67,30 +83,29 @@ export function useElementConnections(
 
   usePageElementConnections(pageId);
 
-  return useQuery({
+  return useQuery<IElementEventWorkflowConnection[]>({
     queryKey: elementEventWorkflowKeys.byElement(elementId ?? ""),
     queryFn: async () => {
-      if (!elementId) return [];
-      const result =
-        await elementEventWorkflowService.getElementEventWorkflowsByElement(
-          elementId,
-        );
-      return Array.isArray(result)
-        ? (result as IElementEventWorkflowConnection[])
-        : [];
+      if (!elementId) {
+        return [];
+      }
+
+      return fetchElementConnections(elementId);
     },
-    enabled: !!elementId && !pageId,
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+    enabled: elementId !== undefined && elementId.length > 0 && !pageId,
     initialData: pageId
       ? () => {
-          const pageData = queryClient.getQueryData<
+          const pageConnections = queryClient.getQueryData<
             IElementEventWorkflowConnection[]
           >(elementEventWorkflowKeys.byPage(pageId));
 
-          if (!pageData) return undefined;
+          if (!pageConnections) {
+            return undefined;
+          }
 
-          return pageData.filter((conn) => conn.elementId === elementId);
+          return pageConnections.filter(
+            (connection) => connection.elementId === elementId,
+          );
         }
       : undefined,
     initialDataUpdatedAt: pageId
@@ -103,8 +118,8 @@ export function useElementConnections(
 
 export function useElementEventWorkflowActions(elementId: string | undefined) {
   const queryClient = useQueryClient();
-  const query = useElementConnections(elementId);
-  const connections = query.data ?? [];
+  const connectionsQuery = useElementConnections(elementId);
+  const connections = connectionsQuery.data ?? [];
 
   const connectMutation = useConnectElementEventWorkflow();
   const disconnectMutation = useDisconnectElementEventWorkflow();
@@ -133,6 +148,22 @@ export function useElementEventWorkflowActions(elementId: string | undefined) {
     [connections],
   );
 
+  const handleConnect = useCallback(
+    (eventType: string, workflowId: string) =>
+      elementId
+        ? connectMutation.mutateAsync({ elementId, eventType, workflowId })
+        : Promise.reject(new Error("Missing elementId")),
+    [connectMutation, elementId],
+  );
+
+  const handleDisconnect = useCallback(
+    (eventType: string, workflowId: string) =>
+      elementId
+        ? disconnectMutation.mutateAsync({ elementId, eventType, workflowId })
+        : Promise.reject(new Error("Missing elementId")),
+    [disconnectMutation, elementId],
+  );
+
   const invalidateAll = useCallback(
     () =>
       queryClient.invalidateQueries({
@@ -152,10 +183,10 @@ export function useElementEventWorkflowActions(elementId: string | undefined) {
 
   return {
     connections,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    error: query.error
-      ? getErrorMessage(query.error, "Failed to load connections")
+    isLoading: connectionsQuery.isLoading,
+    isFetching: connectionsQuery.isFetching,
+    error: connectionsQuery.error
+      ? getErrorMessage(connectionsQuery.error, "Failed to load connections")
       : mutationError
         ? getErrorMessage(mutationError, "Operation failed")
         : null,
@@ -163,18 +194,12 @@ export function useElementEventWorkflowActions(elementId: string | undefined) {
     isWorkflowConnected,
     getWorkflowConnections,
     isConnectedToEvent,
-    handleConnect: (eventType: string, workflowId: string) =>
-      elementId
-        ? connectMutation.mutateAsync({ elementId, eventType, workflowId })
-        : Promise.reject(new Error("Missing elementId")),
-    handleDisconnect: (eventType: string, workflowId: string) =>
-      elementId
-        ? disconnectMutation.mutateAsync({ elementId, eventType, workflowId })
-        : Promise.reject(new Error("Missing elementId")),
+    handleConnect,
+    handleDisconnect,
     isConnecting: connectMutation.isPending,
     isDisconnecting: disconnectMutation.isPending,
     invalidateAll,
     invalidateElement,
-    refetch: query.refetch,
+    refetch: connectionsQuery.refetch,
   };
 }

@@ -1,4 +1,3 @@
-
 import { RefObject, useEffect, useId, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -31,7 +30,7 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
   toRef,
   curvature = 0,
   reverse = false,
-  duration = Math.random() * 3 + 4,
+  duration = 7,
   delay = 0,
   pathColor = "gray",
   pathWidth = 2,
@@ -91,30 +90,16 @@ export const AnimatedBeam: React.FC<AnimatedBeamProps> = ({
       }
     };
 
-    // Initialize ResizeObserver
-    const resizeObserver = new ResizeObserver((entries) => {
-      // For simplicity, just update path on any resize
-      updatePath();
-    });
+    updatePath();
+
+    const resizeObserver = new ResizeObserver(() => updatePath());
 
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
-    // Call updatePath initially
-    updatePath();
-
-    // Use requestAnimationFrame for smoother updates during scroll/animations
-    let animationFrameId: number;
-    const loop = () => {
-      updatePath();
-      animationFrameId = requestAnimationFrame(loop);
-    };
-    loop();
-
     return () => {
       resizeObserver.disconnect();
-      cancelAnimationFrame(animationFrameId);
     };
   }, [
     containerRef,

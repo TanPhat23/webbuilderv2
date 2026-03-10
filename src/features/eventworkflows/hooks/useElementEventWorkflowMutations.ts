@@ -1,27 +1,42 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { elementEventWorkflowService } from "@/features/eventworkflows";
+import {
+  createElementEventWorkflow,
+  disconnectElementEventWorkflow,
+} from "@/features/eventworkflows";
 import {
   CreateElementEventWorkflowSchema,
   getFirstError,
   validateCreateConnection,
   validateDisconnectConnection,
 } from "@/features/eventworkflows/schema/elementEventWorkflowSchemas";
+import { EventTypeSchema } from "@/features/eventworkflows/schema/eventSchemas";
 import {
   elementEventWorkflowKeys,
   type IElementEventWorkflowConnection,
   useElementEventWorkflowStore,
 } from "@/features/editor";
-import {
-  showErrorToast,
-  showSuccessToast,
-} from "@/utils/errors/errorToast";
+import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
+import { z } from "zod";
 
 type ConnectionVariables = {
   elementId: string;
   eventType: string;
   workflowId: string;
 };
+
+type DisconnectConnectionResult = {
+  elementId: string;
+  connectionId: string;
+};
+
+const getElementConnectionsFromCache = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  elementId: string,
+): IElementEventWorkflowConnection[] =>
+  queryClient.getQueryData<IElementEventWorkflowConnection[]>(
+    elementEventWorkflowKeys.byElement(elementId),
+  ) ?? [];
 
 export const useConnectElementEventWorkflow = () => {
   const queryClient = useQueryClient();
@@ -31,51 +46,54 @@ export const useConnectElementEventWorkflow = () => {
       elementId,
       eventType,
       workflowId,
-    }: ConnectionVariables) => {
+    }: ConnectionVariables): Promise<IElementEventWorkflowConnection> => {
       const validation = validateCreateConnection({
         elementId,
         eventName: eventType,
         workflowId,
       });
+
       if (!validation.success) {
         throw new Error(getFirstError(validation) ?? "Invalid connection data");
       }
 
-      const cached =
-        queryClient.getQueryData<IElementEventWorkflowConnection[]>(
-          elementEventWorkflowKeys.byElement(elementId),
-        ) ?? [];
+      const cachedConnections = getElementConnectionsFromCache(
+        queryClient,
+        elementId,
+      );
 
       if (
-        cached.some(
-          (c) => c.eventName === eventType && c.workflowId === workflowId,
+        cachedConnections.some(
+          (connection) =>
+            connection.eventName === eventType &&
+            connection.workflowId === workflowId,
         )
       ) {
         throw new Error("Workflow already connected to this event");
       }
 
-      const validated = CreateElementEventWorkflowSchema.parse({
+      const validatedConnection = CreateElementEventWorkflowSchema.parse({
         elementId,
         eventName: eventType,
         workflowId,
       });
 
-      return elementEventWorkflowService.createElementEventWorkflow({
-        elementId: validated.elementId,
-        workflowId: validated.workflowId,
-        eventName: validated.eventName,
+      return createElementEventWorkflow({
+        data: {
+          elementId: validatedConnection.elementId,
+          workflowId: validatedConnection.workflowId,
+          eventName: validatedConnection.eventName,
+        },
       });
     },
 
-    onSuccess: (newConnection, { elementId }) => {
-      const conn = newConnection as IElementEventWorkflowConnection;
-
+    onSuccess: (connection, { elementId }) => {
       queryClient.setQueryData<IElementEventWorkflowConnection[]>(
         elementEventWorkflowKeys.byElement(elementId),
-        (old) => [...(old ?? []), conn],
+        (oldConnections) => [...(oldConnections ?? []), connection],
       );
 
-      useElementEventWorkflowStore.getState().addConnection(conn);
+      useElementEventWorkflowStore.getState().addConnection(connection);
       showSuccessToast("Workflow connected successfully!");
     },
 
@@ -106,38 +124,53 @@ export const useDisconnectElementEventWorkflow = () => {
       elementId,
       eventType,
       workflowId,
-    }: ConnectionVariables) => {
+    }: ConnectionVariables): Promise<DisconnectConnectionResult> => {
       const validation = validateDisconnectConnection({
         elementId,
         eventName: eventType,
         workflowId,
       });
+
       if (!validation.success) {
         throw new Error(getFirstError(validation) ?? "Invalid disconnect data");
       }
 
-      const cached =
-        queryClient.getQueryData<IElementEventWorkflowConnection[]>(
-          elementEventWorkflowKeys.byElement(elementId),
-        ) ?? [];
-
-      const connection = cached.find(
-        (c) => c.eventName === eventType && c.workflowId === workflowId,
+      const cachedConnections = getElementConnectionsFromCache(
+        queryClient,
+        elementId,
       );
 
-      if (!connection) throw new Error("Connection not found");
-
-      await elementEventWorkflowService.deleteElementEventWorkflow(
-        connection.id,
+      const connection = cachedConnections.find(
+        (cachedConnection) =>
+          cachedConnection.eventName === eventType &&
+          cachedConnection.workflowId === workflowId,
       );
 
-      return { elementId, connectionId: connection.id };
+      if (!connection) {
+        throw new Error("Connection not found");
+      }
+
+      const result = await disconnectElementEventWorkflow({
+        data: {
+          elementId,
+          eventName: eventType as z.infer<typeof EventTypeSchema>,
+          workflowId,
+        },
+      });
+
+      return {
+        elementId,
+        connectionId: result.connectionId,
+      };
     },
 
     onSuccess: ({ elementId, connectionId }) => {
       queryClient.setQueryData<IElementEventWorkflowConnection[]>(
         elementEventWorkflowKeys.byElement(elementId),
-        (old) => old?.filter((c) => c.id !== connectionId) ?? [],
+        (oldConnections) =>
+          oldConnections?.filter(
+            (connection) => connection.id !== connectionId,
+          ) ?? [],
       );
 
       useElementEventWorkflowStore

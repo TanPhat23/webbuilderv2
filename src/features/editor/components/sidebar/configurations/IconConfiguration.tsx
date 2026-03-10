@@ -1,4 +1,3 @@
-
 import React, { ChangeEvent, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -31,8 +30,8 @@ import {
   Palette,
   Droplets,
 } from "lucide-react";
-import { DynamicIcon, iconNames } from "lucide-react/dynamic";
-import type { IconName } from "lucide-react/dynamic";
+import { DynamicIcon, iconNames } from "lucide-react/dynamic.mjs";
+import type { IconName } from "lucide-react/dynamic.mjs";
 
 /* ─── Constants ─── */
 

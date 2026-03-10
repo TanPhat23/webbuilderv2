@@ -131,16 +131,29 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.emitStatus("disconnected");
     });
 
-    this.connection.on("error", (err: Error) => {
+    this.connection.on("error", (...args: unknown[]) => {
+      const [err] = args;
+      const message = err instanceof Error ? err.message : "WebSocket error";
+
       this.emitStatus("error");
       this.onError?.({
         type: "error",
-        message: err.message || "WebSocket error",
+        message,
         code: "PROCESS_ERROR",
       });
     });
 
-    this.connection.on("message", (data: string) => {
+    this.connection.on("message", (...args: unknown[]) => {
+      const [data] = args;
+
+      if (typeof data !== "string") {
+        console.error(
+          "[CustomYjsProviderV2] Received non-string message payload:",
+          data,
+        );
+        return;
+      }
+
       try {
         const envelope = JSON.parse(data) as WSEnvelope<unknown>;
         this.messageHandler.handle(envelope);
@@ -149,8 +162,18 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       }
     });
 
-    this.awarenessController.on("change", (data) => {
-      this.onSyncUsers?.(data.users);
+    this.awarenessController.on("change", (...args: unknown[]) => {
+      const [data] = args;
+      const users =
+        data &&
+        typeof data === "object" &&
+        "users" in data &&
+        data.users &&
+        typeof data.users === "object"
+          ? (data.users as Record<string, UserInfo>)
+          : {};
+
+      this.onSyncUsers?.(users);
     });
   }
 

@@ -11,7 +11,7 @@ export interface WorkflowNodeData {
   description?: string;
   icon?: string;
   type: NodeType;
-  config?: Record<string, unknown>;
+  config?: Record<string, {}>;
   onSelect?: () => void;
   onConfigure?: (nodeId: string) => void;
 }

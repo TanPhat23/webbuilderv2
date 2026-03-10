@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { cmsService } from "@/features/cms";
-import { ContentItem, ContentType } from "@/features/cms";
+import {
+  getContentTypes,
+  getPublicContent,
+  getPublicContentItem,
+} from "@/features/cms";
+import type { ContentItem, ContentType } from "@/features/cms";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 
 export interface UseCMSContentOptions {
@@ -20,6 +24,8 @@ export interface UseCMSContentResult {
   refetch: () => void;
 }
 
+type ContentItemRecord = ContentItem & Record<string, unknown>;
+
 export const useCMSContent = (
   options: UseCMSContentOptions = {},
 ): UseCMSContentResult => {
@@ -31,27 +37,30 @@ export const useCMSContent = (
     isFetching,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<ContentItem[], Error>({
     queryKey: ["cms-public-content", contentTypeId, limit, sortBy, sortOrder],
     queryFn: () =>
-      cmsService.getPublicContent({
-        contentTypeId,
-        limit,
-        sortBy,
-        sortOrder,
+      getPublicContent({
+        data: {
+          contentTypeId,
+          limit,
+          sortBy,
+          sortOrder,
+        },
       }),
-    enabled: enabled && !!contentTypeId,
+    enabled: enabled && Boolean(contentTypeId),
     ...QUERY_CONFIG.DEFAULT,
   });
-  const contentItems = contentItemsData ?? [];
 
   return {
-    contentItems,
+    contentItems: contentItemsData ?? [],
     contentTypes: [],
     isLoading,
     isFetching,
     error,
-    refetch,
+    refetch: () => {
+      void refetch();
+    },
   };
 };
 
@@ -69,94 +78,85 @@ export const useCMSContentItem = (
 ): UseCMSContentItemResult => {
   const {
     data: contentItem,
+    isLoading,
     isFetching,
     error,
     refetch,
-  } = useQuery({
+  } = useQuery<ContentItem, Error>({
     queryKey: ["cms-public-content-item", contentTypeId, slug],
-    queryFn: () => cmsService.getPublicContentItem(contentTypeId, slug),
-    enabled: !!contentTypeId && !!slug,
+    queryFn: () =>
+      getPublicContentItem({
+        data: { contentTypeId, slug },
+      }),
+    enabled: Boolean(contentTypeId) && Boolean(slug),
     ...QUERY_CONFIG.DEFAULT,
   });
 
   return {
     contentItem,
-    isLoading: isFetching,
+    isLoading,
     isFetching,
     error,
-    refetch,
+    refetch: () => {
+      void refetch();
+    },
   };
 };
 
 /**
  * Helper function to get a specific field value from a content item.
  * Handles both direct properties and fieldValues structure.
- *
- * @param contentItem - The content item to extract the field from.
- * @param fieldName   - The name of the field to retrieve.
- * @returns The field value, or `undefined` if not found.
  */
 export const getFieldValue = (
   contentItem: ContentItem,
   fieldName: string,
 ): string | undefined => {
-  // Check direct properties first
-  if (fieldName in contentItem) {
-    const value = (contentItem as unknown as Record<string, unknown>)[
-      fieldName
-    ];
+  const record = contentItem as ContentItemRecord;
+
+  if (fieldName in record) {
+    const value = record[fieldName];
     return value != null ? String(value) : undefined;
   }
 
-  // Fall back to fieldValues array
-  if (contentItem.fieldValues) {
-    const fieldValue = contentItem.fieldValues.find(
-      (fv) => fv.field?.name === fieldName,
-    );
-    return fieldValue?.value;
-  }
+  const fieldValue = contentItem.fieldValues?.find(
+    (entry) => entry.field?.name === fieldName,
+  );
 
-  return undefined;
+  return fieldValue?.value;
 };
 
 /**
  * Helper function to get all field values as a simple object.
  * Useful for spreading into components or easy access.
- *
- * @param contentItem - The content item to extract fields from.
- * @returns A flat record of field names to their values.
  */
 export const getFieldValues = (
   contentItem: ContentItem,
 ): Record<string, unknown> => {
+  const record = contentItem as ContentItemRecord;
   const values: Record<string, unknown> = {};
 
-  // Add direct properties
-  for (const key of Object.keys(contentItem)) {
+  for (const key of Object.keys(record)) {
     if (key !== "fieldValues") {
-      values[key] = (contentItem as unknown as Record<string, unknown>)[key];
+      values[key] = record[key];
     }
   }
 
-  // Add field values
-  if (contentItem.fieldValues) {
-    contentItem.fieldValues.forEach((fv) => {
-      if (fv.field?.name) {
-        values[fv.field.name] = fv.value;
-      }
-    });
-  }
+  contentItem.fieldValues?.forEach((entry) => {
+    if (entry.field?.name) {
+      values[entry.field.name] = entry.value;
+    }
+  });
 
   return values;
 };
 
 /**
- * Hook for fetching content types (useful for dynamic content type selection).
+ * Hook for fetching content types.
  */
 export const useCMSContentTypes = () => {
-  return useQuery<ContentType[]>({
+  return useQuery<ContentType[], Error>({
     queryKey: ["cms-content-types"],
-    queryFn: () => cmsService.getContentTypes(),
+    queryFn: () => getContentTypes(),
     ...QUERY_CONFIG.LONG,
   });
 };

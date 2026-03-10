@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,14 +52,14 @@ export const WorkflowCreator = ({
 
   const onSubmit = async (data: CreateEventWorkflowFormData) => {
     try {
-      const result = await createWorkflowMutation.mutateAsync({
+      const result = (await createWorkflowMutation.mutateAsync({
         projectId,
         input: {
           name: data.name,
           description: data.description,
           canvasData: undefined,
         },
-      });
+      })) as { id: string };
 
       toast.success("Workflow created! Now design your workflow visually.");
       form.reset();

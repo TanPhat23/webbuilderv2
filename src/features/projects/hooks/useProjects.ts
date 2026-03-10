@@ -7,10 +7,14 @@ import {
   createProject,
   updateProject,
   deleteProject,
-} from "@/features/projects/api/project";
+} from "@/features/projects/api/project.api";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
-import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
-import { getErrorMessage, onMutationError } from "@/hooks/utils/mutationUtils";
+import { showSuccessToast } from "@/utils/errors/errorToast";
+import { onMutationError } from "@/hooks/utils/mutationUtils";
+import type {
+  CreateProjectInput,
+  ProjectUpdateFields,
+} from "../schema/project";
 
 export const projectKeys = {
   all: ["projects"] as const,
@@ -33,7 +37,7 @@ export function useUserProjects() {
 }
 
 export function useProject(projectId: string | null) {
-  return useQuery({
+  return useQuery<Project>({
     queryKey: projectKeys.detail(projectId || ""),
     queryFn: () => getProjectById({ data: { projectId: projectId! } }),
     enabled: !!projectId,
@@ -53,8 +57,13 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (project: Pick<Project, "id" | "name" | "description">) =>
-      createProject({ data: project }),
+    mutationFn: (project: CreateProjectInput) =>
+      createProject({
+        data: {
+          ...project,
+          description: project.description ?? undefined,
+        },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project created successfully!");
@@ -67,61 +76,19 @@ export function useUpdateProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, updates }: { projectId: string; updates: Partial<Project> }) =>
-      updateProject({ data: { projectId, updates } }),
-    onMutate: async ({ projectId, updates }) => {
-      await queryClient.cancelQueries({ queryKey: projectKeys.detail(projectId) });
-      await queryClient.cancelQueries({ queryKey: projectKeys.userProjects() });
-
-      const previousProject = queryClient.getQueryData<Project>(
-        projectKeys.detail(projectId),
-      );
-      const previousProjects = queryClient.getQueryData<Project[]>(
-        projectKeys.userProjects(),
-      );
-
-      if (previousProject) {
-        queryClient.setQueryData<Project>(projectKeys.detail(projectId), {
-          ...previousProject,
-          ...updates,
-        });
-      }
-
-      if (previousProjects) {
-        queryClient.setQueryData<Project[]>(
-          projectKeys.userProjects(),
-          previousProjects.map((p) =>
-            p.id === projectId ? { ...p, ...updates } : p,
-          ),
-        );
-      }
-
-      return { previousProject, previousProjects };
-    },
+    mutationFn: ({
+      projectId,
+      updates,
+    }: {
+      projectId: string;
+      updates: ProjectUpdateFields;
+    }) => updateProject({ data: { projectId, updates } }),
     onSuccess: (data, { projectId }) => {
       queryClient.setQueryData(projectKeys.detail(projectId), data);
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project updated successfully!");
     },
-    onError: (error, { projectId }, context) => {
-      if (context?.previousProject) {
-        queryClient.setQueryData(
-          projectKeys.detail(projectId),
-          context.previousProject,
-        );
-      }
-      if (context?.previousProjects) {
-        queryClient.setQueryData(
-          projectKeys.userProjects(),
-          context.previousProjects,
-        );
-      }
-      showErrorToast(getErrorMessage(error, "Failed to update project"));
-    },
-    onSettled: (_, __, { projectId }) => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
-    },
+    onError: onMutationError("Failed to update project"),
   });
 }
 
@@ -130,34 +97,11 @@ export function useDeleteProject() {
 
   return useMutation({
     mutationFn: (projectId: string) => deleteProject({ data: { projectId } }),
-    onMutate: async (projectId) => {
-      await queryClient.cancelQueries({ queryKey: projectKeys.userProjects() });
-
-      const previousProjects = queryClient.getQueryData<Project[]>(
-        projectKeys.userProjects(),
-      );
-
-      queryClient.setQueryData<Project[]>(projectKeys.userProjects(), (old) =>
-        old ? old.filter((p) => p.id !== projectId) : [],
-      );
-
-      return { previousProjects };
-    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project deleted successfully!");
     },
-    onError: (error, _projectId, context) => {
-      if (context?.previousProjects) {
-        queryClient.setQueryData(
-          projectKeys.userProjects(),
-          context.previousProjects,
-        );
-      }
-      showErrorToast(getErrorMessage(error, "Failed to delete project"));
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
-    },
+    onError: onMutationError("Failed to delete project"),
   });
 }
 
@@ -165,62 +109,23 @@ export function usePublishProject() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ projectId, publish }: { projectId: string; publish: boolean }) =>
+    mutationFn: ({
+      projectId,
+      publish,
+    }: {
+      projectId: string;
+      publish: boolean;
+    }) =>
       updateProject({ data: { projectId, updates: { published: publish } } }),
-    onMutate: async ({ projectId, publish }) => {
-      await queryClient.cancelQueries({ queryKey: projectKeys.detail(projectId) });
-      await queryClient.cancelQueries({ queryKey: projectKeys.userProjects() });
-
-      const previousProject = queryClient.getQueryData<Project>(
-        projectKeys.detail(projectId),
-      );
-      const previousProjects = queryClient.getQueryData<Project[]>(
-        projectKeys.userProjects(),
-      );
-
-      if (previousProject) {
-        queryClient.setQueryData<Project>(projectKeys.detail(projectId), {
-          ...previousProject,
-          published: publish,
-        });
-      }
-
-      if (previousProjects) {
-        queryClient.setQueryData<Project[]>(
-          projectKeys.userProjects(),
-          previousProjects.map((p) =>
-            p.id === projectId ? { ...p, published: publish } : p,
-          ),
-        );
-      }
-
-      return { previousProject, previousProjects };
-    },
     onSuccess: (data, { projectId, publish }) => {
       queryClient.setQueryData(projectKeys.detail(projectId), data);
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast(
-        publish ? "Project published successfully!" : "Project unpublished successfully!",
+        publish
+          ? "Project published successfully!"
+          : "Project unpublished successfully!",
       );
     },
-    onError: (error, { projectId }, context) => {
-      if (context?.previousProject) {
-        queryClient.setQueryData(
-          projectKeys.detail(projectId),
-          context.previousProject,
-        );
-      }
-      if (context?.previousProjects) {
-        queryClient.setQueryData(
-          projectKeys.userProjects(),
-          context.previousProjects,
-        );
-      }
-      showErrorToast(getErrorMessage(error, "Failed to update project"));
-    },
-    onSettled: (_, __, { projectId }) => {
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
-      queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
-    },
+    onError: onMutationError("Failed to update project"),
   });
 }

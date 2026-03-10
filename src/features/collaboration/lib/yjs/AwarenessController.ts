@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from "./EventEmitter";
 import * as Y from "yjs";
 import { Awareness } from "y-protocols/awareness";
 import type {

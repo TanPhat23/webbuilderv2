@@ -77,8 +77,6 @@ export const projectDAL = {
         },
       });
 
-      // Every project must have at least one page.  Creating it here keeps the
-      // two records atomic — if page creation fails the project is rolled back.
       await tx.page.create({
         data: {
           Id: crypto.randomUUID(),
