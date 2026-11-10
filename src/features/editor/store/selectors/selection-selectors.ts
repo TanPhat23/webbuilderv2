@@ -21,18 +21,6 @@ import type { EditorElement } from "@/types/global.type";
 export const useSelectedElement = (): EditorElement | undefined =>
   useSelectionStore((s) => s.selectedElement);
 
-/** Select only the element currently being dragged. */
-export const useDraggingElement = (): EditorElement | undefined =>
-  useSelectionStore((s) => s.draggingElement);
-
-/** Select only the element currently being dragged over. */
-export const useDraggedOverElement = (): EditorElement | undefined =>
-  useSelectionStore((s) => s.draggedOverElement);
-
-/** Select only the element currently being hovered. */
-export const useHoveredElement = (): EditorElement | undefined =>
-  useSelectionStore((s) => s.hoveredElement);
-
 // ─── Individual Action Selectors ─────────────────────────────────────
 // Actions are stable references in Zustand — they never change after store
 // creation, so selecting them individually will never cause a re-render.
@@ -41,31 +29,9 @@ export const useHoveredElement = (): EditorElement | undefined =>
 export const useSetSelectedElement = () =>
   useSelectionStore((s) => s.setSelectedElement);
 
-/** Select only the setDraggingElement action. */
-export const useSetDraggingElement = () =>
-  useSelectionStore((s) => s.setDraggingElement);
-
 /** Select only the setDraggedOverElement action. */
 export const useSetDraggedOverElement = () =>
   useSelectionStore((s) => s.setDraggedOverElement);
-
-/** Select only the setHoveredElement action. */
-export const useSetHoveredElement = () =>
-  useSelectionStore((s) => s.setHoveredElement);
-
-// ─── Combined State Selectors ────────────────────────────────────────
-
-/**
- * Select selectedElement + hoveredElement together (shallow compared).
- * Commonly used in sidebar configuration panels and element tree items.
- */
-export const useSelectionState = () =>
-  useSelectionStore(
-    useShallow((s) => ({
-      selectedElement: s.selectedElement,
-      hoveredElement: s.hoveredElement,
-    })),
-  );
 
 /**
  * Select all drag-related state (shallow compared).
@@ -89,19 +55,6 @@ export const useDragAndSelectionState = () =>
       selectedElement: s.selectedElement,
       draggedOverElement: s.draggedOverElement,
       hoveredElement: s.hoveredElement,
-    })),
-  );
-
-// ─── Combined Action Selectors ───────────────────────────────────────
-
-/** Select all selection action setters (no state, no re-renders). */
-export const useSelectionActions = () =>
-  useSelectionStore(
-    useShallow((s) => ({
-      setSelectedElement: s.setSelectedElement,
-      setDraggingElement: s.setDraggingElement,
-      setDraggedOverElement: s.setDraggedOverElement,
-      setHoveredElement: s.setHoveredElement,
     })),
   );
 
