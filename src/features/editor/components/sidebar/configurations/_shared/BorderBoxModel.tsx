@@ -1,3 +1,4 @@
+import { parseNumericDisplay } from "./parseNumericDisplay";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -53,12 +54,7 @@ interface BorderBoxModelProps {
   className?: string;
 }
 
-function parseNumericValue(value: string | number | undefined): string {
-  if (value === undefined || value === null || value === "") return "0";
-  const str = String(value);
-  const num = parseInt(str, 10);
-  return isNaN(num) ? "0" : String(num);
-}
+
 
 const BORDER_STYLES: BorderStyle[] = [
   "solid",
@@ -99,7 +95,7 @@ function InlineNumber({
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayed = parseNumericValue(value);
+  const displayed = parseNumericDisplay(value);
 
   const startEditing = useCallback(() => {
     setDraft(displayed);
@@ -200,7 +196,7 @@ function CornerRadiusInput({
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayed = parseNumericValue(value);
+  const displayed = parseNumericDisplay(value);
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -300,7 +296,7 @@ function SideWidth({
   onStyleCycle,
 }: SideWidthProps) {
   const isHorizontal = side === "top" || side === "bottom";
-  const displayWidth = parseNumericValue(width);
+  const displayWidth = parseNumericDisplay(width);
   const currentStyle = style ?? "solid";
   const isNone = currentStyle === "none" || displayWidth === "0";
 
@@ -542,7 +538,7 @@ export function BorderBoxModel({
   const [linked, setLinked] = useState(true);
 
   // Derive a "representative" width from the top side for the linked control
-  const linkedWidth = parseNumericValue(sides.top.width);
+  const linkedWidth = parseNumericDisplay(sides.top.width);
   const currentStyle = sides.top.style ?? "solid";
 
   /** Cycle to the next border style */
@@ -660,7 +656,7 @@ export function BorderBoxModel({
                 currentStyle === "none"
                   ? "hsl(var(--border) / 0.3)"
                   : previewColor,
-              borderRadius: `${parseNumericValue(radii.topLeft)}px ${parseNumericValue(radii.topRight)}px ${parseNumericValue(radii.bottomRight)}px ${parseNumericValue(radii.bottomLeft)}px`,
+              borderRadius: `${parseNumericDisplay(radii.topLeft)}px ${parseNumericDisplay(radii.topRight)}px ${parseNumericDisplay(radii.bottomRight)}px ${parseNumericDisplay(radii.bottomLeft)}px`,
             }}
           >
             <span className="text-[8px] text-muted-foreground/30 uppercase tracking-wider font-medium select-none">

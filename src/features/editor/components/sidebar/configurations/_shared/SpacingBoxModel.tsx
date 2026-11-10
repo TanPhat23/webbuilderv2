@@ -1,3 +1,4 @@
+import { parseNumericDisplay } from "./parseNumericDisplay";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -32,13 +33,7 @@ interface InlineValueProps {
   ariaLabel?: string;
 }
 
-function parseDisplayValue(value: string | number | undefined): string {
-  if (value === undefined || value === null || value === "") return "0";
-  const str = String(value);
-  const num = parseInt(str, 10);
-  if (isNaN(num)) return "0";
-  return String(num);
-}
+
 
 function InlineValue({
   value,
@@ -51,7 +46,7 @@ function InlineValue({
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayed = parseDisplayValue(value);
+  const displayed = parseNumericDisplay(value);
 
   const startEditing = useCallback(() => {
     setDraft(displayed);
