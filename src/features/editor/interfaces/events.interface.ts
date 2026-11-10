@@ -4,44 +4,10 @@
  */
 
 
-export type EventType =
-  | "onClick"
-  | "onDoubleClick"
-  | "onMouseEnter"
-  | "onMouseLeave"
-  | "onMouseDown"
-  | "onMouseUp"
-  | "onFocus"
-  | "onBlur"
-  | "onChange"
-  | "onSubmit"
-  | "onKeyDown"
-  | "onKeyUp"
-  | "onScroll"
-  | "onLoad"
-  | "onError";
+import type { EventTypeEvent, ActionTypeEvent } from "../constants/events";
 
-
-export type ActionType =
-  | "navigate"
-  | "showElement"
-  | "hideElement"
-  | "toggleElement"
-  | "apiCall"
-  | "setData"
-  | "customCode"
-  | "scrollTo"
-  | "modal"
-  | "submitForm"
-  | "resetForm"
-  | "playAnimation"
-  | "showNotification"
-  | "copyToClipboard"
-  | "downloadFile"
-  | "toggleClass"
-  | "addClass"
-  | "removeClass";
-
+export type EventType = EventTypeEvent;
+export type ActionType = ActionTypeEvent;
 
 export interface NavigateActionConfig {
   type: "navigate";
