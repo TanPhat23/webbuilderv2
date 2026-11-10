@@ -46,7 +46,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   );
 
   const content = isLoading ? (
-    <ElementLoading count={6} variant="mixed" />
+    <ElementLoading count={6} />
   ) : (
     React.cloneElement(children, { iframeRef } as React.ComponentProps<any>)
   );
@@ -67,7 +67,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
           style={{ width: "100%", height: "100%", border: "none" }}
         />
         {!mountNode && isLoading && (
-          <ElementLoading count={6} variant="mixed" />
+          <ElementLoading count={6} />
         )}
         {mountNode && createPortal(content, mountNode)}
       </div>
