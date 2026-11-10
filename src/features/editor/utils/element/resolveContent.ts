@@ -1,4 +1,4 @@
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { replacePlaceholders } from "./replacePlaceholders";
 
 interface ContentElement {
   content?: unknown;
@@ -6,19 +6,19 @@ interface ContentElement {
 
 export function resolveContent(
   element: ContentElement,
-  data: Record<string, unknown> | undefined,
+  data: unknown,
   isEditing: boolean,
 ): string {
   let content =
     (typeof data === "string" ? data : "") ||
-    (typeof data === "object" && data && typeof data.content === "string"
-      ? data.content
+    (typeof data === "object" && data && typeof (data as Record<string, unknown>).content === "string"
+      ? (data as Record<string, string>).content
       : "") ||
     (typeof element.content === "string" ? element.content : "") ||
     "";
 
   if (typeof element.content === "string" && data && typeof data === "object") {
-    content = elementHelper.replacePlaceholders(element.content, data);
+    content = replacePlaceholders(element.content, data);
   }
 
   return isEditing ? (element.content as string) ?? "" : content;
