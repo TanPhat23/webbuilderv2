@@ -4,47 +4,11 @@
  */
 
 import { z } from "zod";
+import { ACTION_TYPES, EVENT_TYPES } from "@/features/editor/constants/events";
 
 
-export const EventTypeSchema = z.enum([
-  "onClick",
-  "onDoubleClick",
-  "onMouseEnter",
-  "onMouseLeave",
-  "onMouseDown",
-  "onMouseUp",
-  "onFocus",
-  "onBlur",
-  "onChange",
-  "onSubmit",
-  "onKeyDown",
-  "onKeyUp",
-  "onScroll",
-  "onLoad",
-  "onError",
-]);
-
-export const ActionTypeSchema = z.enum([
-  "navigate",
-  "showElement",
-  "hideElement",
-  "toggleElement",
-  "apiCall",
-  "setData",
-  "customCode",
-  "scrollTo",
-  "modal",
-  "submitForm",
-  "resetForm",
-  "playAnimation",
-  "showNotification",
-  "copyToClipboard",
-  "downloadFile",
-  "toggleClass",
-  "addClass",
-  "removeClass",
-]);
-
+export const EventTypeSchema = z.enum(Object.values(EVENT_TYPES));
+export const ActionTypeSchema = z.enum(Object.values(ACTION_TYPES));
 
 export const NavigateActionConfigSchema = z.object({
   type: z.literal("navigate"),
