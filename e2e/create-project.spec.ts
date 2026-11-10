@@ -1,3 +1,19 @@
+/**
+ * @file e2e/create-project.spec.ts
+ *
+ * Requirements & Constraints:
+ * 1. Authenticated backend requirement:
+ *    - These tests interact with protected routes (/dashboard) and server actions that require
+ *      an active, authenticated Clerk session and a reachable backend/database instance.
+ * 2. Need for test account isolation:
+ *    - Dedicated test accounts or isolated user contexts must be used to avoid test cross-talk,
+ *      concurrency races, and cluttering production or shared user workspaces.
+ * 3. Caution regarding project creation cleanup:
+ *    - Notice that dialog dismissal tests only cancel the creation modal without persisting records,
+ *      whereas successful creation tests generate permanent database records. Proper teardown or
+ *      periodic cleanup of test projects is required to prevent database bloat and query slowdown.
+ */
+
 import { test, expect } from '@playwright/test';
 
 test.describe('Create Project', () => {
