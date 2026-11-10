@@ -70,11 +70,10 @@ export interface UseElementDragHandlersReturn {
   handleDragStart: (e: React.DragEvent, element: EditorElement) => void;
   handleDragEnd: () => void;
   handleDrop: (e: React.DragEvent, element: EditorElement) => void;
-  handleReorder: (newOrder: EditorElement[]) => void;
 }
 
 /**
- * Extracts drag/drop and reorder logic from the ElementLoader component so it
+ * Extracts drag/drop logic from the ElementLoader component so it
  * can be easily tested and composed.
  */
 export function useElementDragHandlers({
@@ -266,27 +265,6 @@ export function useElementDragHandlers({
     ],
   );
 
-  const handleReorder = useCallback(
-    (newOrder: EditorElement[]) => {
-      if (!canDrag) return;
-
-      const currentIds = items?.map((e) => e.id) || [];
-      const newIds = newOrder.map((e) => e.id);
-
-      // Find first mismatch and swap the corresponding elements in the store.
-      for (let i = 0; i < currentIds.length; i++) {
-        if (currentIds[i] !== newIds[i]) {
-          const originalIndex = newIds.indexOf(currentIds[i]);
-          if (originalIndex !== -1 && originalIndex !== i) {
-            swapElement(currentIds[i], newIds[i]);
-            break;
-          }
-        }
-      }
-    },
-    [canDrag, items, swapElement],
-  );
-
   return {
     items,
     draggedOverElement,
@@ -300,8 +278,7 @@ export function useElementDragHandlers({
     handleDragStart,
     handleDragEnd,
     handleDrop,
-    handleReorder,
-  };
+    };
 }
 
 export type UseElementDragHandlers = UseElementDragHandlersReturn;

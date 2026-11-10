@@ -65,7 +65,7 @@ export interface EditorFlagsProviderProps extends EditorFlags {
  * and the iframe ref) to all descendants via context.
  *
  * Wrap this around the element tree that needs access to these flags — typically
- * at the `ElementLoader` level so that `ElementItem`, `ElementReorderList`,
+ * at the `ElementLoader` level so that `ElementItem`,
  * `ResizeHandler`, and `EditorContextMenu` can all consume the values without
  * explicit prop drilling.
  *
