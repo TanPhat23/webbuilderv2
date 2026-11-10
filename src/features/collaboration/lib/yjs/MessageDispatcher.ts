@@ -216,12 +216,7 @@ export class MessageDispatcher extends EventEmitter {
     return queue;
   }
 
-  /**
-   * Checks if there are pending messages in the offline queue.
-   */
-  public hasQueuedMessages(): boolean {
-    return this.messageQueue.length > 0;
-  }
+
 
   // Cleanup
 

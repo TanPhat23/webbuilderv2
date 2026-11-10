@@ -104,12 +104,7 @@ export class MessageSender extends EventEmitter {
     }
   }
 
-  /**
-   * Returns whether there are queued messages.
-   */
-  public hasQueuedMessages(): boolean {
-    return this.dispatcher.hasQueuedMessages();
-  }
+
 
   /**
    * Clean up listeners and resources.

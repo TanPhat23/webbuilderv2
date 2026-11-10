@@ -5,17 +5,14 @@ import { MessageSender } from "./MessageSender";
 import { AwarenessController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
 import { ElementOperations } from "./ElementOperations";
-import type { Page } from "@/features/pages";
 import type {
   ElementOperationResult,
-  PageOperationResult,
   YjsProviderV2Options,
   UserInfo,
   UpdateType,
   StatusListener,
   SyncedListener,
   EventType,
-  ConflictMessage,
   ErrorMessage,
   WSEnvelope,
   PresenceBroadcastPayload,
@@ -44,7 +41,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private readonly userName: string;
 
   private readonly onSyncUsers?: (users: Record<string, UserInfo>) => void;
-  private readonly onConflict?: (conflict: ConflictMessage) => void;
   private readonly onError?: (error: ErrorMessage) => void;
   private readonly onPresence?: (data: PresenceBroadcastPayload) => void;
 
@@ -59,7 +55,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     this.userId = options.userId;
     this.userName = options.userName ?? options.userId;
     this.onSyncUsers = options.onSyncUsers;
-    this.onConflict = options.onConflict;
     this.onError = options.onError;
     this.onPresence = options.onPresence;
 
@@ -213,26 +208,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     return this.elementOps.moveElement(elementId, newParentId, newPosition);
   }
 
-  // Page operations (REST — WS not implemented)
-
-  public async createPage(_page: Page): Promise<PageOperationResult> {
-    console.warn("[CustomYjsProviderV2] createPage — use REST API");
-    return { operationType: "create", page: _page };
-  }
-
-  public async updatePage(
-    pageId: string,
-    _updates: Partial<Page>,
-  ): Promise<PageOperationResult> {
-    console.warn("[CustomYjsProviderV2] updatePage — use REST API");
-    return { operationType: "update", pageId };
-  }
-
-  public async deletePage(pageId: string): Promise<PageOperationResult> {
-    console.warn("[CustomYjsProviderV2] deletePage — use REST API");
-    return { operationType: "delete", deletedPageId: pageId };
-  }
-
   // Presence
 
   public sendPresence(
@@ -256,17 +231,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         elementId:
           elementId ?? this.awarenessController.getLocalSelectedElement(),
       } satisfies import("@/features/collaboration").PresencePayload,
-      { userId: this.userId },
-    );
-    this.sender.sendOrQueue(envelope);
-  }
-
-  public requestSync(): void {
-    const envelope = this.dispatcher.createEnvelope(
-      "sync:page",
-      this.projectId,
-      this.pageId,
-      {},
       { userId: this.userId },
     );
     this.sender.sendOrQueue(envelope);

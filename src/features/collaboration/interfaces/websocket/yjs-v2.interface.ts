@@ -195,14 +195,8 @@ export interface CustomYjsProviderV2 {
     cursorY: number,
     elementId?: string | null,
   ): void;
-  requestSync(): void;
 
-  createPage(page: Page): Promise<PageOperationResult>;
-  updatePage(
-    pageId: string,
-    updates: Partial<Page>,
-  ): Promise<PageOperationResult>;
-  deletePage(pageId: string): Promise<PageOperationResult>;
+
 }
 
 export interface YjsProviderV2Options {
@@ -214,7 +208,6 @@ export interface YjsProviderV2Options {
   getToken: () => Promise<string | null>;
   doc: Y.Doc;
   onSyncUsers?: (users: Record<string, UserInfo>) => void;
-  onConflict?: (conflict: ConflictMessage) => void;
   onError?: (error: ErrorMessage) => void;
   onPresence?: (data: PresenceBroadcastPayload) => void;
 }
@@ -235,7 +228,6 @@ export interface UseYjsCollabV2Options {
   enabled?: boolean;
   onSync?: () => void;
   onError?: (error: Error) => void;
-  onConflict?: (conflict: ConflictMessage) => void;
   onDisconnect?: () => void;
   onReconnect?: () => void;
   debounceMs?: number;
