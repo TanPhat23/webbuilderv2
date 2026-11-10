@@ -15,25 +15,3 @@ export interface CustomElement {
   createdAt: string;
   updatedAt: string;
 }
-
-export interface CreateCustomElementRequest {
-  name: string;
-  description?: string;
-  category?: string;
-  icon?: string;
-  thumbnail?: string;
-  structure: ElementTemplate;
-  tags?: string;
-  isPublic?: boolean;
-}
-
-export interface UpdateCustomElementRequest {
-  name?: string;
-  description?: string;
-  category?: string;
-  icon?: string;
-  thumbnail?: string;
-  structure?: ElementTemplate;
-  tags?: string;
-  isPublic?: boolean;
-}

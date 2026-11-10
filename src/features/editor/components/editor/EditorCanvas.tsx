@@ -3,7 +3,7 @@ import { MousePointer } from "lucide-react";
 import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/features/editor/components/ElementLoader";
 import { Button } from "@/components/ui/button";
-import { KeyboardEvent as KeyboardEventClass } from "@/features/editor/utils/element/keyBoardEvents";
+import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
 import { useCollaborationCursors } from "@/features/editor";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 
@@ -40,7 +40,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
-  const keyboardEventRef = useRef(new KeyboardEventClass());
+  const keyboardEventRef = useRef(new ElementKeyboardActions());
   const { remoteUsers, users } = useCollaborationCursors();
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
 

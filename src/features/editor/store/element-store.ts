@@ -25,7 +25,7 @@ export type CollaborativeData =
  *
  * @example
  * ```ts
- * import { useElements, useUpdateElement } from "@/globalstore/selectors";
+ * import { useElements, useUpdateElement } from "@/features/editor";
  * const elements = useElements();
  * const updateElement = useUpdateElement();
  *

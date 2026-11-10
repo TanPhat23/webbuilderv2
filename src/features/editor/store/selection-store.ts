@@ -12,7 +12,7 @@ import { EditorElement } from "@/types/global.type";
  * @example
  * ```ts
  * // ✅ Preferred — use a targeted selector
- * import { useSelectedElement } from "@/globalstore/selectors";
+ * import { useSelectedElement } from "@/features/editor";
  * const selected = useSelectedElement();
  *
  * // ⚠️ Full store — causes re-renders on ANY selection change

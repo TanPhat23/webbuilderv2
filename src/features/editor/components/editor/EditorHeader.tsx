@@ -24,7 +24,7 @@ import {
 import CollaborationButton from "./CollaborationButton";
 import CollaboratorIndicator from "./CollaboratorIndicator";
 import { useEditorContext } from "@/providers/editorprovider";
-import EventModeToggle from "../eventmode/EventModeToggle";
+import EventModeToggle from "./EventModeToggle";
 import { PageNavigationCommand } from "./PageNavigationCommand";
 import { useElementCommentStore } from "@/features/editor";
 import { useProjectStore } from "@/features/editor";

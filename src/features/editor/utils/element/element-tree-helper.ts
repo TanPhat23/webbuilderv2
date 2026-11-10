@@ -9,7 +9,7 @@ import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
 } from "@/features/editor/constants/elements";
-import { ElementSchema } from "../../schema/element";
+import { ElementSchema } from "./elementSchema";
 
 const asContainer = (el: EditorElement): ContainerElement =>
   el as unknown as ContainerElement;

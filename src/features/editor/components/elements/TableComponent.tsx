@@ -28,6 +28,7 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
   const striped = settings.striped ?? false;
   const hoverable = settings.hoverable ?? true;
   const compact = settings.compact ?? false;
+  const safeElementId = element.id.replace(/[^a-zA-Z0-9_-]/g, "");
   const columns: TableColumnDefinition[] = settings.columns ?? [];
 
   const cellPadding = compact ? "6px 10px" : "10px 16px";
@@ -155,12 +156,12 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
 
       {(striped || hoverable) && (
         <style>{`
-          [data-element-id="${element.id}"] tbody tr:nth-child(even) {
+          [data-element-id="${safeElementId}"] tbody tr:nth-child(even) {
             ${striped ? "background-color: var(--bg-table-stripe, rgba(248,250,252,0.5));" : ""}
           }
           ${
             hoverable
-              ? `[data-element-id="${element.id}"] tbody tr:hover {
+              ? `[data-element-id="${safeElementId}"] tbody tr:hover {
                    background-color: var(--bg-table-hover, rgba(241,245,249,0.8));
                    transition: background-color 0.15s ease;
                  }`

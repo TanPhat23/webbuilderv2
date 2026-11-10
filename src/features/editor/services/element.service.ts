@@ -4,22 +4,7 @@ import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import { Snapshot } from "@/features/editor";
 
-interface IElementService {
-  getElements: (projectId: string) => Promise<EditorElement[]>;
-  getElementsPublic: (projectId: string) => Promise<EditorElement[]>;
-  saveSnapshot: (projectId: string, snapshot: Snapshot) => Promise<void>;
-  getSnapshots: (projectId: string) => Promise<Snapshot[]>;
-  loadSnapshot: (
-    projectId: string,
-    snapshotId: string,
-  ) => Promise<EditorElement[]>;
-  generateCode: (
-    elements: EditorElement[],
-    options?: RequestInit,
-  ) => Promise<{ code: string }>;
-}
-
-export const elementService: IElementService = {
+export const elementService = {
   getElements: async (projectId: string): Promise<EditorElement[]> => {
     return apiClient.get<EditorElement[]>(
       new URLBuilder("api")

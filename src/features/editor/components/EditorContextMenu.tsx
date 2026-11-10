@@ -10,7 +10,7 @@ import {
   ContextMenuPortal,
 } from "@/components/ui/context-menu";
 import { Copy, Trash2, Layers, ArrowUp, ArrowDown, Save } from "lucide-react";
-import { KeyboardEvent as EditorKeyboardEvent } from "@/features/editor/utils/element/keyBoardEvents";
+import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
 import { EditorElement } from "@/types/global.type";
 import { useSetSelectedElement } from "@/features/editor";
 
@@ -24,7 +24,7 @@ interface EditorContextMenuProps {
   isLocked?: boolean;
 }
 
-const keyboardEventHandler = new EditorKeyboardEvent();
+const keyboardEventHandler = new ElementKeyboardActions();
 
 export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   children,

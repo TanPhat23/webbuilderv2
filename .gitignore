@@ -4,6 +4,7 @@
 .vinxi
 .output
 .tanstack
+e2e/.auth/
 .cache
 
 # dependencies

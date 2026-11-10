@@ -22,7 +22,7 @@ import {
   CMSContentListComponent,
   CMSContentItemComponent,
   CMSContentGridComponent,
-} from "@/features/editor/components/editorcomponents";
+} from "@/features/editor/components/elements";
 import {
   ChevronLeft,
   ChevronRight,

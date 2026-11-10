@@ -5,19 +5,7 @@ import { ElementStore } from "@/features/editor";
 import { SelectionStore } from "@/features/editor";
 import { toast } from "sonner";
 
-export interface IKeyboardEvent {
-  copyElement: () => void;
-  cutElement: () => void;
-  pasteElement: () => void;
-  bringToFront: () => void;
-  sendToBack: () => void;
-  deleteElement: () => void;
-  saveElement: () => Promise<void>;
-  setReadOnly: (value: boolean) => void;
-  setLocked: (value: boolean) => void;
-}
-
-export class KeyboardEvent implements IKeyboardEvent {
+export class ElementKeyboardActions {
   private isReadOnly = false;
   private isLocked = false;
 
@@ -168,10 +156,5 @@ export class KeyboardEvent implements IKeyboardEvent {
 
   public redo = () => {
     ElementStore.getState().redo();
-  };
-
-  public saveElement = async () => {
-    // This method is now handled by the SaveElementDialog component
-    // The dialog will be opened from the context menu
   };
 }

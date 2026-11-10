@@ -13,7 +13,11 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.118",
@@ -38,6 +42,7 @@
     "@lexical/utils": "^0.37.0",
     "@monaco-editor/react": "^4.7.0",
     "@number-flow/react": "^0.5.11",
+    "@playwright/test": "^1.59.1",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@radix-ui/react-accordion": "^1.2.12",

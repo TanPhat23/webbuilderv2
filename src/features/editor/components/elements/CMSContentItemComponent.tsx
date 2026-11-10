@@ -1,5 +1,6 @@
 
 import React from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { useCMSContentItem, useElementHandler } from "@/hooks";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentItemElement } from "@/features/editor";
@@ -95,9 +96,10 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
           <div className="prose prose-lg max-w-none">
             <div
               dangerouslySetInnerHTML={{
-                __html:
+                __html: DOMPurify.sanitize(
                   getFieldValue(itemToRender, "content") ||
-                  "Sample content would be rendered here.",
+                    "Sample content would be rendered here.",
+                ),
               }}
             />
           </div>
