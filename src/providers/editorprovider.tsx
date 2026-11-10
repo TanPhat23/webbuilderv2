@@ -54,10 +54,7 @@ export default function EditorProvider({
 
   const collabEnabled = !!userId;
 
-  const editorData = useEditor(projectId || "", pageId, {
-    enableCollab: false,
-    userId: userId || "guest",
-  });
+  const editorData = useEditor(projectId || "", pageId);
 
   const contextValue = useMemo<EditorContextType>(
     () => ({

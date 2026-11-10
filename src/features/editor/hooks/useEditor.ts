@@ -18,9 +18,6 @@ import type { Project } from "@/features/projects";
 export type Viewport = "mobile" | "tablet" | "desktop";
 
 export interface UseEditorOptions {
-  enableCollab?: boolean;
-  collabWsUrl?: string;
-  userId?: string;
   isReadOnly?: boolean;
   isLocked?: boolean;
 }
