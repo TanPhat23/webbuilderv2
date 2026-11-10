@@ -6,8 +6,6 @@
 // =============================================================================
 // TABLE MANAGEMENT HOOKS
 // =============================================================================
-export { useTableEditing } from "@/features/table";
-export { useTableState } from "@/features/table";
 
 // =============================================================================
 // CMS HOOKS
@@ -27,7 +25,6 @@ export {
 export { useEditor } from "@/features/editor/hooks/useEditor";
 export type { Viewport } from "@/features/editor/hooks/useEditor";
 export { useElementHandler } from "@/features/editor/hooks";
-export { useGridEditor } from "@/features/editor/hooks/useGridEditor";
 export { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 
 // =============================================================================

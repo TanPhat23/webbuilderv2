@@ -4,8 +4,6 @@ export * from './interfaces/elements.interface';
 export * from './interfaces/events.interface';
 export * from './interfaces/snapshot.interface';
 export * from './interfaces/validate.interface';
-export * from './interfaces/custom-element.interface';
-export * from './store/custom-element-store';
 export * from './store/element-comment-store';
 export * from './store/element-event-workflow-store';
 export * from './store/element-store';

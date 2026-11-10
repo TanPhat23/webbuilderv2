@@ -1,7 +1,6 @@
 import { EditorElement, ElementType } from "@/types/global.type";
 import { ElementTreeHelper } from "./element-tree-helper";
 import { ALL_ELEMENT_TYPES } from "@/features/editor";
-import { handleSwap } from "./handleSwap";
 import type { ResponsiveStyles } from "@/features/editor";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
 import React from "react";
@@ -124,7 +123,6 @@ export const elementHelper = {
   mapSwapChildrenById: ElementTreeHelper.mapSwapChildrenById,
   insertAtPosition: ElementTreeHelper.insertAtPosition,
   // misc
-  handleSwap,
   isValidElementType,
 };
 

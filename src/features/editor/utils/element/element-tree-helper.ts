@@ -1,4 +1,3 @@
-import { z } from "zod";
 import type {
   ContainerElement,
   ContainerElementType,
@@ -9,7 +8,6 @@ import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
 } from "@/features/editor/constants/elements";
-import { ElementSchema } from "./elementSchema";
 
 const asContainer = (el: EditorElement): ContainerElement =>
   el as unknown as ContainerElement;
@@ -20,19 +18,6 @@ const hasChildren = (el: EditorElement): boolean =>
 const children = (el: EditorElement): EditorElement[] =>
   asContainer(el).elements ?? [];
 
-
-type EditorElementInput = z.infer<typeof ElementSchema> & {
-  elements?: EditorElementInput[];
-};
-
-const EditorElementSchema: z.ZodType<EditorElementInput> =
-  ElementSchema.extend({
-    get elements() {
-      return z.array(EditorElementSchema).optional();
-    },
-  });
-
-const EditorElementArraySchema = z.array(EditorElementSchema);
 
 const isContainerElement = (
   element: EditorElement,
@@ -244,45 +229,6 @@ const getPath = (elements: EditorElement[], id: string): string[] => {
   return [];
 };
 
-const validate = (
-  elements: EditorElement[],
-): { isValid: boolean; errors: string[] } => {
-  const result = EditorElementArraySchema.safeParse(elements);
-
-  if (!result.success) {
-    return {
-      isValid: false,
-      errors: result.error.issues.map(
-        (issue) => `[${issue.path.join(".")}] ${issue.message}`,
-      ),
-    };
-  }
-
-  const errors: string[] = [];
-  const seenIds = new Set<string>();
-
-  const check = (els: EditorElement[], parentId: string | null): void => {
-    for (const el of els) {
-      if (seenIds.has(el.id)) {
-        errors.push(`Duplicate element ID: ${el.id}`);
-      } else {
-        seenIds.add(el.id);
-      }
-
-      if (el.parentId !== parentId) {
-        errors.push(
-          `Element ${el.id} has incorrect parentId. Expected: ${parentId}, Got: ${el.parentId}`,
-        );
-      }
-
-      if (hasChildren(el)) check(children(el), el.id);
-    }
-  };
-
-  check(elements, null);
-  return { isValid: errors.length === 0, errors };
-};
-
 export const ElementTreeHelper = {
   isContainerElement,
   isEditableElement,
@@ -301,5 +247,4 @@ export const ElementTreeHelper = {
   exists,
   getDepth,
   getPath,
-  validate,
 };
