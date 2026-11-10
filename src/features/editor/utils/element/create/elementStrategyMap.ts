@@ -23,6 +23,7 @@ import {
   InputElementCreateStrategy,
   LabelElementCreateStrategy,
   ListElementCreateStrategy,
+  LinkElementCreateStrategy,
   NavElementCreateStrategy,
   ProgressElementCreateStrategy,
   RadioElementCreateStrategy,
@@ -36,55 +37,57 @@ import {
   VideoElementCreateStrategy,
 } from "./elementCreateStrategy";
 
-export const ElementStrategyMap: Map<ElementType, ElementCreateStrategy> =
-  new Map([
+export const ElementStrategyMap: Record<ElementType, ElementCreateStrategy> = {
     // Inline / Leaf
-    ["Text", new TextElementCreateStrategy()],
-    ["Span", new SpanElementCreateStrategy()],
-    ["Heading", new HeadingElementCreateStrategy()],
-    ["Label", new LabelElementCreateStrategy()],
-    ["Blockquote", new BlockquoteElementCreateStrategy()],
-    ["Code", new CodeElementCreateStrategy()],
-    ["Separator", new SeparatorElementCreateStrategy()],
-    ["Icon", new IconElementCreateStrategy()],
+    Text: new TextElementCreateStrategy(),
+    Span: new SpanElementCreateStrategy(),
+    Heading: new HeadingElementCreateStrategy(),
+    Label: new LabelElementCreateStrategy(),
+    Blockquote: new BlockquoteElementCreateStrategy(),
+    Code: new CodeElementCreateStrategy(),
+    Separator: new SeparatorElementCreateStrategy(),
+    Icon: new IconElementCreateStrategy(),
     // Media
-    ["Image", new ImageElementCreateStrategy()],
-    ["Video", new VideoElementCreateStrategy()],
-    ["Audio", new AudioElementCreateStrategy()],
-    ["IFrame", new IFrameElementCreateStrategy()],
+    Image: new ImageElementCreateStrategy(),
+    Video: new VideoElementCreateStrategy(),
+    Audio: new AudioElementCreateStrategy(),
+    IFrame: new IFrameElementCreateStrategy(),
     // Interactive
-    ["Button", new ButtonElementCreateStrategy()],
+    Link: new LinkElementCreateStrategy(),
+    Button: new ButtonElementCreateStrategy(),
     // Form
-    ["Input", new InputElementCreateStrategy()],
-    ["Textarea", new TextareaElementCreateStrategy()],
-    ["Checkbox", new CheckboxElementCreateStrategy()],
-    ["Radio", new RadioElementCreateStrategy()],
-    ["Progress", new ProgressElementCreateStrategy()],
-    ["List", new ListElementCreateStrategy()],
-    ["Select", new SelectElementCreateStrategy()],
-    ["Form", new FormElementCreateStrategy()],
+    Input: new InputElementCreateStrategy(),
+    Textarea: new TextareaElementCreateStrategy(),
+    Checkbox: new CheckboxElementCreateStrategy(),
+    Radio: new RadioElementCreateStrategy(),
+    Progress: new ProgressElementCreateStrategy(),
+    List: new ListElementCreateStrategy(),
+    Select: new SelectElementCreateStrategy(),
+    Form: new FormElementCreateStrategy(),
     // Table
-    ["Table", new TableElementCreateStrategy()],
+    Table: new TableElementCreateStrategy(),
     // Container / Layout
-    ["Frame", new FrameElementCreateStrategy()],
-    ["Section", new SectionElementCreateStrategy()],
-    ["Nav", new NavElementCreateStrategy()],
-    ["Header", new HeaderElementCreateStrategy()],
-    ["Footer", new FooterElementCreateStrategy()],
-    ["Article", new ArticleElementCreateStrategy()],
-    ["Aside", new AsideElementCreateStrategy()],
+    Frame: new FrameElementCreateStrategy(),
+    Section: new SectionElementCreateStrategy(),
+    Nav: new NavElementCreateStrategy(),
+    Header: new HeaderElementCreateStrategy(),
+    Footer: new FooterElementCreateStrategy(),
+    Article: new ArticleElementCreateStrategy(),
+    Aside: new AsideElementCreateStrategy(),
     // Carousel
-    ["Carousel", new CarouselElementCreateStrategy()],
+    Carousel: new CarouselElementCreateStrategy(),
     // CMS
-    ["CMSContentList", new CMSContentListElementCreateStrategy()],
-    ["CMSContentItem", new CMSContentItemElementCreateStrategy()],
-    ["CMSContentGrid", new CMSContentGridElementCreateStrategy()],
-  ]);
+    CMSContentList: new CMSContentListElementCreateStrategy(),
+    CMSContentItem: new CMSContentItemElementCreateStrategy(),
+    CMSContentGrid: new CMSContentGridElementCreateStrategy(),
+  };
 
 export const getElementStrategy = (
   type: ElementType,
 ): ElementCreateStrategy => {
-  const strategy = ElementStrategyMap.get(type);
+  const strategy = Object.hasOwn(ElementStrategyMap, type)
+    ? ElementStrategyMap[type]
+    : undefined;
   if (!strategy) {
     throw new Error(`No strategy found for element type: ${type}`);
   }

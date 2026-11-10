@@ -65,6 +65,12 @@ function createBaseElement(
 // INLINE / LEAF ELEMENTS
 // ============================================
 
+export class LinkElementCreateStrategy implements ElementCreateStrategy {
+  buildElement(state: BuilderState): EditorElement {
+    return createBaseElement(state, { content: "Link" });
+  }
+}
+
 export class TextElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): EditorElement {
     return createBaseElement(state, {
