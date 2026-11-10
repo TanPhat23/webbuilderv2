@@ -1,11 +1,7 @@
 
 import React, { useState } from "react";
-import { NodeType } from "../types/workflow.types";
+import { NodeType } from "../../types/workflow.types";
 import {
-  Zap,
-  ArrowRight,
-  GitBranch,
-  CheckCircle,
   ChevronDown,
   ChevronUp,
   Layers,
@@ -14,7 +10,15 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { NODE_TYPE_LABELS, NODE_TYPE_DESCRIPTIONS, NODE_TYPE_COLORS, ANIMATION_DURATIONS } from "@/features/eventworkflows/constants/eventWorkflows";
+import {
+  ANIMATION_DURATIONS,
+  getNodeTypeColor,
+} from "@/features/eventworkflows/constants/eventWorkflows";
+import {
+  NODE_META,
+  NODE_TYPES_ORDER,
+  NodeIcon,
+} from "@/features/eventworkflows/constants/nodeMeta";
 import { Button } from "@/components/ui/button";
 
 export interface PaletteElement {
@@ -31,39 +35,10 @@ interface NodePaletteProps {
   className?: string;
 }
 
-const NodeIcon = ({ type }: { type: NodeType }) => {
-  switch (type) {
-    case NodeType.TRIGGER:
-      return <Zap className="h-4 w-4" />;
-    case NodeType.ACTION:
-      return <ArrowRight className="h-4 w-4" />;
-    case NodeType.CONDITION:
-      return <GitBranch className="h-4 w-4" />;
-    case NodeType.OUTPUT:
-      return <CheckCircle className="h-4 w-4" />;
-    default:
-      return <Zap className="h-4 w-4" />;
-  }
-};
-
 const getNodePaletteColor = (type: NodeType) => {
-  const colorMap: Record<NodeType, keyof typeof NODE_TYPE_COLORS> = {
-    [NodeType.TRIGGER]: "trigger",
-    [NodeType.ACTION]: "action",
-    [NodeType.CONDITION]: "condition",
-    [NodeType.OUTPUT]: "output",
-    [NodeType.ELEMENT]: "trigger",
-  };
-  const colors = NODE_TYPE_COLORS[colorMap[type]];
+  const colors = getNodeTypeColor(type);
   return cn(colors.bg, colors.border);
 };
-
-const NODE_TYPES_ORDER: NodeType[] = [
-  NodeType.TRIGGER,
-  NodeType.ACTION,
-  NodeType.CONDITION,
-  NodeType.OUTPUT,
-];
 
 export const NodePalette = ({
   onNodeDragStart,
@@ -110,28 +85,31 @@ export const NodePalette = ({
             Drag onto the canvas to build your workflow
           </p>
 
-          {NODE_TYPES_ORDER.map((nodeType) => (
-            <div
-              key={nodeType}
-              draggable
-              onDragStart={(e) => handleNodeDragStart(e, nodeType)}
-              className={cn(
-                "p-3 border-2 rounded-lg cursor-move transition-all hover:shadow-md active:opacity-50 select-none",
-                getNodePaletteColor(nodeType),
-              )}
-              style={{ transitionDuration: `${ANIMATION_DURATIONS.normal}ms` }}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <NodeIcon type={nodeType} />
-                <span className="font-medium text-sm">
-                  {NODE_TYPE_LABELS[nodeType]}
-                </span>
+          {NODE_TYPES_ORDER.map((nodeType) => {
+            const meta = NODE_META[nodeType];
+            return (
+              <div
+                key={nodeType}
+                draggable
+                onDragStart={(e) => handleNodeDragStart(e, nodeType)}
+                className={cn(
+                  "p-3 border-2 rounded-lg cursor-move transition-all hover:shadow-md active:opacity-50 select-none",
+                  getNodePaletteColor(nodeType),
+                )}
+                style={{ transitionDuration: `${ANIMATION_DURATIONS.normal}ms` }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <NodeIcon type={nodeType} />
+                  <span className="font-medium text-sm">
+                    {meta.label}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {meta.description}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {NODE_TYPE_DESCRIPTIONS[nodeType]}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

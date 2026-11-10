@@ -1,12 +1,8 @@
 
 import React from "react";
 import { Handle, Position, NodeProps } from "reactflow";
-import { NodeType } from "../types/workflow.types";
+import { NodeType } from "../../types/workflow.types";
 import {
-  Zap,
-  GitBranch,
-  ArrowRight,
-  CheckCircle,
   Trash2,
   Settings,
 } from "lucide-react";
@@ -14,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";
 import { getNodeTypeColor, ANIMATION_DURATIONS } from "@/features/eventworkflows/constants/eventWorkflows";
+import { NodeIcon } from "@/features/eventworkflows/constants/nodeMeta";
 
 interface WorkflowNodeData {
   label: string;
@@ -23,28 +20,6 @@ interface WorkflowNodeData {
   onSelect?: (nodeId: string) => void;
   onConfigure?: (nodeId: string) => void;
 }
-
-const NodeIcon = ({
-  type,
-  className,
-}: {
-  type: NodeType;
-  className?: string;
-}) => {
-  const size = "h-4 w-4";
-  switch (type) {
-    case NodeType.TRIGGER:
-      return <Zap className={cn(size, className)} />;
-    case NodeType.ACTION:
-      return <ArrowRight className={cn(size, className)} />;
-    case NodeType.CONDITION:
-      return <GitBranch className={cn(size, className)} />;
-    case NodeType.OUTPUT:
-      return <CheckCircle className={cn(size, className)} />;
-    default:
-      return <Zap className={cn(size, className)} />;
-  }
-};
 
 const getNodeColorClasses = (type: NodeType, isSelected: boolean) => {
   const baseClasses =

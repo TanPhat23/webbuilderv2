@@ -3,8 +3,12 @@ import {
   NodeType,
   Position,
   WorkflowNode,
-} from "@/features/eventworkflows/components/types/workflow.types";
+} from "@/features/eventworkflows/types/workflow.types";
 import { getDefaultNodeConfig } from "@/features/eventworkflows/utils/workflowBuild";
+import {
+  NODE_META,
+  isCanvasNodeType,
+} from "@/features/eventworkflows/constants/nodeMeta";
 
 export interface WorkflowNodeData {
   label: string;
@@ -53,13 +57,19 @@ class WorkflowTypeStrategy implements NodeCreationStrategy {
   constructor(private readonly nodeType: NodeType) {}
 
   create(input: CreateNodeInput): Node<WorkflowNodeData> {
+    const meta = isCanvasNodeType(this.nodeType)
+      ? NODE_META[this.nodeType]
+      : undefined;
+    const defaultLabel = meta?.label ?? this.nodeType;
+    const defaultDescription = meta?.description ?? `New ${this.nodeType} node`;
+
     return {
       id: input.id,
       type: "workflow",
       position: input.position,
       data: {
-        label: input.label ?? this.nodeType,
-        description: `New ${this.nodeType} node`,
+        label: input.label ?? defaultLabel,
+        description: defaultDescription,
         type: this.nodeType,
         config: getDefaultNodeConfig(this.nodeType),
         onSelect: input.onSelect,

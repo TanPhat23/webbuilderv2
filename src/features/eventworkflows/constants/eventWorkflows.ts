@@ -1,54 +1,45 @@
-import { NodeType } from "@/features/eventworkflows/components/types/workflow.types";
+import { NodeType } from "@/features/eventworkflows/types/workflow.types";
+import {
+  NODE_META,
+  NODE_TYPES_ORDER,
+  NodeIcon,
+  resolveNodeIcon,
+  type CanvasNodeType,
+  type NodeMetadata,
+  type NodeTypeColors,
+} from "./nodeMeta";
+
+export {
+  NODE_META,
+  NODE_TYPES_ORDER,
+  NodeIcon,
+  resolveNodeIcon,
+  type CanvasNodeType,
+  type NodeMetadata,
+  type NodeTypeColors,
+};
 
 export const NODE_TYPE_LABELS: Record<NodeType, string> = {
-  [NodeType.TRIGGER]: "Trigger",
-  [NodeType.ACTION]: "Action",
-  [NodeType.CONDITION]: "Condition",
-  [NodeType.OUTPUT]: "Output",
+  [NodeType.TRIGGER]: NODE_META[NodeType.TRIGGER].label,
+  [NodeType.ACTION]: NODE_META[NodeType.ACTION].label,
+  [NodeType.CONDITION]: NODE_META[NodeType.CONDITION].label,
+  [NodeType.OUTPUT]: NODE_META[NodeType.OUTPUT].label,
   [NodeType.ELEMENT]: "Element",
 };
 
 export const NODE_TYPE_DESCRIPTIONS: Record<NodeType, string> = {
-  [NodeType.TRIGGER]: "Start point of the workflow",
-  [NodeType.ACTION]: "Perform an action or task",
-  [NodeType.CONDITION]: "Branch based on conditions",
-  [NodeType.OUTPUT]: "End point of the workflow",
+  [NodeType.TRIGGER]: NODE_META[NodeType.TRIGGER].description,
+  [NodeType.ACTION]: NODE_META[NodeType.ACTION].description,
+  [NodeType.CONDITION]: NODE_META[NodeType.CONDITION].description,
+  [NodeType.OUTPUT]: NODE_META[NodeType.OUTPUT].description,
   [NodeType.ELEMENT]: "Canvas element event source",
 };
 
 export const NODE_TYPE_COLORS = {
-  trigger: {
-    bg: "bg-accent/10 dark:bg-accent/20",
-    border: "border-accent/30 dark:border-accent/60",
-    borderSelected: "border-accent",
-    shadowSelected: "shadow-accent/20",
-    icon: "text-accent dark:text-accent-foreground",
-    iconBg: "bg-accent/10 dark:bg-accent/20",
-  },
-  action: {
-    bg: "bg-primary/10 dark:bg-primary/20",
-    border: "border-primary/30 dark:border-primary/60",
-    borderSelected: "border-primary",
-    shadowSelected: "shadow-primary/20",
-    icon: "text-primary dark:text-primary-foreground",
-    iconBg: "bg-primary/10 dark:bg-primary/20",
-  },
-  condition: {
-    bg: "bg-secondary/10 dark:bg-secondary/20",
-    border: "border-secondary/30 dark:border-secondary/60",
-    borderSelected: "border-secondary",
-    shadowSelected: "shadow-secondary/20",
-    icon: "text-secondary dark:text-secondary-foreground",
-    iconBg: "bg-secondary/10 dark:bg-secondary/20",
-  },
-  output: {
-    bg: "bg-muted/10 dark:bg-muted/20",
-    border: "border-muted/30 dark:border-muted/60",
-    borderSelected: "border-muted",
-    shadowSelected: "shadow-muted/20",
-    icon: "text-muted-foreground",
-    iconBg: "bg-muted/10 dark:bg-muted/20",
-  },
+  trigger: NODE_META[NodeType.TRIGGER].colors,
+  action: NODE_META[NodeType.ACTION].colors,
+  condition: NODE_META[NodeType.CONDITION].colors,
+  output: NODE_META[NodeType.OUTPUT].colors,
 } as const;
 
 export const WORKFLOW_EVENT_TYPES = [
