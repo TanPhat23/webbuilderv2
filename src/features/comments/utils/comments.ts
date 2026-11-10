@@ -55,32 +55,6 @@ export function getUnresolvedCount(comments: ElementComment[]): number {
 }
 
 /**
- * Formats author name with fallback
- */
-export function formatAuthorName(author: {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-}): string {
-  if (author.firstName && author.lastName) {
-    return `${author.firstName} ${author.lastName}`;
-  }
-  return author.email || "Unknown User";
-}
-
-/**
- * Gets author initials for avatar
- */
-export function getAuthorInitial(author: {
-  firstName?: string;
-  email?: string;
-}): string {
-  return (
-    author.firstName?.[0] || author.email?.[0]?.toUpperCase() || "U"
-  );
-}
-
-/**
  * Gets empty state message based on view mode
  */
 export function getEmptyStateMessage(viewMode: ViewMode): {
