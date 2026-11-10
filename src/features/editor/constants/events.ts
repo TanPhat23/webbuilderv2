@@ -3,9 +3,6 @@
  * Centralized constants and type definitions for all event-related types
  */
 
-// ============================================
-// EVENT TYPES
-// ============================================
 
 export const EVENT_TYPES = {
   CLICK: "onClick",
@@ -27,9 +24,6 @@ export const EVENT_TYPES = {
 
 export type EventTypeEvent = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
 
-// ============================================
-// ACTION TYPES
-// ============================================
 
 export const ACTION_TYPES = {
   NAVIGATE: "navigate",
@@ -54,9 +48,6 @@ export const ACTION_TYPES = {
 
 export type ActionTypeEvent = (typeof ACTION_TYPES)[keyof typeof ACTION_TYPES];
 
-// ============================================
-// HTTP METHODS
-// ============================================
 
 export const HTTP_METHODS = {
   GET: "GET",
@@ -68,9 +59,6 @@ export const HTTP_METHODS = {
 
 export type HttpMethod = (typeof HTTP_METHODS)[keyof typeof HTTP_METHODS];
 
-// ============================================
-// NAVIGATE TARGETS
-// ============================================
 
 export const NAVIGATE_TARGETS = {
   URL: "url",
@@ -81,9 +69,6 @@ export const NAVIGATE_TARGETS = {
 export type NavigateTarget =
   (typeof NAVIGATE_TARGETS)[keyof typeof NAVIGATE_TARGETS];
 
-// ============================================
-// ANIMATION TYPES
-// ============================================
 
 export const ANIMATION_TYPES = {
   FADE_IN: "fadeIn",
@@ -97,9 +82,6 @@ export const ANIMATION_TYPES = {
 export type AnimationType =
   (typeof ANIMATION_TYPES)[keyof typeof ANIMATION_TYPES];
 
-// ============================================
-// NOTIFICATION TYPES
-// ============================================
 
 export const NOTIFICATION_TYPES = {
   SUCCESS: "success",
@@ -111,9 +93,6 @@ export const NOTIFICATION_TYPES = {
 export type NotificationType =
   (typeof NOTIFICATION_TYPES)[keyof typeof NOTIFICATION_TYPES];
 
-// ============================================
-// SCROLL BEHAVIOR
-// ============================================
 
 export const SCROLL_BEHAVIORS = {
   SMOOTH: "smooth",
@@ -123,9 +102,6 @@ export const SCROLL_BEHAVIORS = {
 export type ScrollBehavior =
   (typeof SCROLL_BEHAVIORS)[keyof typeof SCROLL_BEHAVIORS];
 
-// ============================================
-// SCROLL TARGET
-// ============================================
 
 export const SCROLL_TARGETS = {
   ELEMENT_ID: "elementId",
@@ -134,9 +110,6 @@ export const SCROLL_TARGETS = {
 
 export type ScrollTarget = (typeof SCROLL_TARGETS)[keyof typeof SCROLL_TARGETS];
 
-// ============================================
-// MODAL ACTIONS
-// ============================================
 
 export const MODAL_ACTIONS = {
   OPEN: "open",
@@ -145,9 +118,6 @@ export const MODAL_ACTIONS = {
 
 export type ModalAction = (typeof MODAL_ACTIONS)[keyof typeof MODAL_ACTIONS];
 
-// ============================================
-// DATA VALUE TYPES
-// ============================================
 
 export const DATA_VALUE_TYPES = {
   STATIC: "static",
@@ -158,9 +128,6 @@ export const DATA_VALUE_TYPES = {
 export type DataValueType =
   (typeof DATA_VALUE_TYPES)[keyof typeof DATA_VALUE_TYPES];
 
-// ============================================
-// EVENT VALUE SOURCES
-// ============================================
 
 export const EVENT_VALUE_SOURCES = {
   TARGET_VALUE: "target.value",
@@ -171,9 +138,6 @@ export const EVENT_VALUE_SOURCES = {
 export type EventValueSource =
   (typeof EVENT_VALUE_SOURCES)[keyof typeof EVENT_VALUE_SOURCES];
 
-// ============================================
-// CONDITION TYPES
-// ============================================
 
 export const CONDITION_TYPES = {
   STATE_EQUALS: "stateEquals",
@@ -185,9 +149,6 @@ export const CONDITION_TYPES = {
 export type ConditionType =
   (typeof CONDITION_TYPES)[keyof typeof CONDITION_TYPES];
 
-// ============================================
-// CONDITION OPERATORS
-// ============================================
 
 export const CONDITION_OPERATORS = {
   EQUALS: "==",
@@ -203,9 +164,6 @@ export const CONDITION_OPERATORS = {
 export type ConditionOperatorEvent =
   (typeof CONDITION_OPERATORS)[keyof typeof CONDITION_OPERATORS];
 
-// ============================================
-// BODY TYPES
-// ============================================
 
 export const BODY_TYPES = {
   JSON: "json",
@@ -214,9 +172,6 @@ export const BODY_TYPES = {
 
 export type BodyType = (typeof BODY_TYPES)[keyof typeof BODY_TYPES];
 
-// ============================================
-// CONSTANT MAPS
-// ============================================
 
 /**
  * Event type display names
@@ -311,9 +266,6 @@ export const CONDITION_OPERATOR_LABELS: Record<ConditionOperatorEvent, string> =
     [CONDITION_OPERATORS.NOT_INCLUDES]: "Not Includes",
   };
 
-// ============================================
-// UTILITY FUNCTIONS
-// ============================================
 
 /**
  * Get all event type values as an array

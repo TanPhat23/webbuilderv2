@@ -5,9 +5,6 @@ import { z } from "zod";
  * Provides type-safe validation for workflow creation and updates
  */
 
-// ============================================
-// WORKFLOW CREATION SCHEMA
-// ============================================
 
 export const CreateEventWorkflowSchema = z.object({
   name: z
@@ -27,9 +24,6 @@ export type CreateEventWorkflowFormData = z.infer<
   typeof CreateEventWorkflowSchema
 >;
 
-// ============================================
-// WORKFLOW UPDATE SCHEMA
-// ============================================
 
 export const UpdateEventWorkflowSchema = z.object({
   name: z
@@ -51,9 +45,6 @@ export type UpdateEventWorkflowFormData = z.infer<
   typeof UpdateEventWorkflowSchema
 >;
 
-// ============================================
-// WORKFLOW FILTER/SEARCH SCHEMA
-// ============================================
 
 export const WorkflowFilterSchema = z.object({
   search: z
@@ -65,9 +56,6 @@ export const WorkflowFilterSchema = z.object({
 
 export type WorkflowFilterFormData = z.infer<typeof WorkflowFilterSchema>;
 
-// ============================================
-// VALIDATION UTILITIES
-// ============================================
 
 /**
  * Validates workflow creation form data

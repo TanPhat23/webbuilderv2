@@ -61,9 +61,6 @@ function createBaseElement(
   } as EditorElement;
 }
 
-// ============================================
-// INLINE / LEAF ELEMENTS
-// ============================================
 
 export class LinkElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): EditorElement {
@@ -235,9 +232,6 @@ export class IconElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// MEDIA ELEMENTS
-// ============================================
 
 export class ImageElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): ImageElement {
@@ -336,9 +330,6 @@ export class IFrameElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// INTERACTIVE / LINK ELEMENTS
-// ============================================
 
 export class ButtonElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): EditorElement {
@@ -367,9 +358,6 @@ export class ButtonElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// FORM ELEMENTS
-// ============================================
 
 export class InputElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): InputElement {
@@ -573,9 +561,6 @@ export class FormElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// TABLE ELEMENT
-// ============================================
 
 export class TableElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): TableElement {
@@ -611,9 +596,6 @@ export class TableElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// CONTAINER / LAYOUT ELEMENTS
-// ============================================
 
 export class FrameElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): EditorElement {
@@ -750,9 +732,6 @@ export class AsideElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// CAROUSEL ELEMENT
-// ============================================
 
 export class CarouselElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): CarouselElement {
@@ -777,9 +756,6 @@ export class CarouselElementCreateStrategy implements ElementCreateStrategy {
   }
 }
 
-// ============================================
-// CMS ELEMENTS
-// ============================================
 
 export class CMSContentListElementCreateStrategy implements ElementCreateStrategy {
   buildElement(state: BuilderState): CMSContentListElement {

@@ -4,11 +4,9 @@ import { ElementType } from "@/types/global.type";
 import React, { Suspense } from "react";
 import { useSelectedElement } from "@/features/editor";
 
-// ---------------------------------------------------------------------------
 // Lazy-loaded configuration panels — each panel and its dependencies are
 // only loaded when the user actually selects the corresponding element type.
 // This reduces the initial JS bundle for the editor sidebar significantly.
-// ---------------------------------------------------------------------------
 
 const LinkConfigurationAccordion = React.lazy(() =>
   import("./LinkConfiguration").then((m) => ({

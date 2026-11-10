@@ -30,9 +30,7 @@ export class ConnectionManager extends EventEmitter {
     this.maxInterval = options.maxReconnectInterval ?? 30_000;
   }
 
-  // --------------------------------------------------------------------------
   // Public API
-  // --------------------------------------------------------------------------
 
   /**
    * Initiate or re-initiate the WebSocket connection.
@@ -115,9 +113,7 @@ export class ConnectionManager extends EventEmitter {
     this.removeAllListeners();
   }
 
-  // --------------------------------------------------------------------------
   // Internal — Auth & URL
-  // --------------------------------------------------------------------------
 
   private async getAuthToken(): Promise<string> {
     const token = await this.options.getToken();
@@ -144,9 +140,7 @@ export class ConnectionManager extends EventEmitter {
       .build();
   }
 
-  // --------------------------------------------------------------------------
   // Internal — WebSocket event handlers
-  // --------------------------------------------------------------------------
 
   private attachHandlers(): void {
     if (!this.ws) return;
@@ -206,9 +200,7 @@ export class ConnectionManager extends EventEmitter {
     this.send(joinEnvelope);
   }
 
-  // --------------------------------------------------------------------------
   // Internal — Reconnection with exponential backoff + jitter
-  // --------------------------------------------------------------------------
 
   /**
    * Schedule a reconnection attempt using exponential backoff with jitter.

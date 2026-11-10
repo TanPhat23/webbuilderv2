@@ -10,7 +10,6 @@ import type { EditorElement } from "@/types/global.type";
  * props drilled from the parent — it can simply call `useDragContext()`.
  */
 export interface DragContextValue {
-  // ---- Drag state ----
 
   /** Whether the current user is allowed to drag/reorder elements. */
   readonly canDrag: boolean;
@@ -24,7 +23,6 @@ export interface DragContextValue {
   /** The element currently hovered during a drag (drop target indicator). */
   readonly draggedOverElement: EditorElement | undefined;
 
-  // ---- Drag handlers ----
 
   /** Called when the user starts dragging an element. */
   readonly handleDragStart: (e: React.DragEvent, element: EditorElement) => void;

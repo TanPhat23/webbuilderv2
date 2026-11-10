@@ -7,7 +7,6 @@ import {
   Permission,
 } from "@/features/auth";
 
-// ─── Internal helpers ─────────────────────────────────────────────────────────
 
 const LOG = "[PageDAL]";
 
@@ -36,7 +35,6 @@ function mapPage(row: PrismaPage): Page {
   };
 }
 
-// ─── DAL ──────────────────────────────────────────────────────────────────────
 
 export const pageDAL = {
   /**

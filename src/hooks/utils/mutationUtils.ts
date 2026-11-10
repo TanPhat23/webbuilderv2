@@ -1,8 +1,6 @@
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 
-// ---------------------------------------------------------------------------
 // Error message extraction
-// ---------------------------------------------------------------------------
 
 /**
  * Safely extract a human-readable message from an unknown error value.
@@ -29,9 +27,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-// ---------------------------------------------------------------------------
 // Standardised onError / onSuccess handlers
-// ---------------------------------------------------------------------------
 
 /**
  * Options accepted by {@link onMutationError}.

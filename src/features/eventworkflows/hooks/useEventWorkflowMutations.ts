@@ -31,7 +31,6 @@ import type {
 import { eventWorkflowKeys } from "@/features/editor";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
 
-// ─── Variable types ───────────────────────────────────────────────────────────
 
 type CreateWorkflowVariables = {
   projectId: string;
@@ -52,7 +51,6 @@ type DeleteWorkflowVariables = {
   workflowId: string;
 };
 
-// ─── Hooks ────────────────────────────────────────────────────────────────────
 
 /** Create a new event workflow for a project. */
 export const useCreateEventWorkflow = () => {

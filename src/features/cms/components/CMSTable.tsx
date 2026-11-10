@@ -46,7 +46,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useCMSContext } from "../provider/CMSProvider";
 
-// ─── Sortable header ──────────────────────────────────────────────────────────
 
 function SortableHeader({
   column,
@@ -75,7 +74,6 @@ function SortableHeader({
   );
 }
 
-// ─── CMSTable ─────────────────────────────────────────────────────────────────
 
 export function CMSTable() {
   const {

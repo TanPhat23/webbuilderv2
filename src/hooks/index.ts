@@ -3,13 +3,7 @@
  * Organized by functionality into folders
  */
 
-// =============================================================================
-// TABLE MANAGEMENT HOOKS
-// =============================================================================
 
-// =============================================================================
-// CMS HOOKS
-// =============================================================================
 export {
   useCMSContent,
   useCMSContentItem,
@@ -19,38 +13,23 @@ export {
   useCMSManager,
 } from "@/features/cms";
 
-// =============================================================================
-// EDITOR HOOKS
-// =============================================================================
 export { useEditor } from "@/features/editor/hooks/useEditor";
 export type { Viewport } from "@/features/editor/hooks/useEditor";
 export { useElementHandler } from "@/features/editor/hooks";
 export { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 
-// =============================================================================
-// ELEMENT COMMENTS HOOKS
-// =============================================================================
 export {
   elementCommentKeys,
   useElementComments,
   useProjectComments,
 } from "@/features/comments";
 
-// =============================================================================
-// COMMENT MANAGER HOOK
-// =============================================================================
 export { useCommentManager } from "@/features/comments";
 
 
-// =============================================================================
-// UI HOOKS
-// =============================================================================
 export { useInView } from "@/features/ui";
 export { useIsMobile } from "@/features/ui";
 
-// =============================================================================
-// IMAGE HOOKS
-// =============================================================================
 export {
   imageKeys,
   useUserImages,
@@ -60,9 +39,6 @@ export {
   useDeleteImage,
 } from "@/features/images";
 
-// =============================================================================
-// SUBSCRIPTION HOOKS
-// =============================================================================
 export {
   subscriptionKeys,
   useSubscriptionStatus,
@@ -74,9 +50,6 @@ export {
 } from "@/features/subscription";
 export type { UserPlan } from "@/features/subscription";
 
-// =============================================================================
-// FEATURE HOOKS
-// =============================================================================
 export {
   useMarketplaceItems,
   useMarketplaceItem,
@@ -116,9 +89,6 @@ export {
 export { useDashboard } from "@/features/dashboard";
 export { useAnalytics } from "@/features/analytics";
 
-// =============================================================================
-// NOTIFICATION HOOKS
-// =============================================================================
 export {
   notificationKeys,
   useNotifications,
@@ -126,9 +96,6 @@ export {
   useCreateProfileUpdateNotification,
 } from "@/features/notifications";
 
-// =============================================================================
-// COLLABORATION HOOKS
-// =============================================================================
 export {
   invitationKeys,
   useProjectInvitations,
@@ -148,9 +115,6 @@ export {
   useCollaboratorManager,
 } from "@/features/collaboration";
 
-// =============================================================================
-// USER HOOKS
-// =============================================================================
 export {
   userKeys,
   useSearchUsers,
@@ -158,9 +122,6 @@ export {
   useUserByUsername,
 } from "@/features/users";
 
-// =============================================================================
-// RBAC & PERMISSIONS HOOKS
-// =============================================================================
 export {
   useProjectPermissions,
   useCanEditOwnResource,

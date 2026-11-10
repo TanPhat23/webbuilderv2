@@ -31,9 +31,7 @@ export class MessageDispatcher extends EventEmitter {
     super();
   }
 
-  // --------------------------------------------------------------------------
   // Envelope Factory
-  // --------------------------------------------------------------------------
 
   /**
    * Creates a standard message envelope following the WebSocket API spec.
@@ -65,9 +63,7 @@ export class MessageDispatcher extends EventEmitter {
     };
   }
 
-  // --------------------------------------------------------------------------
   // Request ID Generation
-  // --------------------------------------------------------------------------
 
   /**
    * Generates a unique request ID for tracking request/response cycles.
@@ -77,9 +73,7 @@ export class MessageDispatcher extends EventEmitter {
     return `req-${Date.now()}-${++this.requestIdCounter}`;
   }
 
-  // --------------------------------------------------------------------------
   // Rate Limiting (Token Bucket)
-  // --------------------------------------------------------------------------
 
   /**
    * Implements a token bucket algorithm to rate limit outgoing operations.
@@ -105,9 +99,7 @@ export class MessageDispatcher extends EventEmitter {
     return false;
   }
 
-  // --------------------------------------------------------------------------
   // Pending Request Tracking
-  // --------------------------------------------------------------------------
 
   /**
    * Creates a promise-based pending request that will be resolved when a
@@ -200,9 +192,7 @@ export class MessageDispatcher extends EventEmitter {
     return this.pendingRequests.size;
   }
 
-  // --------------------------------------------------------------------------
   // Offline Message Queue
-  // --------------------------------------------------------------------------
 
   /**
    * Adds an envelope to the offline queue.
@@ -233,9 +223,7 @@ export class MessageDispatcher extends EventEmitter {
     return this.messageQueue.length > 0;
   }
 
-  // --------------------------------------------------------------------------
   // Cleanup
-  // --------------------------------------------------------------------------
 
   /**
    * Cleans up all dispatcher resources:

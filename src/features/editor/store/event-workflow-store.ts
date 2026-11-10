@@ -2,14 +2,12 @@ import { getQueryClient } from "@/client/queryclient";
 import { getEventWorkflowById } from "@/features/eventworkflows";
 import { EventWorkflow } from "@/features/eventworkflows";
 
-// ─── Query Key Factory ────────────────────────────────────────────────────────
 // Hierarchical keys enable React Query filter-based invalidation:
 //   ["eventWorkflows"]                          → matches ALL
 //   ["eventWorkflows", "list"]                  → matches all list queries
 //   ["eventWorkflows", "list", projectId]        → exact project list
 //   ["eventWorkflows", "detail"]                 → matches all detail queries
 //   ["eventWorkflows", "detail", workflowId]     → exact workflow detail
-// ─────────────────────────────────────────────────────────────────────────────
 export const eventWorkflowKeys = {
   all: ["eventWorkflows"] as const,
   lists: () => [...eventWorkflowKeys.all, "list"] as const,
@@ -20,7 +18,6 @@ export const eventWorkflowKeys = {
     [...eventWorkflowKeys.details(), workflowId] as const,
 };
 
-// ─── Non-React Utilities ──────────────────────────────────────────────────────
 
 /**
  * Fetch a single workflow by ID outside of React (e.g. server actions, plain

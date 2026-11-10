@@ -31,9 +31,7 @@ export class MessageSender extends EventEmitter {
     this.attachHandlers();
   }
 
-  // --------------------------------------------------------------------------
   // Public API
-  // --------------------------------------------------------------------------
 
   /**
    * Send the envelope immediately if the connection is open, otherwise enqueue
@@ -121,9 +119,7 @@ export class MessageSender extends EventEmitter {
     this.removeAllListeners();
   }
 
-  // --------------------------------------------------------------------------
   // Internal helpers
-  // --------------------------------------------------------------------------
 
   /**
    * Try to send immediately. Returns true if the send was performed (socket
@@ -141,9 +137,7 @@ export class MessageSender extends EventEmitter {
     }
   }
 
-  // --------------------------------------------------------------------------
   // Connection event wiring
-  // --------------------------------------------------------------------------
 
   private attachHandlers(): void {
     if (this.attached) return;

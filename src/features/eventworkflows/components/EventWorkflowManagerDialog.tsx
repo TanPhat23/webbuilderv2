@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import { Zap, List, Plus, X, Loader2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface EventWorkflowManagerDialogProps {
   projectId: string;
@@ -25,7 +24,6 @@ interface EventWorkflowManagerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
 
 type NavViewType = "list" | "create";
 
@@ -48,7 +46,6 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// ─── Header ───────────────────────────────────────────────────────────────────
 
 interface HeaderProps {
   view: ReturnType<typeof useWorkflowManager>["view"];
@@ -96,7 +93,6 @@ function ManagerHeader({ view }: HeaderProps) {
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   activeViewType: string;
@@ -162,7 +158,6 @@ function ManagerSidebar({ activeViewType, onNavigate }: SidebarProps) {
   );
 }
 
-// ─── Loading screen ───────────────────────────────────────────────────────────
 
 function WorkflowLoadingScreen() {
   return (
@@ -175,7 +170,6 @@ function WorkflowLoadingScreen() {
   );
 }
 
-// ─── Content area ─────────────────────────────────────────────────────────────
 
 interface ContentAreaProps {
   manager: ReturnType<typeof useWorkflowManager>;
@@ -232,7 +226,6 @@ function ContentArea({ manager }: ContentAreaProps) {
   return null;
 }
 
-// ─── Dialog ───────────────────────────────────────────────────────────────────
 
 export const EventWorkflowManagerDialog = ({
   projectId,

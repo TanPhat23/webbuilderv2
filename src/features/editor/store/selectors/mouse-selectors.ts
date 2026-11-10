@@ -17,7 +17,6 @@ import { useMouseStore } from "@/features/editor";
 /** Select only the online collaborator users record. */
 export const useCollaboratorUsers = () => useMouseStore((s) => s.users);
 
-// ─── Combined State Selectors ────────────────────────────────────────
 
 /**
  * Select remote users + online users together (shallow compared).

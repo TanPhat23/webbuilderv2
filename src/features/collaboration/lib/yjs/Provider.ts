@@ -115,9 +115,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     }, 60_000);
   }
 
-  // --------------------------------------------------------------------------
   // Event wiring
-  // --------------------------------------------------------------------------
 
   private setupEventForwarding(): void {
     this.connection.on("open", () => {
@@ -177,9 +175,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     });
   }
 
-  // --------------------------------------------------------------------------
   // Element operations (outbound)
-  // --------------------------------------------------------------------------
 
   public async createElement(
     element: EditorElement,
@@ -217,9 +213,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     return this.elementOps.moveElement(elementId, newParentId, newPosition);
   }
 
-  // --------------------------------------------------------------------------
   // Page operations (REST — WS not implemented)
-  // --------------------------------------------------------------------------
 
   public async createPage(_page: Page): Promise<PageOperationResult> {
     console.warn("[CustomYjsProviderV2] createPage — use REST API");
@@ -239,9 +233,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     return { operationType: "delete", deletedPageId: pageId };
   }
 
-  // --------------------------------------------------------------------------
   // Presence
-  // --------------------------------------------------------------------------
 
   public sendPresence(
     cursorX: number,
@@ -280,9 +272,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     this.sender.sendOrQueue(envelope);
   }
 
-  // --------------------------------------------------------------------------
   // Event subscription & control
-  // --------------------------------------------------------------------------
 
   public on(event: EventType, callback: StatusListener | SyncedListener): void {
     if (event === "status") {

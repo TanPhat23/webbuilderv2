@@ -6,9 +6,6 @@
 import { z } from "zod";
 import { EventTypeSchema } from "./eventSchemas";
 
-// ============================================
-// ID SCHEMAS
-// ============================================
 
 /**
  * Schema for element ID - non-empty trimmed string
@@ -36,9 +33,6 @@ export const ConnectionIdSchema = z
   .min(1, "Connection ID is required")
   .describe("Unique identifier for a connection");
 
-// ============================================
-// CONNECTION SCHEMAS
-// ============================================
 
 /**
  * Schema for element event workflow connection data from API
@@ -85,9 +79,6 @@ export const ElementEventWorkflowConnectionArraySchema = z.array(
   ElementEventWorkflowConnectionSchema,
 );
 
-// ============================================
-// QUERY & RESPONSE SCHEMAS
-// ============================================
 
 /**
  * Schema for API response with connection data
@@ -113,9 +104,6 @@ export const PaginatedConnectionsResponseSchema = z.object({
   pageSize: z.number().positive(),
 });
 
-// ============================================
-// VALIDATION UTILITIES
-// ============================================
 
 /**
  * Validates a connection object
@@ -203,9 +191,6 @@ export function formatValidationErrors(result: {
   return getAllErrors(result).join("\n");
 }
 
-// ============================================
-// TYPE EXPORTS
-// ============================================
 
 export type ElementEventWorkflowConnection = z.infer<
   typeof ElementEventWorkflowConnectionSchema

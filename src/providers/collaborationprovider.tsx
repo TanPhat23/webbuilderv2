@@ -118,9 +118,7 @@ export default function CollaborationProvider({
     pageId,
   };
 
-  // ---------------------------------------------------------------------------
   // Core effect: Setup WebSocketProvider and wire everything together
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
       return;
@@ -172,7 +170,6 @@ export default function CollaborationProvider({
 
     providerRef.current = provider;
 
-    // ---- Status listener ----
     provider.on("status", ({ status }: { status: string }) => {
       const roomState: WSRoomState =
         status === "connected"
@@ -190,13 +187,11 @@ export default function CollaborationProvider({
       else if (status === "disconnected") latest.current.onDisconnect?.();
     });
 
-    // ---- Synced listener ----
     provider.on("synced", (synced: boolean) => {
       setState((s: WSCollabState) => ({ ...s, isSynced: synced }));
       if (synced) latest.current.onSync?.();
     });
 
-    // ---- Observe Y.Text for remote element updates ----
     const yElementsText = ydoc.getText("elementsJson");
     const observer = (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
       if (internalRef.current.isApplyingRemoteUpdate) return;
@@ -312,9 +307,7 @@ export default function CollaborationProvider({
     removeUser,
   ]);
 
-  // ---------------------------------------------------------------------------
   // Mouse tracking on canvas — send presence updates via WebSocket
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !providerRef.current) return;
@@ -361,9 +354,7 @@ export default function CollaborationProvider({
     };
   }, [state.roomState]);
 
-  // ---------------------------------------------------------------------------
   // Stable operation callbacks
-  // ---------------------------------------------------------------------------
 
   const createElement = useCallback(
     async (
@@ -433,9 +424,7 @@ export default function CollaborationProvider({
     await providerRef.current?.reconnect();
   }, []);
 
-  // ---------------------------------------------------------------------------
   // Memoized context value
-  // ---------------------------------------------------------------------------
   const contextValue = useMemo<CollaborationContextValue>(
     () => ({
       // State

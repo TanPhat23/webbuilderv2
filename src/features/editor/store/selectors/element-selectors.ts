@@ -10,7 +10,6 @@ import { useShallow } from "zustand/react/shallow";
 import { useElementStore } from "@/features/editor";
 import type { EditorElement } from "@/types/global.type";
 
-// ─── State Selectors ─────────────────────────────────────────────────
 
 /** Select only the elements array. Re-renders only when elements change. */
 export const useElements = (): EditorElement[] =>

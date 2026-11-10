@@ -26,7 +26,6 @@ const fetchEventWorkflowById = async (
   workflowId: string,
 ): Promise<EventWorkflow> => getEventWorkflowById({ data: { workflowId } });
 
-// ─── Query Hooks ──────────────────────────────────────────────────────────────
 
 /**
  * Fetch all workflows for a project.
@@ -72,7 +71,6 @@ export function useEventWorkflow(workflowId: string, enabled = true) {
   });
 }
 
-// ─── Convenience Hook ─────────────────────────────────────────────────────────
 
 /**
  * Returns workflows + mutation actions + aggregate state flags in one call.

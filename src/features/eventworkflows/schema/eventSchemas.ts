@@ -5,9 +5,6 @@
 
 import { z } from "zod";
 
-// ============================================
-// BASIC TYPE SCHEMAS
-// ============================================
 
 export const EventTypeSchema = z.enum([
   "onClick",
@@ -48,9 +45,6 @@ export const ActionTypeSchema = z.enum([
   "removeClass",
 ]);
 
-// ============================================
-// ACTION CONFIG SCHEMAS
-// ============================================
 
 export const NavigateActionConfigSchema = z.object({
   type: z.literal("navigate"),
@@ -173,9 +167,6 @@ export const EventActionConfigSchema = z.discriminatedUnion("type", [
   ToggleClassActionConfigSchema,
 ]);
 
-// ============================================
-// CONDITION SCHEMAS
-// ============================================
 
 export const ConditionOperatorSchema = z.enum([
   "==",
@@ -197,9 +188,6 @@ export const EventConditionSchema = z.object({
   customCode: z.string().optional(),
 });
 
-// ============================================
-// EVENT HANDLER SCHEMAS
-// ============================================
 
 export const EventHandlerSchema: z.ZodType<any> = z.lazy(() =>
   z.object({
@@ -216,18 +204,12 @@ export const EventHandlerSchema: z.ZodType<any> = z.lazy(() =>
   }),
 );
 
-// ============================================
-// ELEMENT EVENTS SCHEMA
-// ============================================
 
 export const ElementEventsSchema = z.record(
   z.string(),
   EventHandlerSchema.array(),
 );
 
-// ============================================
-// EXECUTION CONTEXT SCHEMA
-// ============================================
 
 export const EventExecutionContextSchema = z.object({
   element: z.any(),
@@ -237,9 +219,6 @@ export const EventExecutionContextSchema = z.object({
   elementInstance: z.any().optional(),
 });
 
-// ============================================
-// EVENT REGISTRY SCHEMA
-// ============================================
 
 export const EventRegistrySchema = z.object({
   elementId: z.string().min(1, "Element ID is required"),
@@ -248,9 +227,6 @@ export const EventRegistrySchema = z.object({
   updatedAt: z.date(),
 });
 
-// ============================================
-// VALIDATION UTILITIES
-// ============================================
 
 /**
  * Validates a single event handler
@@ -315,9 +291,6 @@ export function validateEventRegistry(registry: unknown) {
   return EventRegistrySchema.safeParse(registry);
 }
 
-// ============================================
-// ERROR FORMATTING UTILITIES
-// ============================================
 
 /**
  * Format Zod errors into a readable string
@@ -348,9 +321,6 @@ export function extractErrorMessages(result: {
   });
 }
 
-// ============================================
-// TYPE EXPORTS
-// ============================================
 
 export type EventType = z.infer<typeof EventTypeSchema>;
 export type ActionType = z.infer<typeof ActionTypeSchema>;

@@ -15,13 +15,11 @@ import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "@/features/editor";
 import type { EditorElement } from "@/types/global.type";
 
-// ─── Individual State Selectors ──────────────────────────────────────
 
 /** Select only the currently selected element. */
 export const useSelectedElement = (): EditorElement | undefined =>
   useSelectionStore((s) => s.selectedElement);
 
-// ─── Individual Action Selectors ─────────────────────────────────────
 // Actions are stable references in Zustand — they never change after store
 // creation, so selecting them individually will never cause a re-render.
 
@@ -70,7 +68,6 @@ export const useDragActions = () =>
     })),
   );
 
-// ─── State + Actions Combined ────────────────────────────────────────
 
 /**
  * Selected element + its setter — the most common pattern in sidebar panels.

@@ -6,7 +6,6 @@ import {
   hasPermission,
 } from "@/features/auth";
 
-// ─── Internal helpers ─────────────────────────────────────────────────────────
 
 const LOG = "[ProjectDAL]";
 
@@ -44,7 +43,6 @@ function buildOwnerFields(updates: Partial<Project>): Record<string, unknown> {
   return data;
 }
 
-// ─── DAL ──────────────────────────────────────────────────────────────────────
 
 export const projectDAL = {
   /**

@@ -3,9 +3,6 @@
  * Handles element interactions like click, hover, etc.
  */
 
-// ============================================
-// EVENT TYPES
-// ============================================
 
 export type EventType =
   | "onClick"
@@ -24,9 +21,6 @@ export type EventType =
   | "onLoad"
   | "onError";
 
-// ============================================
-// ACTION TYPES
-// ============================================
 
 export type ActionType =
   | "navigate"
@@ -48,9 +42,6 @@ export type ActionType =
   | "addClass"
   | "removeClass";
 
-// ============================================
-// ACTION CONFIGURATIONS
-// ============================================
 
 export interface NavigateActionConfig {
   type: "navigate";
@@ -163,9 +154,6 @@ export type EventActionConfig =
   | FormActionConfig
   | ToggleClassActionConfig;
 
-// ============================================
-// CONDITIONS
-// ============================================
 
 export type ConditionOperator =
   | "=="
@@ -186,9 +174,6 @@ export interface EventCondition {
   customCode?: string;
 }
 
-// ============================================
-// EVENT HANDLER
-// ============================================
 
 export interface EventHandler {
   id: string;
@@ -205,17 +190,11 @@ export interface EventHandler {
   falseHandlers?: EventHandler[];
 }
 
-// ============================================
-// ELEMENT EVENT COLLECTION
-// ============================================
 
 export interface ElementEvents {
   [eventType: string]: EventHandler[];
 }
 
-// ============================================
-// CONTEXT & EXECUTION
-// ============================================
 
 export interface EventExecutionContext {
   element: any;
@@ -225,9 +204,6 @@ export interface EventExecutionContext {
   elementInstance?: any;
 }
 
-// ============================================
-// EVENT REGISTRY
-// ============================================
 
 export interface EventRegistry {
   elementId: string;

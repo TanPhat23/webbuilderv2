@@ -3,7 +3,6 @@ import { getQueryClient } from "@/client/queryclient";
 import { WORKFLOW_EVENT_TYPES } from "@/features/eventworkflows";
 import { EventWorkflow } from "@/features/eventworkflows";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface IElementEventWorkflowConnection {
   id: string;
@@ -35,7 +34,6 @@ interface ElementEventWorkflowState {
   reset: () => void;
 }
 
-// ─── Query Key Factory ────────────────────────────────────────────────────────
 
 export const elementEventWorkflowKeys = {
   all: ["elementEventWorkflows"] as const,
@@ -47,7 +45,6 @@ export const elementEventWorkflowKeys = {
     [...elementEventWorkflowKeys.byPages(), pageId] as const,
 };
 
-// ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useElementEventWorkflowStore = create<ElementEventWorkflowState>()(
   (set, get) => ({
@@ -133,7 +130,6 @@ export const useElementEventWorkflowStore = create<ElementEventWorkflowState>()(
   }),
 );
 
-// ─── React Query cache helpers ────────────────────────────────────────────────
 
 export function getConnectionsFromCache(
   elementId: string,
@@ -146,7 +142,6 @@ export function getConnectionsFromCache(
   );
 }
 
-// ─── Pure utilities ───────────────────────────────────────────────────────────
 
 export function getConnectedWorkflowsForEvent(
   connections: IElementEventWorkflowConnection[],

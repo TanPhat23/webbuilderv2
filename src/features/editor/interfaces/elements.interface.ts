@@ -30,9 +30,6 @@ export interface Element<
   eventWorkflowConnections?: string[];
 }
 
-// ============================================
-// INLINE / LEAF ELEMENTS
-// ============================================
 
 export interface TextElement extends Element<"Text"> {}
 
@@ -79,9 +76,6 @@ export interface IconSettings {
 
 export interface IconElement extends Element<"Icon", IconSettings> {}
 
-// ============================================
-// MEDIA ELEMENTS
-// ============================================
 
 export interface ImageSettings {
   objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
@@ -152,9 +146,6 @@ export interface IFrameElement extends Element<"IFrame", IFrameSettings> {
   src?: string;
 }
 
-// ============================================
-// INTERACTIVE / LINK ELEMENTS
-// ============================================
 
 export interface LinkElement extends Element<"Link"> {
   href?: string;
@@ -164,9 +155,6 @@ export interface ButtonElement extends Element<"Button"> {
   href?: string;
 }
 
-// ============================================
-// FORM ELEMENTS
-// ============================================
 
 export interface InputSettings {
   name?: string;
@@ -280,9 +268,6 @@ export interface FormElement extends Element<"Form", FormSettings> {
   elements: EditorElement[];
 }
 
-// ============================================
-// TABLE ELEMENTS
-// ============================================
 
 export interface TableSettings {
   caption?: string;
@@ -306,9 +291,6 @@ export interface TableElement extends Element<"Table", TableSettings> {
   elements: EditorElement[];
 }
 
-// ============================================
-// CONTAINER / LAYOUT ELEMENTS
-// ============================================
 
 export interface FrameElement extends Element<"Frame"> {
   elements: EditorElement[];
@@ -338,9 +320,6 @@ export interface AsideElement extends Element<"Aside"> {
   elements: EditorElement[];
 }
 
-// ============================================
-// CMS ELEMENTS
-// ============================================
 
 export interface CMSContentSettings {
   contentTypeId?: string;
@@ -374,9 +353,6 @@ export interface CMSContentGridElement extends Element<
   elements: EditorElement[]; // Template for each grid item
 }
 
-// ============================================
-// CAROUSEL ELEMENT
-// ============================================
 
 export interface CarouselSettings extends EmblaOptionsType {
   withNavigation?: boolean;
