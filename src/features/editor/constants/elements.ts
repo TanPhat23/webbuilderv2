@@ -47,97 +47,42 @@ export const ALL_ELEMENT_TYPES = [
 
 export type ElementType = (typeof ALL_ELEMENT_TYPES)[number];
 
-export const ELEMENT_ICON_MAP: Record<ElementType, string> = {
-  // Inline / Leaf
-  Text: "Type",
-  Span: "TextCursorInput",
-  Heading: "Heading",
-  Label: "Tag",
-  Blockquote: "Quote",
-  Code: "Code",
-  Separator: "Minus",
-  Icon: "Smile",
-  // Media
-  Image: "Image",
-  Video: "Video",
-  Audio: "Volume2",
-  IFrame: "Globe",
-  // Interactive
-  Button: "MousePointerClick",
-  Link: "Link",
-  // Form
-  Input: "FormInput",
-  Textarea: "AlignLeft",
-  Checkbox: "CheckSquare",
-  Radio: "Circle",
-  Select: "TextSelection",
-  Form: "FormInput",
-  Progress: "BarChart3",
-  // Table
-  Table: "Table",
-  // Container / Layout
-  Frame: "CardSim",
-  Section: "CardSim",
-  Nav: "Navigation",
-  Header: "PanelTop",
-  Footer: "PanelBottom",
-  Article: "FileText",
-  Aside: "PanelRight",
-  // Carousel
-  Carousel: "SlidersHorizontal",
-  // List
-  List: "List",
-  // CMS
-  CMSContentList: "List",
-  CMSContentItem: "Database",
-  CMSContentGrid: "Database",
-} as const;
-
-export const ELEMENT_LABELS: Record<ElementType, string> = {
-  // Inline / Leaf
-  Text: "Text",
-  Span: "Span",
-  Heading: "Heading",
-  Label: "Label",
-  Blockquote: "Blockquote",
-  Code: "Code",
-  Separator: "Separator",
-  Icon: "Icon",
-  // Media
-  Image: "Image",
-  Video: "Video",
-  Audio: "Audio",
-  IFrame: "IFrame",
-  // Interactive
-  Button: "Button",
-  Link: "Link",
-  // Form
-  Input: "Input",
-  Textarea: "Textarea",
-  Checkbox: "Checkbox",
-  Radio: "Radio",
-  Select: "Select",
-  Form: "Form",
-  Progress: "Progress",
-  // Table
-  Table: "Table",
-  // Container / Layout
-  Frame: "Frame",
-  Section: "Section",
-  Nav: "Nav",
-  Header: "Header",
-  Footer: "Footer",
-  Article: "Article",
-  Aside: "Aside",
-  // Carousel
-  Carousel: "Carousel",
-  // List
-  List: "List",
-  // CMS
-  CMSContentList: "CMS List",
-  CMSContentItem: "CMS Item",
-  CMSContentGrid: "CMS Grid",
-} as const;
+const ELEMENT_METADATA: Record<ElementType, { icon: string; label: string }> = {
+  Text: { icon: "Type", label: "Text" },
+  Span: { icon: "TextCursorInput", label: "Span" },
+  Heading: { icon: "Heading", label: "Heading" },
+  Label: { icon: "Tag", label: "Label" },
+  Blockquote: { icon: "Quote", label: "Blockquote" },
+  Code: { icon: "Code", label: "Code" },
+  Separator: { icon: "Minus", label: "Separator" },
+  Icon: { icon: "Smile", label: "Icon" },
+  Image: { icon: "Image", label: "Image" },
+  Video: { icon: "Video", label: "Video" },
+  Audio: { icon: "Volume2", label: "Audio" },
+  IFrame: { icon: "Globe", label: "IFrame" },
+  Button: { icon: "MousePointerClick", label: "Button" },
+  Link: { icon: "Link", label: "Link" },
+  Input: { icon: "FormInput", label: "Input" },
+  Textarea: { icon: "AlignLeft", label: "Textarea" },
+  Checkbox: { icon: "CheckSquare", label: "Checkbox" },
+  Radio: { icon: "Circle", label: "Radio" },
+  Select: { icon: "TextSelection", label: "Select" },
+  Form: { icon: "FormInput", label: "Form" },
+  Progress: { icon: "BarChart3", label: "Progress" },
+  Table: { icon: "Table", label: "Table" },
+  Frame: { icon: "CardSim", label: "Frame" },
+  Section: { icon: "CardSim", label: "Section" },
+  Nav: { icon: "Navigation", label: "Nav" },
+  Header: { icon: "PanelTop", label: "Header" },
+  Footer: { icon: "PanelBottom", label: "Footer" },
+  Article: { icon: "FileText", label: "Article" },
+  Aside: { icon: "PanelRight", label: "Aside" },
+  Carousel: { icon: "SlidersHorizontal", label: "Carousel" },
+  List: { icon: "List", label: "List" },
+  CMSContentList: { icon: "List", label: "CMS List" },
+  CMSContentItem: { icon: "Database", label: "CMS Item" },
+  CMSContentGrid: { icon: "Database", label: "CMS Grid" },
+};
 
 interface ElementHolder {
   readonly type: ElementType;
@@ -148,8 +93,7 @@ interface ElementHolder {
 export const elementHolders: readonly ElementHolder[] = ALL_ELEMENT_TYPES.map(
   (type) => ({
     type,
-    icon: ELEMENT_ICON_MAP[type],
-    label: ELEMENT_LABELS[type],
+    ...ELEMENT_METADATA[type],
   }),
 );
 
