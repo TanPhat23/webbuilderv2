@@ -19,7 +19,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createEventWorkflow, deleteEventWorkflow, updateEventWorkflow, updateEventWorkflowEnabled } from "@/features/eventworkflows/api/eventWorkflow.api";
 import type { EventWorkflow, CreateEventWorkflowInput, UpdateEventWorkflowInput } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
-import { eventWorkflowKeys } from "@/features/editor";
+import { eventWorkflowKeys } from "@/features/eventworkflows/constants/queryKeys";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
 
 

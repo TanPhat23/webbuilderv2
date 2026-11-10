@@ -24,4 +24,3 @@ export {
   type EditorResource,
 } from "./useEditorPermissions";
 
-export { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";

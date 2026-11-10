@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { WORKFLOW_EVENT_TYPES } from "@/features/eventworkflows/constants/eventWorkflows";
 import { Layers, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useWorkflowCanvas } from "@/features/editor/hooks";
+import { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";
 import { Badge } from "@/components/ui/badge";
 
 export interface ElementNodeData {

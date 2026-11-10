@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useWorkflowCanvas } from "@/features/editor/hooks";
+import { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";
 import { getNodeTypeColor, ANIMATION_DURATIONS } from "@/features/eventworkflows/constants/eventWorkflows";
 
 interface WorkflowNodeData {

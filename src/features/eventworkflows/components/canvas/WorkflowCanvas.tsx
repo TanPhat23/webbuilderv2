@@ -21,7 +21,7 @@ import { ElementNode } from "../nodes/ElementNode";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, RotateCcw, Trash2, Plus, Grid3x3 } from "lucide-react";
 import { toast } from "sonner";
-import { useWorkflowCanvas } from "@/features/editor/hooks";
+import { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";
 import { cn } from "@/lib/utils";
 import { VALIDATION_ERRORS, NODE_TYPE_LABELS, CONNECTION_CONFIG } from "@/features/eventworkflows/constants/eventWorkflows";
 

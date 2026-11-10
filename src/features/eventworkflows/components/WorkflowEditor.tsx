@@ -23,7 +23,7 @@ import {
 import { Save, RotateCcw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import clsx from "clsx";
-import { useWorkflowCanvas } from "@/features/editor/hooks";
+import { useWorkflowCanvas } from "@/features/eventworkflows/hooks/useWorkflowCanvas";
 import { useElements } from "@/features/editor";
 import { validateWorkflowCanvas } from "@/features/eventworkflows/schema/workflowCanvas";
 import type { ZodIssue } from "zod";
