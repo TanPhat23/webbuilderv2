@@ -49,19 +49,4 @@ export const notificationService = {
     return response.json();
   },
 
-  markAllAsRead: async (): Promise<void> => {
-    const url = new URLBuilder("next").setPath(API_BASE).build();
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to mark all as read");
-    }
-
-    return response.json();
-  },
 };

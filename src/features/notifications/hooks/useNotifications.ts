@@ -6,7 +6,6 @@ import type {
   UpdateNotificationPayload,
 } from "@/features/notifications";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
-import { showSuccessToast } from "@/utils/errors/errorToast";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
 
 export const notificationKeys = {
@@ -36,20 +35,6 @@ export function useUpdateNotification() {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
     onError: onMutationError("Failed to update notification", { log: true }),
-  });
-}
-
-/** Hook to mark all notifications as read. */
-export function useMarkAllAsRead() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => notificationService.markAllAsRead(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
-      showSuccessToast("All notifications marked as read");
-    },
-    onError: onMutationError("Failed to mark all as read", { log: true }),
   });
 }
 

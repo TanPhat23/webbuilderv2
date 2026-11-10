@@ -123,7 +123,6 @@ export {
   notificationKeys,
   useNotifications,
   useUpdateNotification,
-  useMarkAllAsRead,
   useCreateProfileUpdateNotification,
 } from "@/features/notifications";
 
