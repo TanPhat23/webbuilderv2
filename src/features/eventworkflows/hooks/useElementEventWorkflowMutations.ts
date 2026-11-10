@@ -10,7 +10,6 @@ import { EventTypeSchema } from "@/features/eventworkflows/schema/eventSchemas";
 import {
   elementEventWorkflowKeys,
   type IElementEventWorkflowConnection,
-  useElementEventWorkflowStore,
 } from "@/features/editor";
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
@@ -90,7 +89,6 @@ export const useConnectElementEventWorkflow = () => {
         (oldConnections) => [...(oldConnections ?? []), connection],
       );
 
-      useElementEventWorkflowStore.getState().addConnection(connection);
       showSuccessToast("Workflow connected successfully!");
     },
 
@@ -170,9 +168,6 @@ export const useDisconnectElementEventWorkflow = () => {
           ) ?? [],
       );
 
-      useElementEventWorkflowStore
-        .getState()
-        .removeConnection(connectionId, elementId);
       showSuccessToast("Workflow disconnected");
     },
 

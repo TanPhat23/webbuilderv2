@@ -9,7 +9,6 @@ import {
   isWorkflowConnected as isWorkflowConnectedFn,
   getWorkflowConnections as getWorkflowConnectionsFn,
   isConnectedToEvent as isConnectedToEventFn,
-  useElementEventWorkflowStore,
 } from "@/features/editor";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
 import {
@@ -33,7 +32,6 @@ const fetchElementConnections = async (
 
 export function usePageElementConnections(pageId: string | undefined) {
   const queryClient = useQueryClient();
-  const { setPageConnections, setPageLoading } = useElementEventWorkflowStore();
 
   return useQuery<IElementEventWorkflowConnection[]>({
     queryKey: elementEventWorkflowKeys.byPage(pageId ?? ""),
@@ -41,8 +39,6 @@ export function usePageElementConnections(pageId: string | undefined) {
       if (!pageId) {
         return [];
       }
-
-      setPageLoading(pageId, true);
 
       const connections = await fetchPageElementConnections(pageId);
       const groupedConnections = new Map<
@@ -63,8 +59,6 @@ export function usePageElementConnections(pageId: string | undefined) {
           elementConnections,
         );
       });
-
-      setPageConnections(pageId, connections);
 
       return connections;
     },

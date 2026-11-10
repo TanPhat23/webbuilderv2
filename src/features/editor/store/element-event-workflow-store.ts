@@ -1,4 +1,3 @@
-import { create } from "zustand";
 import { getQueryClient } from "@/client/queryclient";
 import { WORKFLOW_EVENT_TYPES } from "@/features/eventworkflows";
 import { EventWorkflow } from "@/features/eventworkflows";
@@ -13,28 +12,6 @@ export interface IElementEventWorkflowConnection {
   updatedAt: string;
 }
 
-type ConnectionsMap = Record<string, IElementEventWorkflowConnection[]>;
-
-interface ElementEventWorkflowState {
-  connectionsByElement: ConnectionsMap;
-  loadedPages: Set<string>;
-  loadingPages: Set<string>;
-
-  setPageConnections: (
-    pageId: string,
-    connections: IElementEventWorkflowConnection[],
-  ) => void;
-  addConnection: (connection: IElementEventWorkflowConnection) => void;
-  removeConnection: (connectionId: string, elementId: string) => void;
-  getElementConnections: (
-    elementId: string,
-  ) => IElementEventWorkflowConnection[];
-  isPageLoaded: (pageId: string) => boolean;
-  setPageLoading: (pageId: string, loading: boolean) => void;
-  reset: () => void;
-}
-
-
 export const elementEventWorkflowKeys = {
   all: ["elementEventWorkflows"] as const,
   byElements: () => [...elementEventWorkflowKeys.all, "byElement"] as const,
@@ -44,91 +21,6 @@ export const elementEventWorkflowKeys = {
   byPage: (pageId: string) =>
     [...elementEventWorkflowKeys.byPages(), pageId] as const,
 };
-
-
-export const useElementEventWorkflowStore = create<ElementEventWorkflowState>()(
-  (set, get) => ({
-    connectionsByElement: {},
-    loadedPages: new Set(),
-    loadingPages: new Set(),
-
-    setPageConnections: (pageId, connections) => {
-      const grouped: ConnectionsMap = {};
-      for (const conn of connections) {
-        if (!grouped[conn.elementId]) grouped[conn.elementId] = [];
-        grouped[conn.elementId].push(conn);
-      }
-
-      set((state) => {
-        const loadedPages = new Set(state.loadedPages);
-        const loadingPages = new Set(state.loadingPages);
-        loadedPages.add(pageId);
-        loadingPages.delete(pageId);
-
-        return {
-          connectionsByElement: { ...state.connectionsByElement, ...grouped },
-          loadedPages,
-          loadingPages,
-        };
-      });
-    },
-
-    addConnection: (connection) => {
-      set((state) => {
-        const existing = state.connectionsByElement[connection.elementId] ?? [];
-        const alreadyExists = existing.some((c) => c.id === connection.id);
-        if (alreadyExists) return state;
-
-        return {
-          connectionsByElement: {
-            ...state.connectionsByElement,
-            [connection.elementId]: [...existing, connection],
-          },
-        };
-      });
-    },
-
-    removeConnection: (connectionId, elementId) => {
-      set((state) => {
-        const existing = state.connectionsByElement[elementId] ?? [];
-        return {
-          connectionsByElement: {
-            ...state.connectionsByElement,
-            [elementId]: existing.filter((c) => c.id !== connectionId),
-          },
-        };
-      });
-    },
-
-    getElementConnections: (elementId) => {
-      return get().connectionsByElement[elementId] ?? [];
-    },
-
-    isPageLoaded: (pageId) => {
-      return get().loadedPages.has(pageId);
-    },
-
-    setPageLoading: (pageId, loading) => {
-      set((state) => {
-        const loadingPages = new Set(state.loadingPages);
-        if (loading) {
-          loadingPages.add(pageId);
-        } else {
-          loadingPages.delete(pageId);
-        }
-        return { loadingPages };
-      });
-    },
-
-    reset: () => {
-      set({
-        connectionsByElement: {},
-        loadedPages: new Set(),
-        loadingPages: new Set(),
-      });
-    },
-  }),
-);
 
 
 export function getConnectionsFromCache(
