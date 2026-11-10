@@ -97,7 +97,6 @@ function IconPicker({ value, onChange }: IconPickerProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Current selection */}
       <div className="flex items-center gap-2">
         <div
           className={cn(
@@ -135,7 +134,6 @@ function IconPicker({ value, onChange }: IconPickerProps) {
         </div>
       </div>
 
-      {/* Toggle picker */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -155,10 +153,8 @@ function IconPicker({ value, onChange }: IconPickerProps) {
         )}
       </button>
 
-      {/* Expanded picker */}
       {isExpanded && (
         <div className="flex flex-col gap-2 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground/40" />
             <Input
@@ -180,7 +176,6 @@ function IconPicker({ value, onChange }: IconPickerProps) {
             )}
           </div>
 
-          {/* Results count */}
           <div className="flex items-center gap-1.5 px-0.5">
             <span className="text-[10px] text-muted-foreground/50">
               {totalMatches > MAX_VISIBLE_ICONS
@@ -189,7 +184,6 @@ function IconPicker({ value, onChange }: IconPickerProps) {
             </span>
           </div>
 
-          {/* Icon grid */}
           <div className="grid grid-cols-6 gap-1 max-h-[240px] overflow-y-auto rounded-md border border-border/30 bg-muted/10 p-1.5">
             {filteredIcons.map((name) => (
               <button
@@ -321,7 +315,6 @@ export default function IconConfiguration() {
           defaultValue={["icon-select", "sizing", "colors"]}
           className="w-full"
         >
-          {/* ── Icon Selection ── */}
           <AccordionSection
             value="icon-select"
             title="Icon"
@@ -331,14 +324,12 @@ export default function IconConfiguration() {
             <IconPicker value={iconName} onChange={handleIconNameChange} />
           </AccordionSection>
 
-          {/* ── Sizing ── */}
           <AccordionSection
             value="sizing"
             title="Sizing"
             icon={<Ruler />}
             nested
           >
-            {/* Size */}
             <ConfigField
               label="Size"
               htmlFor="icon-size"
@@ -383,7 +374,6 @@ export default function IconConfiguration() {
 
             <SectionDivider />
 
-            {/* Stroke Width */}
             <ConfigField
               label="Stroke width"
               htmlFor="icon-strokeWidth"
@@ -428,7 +418,6 @@ export default function IconConfiguration() {
 
             <SectionDivider />
 
-            {/* Absolute Stroke Width */}
             <ConfigField
               label="Absolute stroke"
               htmlFor="icon-absoluteStrokeWidth"
@@ -484,14 +473,12 @@ export default function IconConfiguration() {
             </div>
           </AccordionSection>
 
-          {/* ── Colors ── */}
           <AccordionSection
             value="colors"
             title="Colors"
             icon={<Palette />}
             nested
           >
-            {/* Stroke Color */}
             <ConfigSection
               title="Stroke Color"
               icon={<Paintbrush className="h-3 w-3" />}
@@ -561,7 +548,6 @@ export default function IconConfiguration() {
 
             <SectionDivider />
 
-            {/* Fill Color */}
             <ConfigSection
               title="Fill Color"
               icon={<Droplets className="h-3 w-3" />}
@@ -643,7 +629,6 @@ export default function IconConfiguration() {
           </AccordionSection>
         </Accordion>
 
-        {/* ── Final Summary ── */}
         <SectionDivider className="mt-2" />
         <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
           {isValidIcon ? (

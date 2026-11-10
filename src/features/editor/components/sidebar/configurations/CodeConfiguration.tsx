@@ -124,12 +124,10 @@ export default function CodeConfiguration() {
 
       <AccordionContent className="pb-3 pt-1 px-0.5">
         <div className="flex flex-col gap-3">
-          {/* ── Language ── */}
           <ConfigSection
             title="Language"
             icon={<FileCode2 className="h-3 w-3" />}
           >
-            {/* Language Selector */}
             <ConfigField
               label="Language"
               htmlFor="code-language"
@@ -168,12 +166,10 @@ export default function CodeConfiguration() {
 
           <SectionDivider />
 
-          {/* ── Display ── */}
           <ConfigSection
             title="Display"
             icon={<Settings2 className="h-3 w-3" />}
           >
-            {/* Preformatted */}
             <ConfigField
               label="Preformatted"
               htmlFor="code-preformatted"
@@ -200,7 +196,6 @@ export default function CodeConfiguration() {
             </div>
           </ConfigSection>
 
-          {/* ── Summary ── */}
           <SectionDivider />
           <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
             <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">

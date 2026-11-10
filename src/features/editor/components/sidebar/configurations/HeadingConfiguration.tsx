@@ -115,7 +115,6 @@ export default function HeadingConfiguration() {
 
       <AccordionContent className="pb-3 pt-1 px-0.5">
         <div className="flex flex-col gap-3">
-          {/* ── Level Selector ── */}
           <ConfigSection
             title="Level"
             icon={<Type className="h-3 w-3" />}

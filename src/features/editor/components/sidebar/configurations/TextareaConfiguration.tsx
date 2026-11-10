@@ -135,14 +135,12 @@ export default function TextareaConfiguration() {
           defaultValue={["general", "validation", "dimensions", "behavior"]}
           className="w-full"
         >
-          {/* ── General ── */}
           <AccordionSection
             value="general"
             title="General"
             icon={<Settings2 />}
             nested
           >
-            {/* Name */}
             <ConfigField
               label="Name"
               htmlFor="textarea-name"
@@ -162,7 +160,6 @@ export default function TextareaConfiguration() {
 
             <SectionDivider />
 
-            {/* Placeholder */}
             <ConfigField
               label="Placeholder"
               htmlFor="textarea-placeholder"
@@ -180,7 +177,6 @@ export default function TextareaConfiguration() {
               />
             </ConfigField>
 
-            {/* Default Value */}
             <ConfigField
               label="Default value"
               htmlFor="textarea-defaultValue"
@@ -200,14 +196,12 @@ export default function TextareaConfiguration() {
             </ConfigField>
           </AccordionSection>
 
-          {/* ── Dimensions ── */}
           <AccordionSection
             value="dimensions"
             title="Dimensions"
             icon={<Maximize2 />}
             nested
           >
-            {/* Rows */}
             <ConfigField
               label="Rows"
               htmlFor="textarea-rows"
@@ -225,7 +219,6 @@ export default function TextareaConfiguration() {
               />
             </ConfigField>
 
-            {/* Cols */}
             <ConfigField
               label="Cols"
               htmlFor="textarea-cols"
@@ -256,7 +249,6 @@ export default function TextareaConfiguration() {
 
             <SectionDivider />
 
-            {/* Resize */}
             <ConfigField
               label="Resize"
               htmlFor="textarea-resize"
@@ -295,7 +287,6 @@ export default function TextareaConfiguration() {
             </div>
           </AccordionSection>
 
-          {/* ── Validation ── */}
           <AccordionSection
             value="validation"
             title="Validation Rules"
@@ -305,14 +296,12 @@ export default function TextareaConfiguration() {
             <ValidationConfiguration />
           </AccordionSection>
 
-          {/* ── Constraints ── */}
           <AccordionSection
             value="constraints"
             title="Constraints"
             icon={<Lock />}
             nested
           >
-            {/* Required */}
             <ConfigField
               label="Required"
               htmlFor="textarea-required"
@@ -328,7 +317,6 @@ export default function TextareaConfiguration() {
               />
             </ConfigField>
 
-            {/* Read Only */}
             <ConfigField
               label="Read only"
               htmlFor="textarea-readOnly"
@@ -344,7 +332,6 @@ export default function TextareaConfiguration() {
               />
             </ConfigField>
 
-            {/* Disabled */}
             <ConfigField
               label="Disabled"
               htmlFor="textarea-disabled"
@@ -366,7 +353,6 @@ export default function TextareaConfiguration() {
               title="Character Limits"
               icon={<Hash className="h-3 w-3" />}
             >
-              {/* Min Length */}
               <ConfigField
                 label="Min length"
                 htmlFor="textarea-minLength"
@@ -383,7 +369,6 @@ export default function TextareaConfiguration() {
                 />
               </ConfigField>
 
-              {/* Max Length */}
               <ConfigField
                 label="Max length"
                 htmlFor="textarea-maxLength"
@@ -419,14 +404,12 @@ export default function TextareaConfiguration() {
             </ConfigSection>
           </AccordionSection>
 
-          {/* ── Behavior ── */}
           <AccordionSection
             value="behavior"
             title="Behavior"
             icon={<Keyboard />}
             nested
           >
-            {/* Wrap */}
             <ConfigField
               label="Wrap"
               htmlFor="textarea-wrap"
@@ -475,7 +458,6 @@ export default function TextareaConfiguration() {
 
             <SectionDivider />
 
-            {/* Spell Check */}
             <ConfigField
               label="Spell check"
               htmlFor="textarea-spellCheck"
@@ -503,7 +485,6 @@ export default function TextareaConfiguration() {
 
             <SectionDivider />
 
-            {/* Autocomplete */}
             <ConfigField
               label="Autocomplete"
               htmlFor="textarea-autoComplete"

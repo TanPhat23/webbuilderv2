@@ -102,7 +102,6 @@ function ColumnEditor({
           : "border-border/40 bg-background hover:border-border/60",
       )}
     >
-      {/* Column header row */}
       <button
         type="button"
         onClick={onToggleExpand}
@@ -131,12 +130,10 @@ function ColumnEditor({
         )}
       </button>
 
-      {/* Expanded column fields */}
       {isExpanded && (
         <div className="px-2.5 pb-2.5 pt-1 flex flex-col gap-2.5 animate-in fade-in-0 slide-in-from-top-1 duration-150">
           <SectionDivider />
 
-          {/* Header */}
           <ConfigField
             label="Header"
             htmlFor={`col-header-${column.id}`}
@@ -153,7 +150,6 @@ function ColumnEditor({
             />
           </ConfigField>
 
-          {/* Accessor */}
           <ConfigField
             label="Accessor"
             htmlFor={`col-accessor-${column.id}`}
@@ -172,7 +168,6 @@ function ColumnEditor({
             />
           </ConfigField>
 
-          {/* Width */}
           <ConfigField
             label="Width"
             htmlFor={`col-width-${column.id}`}
@@ -200,7 +195,6 @@ function ColumnEditor({
             />
           </ConfigField>
 
-          {/* Align */}
           <ConfigField
             label="Align"
             htmlFor={`col-align-${column.id}`}
@@ -227,7 +221,6 @@ function ColumnEditor({
             </div>
           </ConfigField>
 
-          {/* Sortable */}
           <ConfigField
             label="Sortable"
             htmlFor={`col-sortable-${column.id}`}
@@ -245,7 +238,6 @@ function ColumnEditor({
 
           <SectionDivider />
 
-          {/* Actions */}
           <div className="flex items-center justify-between gap-1">
             <div className="flex items-center gap-1">
               <Button
@@ -390,14 +382,12 @@ export default function TableConfiguration() {
           defaultValue={["general", "columns", "appearance"]}
           className="w-full"
         >
-          {/* ── General ── */}
           <AccordionSection
             value="general"
             title="General"
             icon={<Settings2 />}
             nested
           >
-            {/* Caption */}
             <ConfigField
               label="Caption"
               htmlFor="table-caption"
@@ -433,7 +423,6 @@ export default function TableConfiguration() {
             )}
           </AccordionSection>
 
-          {/* ── Columns ── */}
           <AccordionSection
             value="columns"
             title="Columns"
@@ -478,7 +467,6 @@ export default function TableConfiguration() {
 
             <SectionDivider />
 
-            {/* Add column button */}
             <Button
               type="button"
               variant="outline"
@@ -490,7 +478,6 @@ export default function TableConfiguration() {
               Add Column
             </Button>
 
-            {/* Column summary */}
             {columns.length > 0 && (
               <>
                 <SectionDivider />
@@ -510,14 +497,12 @@ export default function TableConfiguration() {
             )}
           </AccordionSection>
 
-          {/* ── Appearance ── */}
           <AccordionSection
             value="appearance"
             title="Appearance"
             icon={<Paintbrush />}
             nested
           >
-            {/* Bordered */}
             <ConfigField
               label="Bordered"
               htmlFor="table-bordered"
@@ -533,7 +518,6 @@ export default function TableConfiguration() {
               />
             </ConfigField>
 
-            {/* Striped */}
             <ConfigField
               label="Striped rows"
               htmlFor="table-striped"
@@ -549,7 +533,6 @@ export default function TableConfiguration() {
               />
             </ConfigField>
 
-            {/* Hoverable */}
             <ConfigField
               label="Hover highlight"
               htmlFor="table-hoverable"
@@ -565,7 +548,6 @@ export default function TableConfiguration() {
               />
             </ConfigField>
 
-            {/* Compact */}
             <ConfigField
               label="Compact"
               htmlFor="table-compact"
@@ -619,7 +601,6 @@ export default function TableConfiguration() {
           </AccordionSection>
         </Accordion>
 
-        {/* ── Final Summary ── */}
         <SectionDivider className="mt-2" />
         <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
           <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">

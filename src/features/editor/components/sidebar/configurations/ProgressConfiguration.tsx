@@ -99,12 +99,10 @@ export default function ProgressConfiguration() {
 
       <AccordionContent className="pb-3 pt-1 px-0.5">
         <div className="flex flex-col gap-3">
-          {/* ── Values ── */}
           <ConfigSection
             title="Values"
             icon={<Settings2 className="h-3 w-3" />}
           >
-            {/* Indeterminate */}
             <ConfigField
               label="Indeterminate"
               htmlFor="progress-indeterminate"
@@ -133,7 +131,6 @@ export default function ProgressConfiguration() {
               <>
                 <SectionDivider />
 
-                {/* Value */}
                 <ConfigField
                   label="Value"
                   htmlFor="progress-value"
@@ -157,7 +154,6 @@ export default function ProgressConfiguration() {
                   </div>
                 </ConfigField>
 
-                {/* Max */}
                 <ConfigField
                   label="Max"
                   htmlFor="progress-max"
@@ -175,7 +171,6 @@ export default function ProgressConfiguration() {
                   />
                 </ConfigField>
 
-                {/* Visual progress bar */}
                 <SectionDivider />
 
                 <div className="flex flex-col gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
@@ -234,12 +229,10 @@ export default function ProgressConfiguration() {
 
           <SectionDivider />
 
-          {/* ── Label ── */}
           <ConfigSection
             title="Accessibility"
             icon={<Tag className="h-3 w-3" />}
           >
-            {/* Label */}
             <ConfigField
               label="Label"
               htmlFor="progress-label"
@@ -276,7 +269,6 @@ export default function ProgressConfiguration() {
             )}
           </ConfigSection>
 
-          {/* ── Summary ── */}
           <SectionDivider />
           <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
             {isIndeterminate ? (

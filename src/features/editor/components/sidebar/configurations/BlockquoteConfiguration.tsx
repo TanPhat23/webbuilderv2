@@ -75,12 +75,10 @@ export default function BlockquoteConfiguration() {
 
       <AccordionContent className="pb-3 pt-1 px-0.5">
         <div className="flex flex-col gap-3">
-          {/* ── Citation Source ── */}
           <ConfigSection
             title="Citation"
             icon={<BookOpen className="h-3 w-3" />}
           >
-            {/* Cite URL */}
             <ConfigField
               label="Source URL"
               htmlFor="blockquote-cite"
@@ -137,7 +135,6 @@ export default function BlockquoteConfiguration() {
             </div>
           </ConfigSection>
 
-          {/* ── Summary ── */}
           <SectionDivider />
           <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
             <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
