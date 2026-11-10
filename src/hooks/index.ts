@@ -96,17 +96,12 @@ export {
 } from "@/features/marketplace";
 export {
   commentKeys,
-  useComments,
-  useComment,
   useCommentsByItem,
-  useCommentCount,
   useCreateComment,
   useUpdateComment,
   useDeleteComment,
   useCreateReaction,
   useDeleteReaction,
-  useReactions,
-  useReactionSummary,
 } from "@/features/comments";
 export {
   projectKeys,

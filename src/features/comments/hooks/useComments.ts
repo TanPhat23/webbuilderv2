@@ -30,24 +30,6 @@ export const commentKeys = {
     [...commentKeys.all, "reactionSummary", commentId] as const,
 };
 
-/** Hook to get comments with optional filters. */
-export function useComments(filter?: CommentFilter) {
-  return useQuery({
-    queryKey: commentKeys.list(filter),
-    queryFn: () => commentService.getComments(filter),
-    ...QUERY_CONFIG.SHORT,
-  });
-}
-
-/** Hook to get a single comment by ID. */
-export function useComment(commentId: string) {
-  return useQuery({
-    queryKey: commentKeys.detail(commentId),
-    queryFn: () => commentService.getCommentById(commentId),
-    enabled: !!commentId,
-  });
-}
-
 /** Hook to get comments by marketplace item ID. */
 export function useCommentsByItem(
   itemId: string,
@@ -58,16 +40,6 @@ export function useCommentsByItem(
     queryFn: () => commentService.getCommentsByItemId(itemId, filter),
     enabled: !!itemId,
     ...QUERY_CONFIG.SHORT,
-  });
-}
-
-/** Hook to get comment count for an item. */
-export function useCommentCount(itemId: string) {
-  return useQuery({
-    queryKey: commentKeys.count(itemId),
-    queryFn: () => commentService.getCommentCount(itemId),
-    enabled: !!itemId,
-    ...QUERY_CONFIG.DEFAULT,
   });
 }
 
@@ -184,23 +156,5 @@ export function useDeleteReaction() {
       });
     },
     onError: onMutationError("Failed to remove reaction"),
-  });
-}
-
-/** Hook to get reactions for a comment. */
-export function useReactions(commentId: string) {
-  return useQuery({
-    queryKey: commentKeys.reactions(commentId),
-    queryFn: () => commentService.getReactions(commentId),
-    enabled: !!commentId,
-  });
-}
-
-/** Hook to get reaction summary for a comment. */
-export function useReactionSummary(commentId: string) {
-  return useQuery({
-    queryKey: commentKeys.reactionSummary(commentId),
-    queryFn: () => commentService.getReactionSummary(commentId),
-    enabled: !!commentId,
   });
 }
