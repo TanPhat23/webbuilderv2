@@ -74,7 +74,7 @@ type CreateContentItemVariables = {
 type UpdateContentItemVariables = {
   contentTypeId: string;
   itemId: string;
-  data: Partial<ContentItem> & {
+  data: Partial<ContentItemFormValues> & {
     fieldValues?: ContentFieldValueInput[];
   };
 };

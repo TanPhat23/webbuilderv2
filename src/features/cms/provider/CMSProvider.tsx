@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useMemo } from "react";
-import { useCMSManager } from "@/features/cms";
-import { CMSContextValue } from "../components/types";
+import React, { createContext, useContext } from "react";
+import { useCMSManager } from "../hooks/useCMSManager";
+import type { CMSContextValue } from "../components/types";
 
 const CMSContext = createContext<CMSContextValue | null>(null);
 
@@ -13,49 +13,14 @@ export function useCMSContext(): CMSContextValue {
 export function CMSProvider({ children }: { children: React.ReactNode }) {
   const manager = useCMSManager();
 
-  const value = useMemo<CMSContextValue>(
-    () => ({
-      selectedTypeId: manager.selectedTypeId,
-      selectedType: manager.contentTypes.find(
-        (t) => t.id === manager.selectedTypeId,
-      ),
-
-      contentTypes: manager.contentTypes,
-      contentFields: manager.contentFields,
-      contentItems: manager.contentItems,
-
-      typesLoading: manager.typesLoading,
-      fieldsLoading: manager.fieldsLoading,
-      itemsLoading: manager.itemsLoading,
-
-      createTypeMutation: manager.createTypeMutation,
-      updateTypeMutation: manager.updateTypeMutation,
-      deleteTypeMutation: manager.deleteTypeMutation,
-
-      createFieldMutation: manager.createFieldMutation,
-      updateFieldMutation: manager.updateFieldMutation,
-      deleteFieldMutation: manager.deleteFieldMutation,
-
-      createItemMutation: manager.createItemMutation,
-      updateItemMutation: manager.updateItemMutation,
-      deleteItemMutation: manager.deleteItemMutation,
-
-      selectType: manager.selectType,
-      handleCreateType: manager.handleCreateType,
-      handleCreateField: manager.handleCreateField,
-      handleCreateItem: manager.handleCreateItem,
-
-      handleDeleteType: (id: string) =>
-        manager.deleteTypeMutation.mutate({ id }),
-
-      handleDeleteField: (contentTypeId: string, fieldId: string) =>
-        manager.deleteFieldMutation.mutate({ contentTypeId, fieldId }),
-
-      handleDeleteItem: (contentTypeId: string, itemId: string) =>
-        manager.deleteItemMutation.mutate({ contentTypeId, itemId }),
-    }),
-    [manager],
-  );
+  const value: CMSContextValue = {
+    ...manager,
+    handleDeleteType: (id) => manager.deleteTypeMutation.mutate({ id }),
+    handleDeleteField: (contentTypeId, fieldId) =>
+      manager.deleteFieldMutation.mutate({ contentTypeId, fieldId }),
+    handleDeleteItem: (contentTypeId, itemId) =>
+      manager.deleteItemMutation.mutate({ contentTypeId, itemId }),
+  };
 
   return <CMSContext.Provider value={value}>{children}</CMSContext.Provider>;
 }
