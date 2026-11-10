@@ -7,7 +7,7 @@ import { RecentVisits } from "./RecentVisits";
 import { CalendarDateRangePicker } from "./DateRangePicker";
 import * as XLSX from "xlsx";
 import { Download } from "lucide-react";
-import { useAnalytics } from "@/hooks";
+import { useAnalytics } from "@/features/analytics/hooks/useAnalytics";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function AnalyticsContent() {

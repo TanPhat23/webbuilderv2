@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense, useEffect, useState } from "react";
 import { useSearch } from "@tanstack/react-router";
-import { useAcceptInvitation } from "@/hooks";
+import { useAcceptInvitation } from "@/features/collaboration/hooks/useInvitations";
 import { Loader2, CheckCircle2, XCircle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

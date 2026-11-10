@@ -10,7 +10,7 @@ import { ElementFactory } from "@/features/editor/utils/element/create/ElementFa
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { useEditorPermissions } from "./useEditorPermissions";
-import { useProject, useProjectPages } from "@/hooks";
+import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { Page } from "@/features/pages";
 import type { Project } from "@/features/projects";

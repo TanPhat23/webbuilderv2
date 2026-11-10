@@ -15,7 +15,7 @@ import {
   Loader2,
 } from "lucide-react";
 import type { MarketplaceItemWithRelations } from "@/features/marketplace";
-import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks";
+import { useDownloadMarketplaceItem, useIncrementLikes } from "@/features/marketplace/hooks/useMarketplace";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from '@tanstack/react-router';

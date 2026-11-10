@@ -10,7 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 import { useElementCommentStore } from "@/features/editor";
 import { useSelectedElementWithSetter } from "@/features/editor";
-import { useElementComments, useProjectComments } from "@/hooks";
+import { useElementComments, useProjectComments } from "@/features/comments/hooks/useElementComments";
 import { useProjectStore } from "@/features/editor";
 import { useCommentManager } from "@/features/comments";
 

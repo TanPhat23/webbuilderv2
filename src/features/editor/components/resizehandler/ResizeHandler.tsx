@@ -1,8 +1,8 @@
 
 import { useUpdateElement } from "@/features/editor";
 import { useDragAndSelectionState } from "@/features/editor";
-import { useElementHandler } from "@/hooks";
-import { useResizeHandler } from "@/hooks";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
 import type React from "react";

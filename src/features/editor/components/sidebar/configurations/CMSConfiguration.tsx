@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { CMSContentSettings } from "@/features/editor";
-import { useCMSContentTypes, useCMSContent } from "@/hooks";
+import { useCMSContentTypes, useCMSContent } from "@/features/cms/hooks/useCMSContent";
 import {
   ConfigField,
   ConfigSection,

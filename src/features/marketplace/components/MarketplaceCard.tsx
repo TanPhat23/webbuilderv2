@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Heart, CheckCircle2, Layers, Eye } from "lucide-react";
 
 import { MarketplaceItemWithRelations } from "@/features/marketplace";
-import { useDownloadMarketplaceItem, useIncrementLikes } from "@/hooks";
+import { useDownloadMarketplaceItem, useIncrementLikes } from "@/features/marketplace/hooks/useMarketplace";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from '@tanstack/react-router';

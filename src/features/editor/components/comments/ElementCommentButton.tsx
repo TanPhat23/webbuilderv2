@@ -5,7 +5,7 @@ import { useElementCommentStore } from "@/features/editor";
 import { EditorElement } from "@/types/global.type";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useElementComments } from "@/hooks";
+import { useElementComments } from "@/features/comments/hooks/useElementComments";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,

@@ -36,7 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateMarketplaceItemDialog } from "@/features/marketplace";
-import { useDeleteMarketplaceItem, useMarketplaceItems } from "@/hooks";
+import { useDeleteMarketplaceItem, useMarketplaceItems } from "@/features/marketplace/hooks/useMarketplace";
 import { useUserPlan } from "@/features/subscription";
 import type { Project } from "@/features/projects";
 

@@ -6,7 +6,7 @@
  */
 
 import { useState, useMemo } from "react";
-import { useUserProjects, useDeleteProject, usePublishProject } from "@/hooks";
+import { useUserProjects, useDeleteProject, usePublishProject } from "@/features/projects/hooks/useProjects";
 import type {
   SortOption,
   ViewMode,

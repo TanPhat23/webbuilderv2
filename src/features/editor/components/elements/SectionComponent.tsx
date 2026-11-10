@@ -1,6 +1,6 @@
 import React from "react";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useElementHandler } from "@/hooks";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { SectionElement } from "@/features/editor";
 import { EditorComponentProps } from "@/features/editor";
 import ElementLoader from "../ElementLoader";

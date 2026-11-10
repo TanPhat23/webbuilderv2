@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { MarketplaceItemDetail } from "@/features/marketplace";
-import { useMarketplaceItem } from "@/hooks";
+import { useMarketplaceItem } from "@/features/marketplace/hooks/useMarketplace";
 
 export const Route = createFileRoute("/_protected/marketplace/$id")({
   component: MarketplaceItemPage,

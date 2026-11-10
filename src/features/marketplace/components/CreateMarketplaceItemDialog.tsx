@@ -36,14 +36,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  useCreateMarketplaceItem,
-  useUpdateMarketplaceItem,
-  useMarketplaceItem,
-  useCategories,
-  useTags,
-  useUserProjects,
-} from "@/hooks";
+import { useCreateMarketplaceItem, useUpdateMarketplaceItem, useMarketplaceItem, useCategories, useTags } from "@/features/marketplace/hooks/useMarketplace";
+import { useUserProjects } from "@/features/projects/hooks/useProjects";
 import { useUserPlan } from "@/features/subscription";
 import { Loader2, Plus, Upload, Crown, AlertCircle } from "lucide-react";
 import { CreateMarketplaceItemRequest } from "@/features/marketplace";

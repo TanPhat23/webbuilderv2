@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { useCategories } from "@/hooks";
+import { useCategories } from "@/features/marketplace/hooks/useMarketplace";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

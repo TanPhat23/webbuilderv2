@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { useInView } from "@/hooks";
+import { useInView } from "@/features/ui/hooks/useInView";
 
 const testimonials = [
   {

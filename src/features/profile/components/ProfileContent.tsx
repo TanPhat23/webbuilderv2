@@ -18,7 +18,7 @@ import RecentActivitiesCard from "./RecentActivitiesCard";
 import { EditProfileDialog } from "./EditProfileDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubscriptionCard } from "./SubscriptionCard";
-import { useUserProjects } from "@/hooks";
+import { useUserProjects } from "@/features/projects/hooks/useProjects";
 
 export function ProfileContent() {
   const { user, isLoaded } = useUser();

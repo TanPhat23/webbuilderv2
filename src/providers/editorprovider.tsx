@@ -5,7 +5,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { useEditor } from "@/hooks";
+import { useEditor } from "@/features/editor/hooks/useEditor";
 import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorShell from "@/features/editor/components/editor/EditorShell";

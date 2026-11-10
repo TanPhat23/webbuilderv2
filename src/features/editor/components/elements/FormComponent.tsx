@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useElementHandler } from "@/hooks";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { useAddElement } from "@/features/editor";

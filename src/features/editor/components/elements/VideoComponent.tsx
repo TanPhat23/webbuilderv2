@@ -3,7 +3,7 @@ import React from "react";
 import { EditorComponentProps } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { VideoElement, VideoSettings } from "@/features/editor";
-import { useElementHandler } from "@/hooks";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import {
   Empty,
   EmptyHeader,

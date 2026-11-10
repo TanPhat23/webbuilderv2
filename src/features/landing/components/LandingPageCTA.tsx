@@ -2,7 +2,7 @@
 import { ArrowRight } from "lucide-react";
 import { Link } from '@tanstack/react-router';
 import { Button } from "@/components/ui/button";
-import { useInView } from "@/hooks";
+import { useInView } from "@/features/ui/hooks/useInView";
 
 export default function LandingPageCTA() {
   const [ref, inView] = useInView();

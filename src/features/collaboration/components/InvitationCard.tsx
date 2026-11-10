@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useCreateInvitation } from "@/hooks";
+import { useCreateInvitation } from "@/features/collaboration/hooks/useInvitations";
 import { CollaboratorRole } from "@/features/collaboration";
 import {
   Card,

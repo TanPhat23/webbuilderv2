@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { MarketplaceCard } from "./MarketplaceCard";
 import { Button } from "@/components/ui/button";
 import { MarketplaceFilters } from "@/features/marketplace";
-import { useMarketplaceItems } from "@/hooks";
+import { useMarketplaceItems } from "@/features/marketplace/hooks/useMarketplace";
 import { Loader2, Search, AlertCircle } from "lucide-react";
 import {
   Select,

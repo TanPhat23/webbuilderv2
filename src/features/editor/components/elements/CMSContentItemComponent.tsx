@@ -1,12 +1,13 @@
 
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
-import { useCMSContentItem, useElementHandler } from "@/hooks";
+import { useCMSContentItem } from "@/features/cms/hooks/useCMSContent";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentItemElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import ElementLoader from "../ElementLoader";
-import { getFieldValue } from "@/hooks";
+import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
 

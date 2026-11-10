@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-import { Viewport } from "@/hooks";
+import { Viewport } from "@/features/editor/hooks/useEditor";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,

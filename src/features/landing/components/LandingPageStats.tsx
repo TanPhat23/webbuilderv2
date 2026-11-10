@@ -1,5 +1,5 @@
 
-import { useInView } from "@/hooks";
+import { useInView } from "@/features/ui/hooks/useInView";
 
 const stats = [
   { value: "50K+", label: "Websites Created" },

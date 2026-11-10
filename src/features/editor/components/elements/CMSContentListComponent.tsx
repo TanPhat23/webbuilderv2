@@ -1,11 +1,11 @@
 import React from "react";
-import { useElementHandler } from "@/hooks";
+import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentListElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
-import { getFieldValue, useCMSContent } from "@/hooks";
+import { getFieldValue, useCMSContent } from "@/features/cms/hooks/useCMSContent";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
 

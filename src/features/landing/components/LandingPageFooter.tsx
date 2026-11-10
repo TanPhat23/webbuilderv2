@@ -1,6 +1,6 @@
 import { Sparkles } from "lucide-react";
 
-import { useInView } from "@/hooks";
+import { useInView } from "@/features/ui/hooks/useInView";
 
 const footerSections = [
   {

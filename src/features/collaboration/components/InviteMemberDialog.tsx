@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { CollaboratorRole } from "@/features/collaboration";
-import { useSearchUsers } from "@/hooks";
+import { useSearchUsers } from "@/features/users/hooks/useUsers";
 import {
   Dialog,
   DialogContent,

@@ -2,7 +2,7 @@
 import React, { memo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { viewportSizes } from "@/features/editor";
-import { Viewport } from "@/hooks";
+import { Viewport } from "@/features/editor/hooks/useEditor";
 import { cn } from "@/lib/utils";
 import { useProjectStore } from "@/features/editor";
 import ElementLoading from "@/features/editor/components/skeleton/ElementLoading";
