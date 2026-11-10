@@ -49,23 +49,25 @@ export const SelectConfigurationAccordion = () => {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
 
-  if (!selectedElement || selectedElement.type !== "Select") return null;
-
-  const selectElement = selectedElement as SelectElement;
-  const settings = (selectElement.settings as unknown as SelectSettings) || {};
+  const selectElement = selectedElement?.type === "Select"
+    ? (selectedElement as SelectElement)
+    : undefined;
+  const settings = (selectElement?.settings as unknown as SelectSettings) || {};
 
   const options: SelectOption[] = useMemo(
     () =>
       settings.selectOptions || [
         {
           id: "default-1",
-          label: selectElement.content || "Option 1",
+          label: selectElement?.content || "Option 1",
           value: "option-1",
         },
         { id: "default-2", label: "Option 2", value: "option-2" },
       ],
-    [settings.selectOptions, selectElement.content],
+    [settings.selectOptions, selectElement?.content],
   );
+
+  if (!selectElement) return null;
 
   const defaultValue = settings.defaultValue || "";
 
