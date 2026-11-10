@@ -1,22 +1,3 @@
-/**
- * Shared mutation utilities for React Query hooks.
- *
- * Provides standardized error/success handling so every mutation across
- * the app behaves consistently — same toast style, same error extraction,
- * same cache-invalidation pattern.
- *
- * @example
- * ```ts
- * import { getErrorMessage, onMutationError, onMutationSuccess } from "@/hooks/utils/mutationUtils";
- *
- * useMutation({
- *   mutationFn: (id: string) => service.delete(id),
- *   onSuccess: onMutationSuccess("Item deleted successfully!"),
- *   onError: onMutationError("Failed to delete item"),
- * });
- * ```
- */
-
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 
 // ---------------------------------------------------------------------------
@@ -136,36 +117,3 @@ export function onMutationSuccess(
   };
 }
 
-/**
- * A convenience tuple creator that returns both `onSuccess` and `onError`
- * callbacks ready to spread into a `useMutation` options object.
- *
- * @param successMessage  - Toast message on success.
- * @param errorFallback   - Toast message when the error has no `.message`.
- *
- * @example
- * ```ts
- * const handlers = createMutationHandlers(
- *   "Template created!",
- *   "Failed to create template",
- * );
- *
- * useMutation({
- *   mutationFn: service.create,
- *   ...handlers,
- * });
- * ```
- */
-export function createMutationHandlers(
-  successMessage: string,
-  errorFallback: string,
-  options: MutationErrorOptions & MutationSuccessOptions = {},
-): {
-  onSuccess: () => void;
-  onError: (error: unknown) => void;
-} {
-  return {
-    onSuccess: onMutationSuccess(successMessage, options),
-    onError: onMutationError(errorFallback, options),
-  };
-}

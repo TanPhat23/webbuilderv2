@@ -62,17 +62,6 @@ export class URLBuilder {
   }
 
   /**
-   * Appends a path segment to the current URL path.
-   */
-  addPathSegment(segment: string): URLBuilder {
-    if (!this.url.pathname.endsWith("/")) {
-      this.url.pathname += "/";
-    }
-    this.url.pathname += segment.replace(/^\/+/, "");
-    return this;
-  }
-
-  /**
    * Adds a query parameter to the URL.
    */
   addQueryParam(key: string, value: string): URLBuilder {
