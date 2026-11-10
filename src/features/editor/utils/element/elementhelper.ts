@@ -1,8 +1,8 @@
 import { replacePlaceholders } from "./replacePlaceholders";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { ElementTreeHelper } from "./element-tree-helper";
-import { ALL_ELEMENT_TYPES } from "@/features/editor";
-import type { ResponsiveStyles } from "@/features/editor";
+import { ALL_ELEMENT_TYPES } from "@/features/editor/constants/elements";
+import type { ResponsiveStyles } from "@/features/editor/interfaces/elements.interface";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
 import React from "react";
 import { cn } from "@/lib/utils";
