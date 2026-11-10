@@ -140,6 +140,7 @@ export default function CollaborationProvider({
       userName: userId,
       getToken: () => latest.current.getToken(),
       doc: ydoc,
+      getElementState: () => ElementStore.getState(),
       // Called when awareness/user list changes (sync + awareness updates)
       onSyncUsers: (users) => {
         setUsers(users);

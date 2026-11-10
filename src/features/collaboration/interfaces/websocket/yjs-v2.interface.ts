@@ -207,6 +207,7 @@ export interface YjsProviderV2Options {
   userName?: string;
   getToken: () => Promise<string | null>;
   doc: Y.Doc;
+  getElementState?: () => { elements: EditorElement[] };
   onSyncUsers?: (users: Record<string, UserInfo>) => void;
   onError?: (error: ErrorMessage) => void;
   onPresence?: (data: PresenceBroadcastPayload) => void;

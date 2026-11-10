@@ -4,7 +4,6 @@ import { MessageDispatcher } from "./MessageDispatcher";
 import { MessageSender } from "./MessageSender";
 import { AwarenessController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
-import { ElementStore } from "@/features/editor/store/element-store";
 import { ElementOperations } from "./ElementOperations";
 import type {
   ElementOperationResult,
@@ -75,7 +74,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     this.awareness = this.awarenessController.awareness;
 
     this.messageHandler = new ElementMessageHandler({
-      getElementState: () => ElementStore.getState(),
+      getElementState: (options.getElementState ?? (() => ({ elements: [] }))) as any,
       onError: (payload) =>
         this.onError?.({
           type: "error",
