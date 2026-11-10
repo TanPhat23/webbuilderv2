@@ -1,4 +1,4 @@
-import { ElementComment } from "@/features/comments";
+import { ElementComment } from "@/features/comments/interfaces/elementcomment.interface";
 
 export type ViewMode = "all" | "unresolved" | "resolved";
 export type SortOrder = "newest" | "oldest";

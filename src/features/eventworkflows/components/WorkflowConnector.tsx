@@ -30,11 +30,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  WORKFLOW_EVENT_TYPES,
-  CONNECTION_CONFIG,
-} from "@/features/eventworkflows";
-import type { EventWorkflow } from "@/features/eventworkflows";
+import { WORKFLOW_EVENT_TYPES, CONNECTION_CONFIG } from "@/features/eventworkflows/constants/eventWorkflows";
+import type { EventWorkflow } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
 import type { EditorElement } from "@/types/global.type";
 
 interface WorkflowConnectorProps {

@@ -1,8 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  createElementEventWorkflow,
-  disconnectElementEventWorkflow,
-} from "@/features/eventworkflows";
+import { createElementEventWorkflow, disconnectElementEventWorkflow } from "@/features/eventworkflows/api/elementEventWorkflow.api";
 import {
   CreateElementEventWorkflowSchema,
   getFirstError,

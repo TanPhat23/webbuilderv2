@@ -13,10 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useWorkflowCanvas } from "@/features/editor/hooks";
-import {
-  getNodeTypeColor,
-  ANIMATION_DURATIONS,
-} from "@/features/eventworkflows";
+import { getNodeTypeColor, ANIMATION_DURATIONS } from "@/features/eventworkflows/constants/eventWorkflows";
 
 interface WorkflowNodeData {
   label: string;

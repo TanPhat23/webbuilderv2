@@ -1,9 +1,5 @@
 import { URLBuilder } from "@/utils/urlbuilder";
-import type {
-  NotificationResponse,
-  UpdateNotificationPayload,
-  NotificationFilters,
-} from "@/features/notifications";
+import type { NotificationResponse, UpdateNotificationPayload, NotificationFilters } from "@/features/notifications/interfaces/notification.interface";
 
 const API_BASE = "/api/notifications";
 

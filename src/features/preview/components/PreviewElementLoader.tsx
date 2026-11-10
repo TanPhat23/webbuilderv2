@@ -1,6 +1,6 @@
 import { EditorElement } from "@/types/global.type";
 import React from "react";
-import { getPreviewComponentMap } from "@/features/preview";
+import { getPreviewComponentMap } from "@/features/preview/constants/previewComponents";
 
 interface PreviewElementLoaderProps {
   elements?: EditorElement[];

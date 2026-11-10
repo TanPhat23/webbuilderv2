@@ -1,14 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getEventWorkflowById,
-  getEventWorkflows,
-} from "@/features/eventworkflows";
-import type {
-  EventWorkflow,
-  CreateEventWorkflowInput,
-  UpdateEventWorkflowInput,
-} from "@/features/eventworkflows";
+import { getEventWorkflowById, getEventWorkflows } from "@/features/eventworkflows/api/eventWorkflow.api";
+import type { EventWorkflow, CreateEventWorkflowInput, UpdateEventWorkflowInput } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
 import { eventWorkflowKeys } from "@/features/editor";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
 import {

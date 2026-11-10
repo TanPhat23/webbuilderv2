@@ -14,12 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  NODE_TYPE_LABELS,
-  NODE_TYPE_DESCRIPTIONS,
-  NODE_TYPE_COLORS,
-  ANIMATION_DURATIONS,
-} from "@/features/eventworkflows";
+import { NODE_TYPE_LABELS, NODE_TYPE_DESCRIPTIONS, NODE_TYPE_COLORS, ANIMATION_DURATIONS } from "@/features/eventworkflows/constants/eventWorkflows";
 import { Button } from "@/components/ui/button";
 
 export interface PaletteElement {

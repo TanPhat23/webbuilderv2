@@ -1,10 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  getElementEventWorkflowsByElement,
-  getElementEventWorkflowsByPage,
-  type EventWorkflow,
-} from "@/features/eventworkflows";
+import { getElementEventWorkflowsByElement, getElementEventWorkflowsByPage } from "@/features/eventworkflows/api/elementEventWorkflow.api";
+import { type EventWorkflow } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
 import {
   elementEventWorkflowKeys,
   type IElementEventWorkflowConnection,

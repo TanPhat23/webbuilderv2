@@ -1,10 +1,5 @@
 import { URLBuilder } from "@/utils/urlbuilder";
-import {
-  ElementComment,
-  ElementCommentResponse,
-  CreateElementCommentRequest,
-  UpdateElementCommentRequest,
-} from "@/features/comments";
+import { ElementComment, ElementCommentResponse, CreateElementCommentRequest, UpdateElementCommentRequest } from "@/features/comments/interfaces/elementcomment.interface";
 import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 

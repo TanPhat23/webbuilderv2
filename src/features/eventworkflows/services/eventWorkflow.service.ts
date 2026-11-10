@@ -1,10 +1,6 @@
 import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
-import {
-  EventWorkflow,
-  CreateEventWorkflowInput,
-  UpdateEventWorkflowInput,
-} from "@/features/eventworkflows";
+import { EventWorkflow, CreateEventWorkflowInput, UpdateEventWorkflowInput } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
 import { URLBuilder } from "@/utils/urlbuilder";
 
 type EventWorkflowListResponse = { data: EventWorkflow[] } | EventWorkflow[];

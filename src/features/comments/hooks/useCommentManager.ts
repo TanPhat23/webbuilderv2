@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from "react";
-import { ElementComment } from "@/features/comments";
+import { ElementComment } from "@/features/comments/interfaces/elementcomment.interface";
 import {
   processComments,
   getUnresolvedCount,

@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Edit, Save, X, Loader2 } from "lucide-react";
-import { ContentItem } from "@/features/cms";
+import { ContentItem } from "@/features/cms/interfaces/cms.interface";
 import { DeleteConfirm } from "./DeleteConfirm";
 
 interface RowActionsProps {

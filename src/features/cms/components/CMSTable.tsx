@@ -34,7 +34,7 @@ import {
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
-import { ContentItem } from "@/features/cms";
+import { ContentItem } from "@/features/cms/interfaces/cms.interface";
 import { ContentItemFormSchema } from "@/features/cms/schema/cms";
 import { EditableItemValues } from "./types";
 import {

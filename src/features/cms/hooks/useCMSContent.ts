@@ -1,10 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  getContentTypes,
-  getPublicContent,
-  getPublicContentItem,
-} from "@/features/cms";
-import type { ContentItem, ContentType } from "@/features/cms";
+import { getContentTypes, getPublicContent, getPublicContentItem } from "@/features/cms/api/cms.api";
+import type { ContentItem, ContentType } from "@/features/cms/interfaces/cms.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { cmsKeys } from "../query-keys";
 

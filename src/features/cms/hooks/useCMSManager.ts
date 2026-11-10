@@ -5,26 +5,8 @@ import {
   useQueryClient,
   type UseMutationResult,
 } from "@tanstack/react-query";
-import {
-  createContentField,
-  createContentItem,
-  createContentType,
-  deleteContentField,
-  deleteContentItem,
-  deleteContentType,
-  getContentFieldsByContentType,
-  getContentItemsByContentType,
-  getContentTypes,
-  updateContentField,
-  updateContentItem,
-  updateContentType,
-} from "@/features/cms";
-import type {
-  ContentField,
-  ContentFieldValueInput,
-  ContentItem,
-  ContentType,
-} from "@/features/cms";
+import { createContentField, createContentItem, createContentType, deleteContentField, deleteContentItem, deleteContentType, getContentFieldsByContentType, getContentItemsByContentType, getContentTypes, updateContentField, updateContentItem, updateContentType } from "@/features/cms/api/cms.api";
+import type { ContentField, ContentFieldValueInput, ContentItem, ContentType } from "@/features/cms/interfaces/cms.interface";
 import {
   ContentFieldFormSchema,
   ContentItemFormSchema,

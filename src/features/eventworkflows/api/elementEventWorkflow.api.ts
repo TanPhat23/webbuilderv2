@@ -1,12 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import z from "zod";
 
-import {
-  elementEventWorkflowService,
-  type CreateElementEventWorkflowInput,
-  type IElementEventWorkflow,
-  type UpdateElementEventWorkflowInput,
-} from "@/features/eventworkflows";
+import { elementEventWorkflowService, type CreateElementEventWorkflowInput, type IElementEventWorkflow, type UpdateElementEventWorkflowInput } from "@/features/eventworkflows/services/elementEventWorkflow.service";
 import {
   CreateElementEventWorkflowSchema,
   DisconnectElementEventWorkflowSchema,

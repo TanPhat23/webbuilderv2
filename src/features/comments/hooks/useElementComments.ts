@@ -1,11 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { elementCommentService } from "@/features/comments";
-import {
-  ElementComment,
-  CreateElementCommentRequest,
-  UpdateElementCommentRequest,
-} from "@/features/comments";
+import { elementCommentService } from "@/features/comments/services/elementcomment.service";
+import { ElementComment, CreateElementCommentRequest, UpdateElementCommentRequest } from "@/features/comments/interfaces/elementcomment.interface";
 import { useUser } from '@clerk/tanstack-react-start';
 import { useProjectStore } from "@/features/editor";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";

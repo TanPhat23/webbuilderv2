@@ -6,7 +6,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ChevronDown } from "lucide-react";
-import { ContentField } from "@/features/cms";
+import { ContentField } from "@/features/cms/interfaces/cms.interface";
 import { EditingField } from "../types";
 import { FieldForm } from "./FieldForm";
 import { DeleteConfirm } from "./DeleteConfirm";

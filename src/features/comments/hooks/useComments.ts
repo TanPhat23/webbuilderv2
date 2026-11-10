@@ -1,13 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { commentService } from "@/features/comments";
-import {
-  Comment,
-  CommentFilter,
-  CreateCommentRequest,
-  UpdateCommentRequest,
-  CreateReactionRequest,
-} from "@/features/comments";
+import { commentService } from "@/features/comments/services/comment.service";
+import { Comment, CommentFilter, CreateCommentRequest, UpdateCommentRequest, CreateReactionRequest } from "@/features/comments/interfaces/comment.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
   showErrorToast,

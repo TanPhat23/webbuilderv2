@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eventWorkflowService } from "@/features/eventworkflows/services/eventWorkflow.service";
-import type {
-  CreateEventWorkflowInput,
-  UpdateEventWorkflowInput,
-} from "@/features/eventworkflows";
+import type { CreateEventWorkflowInput, UpdateEventWorkflowInput } from "@/features/eventworkflows/interfaces/eventWorkflow.interface";
 import {
   CreateEventWorkflowSchema,
   UpdateEventWorkflowSchema,

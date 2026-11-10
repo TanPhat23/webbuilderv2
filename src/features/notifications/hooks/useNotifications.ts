@@ -1,10 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationService } from "@/features/notifications";
-import type {
-  NotificationFilters,
-  UpdateNotificationPayload,
-} from "@/features/notifications";
+import { notificationService } from "@/features/notifications/services/notification.service";
+import type { NotificationFilters, UpdateNotificationPayload } from "@/features/notifications/interfaces/notification.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
 
