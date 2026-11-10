@@ -28,7 +28,7 @@ export { useCommentManager } from "@/features/comments";
 
 
 export { useInView } from "@/features/ui";
-export { useIsMobile } from "@/features/ui";
+export { useIsMobile } from "./use-mobile";
 
 export {
   imageKeys,
