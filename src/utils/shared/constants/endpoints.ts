@@ -67,9 +67,7 @@ export const API_ENDPOINTS = {
   },
   IMAGES: {
     UPLOAD: "/api/v1/images",
-    UPLOAD_BASE64: "/api/v1/images/base64",
     GET_USER: "/api/v1/images",
-    GET_BY_ID: (id: string) => `/api/v1/images/${id}`,
     UPDATE: (id: string) => `/api/v1/images/${id}`,
     DELETE: (id: string) => `/api/v1/images/${id}`,
   },

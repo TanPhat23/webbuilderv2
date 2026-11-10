@@ -1,17 +1,12 @@
 import { URLBuilder } from "@/utils/urlbuilder";
-import { Image, ImageUploadResponse } from "@/features/images";
+import type { Image, ImageUploadResponse } from "../interfaces/image.interface";
 import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import getToken from "@/services/token";
 
 interface IImageService {
   uploadImage: (file: File, imageName?: string) => Promise<ImageUploadResponse>;
-  uploadBase64Image: (
-    base64: string,
-    imageName?: string,
-  ) => Promise<ImageUploadResponse>;
   getUserImages: () => Promise<Image[]>;
-  getImageByID: (id: string) => Promise<Image>;
   deleteImage: (id: string) => Promise<boolean>;
 }
 
@@ -44,29 +39,11 @@ export const imageService: IImageService = {
     return response.json();
   },
 
-  uploadBase64Image: async (
-    base64: string,
-    imageName?: string,
-  ): Promise<ImageUploadResponse> => {
-    const data = { base64, imageName };
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.IMAGES.UPLOAD_BASE64)
-      .build();
-    return apiClient.post<ImageUploadResponse>(url, data);
-  },
-
   getUserImages: async (): Promise<Image[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.IMAGES.GET_USER)
       .build();
     return apiClient.get<Image[]>(url);
-  },
-
-  getImageByID: async (id: string): Promise<Image> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.IMAGES.GET_BY_ID(id))
-      .build();
-    return apiClient.get<Image>(url);
   },
 
   deleteImage: async (id: string): Promise<boolean> => {

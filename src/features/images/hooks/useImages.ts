@@ -1,12 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { imageService } from "@/features/images";
-import { Image, ImageUploadResponse } from "@/features/images";
+import { imageService } from "../services/image.service";
+import type { Image } from "../interfaces/image.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 import { getErrorMessage, onMutationError } from "@/hooks/utils/mutationUtils";
 import {
   ImageFileSchema,
-  Base64ImageSchema,
   ImageUploadResponseSchema,
   ImagesArraySchema,
 } from "@/features/images/schema/imageupload";
@@ -34,19 +33,6 @@ export function useUserImages() {
   });
 }
 
-/** Hook to get a specific image by ID. */
-export function useImage(imageId: string | null) {
-  return useQuery({
-    queryKey: imageKeys.detail(imageId || ""),
-    queryFn: async () => {
-      if (!imageId) throw new Error("Image ID is required");
-      const image = await imageService.getImageByID(imageId);
-      return image;
-    },
-    enabled: !!imageId,
-  });
-}
-
 /** Hook to upload an image file. */
 export function useUploadImage() {
   const queryClient = useQueryClient();
@@ -63,50 +49,6 @@ export function useUploadImage() {
       ImageFileSchema.parse({ file, imageName });
 
       const response = await imageService.uploadImage(file, imageName);
-
-      // Validate response
-      return ImageUploadResponseSchema.parse(response);
-    },
-    onSuccess: (data) => {
-      // Invalidate and refetch images list
-      queryClient.invalidateQueries({ queryKey: imageKeys.lists() });
-
-      // Optimistically add to cache
-      queryClient.setQueryData<Image[]>(imageKeys.lists(), (old) => {
-        const newImage: Image = {
-          imageId: data.imageId,
-          imageLink: data.imageLink,
-          imageName: data.imageName,
-          userId: "",
-          createdAt: data.createdAt,
-          updatedAt: data.createdAt,
-          deletedAt: null,
-        };
-        return old ? [newImage, ...old] : [newImage];
-      });
-
-      showSuccessToast("Image uploaded successfully!");
-    },
-    onError: onMutationError("Failed to upload image"),
-  });
-}
-
-/** Hook to upload a base64 image. */
-export function useUploadBase64Image() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      base64,
-      imageName,
-    }: {
-      base64: string;
-      imageName?: string;
-    }) => {
-      // Validate input
-      Base64ImageSchema.parse({ base64, imageName });
-
-      const response = await imageService.uploadBase64Image(base64, imageName);
 
       // Validate response
       return ImageUploadResponseSchema.parse(response);
