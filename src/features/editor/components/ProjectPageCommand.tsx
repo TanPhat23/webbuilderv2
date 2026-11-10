@@ -19,7 +19,7 @@ import {
 import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   Form,
   FormControl,
@@ -208,6 +208,14 @@ function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
 export function ProjectPageCommand() {
   const { pages, deletePage } = usePageStore();
   const { id } = useParams({ strict: false });
+  const navigate = useNavigate();
+  const deleteAndNavigate = async (pageId: string) => {
+    const wasCurrent = usePageStore.getState().currentPage?.Id === pageId;
+    if (await deletePage(pageId) && wasCurrent) {
+      const nextPage = usePageStore.getState().currentPage;
+      navigate({ to: nextPage ? `/editor/${id}?page=${nextPage.Id}` : `/editor/${id}` });
+    }
+  };
 
   return (
     <Command className="rounded-lg border shadow-md">
@@ -224,7 +232,7 @@ export function ProjectPageCommand() {
               >
                 Edit
               </Button>
-              <DeletePageDialog page={page} onDelete={deletePage} />
+              <DeletePageDialog page={page} onDelete={deleteAndNavigate} />
             </div>
           </CommandItem>
         ))}

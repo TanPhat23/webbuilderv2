@@ -8,3 +8,7 @@ export async function deletePageFromList<T extends { Id: string; ProjectId: stri
   await remove(page.ProjectId, page.Id);
   return pages.filter((item) => item.Id !== page.Id);
 }
+
+export function pageAfterDeletion<T extends { Id: string }>(current: T | null, deletedId: string, remaining: T[]): T | null {
+  return current?.Id === deletedId ? remaining[0] ?? null : current;
+}

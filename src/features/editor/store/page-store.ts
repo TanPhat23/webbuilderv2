@@ -1,7 +1,7 @@
 import { Page } from "@/features/pages";
 import { deleteProjectPage } from "@/features/projects/api/page.api";
 import { showErrorToast } from "@/utils/errors/errorToast";
-import { deletePageFromList } from "./delete-page";
+import { deletePageFromList, pageAfterDeletion } from "./delete-page";
 import { create } from "zustand";
 
 /**
@@ -23,7 +23,7 @@ type PageStore = {
 
   updatePage: (updates: Partial<Page>, id: string) => void;
 
-  deletePage: (id: string) => Promise<void>;
+  deletePage: (id: string) => Promise<boolean>;
   /**
    * Load a set of pages into the store.
    * @param pages The array of Page objects to load.
@@ -59,10 +59,16 @@ export const usePageStore = create<PageStore>((set, get) => {
           await deleteProjectPage({ data: { projectId, pageId } });
         });
         if (pages !== originalPages) {
-          set((state) => ({ pages: state.pages.filter((page) => page.Id !== id) }));
+          set((state) => {
+            const remaining = state.pages.filter((page) => page.Id !== id);
+            return { pages: remaining, currentPage: pageAfterDeletion(state.currentPage, id, remaining) };
+          });
+          return true;
         }
+        return false;
       } catch {
         showErrorToast("Failed to delete page");
+        return false;
       }
     },
 
