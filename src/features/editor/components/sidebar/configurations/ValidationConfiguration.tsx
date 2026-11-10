@@ -32,7 +32,6 @@ import {
   Asterisk,
 } from "lucide-react";
 
-
 const ALL_RULES: RuleType[] = [
   "required",
   "minLength",
@@ -85,8 +84,6 @@ const RULE_META: Record<RuleType, RuleMeta> = {
   },
 };
 
-/* ─── Main Component ─── */
-
 export default function ValidationConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -98,8 +95,6 @@ export default function ValidationConfiguration() {
   const availableRules = ALL_RULES.filter(
     (rt) => !validateRules.some((rule) => rule.rule === rt),
   );
-
-  /* ─── Handlers ─── */
 
   const updateValidationRule = <T extends ValidationRule>(
     updateRule: T,
@@ -174,8 +169,6 @@ export default function ValidationConfiguration() {
     }
     updateValidationRule(defaultRule);
   };
-
-  /* ─── Rule Config Renderer ─── */
 
   const renderRuleControl = (rule: ValidationRule) => {
     switch (rule.rule) {
@@ -260,8 +253,6 @@ export default function ValidationConfiguration() {
         return null;
     }
   };
-
-  /* ─── Render ─── */
 
   return (
     <div className="flex flex-col gap-3">

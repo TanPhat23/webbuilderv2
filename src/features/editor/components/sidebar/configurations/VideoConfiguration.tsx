@@ -42,8 +42,6 @@ import {
   Monitor,
 } from "lucide-react";
 
-/* ─── Object Fit Options ─── */
-
 const OBJECT_FIT_OPTIONS = [
   { value: "cover", label: "Cover", description: "Fill & crop to fit" },
   { value: "contain", label: "Contain", description: "Fit within bounds" },
@@ -66,8 +64,6 @@ const PRELOAD_OPTIONS = [
   { value: "none", label: "None", description: "Don't preload anything" },
 ] as const;
 
-/* ─── Main Component ─── */
-
 export default function VideoConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -79,8 +75,6 @@ export default function VideoConfiguration() {
   const element = selectedElement as VideoElement;
   const settings: VideoSettings = element.settings ?? {};
   const src = element.src ?? "";
-
-  /* ─── Handlers ─── */
 
   const handleSrcChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, { src: e.target.value });
@@ -103,8 +97,6 @@ export default function VideoConfiguration() {
     const parsed = parseInt(raw, 10);
     updateSetting(name, isNaN(parsed) ? undefined : parsed);
   };
-
-  /* ─── Derived State ─── */
 
   const hasSrc = src.length > 0;
   const isExternalUrl =

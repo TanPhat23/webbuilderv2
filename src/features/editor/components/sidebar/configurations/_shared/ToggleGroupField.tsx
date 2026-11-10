@@ -9,8 +9,6 @@ import {
 import { ConfigField } from "./ConfigField";
 import { cn } from "@/lib/utils";
 
-/* ─── Types ─── */
-
 export interface ToggleOption {
   /** Unique value for this option */
   value: string;
@@ -104,8 +102,6 @@ export function ToggleGroupField({
   );
 }
 
-/* ─── Internal: Toggle item with tooltip ─── */
-
 interface ToggleGroupItemWithTooltipProps {
   option: ToggleOption;
 }
@@ -162,8 +158,6 @@ function ToggleGroupItemWithTooltip({
     </ToggleGroupItem>
   );
 }
-
-/* ─── Multi-select ToggleGroup variant ─── */
 
 interface ToggleGroupMultiFieldProps {
   /** Label shown on the left */

@@ -37,8 +37,6 @@ import {
   X,
 } from "lucide-react";
 
-/* ─── Types ─── */
-
 interface ObjectFitOption {
   value: string;
   label: string;
@@ -61,8 +59,6 @@ const OBJECT_FIT_OPTIONS: ObjectFitOption[] = [
   },
 ];
 
-/* ─── Main Component ─── */
-
 export const ImageConfiguration = () => {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -79,8 +75,6 @@ export const ImageConfiguration = () => {
   const objectFit = selectedElement.settings?.objectFit ?? "cover";
   const loading = selectedElement.settings?.loading ?? "lazy";
   const decoding = selectedElement.settings?.decoding ?? "async";
-
-  /* ─── Handlers ─── */
 
   const handleSrcChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, { src: e.target.value });
@@ -156,7 +150,6 @@ export const ImageConfiguration = () => {
     updateElement(selectedElement.id, { src: "" });
   };
 
-  /* ─── Detect image info ─── */
   const hasImage = src.length > 0;
   const isExternalUrl = isExternalMedia(src);
   const fileName = src.split("/").pop()?.split("?")[0] ?? "";

@@ -28,7 +28,6 @@ interface AccordionSectionProps {
   noBorder?: boolean;
 }
 
-
 export function AccordionSection({
   value,
   title,
@@ -89,8 +88,6 @@ export function AccordionSection({
     </AccordionItem>
   );
 }
-
-/* ─── Lightweight sub-section divider ─── */
 
 interface SectionDividerProps {
   className?: string;

@@ -5,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { ConfigField } from "./ConfigField";
 import { cn } from "@/lib/utils";
 
-/* ─── Helpers ─── */
-
 /**
  * Parse a CSS value like "16px", "1.5em", "auto", or a raw number
  * into a numeric value for the slider.
@@ -25,8 +23,6 @@ function formatCSSValue(value: number, unit: string): string {
   if (unit === "") return value.toString();
   return `${value}${unit}`;
 }
-
-/* ─── Types ─── */
 
 interface SliderFieldProps {
   /** Label shown on the left */
@@ -65,7 +61,6 @@ interface SliderFieldProps {
   /** Display a unit badge after the input */
   showUnit?: boolean;
 }
-
 
 export function SliderField({
   label,
@@ -181,8 +176,6 @@ export function SliderField({
     </ConfigField>
   );
 }
-
-/* ─── Spacing Group (4-directional padding / margin) ─── */
 
 interface SpacingGroupProps {
   /** "Padding" or "Margin" */

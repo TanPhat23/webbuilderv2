@@ -27,8 +27,6 @@ import {
   Loader,
 } from "lucide-react";
 
-/* ─── Main Component ─── */
-
 export default function ProgressConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -39,8 +37,6 @@ export default function ProgressConfiguration() {
 
   const settings: ProgressSettings =
     (selectedElement as ProgressElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const updateSetting = (name: keyof ProgressSettings, value: unknown) => {
     updateElement(selectedElement.id, {
@@ -62,8 +58,6 @@ export default function ProgressConfiguration() {
       settings: { ...settings, label: e.target.value || undefined },
     });
   };
-
-  /* ─── Derived State ─── */
 
   const currentValue = settings.value ?? 0;
   const maxValue = settings.max ?? 100;

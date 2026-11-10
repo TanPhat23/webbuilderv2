@@ -17,8 +17,6 @@ import {
 import { Command, CommandEmpty, CommandInput } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
 
-/* ─── Constants ──────────────────────────────────────────────────── */
-
 const ITEM_HEIGHT = 28;
 const LIST_HEIGHT = 240;
 const OVERSCAN = 5;
@@ -142,8 +140,6 @@ function VirtualList({ fonts, value, onSelect }: VirtualListProps) {
     </Command>
   );
 }
-
-/* ─── Main picker ────────────────────────────────────────────────── */
 
 export function FontFamilyPicker({
   value,

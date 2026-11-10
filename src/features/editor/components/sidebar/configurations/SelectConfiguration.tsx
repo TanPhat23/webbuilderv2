@@ -69,8 +69,6 @@ export const SelectConfigurationAccordion = () => {
 
   const defaultValue = settings.defaultValue || "";
 
-  /* ─── Handlers ─── */
-
   const updateSettings = (newSettings: Partial<SelectSettings>) => {
     updateElement(selectElement.id, {
       settings: { ...settings, ...newSettings } as any,

@@ -12,8 +12,6 @@ import { ConfigField } from "./ConfigField";
 import { cn } from "@/lib/utils";
 import { Pipette } from "lucide-react";
 
-/* ─── Preset Definitions ─── */
-
 export interface ColorPreset {
   label: string;
   value: string;
@@ -48,8 +46,6 @@ export const BORDER_COLOR_PRESETS: ColorPreset[] = [
   { label: "Destructive", value: "var(--destructive)" },
 ];
 
-/* ─── Helpers ─── */
-
 function resolveSelectValue(color: string | undefined): string {
   if (!color) return "default";
   if (color.startsWith("var(")) return color;
@@ -59,8 +55,6 @@ function resolveSelectValue(color: string | undefined): string {
 function isValidHex(value: string): boolean {
   return /^#([0-9A-Fa-f]{0,8})$/.test(value);
 }
-
-/* ─── Swatch ─── */
 
 interface ColorSwatchProps {
   color: string;
@@ -95,8 +89,6 @@ function ColorSwatch({ color, className }: ColorSwatchProps) {
   );
 }
 
-/* ─── Main Component ─── */
-
 interface ColorPickerFieldProps {
   /** Label shown on the left */
   label: string;
@@ -111,7 +103,6 @@ interface ColorPickerFieldProps {
   /** Additional className for the outer wrapper */
   className?: string;
 }
-
 
 export function ColorPickerField({
   label,

@@ -40,8 +40,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-/* ─── Sandbox Options ─── */
-
 interface SandboxOption {
   value: string;
   label: string;
@@ -81,14 +79,10 @@ const SANDBOX_OPTIONS: SandboxOption[] = [
   },
 ];
 
-/* ─── Loading Options ─── */
-
 const LOADING_OPTIONS = [
   { value: "lazy", label: "Lazy", description: "Load when near viewport" },
   { value: "eager", label: "Eager", description: "Load immediately" },
 ] as const;
-
-/* ─── Referrer Policy Options ─── */
 
 const REFERRER_POLICY_OPTIONS = [
   { value: "no-referrer", label: "No Referrer" },
@@ -104,8 +98,6 @@ const REFERRER_POLICY_OPTIONS = [
   { value: "unsafe-url", label: "Unsafe URL" },
 ] as const;
 
-/* ─── Main Component ─── */
-
 export default function IFrameConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -117,8 +109,6 @@ export default function IFrameConfiguration() {
   const element = selectedElement as IFrameElement;
   const settings: IFrameSettings = element.settings ?? {};
   const src = element.src ?? "";
-
-  /* ─── Handlers ─── */
 
   const handleSrcChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, { src: e.target.value });
@@ -141,8 +131,6 @@ export default function IFrameConfiguration() {
     const parsed = parseInt(raw, 10);
     updateSetting(name, isNaN(parsed) ? undefined : parsed);
   };
-
-  /* ─── Sandbox Helpers ─── */
 
   const currentSandboxValues = settings.sandbox
     ? settings.sandbox.split(" ").filter(Boolean)
@@ -169,8 +157,6 @@ export default function IFrameConfiguration() {
       updateSetting("sandbox", undefined);
     }
   };
-
-  /* ─── Derived State ─── */
 
   const hasSrc = src.length > 0;
   const isExternalUrl =

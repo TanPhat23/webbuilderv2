@@ -47,8 +47,6 @@ import {
   AlignLeft,
 } from "lucide-react";
 
-/* ─── Field Icon Map ─── */
-
 const FIELD_ICONS: Record<string, React.ReactNode> = {
   title: <Type className="h-3 w-3" />,
   excerpt: <AlignLeft className="h-3 w-3" />,
@@ -66,8 +64,6 @@ const DISPLAY_FIELDS = [
   "author",
   "date",
 ];
-
-/* ─── Main Component ─── */
 
 const CMSConfiguration: React.FC = () => {
   const selectedElement = useSelectedElement();
@@ -102,8 +98,6 @@ const CMSConfiguration: React.FC = () => {
   );
 
   if (!element) return null;
-
-  /* ─── Derived State ─── */
 
   const selectedContentType = contentTypes.find(
     (ct) => ct.id === settings.contentTypeId,

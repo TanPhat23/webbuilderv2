@@ -35,8 +35,6 @@ import {
   Type,
 } from "lucide-react";
 
-/* ─── Types ─── */
-
 export type TextAlign = "left" | "center" | "right" | "justify";
 export type TextTransform = "none" | "capitalize" | "uppercase" | "lowercase";
 export type TextDecoration = "none" | "underline" | "line-through" | "overline";
@@ -73,8 +71,6 @@ export interface TypographyPanelProps {
   className?: string;
 }
 
-/* ─── Constants ─── */
-
 const FONT_WEIGHTS: { label: string; value: number; abbr: string }[] = [
   { label: "Thin", value: 100, abbr: "100" },
   { label: "Extra Light", value: 200, abbr: "200" },
@@ -88,8 +84,6 @@ const FONT_WEIGHTS: { label: string; value: number; abbr: string }[] = [
 ];
 
 const FONT_SIZE_UNITS = ["px", "rem", "em", "%", "vw", "vh"] as const;
-
-/* ─── Helpers ─── */
 
 function parseFontSize(v: string | number | undefined): string {
   if (!v) return "16px";
@@ -120,7 +114,6 @@ function parseFontWeight(v: string | number | undefined): number {
   return isNaN(n) || !n ? 400 : n;
 }
 
-/* ─── NudgeInput ─── */
 /**
  * shadcn Input with arrow-key nudging and ▲/▼ spinner buttons.
  * Wraps the shadcn <Input> so focus-ring / dark-mode styles are inherited.
@@ -238,8 +231,6 @@ function NudgeInput({
   );
 }
 
-/* ─── Row ─── */
-
 function Row({
   label,
   children,
@@ -259,8 +250,6 @@ function Row({
   );
 }
 
-/* ─── SectionLabel ─── */
-
 function SectionLabel({
   icon,
   children,
@@ -279,8 +268,6 @@ function SectionLabel({
     </div>
   );
 }
-
-/* ─── Live Preview ─── */
 
 function LivePreview({ values }: { values: TypographyValues }) {
   const fontSize = parseFontSize(values.fontSize);
@@ -324,8 +311,6 @@ function LivePreview({ values }: { values: TypographyValues }) {
     </div>
   );
 }
-
-/* ─── Main Component ─── */
 
 export function TypographyPanel({
   values,

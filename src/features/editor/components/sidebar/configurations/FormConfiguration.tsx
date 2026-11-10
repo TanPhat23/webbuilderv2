@@ -37,8 +37,6 @@ import {
   Lock,
 } from "lucide-react";
 
-/* ─── Method Options ─── */
-
 interface MethodOption {
   value: string;
   label: string;
@@ -74,8 +72,6 @@ const ENCODING_OPTIONS = [
   { value: "text/plain", label: "Plain Text" },
 ];
 
-/* ─── Main Component ─── */
-
 export const FormConfigurationAccordion = () => {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -86,8 +82,6 @@ export const FormConfigurationAccordion = () => {
 
   const settings: Partial<FormSettings> =
     (selectedElement as FormElement).settings || {};
-
-  /* ─── Handlers ─── */
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -101,8 +95,6 @@ export const FormConfigurationAccordion = () => {
       settings: { ...settings, [name]: value },
     });
   };
-
-  /* ─── Derived state ─── */
 
   const hasAction = !!settings.action && settings.action.length > 0;
   const isExternalAction =

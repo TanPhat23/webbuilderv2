@@ -15,8 +15,6 @@ import { ConfigField, ConfigSection, SectionDivider } from "./_shared";
 import { cn } from "@/lib/utils";
 import { Heading, Type } from "lucide-react";
 
-/* ─── Level Options ─── */
-
 interface HeadingLevelOption {
   value: 1 | 2 | 3 | 4 | 5 | 6;
   label: string;
@@ -69,8 +67,6 @@ const HEADING_LEVEL_OPTIONS: HeadingLevelOption[] = [
     fontSize: "0.875rem",
   },
 ];
-
-/* ─── Main Component ─── */
 
 export default function HeadingConfiguration() {
   const updateElement = useUpdateElement();

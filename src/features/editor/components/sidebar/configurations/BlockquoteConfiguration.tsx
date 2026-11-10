@@ -25,8 +25,6 @@ import {
   BookOpen,
 } from "lucide-react";
 
-/* ─── Main Component ─── */
-
 export default function BlockquoteConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -38,15 +36,11 @@ export default function BlockquoteConfiguration() {
   const settings: BlockquoteSettings =
     (selectedElement as BlockquoteElement).settings ?? {};
 
-  /* ─── Handlers ─── */
-
   const handleCiteChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, {
       settings: { ...settings, cite: e.target.value || undefined },
     });
   };
-
-  /* ─── Derived State ─── */
 
   const hasCite = !!settings.cite && settings.cite.length > 0;
   const isExternalCite =

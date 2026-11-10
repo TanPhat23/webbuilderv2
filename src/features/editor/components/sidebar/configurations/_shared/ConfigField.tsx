@@ -106,8 +106,6 @@ export function ConfigField({
   );
 }
 
-/* ─── Section wrapper for grouping fields ─── */
-
 interface ConfigSectionProps {
   /** Optional section title */
   title?: string;
@@ -142,8 +140,6 @@ export function ConfigSection({
     </div>
   );
 }
-
-/* ─── Compact empty state ─── */
 
 interface ConfigEmptyProps {
   icon?: React.ReactNode;

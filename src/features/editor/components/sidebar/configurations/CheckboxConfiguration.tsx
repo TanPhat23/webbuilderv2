@@ -30,8 +30,6 @@ import {
   MinusSquare,
 } from "lucide-react";
 
-/* ─── Main Component ─── */
-
 export default function CheckboxConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -42,8 +40,6 @@ export default function CheckboxConfiguration() {
 
   const settings: CheckboxSettings =
     (selectedElement as CheckboxElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

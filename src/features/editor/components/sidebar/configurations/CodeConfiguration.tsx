@@ -33,8 +33,6 @@ import {
   WrapText,
 } from "lucide-react";
 
-/* ─── Language Options ─── */
-
 interface LanguageOption {
   value: string;
   label: string;
@@ -72,8 +70,6 @@ const LANGUAGE_OPTIONS: LanguageOption[] = [
   { value: "plaintext", label: "Plain Text" },
 ];
 
-/* ─── Main Component ─── */
-
 export default function CodeConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -85,8 +81,6 @@ export default function CodeConfiguration() {
   const settings: CodeSettings =
     (selectedElement as CodeElement).settings ?? {};
 
-  /* ─── Handlers ─── */
-
   const updateSetting = (name: keyof CodeSettings, value: unknown) => {
     updateElement(selectedElement.id, {
       settings: { ...settings, [name]: value },
@@ -96,8 +90,6 @@ export default function CodeConfiguration() {
   const handleLanguageChange = (value: string) => {
     updateSetting("language", value || undefined);
   };
-
-  /* ─── Derived State ─── */
 
   const currentLanguage = settings.language ?? "";
   const currentLanguageOption =

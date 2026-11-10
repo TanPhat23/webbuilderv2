@@ -30,16 +30,12 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-/* ─── Target Options ─── */
-
 const TARGET_OPTIONS = [
   { value: "_self", label: "Same tab" },
   { value: "_blank", label: "New tab" },
   { value: "_parent", label: "Parent frame" },
   { value: "_top", label: "Top frame" },
 ] as const;
-
-/* ─── Main Component ─── */
 
 export default function ButtonConfiguration() {
   const updateElement = useUpdateElement();
@@ -52,8 +48,6 @@ export default function ButtonConfiguration() {
   const element = selectedElement as ButtonElement;
   const href = element.href ?? "";
 
-  /* ─── Handlers ─── */
-
   const handleHrefChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, { href: e.target.value });
   };
@@ -63,8 +57,6 @@ export default function ButtonConfiguration() {
       settings: { ...(selectedElement.settings ?? {}), [name]: value },
     });
   };
-
-  /* ─── Derived State ─── */
 
   const hasHref = href.length > 0;
   const isExternalUrl =

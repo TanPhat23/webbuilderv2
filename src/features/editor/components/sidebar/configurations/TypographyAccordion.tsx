@@ -11,8 +11,6 @@ import { ResponsiveStyles } from "@/features/editor";
 import { AccordionSection, TypographyPanel } from "./_shared";
 import type { TypographyValues } from "./_shared";
 
-/* ─── Types ─── */
-
 type TypographyStyles = Pick<
   React.CSSProperties,
   | "fontFamily"
@@ -36,7 +34,6 @@ type TypographyStyles = Pick<
 interface TypographyAccordionProps {
   currentBreakpoint: "default" | "sm" | "md" | "lg" | "xl";
 }
-
 
 export const TypographyAccordion = ({
   currentBreakpoint,

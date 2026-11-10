@@ -51,8 +51,6 @@ import {
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 
-/* ─── Alignment Options ─── */
-
 const ALIGN_OPTIONS = [
   { value: "left", label: "Left", icon: <AlignLeft className="h-3 w-3" /> },
   {
@@ -62,8 +60,6 @@ const ALIGN_OPTIONS = [
   },
   { value: "right", label: "Right", icon: <AlignRight className="h-3 w-3" /> },
 ] as const;
-
-/* ─── Column Editor Sub-component ─── */
 
 interface ColumnEditorProps {
   column: TableColumnDefinition;
@@ -293,8 +289,6 @@ function ColumnEditor({
   );
 }
 
-/* ─── Main Component ─── */
-
 export default function TableConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -310,8 +304,6 @@ export default function TableConfiguration() {
   const settings: TableSettings = element.settings ?? {};
   const columns = settings.columns ?? [];
 
-  /* ─── Handlers ─── */
-
   const updateSetting = <K extends keyof TableSettings>(
     key: K,
     value: TableSettings[K],
@@ -324,8 +316,6 @@ export default function TableConfiguration() {
   const handleCaptionChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateSetting("caption", e.target.value || undefined);
   };
-
-  /* ─── Column Operations ─── */
 
   const addColumn = () => {
     const newColumn: TableColumnDefinition = {
@@ -365,8 +355,6 @@ export default function TableConfiguration() {
     [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
     updateSetting("columns", next);
   };
-
-  /* ─── Derived State ─── */
 
   const hasCaption = !!settings.caption && settings.caption.length > 0;
   const sortableCount = columns.filter((c) => c.sortable).length;

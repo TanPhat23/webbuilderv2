@@ -34,8 +34,6 @@ import {
   type ToggleOption,
 } from "./_shared/ToggleGroupField";
 
-/* ─── Alignment Options ─── */
-
 const ALIGN_OPTIONS: ToggleOption[] = [
   {
     value: "start",
@@ -54,8 +52,6 @@ const ALIGN_OPTIONS: ToggleOption[] = [
   },
 ];
 
-/* ─── Main Component ─── */
-
 export default function CarouselConfigurationAccordion() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -65,8 +61,6 @@ export default function CarouselConfigurationAccordion() {
   }
 
   const settings = (selectedElement as CarouselElement).settings || {};
-
-  /* ─── Handlers ─── */
 
   const updateSetting = <K extends keyof CarouselSettings>(
     name: K,

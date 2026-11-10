@@ -30,8 +30,6 @@ import {
   CircleDot,
 } from "lucide-react";
 
-/* ─── Main Component ─── */
-
 export default function RadioConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -42,8 +40,6 @@ export default function RadioConfiguration() {
 
   const settings: RadioSettings =
     (selectedElement as RadioElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

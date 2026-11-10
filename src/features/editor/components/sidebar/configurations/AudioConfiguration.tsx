@@ -37,8 +37,6 @@ import {
   Loader,
 } from "lucide-react";
 
-/* ─── Preload Options ─── */
-
 const PRELOAD_OPTIONS = [
   { value: "auto", label: "Auto", description: "Browser decides what to preload" },
   {
@@ -48,8 +46,6 @@ const PRELOAD_OPTIONS = [
   },
   { value: "none", label: "None", description: "Don't preload anything" },
 ] as const;
-
-/* ─── Main Component ─── */
 
 export default function AudioConfiguration() {
   const updateElement = useUpdateElement();
@@ -63,8 +59,6 @@ export default function AudioConfiguration() {
   const settings: AudioSettings = element.settings ?? {};
   const src = element.src ?? "";
 
-  /* ─── Handlers ─── */
-
   const handleSrcChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateElement(selectedElement.id, { src: e.target.value });
   };
@@ -77,8 +71,6 @@ export default function AudioConfiguration() {
       settings: { ...settings, [key]: value },
     });
   };
-
-  /* ─── Derived State ─── */
 
   const hasSrc = src.length > 0;
   const isExternalUrl =

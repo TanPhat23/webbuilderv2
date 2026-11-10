@@ -40,8 +40,6 @@ import {
   Keyboard,
 } from "lucide-react";
 
-/* ─── Input Type Options ─── */
-
 interface InputTypeOption {
   value: string;
   label: string;
@@ -61,8 +59,6 @@ const INPUT_TYPE_OPTIONS: InputTypeOption[] = [
   { value: "url", label: "URL", icon: <Globe className="h-3 w-3" /> },
 ];
 
-/* ─── Main Component ─── */
-
 export default function InputConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -73,8 +69,6 @@ export default function InputConfiguration() {
 
   const settings: InputSettings =
     (selectedElement as InputElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,8 +82,6 @@ export default function InputConfiguration() {
       settings: { ...settings, [name]: value },
     });
   };
-
-  /* ─── Derived State ─── */
 
   const isNumberType = settings.type === "number";
   const currentType =

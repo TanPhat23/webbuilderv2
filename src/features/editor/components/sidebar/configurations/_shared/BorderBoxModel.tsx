@@ -4,8 +4,6 @@ import { cn } from "@/lib/utils";
 import { Link2, Link2Off, CornerUpLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-/* ─── Types ─── */
-
 type BorderSide = "top" | "right" | "bottom" | "left";
 type Corner = "topLeft" | "topRight" | "bottomRight" | "bottomLeft";
 type BorderStyle =
@@ -55,8 +53,6 @@ interface BorderBoxModelProps {
   className?: string;
 }
 
-/* ─── Helpers ─── */
-
 function parseNumericValue(value: string | number | undefined): string {
   if (value === undefined || value === null || value === "") return "0";
   const str = String(value);
@@ -83,8 +79,6 @@ const STYLE_LABELS: Record<BorderStyle, string> = {
   inset: "ins",
   outset: "out",
 };
-
-/* ─── Inline editable number ─── */
 
 interface InlineNumberProps {
   value: string | number | undefined;
@@ -181,8 +175,6 @@ function InlineNumber({
   );
 }
 
-/* ─── Corner radius inline input ─── */
-
 interface CornerRadiusInputProps {
   value: string | number | undefined;
   onChange: (value: string) => void;
@@ -276,8 +268,6 @@ function CornerRadiusInput({
     </div>
   );
 }
-
-/* ─── Side label pill (shows width on the edge) ─── */
 
 interface SideWidthProps {
   side: BorderSide;
@@ -391,8 +381,6 @@ function SideWidth({
     </div>
   );
 }
-
-/* ─── Uniform controls row ─── */
 
 interface UniformControlsProps {
   linkedWidth: string;
@@ -524,8 +512,6 @@ function UniformControls({
     </div>
   );
 }
-
-/* ─── Main Component ─── */
 
 /**
  * Figma-style visual border box model.

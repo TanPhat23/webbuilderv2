@@ -2,8 +2,6 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
-/* ─── Types ─── */
-
 interface SpacingValues {
   top: string | number | undefined;
   right: string | number | undefined;
@@ -24,8 +22,6 @@ interface SpacingBoxModelProps {
   ) => void;
   className?: string;
 }
-
-/* ─── Inline editable value ─── */
 
 interface InlineValueProps {
   value: string | number | undefined;
@@ -141,8 +137,6 @@ function InlineValue({
     </button>
   );
 }
-
-/* ─── Main Component ─── */
 
 /**
  * Figma / Chrome DevTools-inspired visual box model.

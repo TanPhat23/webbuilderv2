@@ -38,8 +38,6 @@ import {
   SpellCheck,
 } from "lucide-react";
 
-/* ─── Wrap Options ─── */
-
 const WRAP_OPTIONS = [
   {
     value: "soft",
@@ -58,8 +56,6 @@ const WRAP_OPTIONS = [
   },
 ] as const;
 
-/* ─── Resize Options ─── */
-
 const RESIZE_OPTIONS = [
   { value: "both", label: "Both", description: "Resize in any direction" },
   {
@@ -75,8 +71,6 @@ const RESIZE_OPTIONS = [
   { value: "none", label: "None", description: "Disable resizing" },
 ] as const;
 
-/* ─── Main Component ─── */
-
 export default function TextareaConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -87,8 +81,6 @@ export default function TextareaConfiguration() {
 
   const settings: TextareaSettings =
     (selectedElement as TextareaElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

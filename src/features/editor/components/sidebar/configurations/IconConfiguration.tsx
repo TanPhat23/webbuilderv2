@@ -33,8 +33,6 @@ import {
 import { DynamicIcon, iconNames } from "lucide-react/dynamic.mjs";
 import type { IconName } from "lucide-react/dynamic.mjs";
 
-/* ─── Constants ─── */
-
 const ALL_ICON_NAMES = Array.from(iconNames);
 const MAX_VISIBLE_ICONS = 60;
 
@@ -42,8 +40,6 @@ const DEFAULT_SIZE = 24;
 const DEFAULT_STROKE_WIDTH = 2;
 const DEFAULT_COLOR = "currentColor";
 const DEFAULT_FILL = "none";
-
-/* ─── Color Presets ─── */
 
 const ICON_COLOR_PRESETS = [
   { color: "currentColor", label: "Inherit" },
@@ -72,8 +68,6 @@ const FILL_COLOR_PRESETS = [
   { color: "#8b5cf6", label: "Purple" },
   { color: "#ec4899", label: "Pink" },
 ] as const;
-
-/* ─── Icon Picker Sub-component ─── */
 
 interface IconPickerProps {
   value: string;
@@ -238,8 +232,6 @@ function IconPicker({ value, onChange }: IconPickerProps) {
   );
 }
 
-/* ─── Main Component ─── */
-
 export default function IconConfiguration() {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
@@ -250,8 +242,6 @@ export default function IconConfiguration() {
 
   const settings: IconSettings =
     (selectedElement as IconElement).settings ?? {};
-
-  /* ─── Handlers ─── */
 
   const updateSetting = <K extends keyof IconSettings>(
     key: K,
@@ -274,8 +264,6 @@ export default function IconConfiguration() {
     const parsed = parseFloat(raw);
     updateSetting(name, isNaN(parsed) ? undefined : parsed);
   };
-
-  /* ─── Derived State ─── */
 
   const iconName = settings.iconName ?? "";
   const size = settings.size ?? DEFAULT_SIZE;

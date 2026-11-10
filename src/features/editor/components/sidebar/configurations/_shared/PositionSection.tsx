@@ -27,7 +27,6 @@ import {
   Minus,
 } from "lucide-react";
 
-
 type CSSPositionValue = "static" | "relative" | "absolute" | "fixed" | "sticky";
 type HorizontalConstraint = "left" | "center" | "right";
 type VerticalConstraint = "top" | "center" | "bottom";
@@ -47,8 +46,6 @@ interface PositionSectionProps {
   updateStyle: (property: string, value: unknown) => void;
   className?: string;
 }
-
-/* ─── Helpers ─── */
 
 function parseNumericValue(value: string | number | undefined): string {
   if (value === undefined || value === null || value === "") return "";
@@ -133,8 +130,6 @@ function inferVConstraint(styles: PositionStyles): VerticalConstraint | "" {
   return "";
 }
 
-/* ─── Compact icon button with tooltip ─── */
-
 function IconBtn({
   tooltip,
   active,
@@ -171,8 +166,6 @@ function IconBtn({
     </Tooltip>
   );
 }
-
-/* ─── Compact labeled input (X, Y, rotation, z-index) ─── */
 
 function CompactInput({
   label,
@@ -223,8 +216,6 @@ function CompactInput({
   );
 }
 
-/* ─── Main Position Section ─── */
-
 export function PositionSection({
   styles,
   updateStyle,
@@ -259,8 +250,6 @@ export function PositionSection({
     () => inferVConstraint(styles),
     [styles.top, styles.bottom],
   );
-
-  /* ─── Handlers ─── */
 
   const handlePositionChange = useCallback(
     (value: string) => {
@@ -385,8 +374,6 @@ export function PositionSection({
     updateStyle("bottom", undefined);
     updateStyle("left", undefined);
   }, [updateStyle]);
-
-  /* ─── Derived display values ─── */
 
   const xValue = useMemo(() => {
     if (hConstraint === "right") return parseNumericValue(styles.right);
