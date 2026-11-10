@@ -10,7 +10,6 @@ import type {
   ErrorPayload,
   PresenceBroadcastPayload,
 } from "@/features/collaboration";
-import { ElementStore } from "@/features/editor/store/element-store";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
 
 type ErrorCallback = (payload: ErrorPayload & { requestId?: string }) => void;
@@ -18,7 +17,17 @@ type PresenceCallback = (payload: PresenceBroadcastPayload) => void;
 type SyncedCallback = (synced: boolean) => void;
 type SyncUsersCallback = (users: Record<string, unknown>) => void;
 
+interface RemoteElementState {
+  elements: EditorElement[];
+  loadElements: (elements: EditorElement[], skipSave?: boolean) => unknown;
+  remoteAdd: (element: EditorElement) => void;
+  remoteUpdate: (id: string, patch: Partial<EditorElement>) => void;
+  remoteMove: (id: string, parentId: string | null, order: number) => void;
+  remoteDelete: (id: string) => void;
+}
+
 export interface ElementMessageHandlerOptions {
+  getElementState: () => RemoteElementState;
   onError?: ErrorCallback;
   onPresence?: PresenceCallback;
   onSynced?: SyncedCallback;
@@ -49,7 +58,7 @@ export class ElementMessageHandler {
     switch (envelope.type) {
       case "sync:page": {
         const payload = envelope.payload as SyncResponsePayload;
-        ElementStore.getState().loadElements(
+        this.options.getElementState().loadElements(
           payload.elements as EditorElement[],
           true,
         );
@@ -60,7 +69,7 @@ export class ElementMessageHandler {
 
       case "element:create": {
         const payload = envelope.payload as ElementCreateBroadcastPayload;
-        ElementStore.getState().remoteAdd(payload.element);
+        this.options.getElementState().remoteAdd(payload.element);
         break;
       }
 
@@ -68,7 +77,7 @@ export class ElementMessageHandler {
         const payload = envelope.payload as ElementUpdateBroadcastPayload;
         const { id, settings, styles, ...rest } = payload;
         const existing = ElementTreeHelper.findById(
-          ElementStore.getState().elements,
+          this.options.getElementState().elements,
           id,
         );
         if (!existing) break;
@@ -87,13 +96,13 @@ export class ElementMessageHandler {
             },
           }),
         } as Partial<EditorElement>;
-        ElementStore.getState().remoteUpdate(id, patch);
+        this.options.getElementState().remoteUpdate(id, patch);
         break;
       }
 
       case "element:move": {
         const payload = envelope.payload as ElementMoveBroadcastPayload;
-        ElementStore.getState().remoteMove(
+        this.options.getElementState().remoteMove(
           payload.id,
           payload.parentId ?? null,
           payload.order,
@@ -103,7 +112,7 @@ export class ElementMessageHandler {
 
       case "element:delete": {
         const payload = envelope.payload as ElementDeleteBroadcastPayload;
-        ElementStore.getState().remoteDelete(payload.id);
+        this.options.getElementState().remoteDelete(payload.id);
         break;
       }
 
