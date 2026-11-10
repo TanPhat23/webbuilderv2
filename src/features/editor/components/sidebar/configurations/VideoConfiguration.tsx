@@ -25,20 +25,15 @@ import {
 import {
   AccordionSection,
   ConfigField,
-  ConfigSection,
+  MediaPlaybackSection,
   SectionDivider,
 } from "./_shared";
 import { cn } from "@/lib/utils";
 import {
   Video,
-  Play,
   Settings2,
   Image as ImageIcon,
   Maximize,
-  Volume2,
-  VolumeX,
-  Repeat,
-  Loader,
   Monitor,
 } from "lucide-react";
 
@@ -52,16 +47,6 @@ const OBJECT_FIT_OPTIONS = [
     label: "Scale Down",
     description: "Smaller of none or contain",
   },
-] as const;
-
-const PRELOAD_OPTIONS = [
-  { value: "auto", label: "Auto", description: "Browser decides" },
-  {
-    value: "metadata",
-    label: "Metadata",
-    description: "Only load metadata & dimensions",
-  },
-  { value: "none", label: "None", description: "Don't preload anything" },
 ] as const;
 
 export default function VideoConfiguration() {
@@ -205,178 +190,27 @@ export default function VideoConfiguration() {
           </AccordionSection>
 
           {/* ── Playback ── */}
-          <AccordionSection
-            value="playback"
-            title="Playback"
-            icon={<Play />}
-            nested
-          >
-            {/* Controls */}
-            <ConfigField
-              label="Controls"
-              htmlFor="video-controls"
-              hint="Show native video playback controls (play, pause, volume, seek)."
-            >
-              <Switch
-                id="video-controls"
-                checked={settings.controls !== false}
-                onCheckedChange={(checked) =>
-                  updateSetting("controls", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            {/* Autoplay */}
-            <ConfigField
-              label="Autoplay"
-              htmlFor="video-autoplay"
-              hint="Start playing automatically when the page loads. Most browsers require muted to be enabled for autoplay."
-            >
-              <Switch
-                id="video-autoplay"
-                checked={!!settings.autoplay}
-                onCheckedChange={(checked) =>
-                  updateSetting("autoplay", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            {/* Autoplay + muted hint */}
-            {settings.autoplay && !settings.muted && (
-              <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-                <VolumeX className="h-3 w-3 text-amber-500/60" />
-                <span className="text-[10px] text-amber-600/60 dark:text-amber-400/60 leading-tight">
-                  Autoplay may be blocked — enable Muted for reliable autoplay
-                </span>
-              </div>
-            )}
-
-            {/* Loop */}
-            <ConfigField
-              label="Loop"
-              htmlFor="video-loop"
-              hint="Restart the video automatically when it reaches the end."
-            >
-              <Switch
-                id="video-loop"
-                checked={!!settings.loop}
-                onCheckedChange={(checked) =>
-                  updateSetting("loop", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            {/* Muted */}
-            <ConfigField
-              label="Muted"
-              htmlFor="video-muted"
-              hint="Start the video with audio muted. Required by most browsers for autoplay."
-            >
-              <Switch
-                id="video-muted"
-                checked={!!settings.muted}
-                onCheckedChange={(checked) =>
-                  updateSetting("muted", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            {/* Plays Inline */}
-            <ConfigField
-              label="Plays inline"
-              htmlFor="video-playsInline"
-              hint="Play the video inline on mobile instead of fullscreen. Important for iOS Safari."
-            >
-              <Switch
-                id="video-playsInline"
-                checked={!!settings.playsInline}
-                onCheckedChange={(checked) =>
-                  updateSetting("playsInline", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            <SectionDivider />
-
-            {/* Preload */}
-            <ConfigField
-              label="Preload"
-              htmlFor="video-preload"
-              hint="How much of the video to preload. 'Metadata' is a good balance between performance and UX."
-            >
-              <Select
-                value={settings.preload ?? "metadata"}
-                onValueChange={(value) =>
-                  updateSetting(
-                    "preload",
-                    value as VideoSettings["preload"],
-                  )
-                }
+          <MediaPlaybackSection
+            mediaType="Video"
+            settings={settings}
+            updateSetting={updateSetting}
+            extraPlaybackFields={
+              <ConfigField
+                label="Plays inline"
+                htmlFor="video-playsInline"
+                hint="Play the video inline on mobile instead of fullscreen. Important for iOS Safari."
               >
-                <SelectTrigger
-                  id="video-preload"
-                  className="h-7 w-[110px] px-2 text-[11px] rounded-md"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRELOAD_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      <div className="flex flex-col">
-                        <span>{opt.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </ConfigField>
-
-            {/* Preload info */}
-            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-              <Loader className="h-3 w-3 text-muted-foreground/40" />
-              <span className="text-[10px] text-muted-foreground/50">
-                {
-                  PRELOAD_OPTIONS.find(
-                    (o) => o.value === (settings.preload ?? "metadata"),
-                  )?.description
-                }
-              </span>
-            </div>
-
-            {/* Playback summary */}
-            <SectionDivider />
-            <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
-              {settings.autoplay && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  <Play className="h-2.5 w-2.5" />
-                  autoplay
-                </span>
-              )}
-              {settings.loop && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  <Repeat className="h-2.5 w-2.5" />
-                  loop
-                </span>
-              )}
-              {settings.muted && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  <VolumeX className="h-2.5 w-2.5" />
-                  muted
-                </span>
-              )}
-              {!settings.muted && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  <Volume2 className="h-2.5 w-2.5" />
-                  audio
-                </span>
-              )}
-            </div>
-          </AccordionSection>
+                <Switch
+                  id="video-playsInline"
+                  checked={!!settings.playsInline}
+                  onCheckedChange={(checked) =>
+                    updateSetting("playsInline", !!checked)
+                  }
+                  className="scale-75 origin-right"
+                />
+              </ConfigField>
+            }
+          />
 
           {/* ── Display ── */}
           <AccordionSection

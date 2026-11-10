@@ -32,3 +32,11 @@ export {
   type ChoiceDefaults,
   type ChoiceConfigurationShellProps,
 } from "./ChoiceConfigurationSection";
+export {
+  MediaPlaybackSection,
+  PRELOAD_OPTIONS,
+  resolveControlsValue,
+  type MediaPlaybackSectionProps,
+  type SharedMediaPlaybackSettings,
+  type PreloadOptionValue,
+} from "./MediaPlaybackSection";
