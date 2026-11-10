@@ -8,6 +8,9 @@ import {
 } from "@/features/projects/schema/page";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+import { getAuthToken } from "@/features/auth/lib/gettoken";
+import { projectService } from "@/features/projects/services/project.service";
 
 export const createPage = createServerFn({ method: "POST" })
   .inputValidator((data: CreatePageInput) => CreatePageSchema.parse(data))
@@ -25,4 +28,13 @@ export const createPage = createServerFn({ method: "POST" })
     };
 
     return pageDAL.createPage(page);
+  });
+
+export const deleteProjectPage = createServerFn({ method: "POST" })
+  .inputValidator((data: { projectId: string; pageId: string }) =>
+    z.object({ projectId: z.string().min(1), pageId: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const { token } = await getAuthToken();
+    await projectService.deleteProjectPage(data.projectId, data.pageId, token);
   });

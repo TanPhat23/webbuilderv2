@@ -1,5 +1,7 @@
 import { Page } from "@/features/pages";
-import { deleteProject } from "@/features/projects/api/project.api";
+import { deleteProjectPage } from "@/features/projects/api/page.api";
+import { showErrorToast } from "@/utils/errors/errorToast";
+import { deletePageFromList } from "./delete-page";
 import { create } from "zustand";
 
 /**
@@ -51,18 +53,16 @@ export const usePageStore = create<PageStore>((set, get) => {
     },
 
     deletePage: async (id) => {
-      const pagesCopy = get().pages;
-      const pageToDelete = pagesCopy.find((page) => page.Id === id);
-      set((state) => ({
-        pages: state.pages.filter((page) => page.Id !== id),
-      }));
-      if (pageToDelete) {
-        const result = await deleteProject({
-          data: { projectId: pageToDelete.ProjectId },
+      try {
+        const originalPages = get().pages;
+        const pages = await deletePageFromList(originalPages, id, async (projectId, pageId) => {
+          await deleteProjectPage({ data: { projectId, pageId } });
         });
-        if (!result?.success) {
-          set({ pages: pagesCopy });
+        if (pages !== originalPages) {
+          set((state) => ({ pages: state.pages.filter((page) => page.Id !== id) }));
         }
+      } catch {
+        showErrorToast("Failed to delete page");
       }
     },
 
