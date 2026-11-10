@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { ReactNode, useState } from "react";
 import {
@@ -8,21 +8,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ElementType } from "@/types/global.type";
-import {
-  BaseComponent,
-  ButtonComponent,
-  SectionComponent,
-  ImageComponent,
-  InputComponent,
-  SelectComponent,
-  FormComponent,
-  FrameComponent,
-  CarouselComponent,
-  ListComponent,
-  CMSContentListComponent,
-  CMSContentItemComponent,
-  CMSContentGridComponent,
-} from "@/features/editor/components/elements";
+import BaseComponent from "@/features/editor/components/elements/BaseComponent";
+import ButtonComponent from "@/features/editor/components/elements/ButtonComponent";
+import SectionComponent from "@/features/editor/components/elements/SectionComponent";
 import {
   ChevronLeft,
   ChevronRight,
@@ -241,420 +229,14 @@ const createMockElement = (type: ElementType): any => {
         },
       },
     },
-    Image: {
-      ...base,
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='80'%3E%3Crect fill='%23e5e7eb' width='120' height='80'/%3E%3Cpath fill='%239ca3af' d='M30 30 L45 45 L60 30 L90 60 L30 60 Z'/%3E%3Ccircle fill='%23fbbf24' cx='90' cy='25' r='8'/%3E%3C/svg%3E",
-      styles: {
-        default: {
-          width: "100%",
-          maxWidth: "120px",
-          height: "auto",
-          borderRadius: "4px",
-        },
-      },
-    },
-    Input: {
-      ...base,
-      styles: {
-        default: {
-          width: "100%",
-          padding: "6px 10px",
-          border: "1px solid #d1d5db",
-          borderRadius: "4px",
-          fontSize: "13px",
-        },
-      },
-      settings: { placeholder: "Enter text...", type: "text" },
-    },
-    Select: {
-      ...base,
-      content: "<option>Choose option</option>",
-      styles: {
-        default: {
-          width: "100%",
-          padding: "6px 10px",
-          border: "1px solid #d1d5db",
-          borderRadius: "4px",
-          fontSize: "13px",
-          backgroundColor: "white",
-        },
-      },
-    },
-    Link: {
-      ...base,
-      content: "Link Text →",
-      href: "#",
-      styles: {
-        default: {
-          color: "#2563eb",
-          textDecoration: "underline",
-          fontSize: "13px",
-        },
-      },
-    },
-    Form: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "12px",
-          border: "2px solid #d1d5db",
-          borderRadius: "6px",
-          backgroundColor: "#f9fafb",
-        },
-      },
-      settings: { submitUrl: "", method: "post" as const },
-    },
-    Frame: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "16px",
-          border: "2px dashed #9ca3af",
-          borderRadius: "6px",
-          backgroundColor: "#f9fafb",
-          minHeight: "60px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#6b7280",
-          fontSize: "11px",
-        },
-      },
-    },
-    Carousel: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          width: "100%",
-          height: "80px",
-          backgroundColor: "#e5e7eb",
-          borderRadius: "6px",
-          position: "relative" as const,
-        },
-      },
-      settings: { options: { loop: true } },
-    },
-    List: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          display: "flex",
-          flexDirection: "column" as const,
-          gap: "6px",
-        },
-      },
-    },
-    Span: {
-      ...base,
-      content: "Span text",
-      styles: {
-        default: { fontSize: "13px", color: "#374151" },
-      },
-    },
-    Heading: {
-      ...base,
-      content: "Heading",
-      styles: {
-        default: {
-          fontSize: "24px",
-          fontWeight: "700",
-          color: "#1f2937",
-          lineHeight: "1.2",
-        },
-      },
-    },
-    Label: {
-      ...base,
-      content: "Label",
-      styles: {
-        default: {
-          fontSize: "12px",
-          fontWeight: "500",
-          color: "#374151",
-        },
-      },
-    },
-    Blockquote: {
-      ...base,
-      content: "Quoted text",
-      styles: {
-        default: {
-          fontSize: "14px",
-          fontStyle: "italic",
-          color: "#6b7280",
-          borderLeft: "4px solid #d1d5db",
-          paddingLeft: "12px",
-        },
-      },
-    },
-    Code: {
-      ...base,
-      content: "const x = 1;",
-      styles: {
-        default: {
-          fontSize: "12px",
-          fontFamily: "monospace",
-          backgroundColor: "#f3f4f6",
-          padding: "2px 6px",
-          borderRadius: "3px",
-          color: "#1f2937",
-        },
-      },
-    },
-    Video: {
-      ...base,
-      src: "https://example.com/video.mp4",
-      styles: {
-        default: {
-          width: "100%",
-          maxWidth: "320px",
-          height: "180px",
-          borderRadius: "4px",
-          backgroundColor: "#000",
-        },
-      },
-    },
-    Audio: {
-      ...base,
-      src: "https://example.com/audio.mp3",
-      styles: {
-        default: {
-          width: "100%",
-          maxWidth: "300px",
-        },
-      },
-    },
-    IFrame: {
-      ...base,
-      src: "https://example.com",
-      styles: {
-        default: {
-          width: "100%",
-          maxWidth: "320px",
-          height: "240px",
-          borderRadius: "4px",
-          border: "1px solid #d1d5db",
-        },
-      },
-    },
-    Textarea: {
-      ...base,
-      styles: {
-        default: {
-          width: "100%",
-          minHeight: "80px",
-          padding: "8px 10px",
-          border: "1px solid #d1d5db",
-          borderRadius: "4px",
-          fontSize: "13px",
-          fontFamily: "inherit",
-        },
-      },
-      settings: { placeholder: "Enter text...", rows: 4 },
-    },
-    Checkbox: {
-      ...base,
-      styles: {
-        default: {
-          width: "16px",
-          height: "16px",
-          cursor: "pointer",
-        },
-      },
-      settings: { label: "Checkbox" },
-    },
-    Radio: {
-      ...base,
-      styles: {
-        default: {
-          width: "16px",
-          height: "16px",
-          cursor: "pointer",
-        },
-      },
-      settings: { label: "Radio", name: "radio" },
-    },
-    Separator: {
-      ...base,
-      styles: {
-        default: {
-          width: "100%",
-          height: "1px",
-          backgroundColor: "#d1d5db",
-          margin: "16px 0",
-        },
-      },
-    },
-    Icon: {
-      ...base,
-      styles: {
-        default: {
-          width: "24px",
-          height: "24px",
-          color: "#6b7280",
-        },
-      },
-      settings: { name: "Heart" },
-    },
-    Progress: {
-      ...base,
-      styles: {
-        default: {
-          width: "100%",
-          height: "8px",
-          backgroundColor: "#e5e7eb",
-          borderRadius: "4px",
-          overflow: "hidden" as const,
-        },
-      },
-      settings: { value: 65, max: 100 },
-    },
-    Table: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          width: "100%",
-          borderCollapse: "collapse" as const,
-          border: "1px solid #d1d5db",
-        },
-      },
-    },
-    Nav: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "12px 20px",
-          backgroundColor: "#f9fafb",
-          borderBottom: "1px solid #d1d5db",
-        },
-      },
-    },
-    Header: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "20px",
-          backgroundColor: "#f3f4f6",
-          borderBottom: "1px solid #d1d5db",
-        },
-      },
-    },
-    Footer: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "20px",
-          backgroundColor: "#f9fafb",
-          borderTop: "1px solid #d1d5db",
-          fontSize: "12px",
-          color: "#6b7280",
-        },
-      },
-    },
-    Article: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "20px",
-        },
-      },
-    },
-    Aside: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "16px",
-          backgroundColor: "#f9fafb",
-          borderLeft: "4px solid #d1d5db",
-        },
-      },
-    },
-    CMSContentList: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          display: "flex",
-          flexDirection: "column" as const,
-          gap: "8px",
-        },
-      },
-      settings: { collectionId: "" },
-    },
-    CMSContentItem: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          padding: "12px",
-          border: "2px solid #c084fc",
-          borderRadius: "6px",
-          backgroundColor: "#faf5ff",
-        },
-      },
-      settings: { collectionId: "" },
-    },
-    CMSContentGrid: {
-      ...base,
-      elements: [],
-      styles: {
-        default: {
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: "8px",
-        },
-      },
-      settings: { collectionId: "" },
-    },
   };
   return mocks[type];
 };
 
 const componentMap: Partial<Record<ElementType, React.ComponentType<any>>> = {
   Text: BaseComponent,
-  Span: BaseComponent,
-  Heading: BaseComponent,
-  Label: BaseComponent,
-  Blockquote: BaseComponent,
-  Code: BaseComponent,
   Button: ButtonComponent,
   Section: SectionComponent,
-  Image: ImageComponent,
-  Video: BaseComponent,
-  Audio: BaseComponent,
-  IFrame: BaseComponent,
-  Input: InputComponent,
-  Textarea: BaseComponent,
-  Checkbox: BaseComponent,
-  Radio: BaseComponent,
-  Select: SelectComponent,
-  Link: BaseComponent,
-  Form: FormComponent,
-  Frame: FrameComponent,
-  Carousel: CarouselComponent,
-  List: ListComponent,
-  Separator: BaseComponent,
-  Icon: BaseComponent,
-  Progress: BaseComponent,
-  Table: BaseComponent,
-  Nav: BaseComponent,
-  Header: BaseComponent,
-  Footer: BaseComponent,
-  Article: BaseComponent,
-  Aside: BaseComponent,
-  CMSContentList: CMSContentListComponent,
-  CMSContentItem: CMSContentItemComponent,
-  CMSContentGrid: CMSContentGridComponent,
 };
 
 const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
@@ -931,20 +513,18 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
 };
 
 function ComponentPreview({ type }: { type: ElementType }) {
-  const Component = componentMap[type];
-  const mockElement = createMockElement(type);
+  const preview = customPreviews[type];
+  if (preview) return preview;
 
-  if (!Component)
-    return <div className="text-xs text-gray-500 p-4">No preview</div>;
+  const Component = componentMap[type];
+  if (!Component) return <div className="text-xs text-gray-500 p-4">No preview</div>;
 
   return (
-    customPreviews[type] || (
-      <div className="w-full min-h-10 flex items-center justify-center">
-        <div style={{ transform: "scale(0.95)", width: "100%" }}>
-          <Component element={mockElement} />
-        </div>
+    <div className="w-full min-h-10 flex items-center justify-center">
+      <div style={{ transform: "scale(0.95)", width: "100%" }}>
+        <Component element={createMockElement(type)} />
       </div>
-    )
+    </div>
   );
 }
 
