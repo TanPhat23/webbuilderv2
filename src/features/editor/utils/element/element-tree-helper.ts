@@ -19,6 +19,14 @@ const children = (el: EditorElement): EditorElement[] =>
   asContainer(el).elements ?? [];
 
 
+const mapChildArrays = (
+  element: EditorElement,
+  map: (elements: EditorElement[]) => EditorElement[],
+): EditorElement =>
+  hasChildren(element)
+    ? ({ ...element, elements: map(children(element)) } as EditorElement)
+    : element;
+
 const isContainerElement = (
   element: EditorElement,
 ): element is ContainerElement =>
@@ -48,13 +56,7 @@ const mapUpdateById = (
 ): EditorElement[] =>
   elements.map((el) => {
     if (el.id === id) return updater(el);
-    if (hasChildren(el)) {
-      return {
-        ...el,
-        elements: mapUpdateById(children(el), id, updater),
-      } as EditorElement;
-    }
-    return el;
+    return mapChildArrays(el, (nested) => mapUpdateById(nested, id, updater));
   });
 
 const mapDeleteById = (
@@ -64,13 +66,7 @@ const mapDeleteById = (
   elements
     .filter((el) => el.id !== id)
     .map((el) => {
-      if (hasChildren(el)) {
-        return {
-          ...el,
-          elements: mapDeleteById(children(el), id),
-        } as EditorElement;
-      }
-      return el;
+      return mapChildArrays(el, (nested) => mapDeleteById(nested, id));
     });
 
 const mapInsertAfterId = (
