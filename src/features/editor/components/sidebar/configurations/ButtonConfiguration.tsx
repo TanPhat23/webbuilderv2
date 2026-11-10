@@ -1,3 +1,4 @@
+import { isExternalLink } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
@@ -68,9 +69,7 @@ export default function ButtonConfiguration() {
   const hasHref = href.length > 0;
   const isExternalUrl =
     hasHref &&
-    (href.startsWith("http://") ||
-      href.startsWith("https://") ||
-      href.startsWith("//"));
+    isExternalLink(href);
   const isMailto = hasHref && href.startsWith("mailto:");
   const isTel = hasHref && href.startsWith("tel:");
   const isAnchor = hasHref && href.startsWith("#");

@@ -1,3 +1,4 @@
+import { isExternalMedia } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
 import { Accordion } from "@/components/ui/accordion";
@@ -173,7 +174,7 @@ export default function IFrameConfiguration() {
 
   const hasSrc = src.length > 0;
   const isExternalUrl =
-    hasSrc && (src.startsWith("http://") || src.startsWith("https://"));
+    hasSrc && isExternalMedia(src);
 
   return (
     <AccordionItem value="iframe-settings" className="border-border/40">

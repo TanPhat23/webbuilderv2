@@ -1,3 +1,4 @@
+import { isExternalLink } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
 import {
@@ -78,9 +79,7 @@ export const LinkConfigurationAccordion = () => {
 
   // Detect if the URL is external
   const isExternalUrl =
-    href.startsWith("http://") ||
-    href.startsWith("https://") ||
-    href.startsWith("//");
+    isExternalLink(href);
 
   return (
     <AccordionItem value="link-settings" className="border-border/40">

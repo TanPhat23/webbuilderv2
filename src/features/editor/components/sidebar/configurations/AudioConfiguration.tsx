@@ -1,3 +1,4 @@
+import { isExternalMedia } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
 import { Accordion } from "@/components/ui/accordion";
@@ -81,7 +82,7 @@ export default function AudioConfiguration() {
 
   const hasSrc = src.length > 0;
   const isExternalUrl =
-    hasSrc && (src.startsWith("http://") || src.startsWith("https://"));
+    hasSrc && isExternalMedia(src);
 
   return (
     <AccordionItem value="audio-settings" className="border-border/40">

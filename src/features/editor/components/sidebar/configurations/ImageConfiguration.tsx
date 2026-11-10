@@ -1,3 +1,4 @@
+import { isExternalMedia } from "./_shared/externalUrl";
 
 import React, { ChangeEvent, useState, useRef } from "react";
 import {
@@ -157,7 +158,7 @@ export const ImageConfiguration = () => {
 
   /* ─── Detect image info ─── */
   const hasImage = src.length > 0;
-  const isExternalUrl = src.startsWith("http://") || src.startsWith("https://");
+  const isExternalUrl = isExternalMedia(src);
   const fileName = src.split("/").pop()?.split("?")[0] ?? "";
 
   return (
