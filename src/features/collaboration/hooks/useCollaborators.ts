@@ -1,3 +1,4 @@
+import { projectScopedKeys } from "./projectScopedKeys";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { collaboratorService } from "../services/collaborator.service";
@@ -8,14 +9,7 @@ import {
   onMutationSuccess,
 } from "@/hooks/utils/mutationUtils";
 
-export const collaboratorKeys = {
-  all: ["collaborators"] as const,
-  lists: () => [...collaboratorKeys.all, "list"] as const,
-  list: (filters?: Record<string, unknown>) =>
-    [...collaboratorKeys.lists(), filters] as const,
-  byProject: (projectId: string) =>
-    [...collaboratorKeys.all, "project", projectId] as const,
-};
+export const collaboratorKeys = projectScopedKeys("collaborators");
 
 export function useProjectCollaborators(
   projectId: string | null,

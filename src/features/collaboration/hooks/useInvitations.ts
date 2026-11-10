@@ -1,3 +1,4 @@
+import { projectScopedKeys } from "./projectScopedKeys";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invitationService } from "../services/invitation.service";
@@ -11,14 +12,7 @@ import {
   onMutationSuccess,
 } from "@/hooks/utils/mutationUtils";
 
-export const invitationKeys = {
-  all: ["invitations"] as const,
-  lists: () => [...invitationKeys.all, "list"] as const,
-  list: (filters?: Record<string, unknown>) =>
-    [...invitationKeys.lists(), filters] as const,
-  byProject: (projectId: string) =>
-    [...invitationKeys.all, "project", projectId] as const,
-};
+export const invitationKeys = projectScopedKeys("invitations");
 
 export function useProjectInvitations(
   projectId: string | null,
