@@ -10,7 +10,7 @@ import { EventTypeSchema } from "@/features/eventworkflows/schema/eventSchemas";
 import {
   elementEventWorkflowKeys,
   type IElementEventWorkflowConnection,
-} from "@/features/editor";
+} from "../utils/elementWorkflowConnections";
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
 import { z } from "zod";

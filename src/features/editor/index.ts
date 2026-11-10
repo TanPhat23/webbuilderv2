@@ -5,7 +5,6 @@ export * from './interfaces/events.interface';
 export * from './interfaces/snapshot.interface';
 export * from './interfaces/validate.interface';
 export * from './store/element-comment-store';
-export * from './store/element-event-workflow-store';
 export * from './store/element-store';
 export * from './store/event-mode-store';
 export * from './store/event-workflow-store';

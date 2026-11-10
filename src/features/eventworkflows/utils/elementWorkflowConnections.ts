@@ -1,6 +1,5 @@
-import { getQueryClient } from "@/client/queryclient";
-import { WORKFLOW_EVENT_TYPES } from "@/features/eventworkflows";
-import { EventWorkflow } from "@/features/eventworkflows";
+import { WORKFLOW_EVENT_TYPES } from "../constants/eventWorkflows";
+import type { EventWorkflow } from "../interfaces/eventWorkflow.interface";
 
 
 export interface IElementEventWorkflowConnection {
@@ -21,18 +20,6 @@ export const elementEventWorkflowKeys = {
   byPage: (pageId: string) =>
     [...elementEventWorkflowKeys.byPages(), pageId] as const,
 };
-
-
-export function getConnectionsFromCache(
-  elementId: string,
-): IElementEventWorkflowConnection[] {
-  const qc = getQueryClient();
-  return (
-    qc.getQueryData<IElementEventWorkflowConnection[]>(
-      elementEventWorkflowKeys.byElement(elementId),
-    ) ?? []
-  );
-}
 
 
 export function getConnectedWorkflowsForEvent(

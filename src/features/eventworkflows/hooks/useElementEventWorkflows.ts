@@ -9,7 +9,7 @@ import {
   isWorkflowConnected as isWorkflowConnectedFn,
   getWorkflowConnections as getWorkflowConnectionsFn,
   isConnectedToEvent as isConnectedToEventFn,
-} from "@/features/editor";
+} from "../utils/elementWorkflowConnections";
 import { getErrorMessage } from "@/hooks/utils/mutationUtils";
 import {
   useConnectElementEventWorkflow,
