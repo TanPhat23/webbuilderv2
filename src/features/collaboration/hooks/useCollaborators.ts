@@ -85,37 +85,3 @@ export function useLeaveProject() {
     onError: onMutationError("Failed to leave project"),
   });
 }
-
-export function useCollaboratorManager(projectId: string | null) {
-  const collaborators = useProjectCollaborators(projectId);
-  const updateRole = useUpdateCollaboratorRole(projectId || undefined);
-  const removeCollaborator = useRemoveCollaborator(projectId || undefined);
-  const leaveProject = useLeaveProject();
-
-  return {
-    collaborators: collaborators.data || [],
-    isLoading: collaborators.isLoading,
-    isError: collaborators.isError,
-    error: collaborators.error,
-
-    updateCollaboratorRole: (
-      collaboratorId: string,
-      role: UpdateCollaboratorRoleRequest,
-    ) => updateRole.mutate({ collaboratorId, role }),
-    updateCollaboratorRoleAsync: (
-      collaboratorId: string,
-      role: UpdateCollaboratorRoleRequest,
-    ) => updateRole.mutateAsync({ collaboratorId, role }),
-    isUpdatingRole: updateRole.isPending,
-
-    removeCollaborator: removeCollaborator.mutate,
-    removeCollaboratorAsync: removeCollaborator.mutateAsync,
-    isRemoving: removeCollaborator.isPending,
-
-    leaveProject: leaveProject.mutate,
-    leaveProjectAsync: leaveProject.mutateAsync,
-    isLeaving: leaveProject.isPending,
-
-    refetch: collaborators.refetch,
-  };
-}

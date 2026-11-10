@@ -1,7 +1,7 @@
 
 import { useState } from "react";
-import { useInvitationManager } from "@/features/collaboration/hooks/useInvitations";
-import { useCollaboratorManager } from "@/features/collaboration/hooks/useCollaborators";
+import { useProjectInvitations, useCreateInvitation, useDeleteInvitation } from "@/features/collaboration/hooks/useInvitations";
+import { useProjectCollaborators, useUpdateCollaboratorRole, useRemoveCollaborator } from "@/features/collaboration/hooks/useCollaborators";
 import { CollaboratorRole } from "@/features/collaboration";
 import {
   Card,
@@ -34,11 +34,15 @@ export function CollaborationManager({
     null,
   );
 
-  const invitations = useInvitationManager(projectId);
-  const collaborators = useCollaboratorManager(projectId);
+  const invitations = useProjectInvitations(projectId);
+  const collaborators = useProjectCollaborators(projectId);
+  const createInvitation = useCreateInvitation();
+  const deleteInvitation = useDeleteInvitation(projectId);
+  const updateRole = useUpdateCollaboratorRole(projectId);
+  const removeCollaborator = useRemoveCollaborator(projectId);
 
   const handleInvite = async (email: string, role: CollaboratorRole) => {
-    await invitations.createInvitationAsync({
+    await createInvitation.mutateAsync({
       projectId,
       email,
       role,
@@ -49,20 +53,20 @@ export function CollaborationManager({
     collaboratorId: string,
     role: CollaboratorRole,
   ) => {
-    await collaborators.updateCollaboratorRoleAsync(collaboratorId, { role });
+    await updateRole.mutateAsync({ collaboratorId, role: { role } });
   };
 
   const handleRemoveCollaborator = async () => {
     if (!deleteCollaboratorId) return;
 
-    await collaborators.removeCollaboratorAsync(deleteCollaboratorId);
+    await removeCollaborator.mutateAsync(deleteCollaboratorId);
     setDeleteCollaboratorId(null);
   };
 
   const handleDeleteInvitation = async () => {
     if (!deleteInvitationId) return;
 
-    await invitations.deleteInvitationAsync(deleteInvitationId);
+    await deleteInvitation.mutateAsync(deleteInvitationId);
     setDeleteInvitationId(null);
   };
 
@@ -82,18 +86,18 @@ export function CollaborationManager({
                 isOpen={isInviteDialogOpen}
                 onOpenChange={setIsInviteDialogOpen}
                 onInvite={handleInvite}
-                isCreating={invitations.isCreating}
+                isCreating={createInvitation.isPending}
               />
             )}
           </div>
         </CardHeader>
         <CardContent>
           <CollaboratorsTable
-            collaborators={collaborators.collaborators}
+            collaborators={collaborators.data || []}
             currentUserId={currentUserId}
             isOwner={isOwner}
             isLoading={collaborators.isLoading}
-            isUpdatingRole={collaborators.isUpdatingRole}
+            isUpdatingRole={updateRole.isPending}
             onUpdateRole={handleUpdateRole}
             onRemoveCollaborator={setDeleteCollaboratorId}
           />
@@ -110,7 +114,7 @@ export function CollaborationManager({
           </CardHeader>
           <CardContent>
             <InvitationsTable
-              invitations={invitations.invitations}
+              invitations={invitations.data || []}
               isLoading={invitations.isLoading}
               onDeleteInvitation={setDeleteInvitationId}
             />
@@ -121,10 +125,10 @@ export function CollaborationManager({
       <ConfirmationDialogs
         deleteCollaboratorId={deleteCollaboratorId}
         deleteInvitationId={deleteInvitationId}
-        collaborators={collaborators.collaborators}
+        collaborators={collaborators.data || []}
         currentUserId={currentUserId}
-        isRemoving={collaborators.isRemoving}
-        isDeleting={invitations.isDeleting}
+        isRemoving={removeCollaborator.isPending}
+        isDeleting={deleteInvitation.isPending}
         onCancelRemoveCollaborator={() => setDeleteCollaboratorId(null)}
         onConfirmRemoveCollaborator={handleRemoveCollaborator}
         onCancelDeleteInvitation={() => setDeleteInvitationId(null)}
