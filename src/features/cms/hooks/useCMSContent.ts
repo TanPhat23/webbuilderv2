@@ -6,6 +6,7 @@ import {
 } from "@/features/cms";
 import type { ContentItem, ContentType } from "@/features/cms";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
+import { cmsKeys } from "../query-keys";
 
 export interface UseCMSContentOptions {
   contentTypeId?: string;
@@ -38,7 +39,7 @@ export const useCMSContent = (
     error,
     refetch,
   } = useQuery<ContentItem[], Error>({
-    queryKey: ["cms-public-content", contentTypeId, limit, sortBy, sortOrder],
+    queryKey: cmsKeys.publicContentList(contentTypeId, limit, sortBy, sortOrder),
     queryFn: () =>
       getPublicContent({
         data: {
@@ -83,7 +84,7 @@ export const useCMSContentItem = (
     error,
     refetch,
   } = useQuery<ContentItem, Error>({
-    queryKey: ["cms-public-content-item", contentTypeId, slug],
+    queryKey: cmsKeys.publicContentDetail(contentTypeId, slug),
     queryFn: () =>
       getPublicContentItem({
         data: { contentTypeId, slug },
@@ -155,7 +156,7 @@ export const getFieldValues = (
  */
 export const useCMSContentTypes = () => {
   return useQuery<ContentType[], Error>({
-    queryKey: ["cms-content-types"],
+    queryKey: cmsKeys.contentTypes(),
     queryFn: () => getContentTypes(),
     ...QUERY_CONFIG.LONG,
   });

@@ -31,6 +31,7 @@ import {
   ContentTypeFormSchema,
 } from "@/features/cms/schema/cms";
 import type { z } from "zod";
+import { cmsKeys } from "../query-keys";
 
 type ContentTypeFormValues = z.infer<typeof ContentTypeFormSchema>;
 type ContentFieldFormValues = z.infer<typeof ContentFieldFormSchema>;
@@ -81,17 +82,6 @@ type UpdateContentItemVariables = {
 type DeleteContentItemVariables = {
   contentTypeId: string;
   itemId: string;
-};
-
-const cmsKeys = {
-  all: ["cms"] as const,
-  contentTypes: () => [...cmsKeys.all, "contentTypes"] as const,
-  contentFields: (contentTypeId: string) =>
-    [...cmsKeys.all, "contentFields", contentTypeId] as const,
-  contentItems: (contentTypeId: string) =>
-    [...cmsKeys.all, "contentItems", contentTypeId] as const,
-  publicContent: () => [...cmsKeys.all, "public-content"] as const,
-  publicContentItem: () => [...cmsKeys.all, "public-content-item"] as const,
 };
 
 function invalidateContentTypeDependencies(
