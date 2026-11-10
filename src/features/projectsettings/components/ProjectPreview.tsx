@@ -1,24 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 
-interface ColorScheme {
-  primary: string;
-  secondary: string;
-  accent: string;
-}
-
-interface DesignSystem {
-  colors?: ColorScheme;
-  fontFamily?: string;
-  letterTracking?: number;
-  borderRadius?: number;
-  spacing?: number;
-  shadowStyle?: string;
-}
+import { generateDesignSystemCSS, type DesignSystem, type SimpleColorScheme } from "../utils/designSystemUtils";
 
 interface ProjectPreviewProps {
   projectId: string;
   className?: string;
-  colors?: ColorScheme;
+  colors?: SimpleColorScheme;
   designSystem?: DesignSystem;
 }
 
@@ -30,95 +17,6 @@ export function ProjectPreview({
 }: ProjectPreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const generateShadowVars = (style: string) => {
-    const shadows: Record<string, string> = {
-      sm: `--shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
-      --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);`,
-      md: `--shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
-      --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);`,
-      lg: `--shadow-lg: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
-      --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);`,
-      xl: `--shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
-      --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
-      "2xl": `--shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
-    };
-    return shadows[style] || shadows.md;
-  };
-
-  const generateDesignSystemCSS = (system: DesignSystem) => {
-    const colorScheme = system.colors ||
-      colors || { primary: "#3b82f6", secondary: "#e0e7ff", accent: "#1e40af" };
-    const fontFamily = system.fontFamily || "Inter";
-    const letterTracking = system.letterTracking || 0;
-    const borderRadius = system.borderRadius || 8;
-    const spacing = system.spacing || 4;
-    const shadowStyle = system.shadowStyle || "md";
-
-    return `
-      /* Design System Variables */
-      :root {
-        /* Colors */
-        --color-primary: ${colorScheme.primary};
-        --color-secondary: ${colorScheme.secondary};
-        --color-accent: ${colorScheme.accent};
-        --primary: ${colorScheme.primary};
-        --secondary: ${colorScheme.secondary};
-        --accent: ${colorScheme.accent};
-
-        /* Typography */
-        --font-sans: "${fontFamily}", ui-sans-serif, system-ui, sans-serif;
-        --tracking-normal: ${letterTracking}em;
-
-        /* Spacing */
-        --spacing: ${spacing}px;
-
-        /* Border Radius */
-        --radius: ${borderRadius}px;
-        --radius-sm: calc(var(--radius) - 4px);
-        --radius-md: calc(var(--radius) - 2px);
-        --radius-lg: var(--radius);
-        --radius-xl: calc(var(--radius) + 4px);
-
-        /* Shadows */
-        ${generateShadowVars(shadowStyle)}
-      }
-
-      body {
-        font-family: var(--font-sans);
-        letter-spacing: var(--tracking-normal);
-      }
-
-      /* Color Utilities */
-      .text-primary, [class*="text-primary"] {
-        color: ${colorScheme.primary} !important;
-      }
-
-      .bg-primary, [class*="bg-primary"] {
-        background-color: ${colorScheme.primary} !important;
-      }
-
-      .border-primary, [class*="border-primary"] {
-        border-color: ${colorScheme.primary} !important;
-      }
-
-      .text-secondary, [class*="text-secondary"] {
-        color: ${colorScheme.secondary} !important;
-      }
-
-      .bg-secondary, [class*="bg-secondary"] {
-        background-color: ${colorScheme.secondary} !important;
-      }
-
-      .text-accent, [class*="text-accent"] {
-        color: ${colorScheme.accent} !important;
-      }
-
-      .bg-accent, [class*="bg-accent"] {
-        background-color: ${colorScheme.accent} !important;
-      }
-    `;
-  };
 
   const generatePreviewHTML = (system: DesignSystem) => {
     const colorScheme = system.colors ||
@@ -146,7 +44,7 @@ export function ProjectPreview({
       box-sizing: border-box;
     }
 
-    ${generateDesignSystemCSS(system)}
+    ${generateDesignSystemCSS({ ...system, colors: system.colors || colors })}
 
     body {
       background: linear-gradient(135deg, oklch(0.98 0.005 250) 0%, oklch(0.95 0.015 260) 100%);

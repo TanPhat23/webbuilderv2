@@ -1,4 +1,4 @@
-interface ColorScheme {
+export interface ColorScheme {
   primary: string;
   primaryForeground: string;
   secondary: string;
@@ -16,7 +16,7 @@ interface ColorScheme {
   destructiveForeground: string;
 }
 
-interface SimpleColorScheme {
+export interface SimpleColorScheme {
   primary: string;
   secondary: string;
   accent: string;
@@ -37,14 +37,16 @@ export function generateShadowVars(style: string) {
   return shadows[style] || shadows.md;
 }
 
-export function generateDesignSystemCSS(system: {
+export interface DesignSystem {
   colors?: SimpleColorScheme;
   fontFamily?: string;
   letterTracking?: number;
   borderRadius?: number;
   spacing?: number;
   shadowStyle?: string;
-}) {
+}
+
+export function generateDesignSystemCSS(system: DesignSystem) {
   const colorScheme = system.colors || {
     primary: "#3b82f6",
     secondary: "#e0e7ff",

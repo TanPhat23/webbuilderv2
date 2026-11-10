@@ -44,29 +44,11 @@ import type {
 import { ProjectPreview } from "./ProjectPreview";
 import { ColorInput } from "./ColorInput";
 import {
-  generateShadowVars,
   generateDesignSystemCSS,
   generateColorsCSS,
+  type ColorScheme,
 } from "../utils/designSystemUtils";
 import { useProjectStore } from "@/features/editor";
-
-interface ColorScheme {
-  primary: string;
-  primaryForeground: string;
-  secondary: string;
-  secondaryForeground: string;
-  accent: string;
-  accentForeground: string;
-  background: string;
-  foreground: string;
-  card: string;
-  cardForeground: string;
-  muted: string;
-  mutedForeground: string;
-  border: string;
-  destructive: string;
-  destructiveForeground: string;
-}
 
 const PRESET_COLORS = [
   {
