@@ -50,26 +50,28 @@ import {
 } from "../utils/designSystemUtils";
 import { useProjectStore } from "@/features/editor";
 
+const DEFAULT_COLORS: ColorScheme = {
+  primary: "#3b82f6",
+  primaryForeground: "#ffffff",
+  secondary: "#e0e7ff",
+  secondaryForeground: "#1e3a8a",
+  accent: "#1e40af",
+  accentForeground: "#ffffff",
+  background: "#ffffff",
+  foreground: "#0f172a",
+  card: "#f8fafc",
+  cardForeground: "#0f172a",
+  muted: "#f1f5f9",
+  mutedForeground: "#64748b",
+  border: "#e2e8f0",
+  destructive: "#ef4444",
+  destructiveForeground: "#ffffff",
+};
+
 const PRESET_COLORS = [
   {
     name: "Blue Ocean",
-    colors: {
-      primary: "#3b82f6",
-      primaryForeground: "#ffffff",
-      secondary: "#e0e7ff",
-      secondaryForeground: "#1e3a8a",
-      accent: "#1e40af",
-      accentForeground: "#ffffff",
-      background: "#ffffff",
-      foreground: "#0f172a",
-      card: "#f8fafc",
-      cardForeground: "#0f172a",
-      muted: "#f1f5f9",
-      mutedForeground: "#64748b",
-      border: "#e2e8f0",
-      destructive: "#ef4444",
-      destructiveForeground: "#ffffff",
-    },
+    colors: DEFAULT_COLORS,
   },
   {
     name: "Green Forest",
@@ -218,23 +220,7 @@ export function ProjectSettings() {
   const projectId = params.id as string;
 
   const [customCSS, setCustomCSS] = useState("");
-  const [selectedColors, setSelectedColors] = useState<ColorScheme>({
-    primary: "#3b82f6",
-    primaryForeground: "#ffffff",
-    secondary: "#e0e7ff",
-    secondaryForeground: "#1e3a8a",
-    accent: "#1e40af",
-    accentForeground: "#ffffff",
-    background: "#ffffff",
-    foreground: "#0f172a",
-    card: "#f8fafc",
-    cardForeground: "#0f172a",
-    muted: "#f1f5f9",
-    mutedForeground: "#64748b",
-    border: "#e2e8f0",
-    destructive: "#ef4444",
-    destructiveForeground: "#ffffff",
-  });
+  const [selectedColors, setSelectedColors] = useState<ColorScheme>({ ...DEFAULT_COLORS });
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
   const [isPublished, setIsPublished] = useState(false);
@@ -380,23 +366,23 @@ export function ProjectSettings() {
       if (project.styles && typeof project.styles === "object") {
         const styles = project.styles as JsonRecord;
         setSelectedColors({
-          primary: (styles.primary as string) || "#3b82f6",
-          primaryForeground: (styles.primaryForeground as string) || "#ffffff",
-          secondary: (styles.secondary as string) || "#e0e7ff",
+          primary: (styles.primary as string) || DEFAULT_COLORS.primary,
+          primaryForeground: (styles.primaryForeground as string) || DEFAULT_COLORS.primaryForeground,
+          secondary: (styles.secondary as string) || DEFAULT_COLORS.secondary,
           secondaryForeground:
-            (styles.secondaryForeground as string) || "#1e3a8a",
-          accent: (styles.accent as string) || "#1e40af",
-          accentForeground: (styles.accentForeground as string) || "#ffffff",
-          background: (styles.background as string) || "#ffffff",
-          foreground: (styles.foreground as string) || "#0f172a",
-          card: (styles.card as string) || "#f8fafc",
-          cardForeground: (styles.cardForeground as string) || "#0f172a",
-          muted: (styles.muted as string) || "#f1f5f9",
-          mutedForeground: (styles.mutedForeground as string) || "#64748b",
-          border: (styles.border as string) || "#e2e8f0",
-          destructive: (styles.destructive as string) || "#ef4444",
+            (styles.secondaryForeground as string) || DEFAULT_COLORS.secondaryForeground,
+          accent: (styles.accent as string) || DEFAULT_COLORS.accent,
+          accentForeground: (styles.accentForeground as string) || DEFAULT_COLORS.accentForeground,
+          background: (styles.background as string) || DEFAULT_COLORS.background,
+          foreground: (styles.foreground as string) || DEFAULT_COLORS.foreground,
+          card: (styles.card as string) || DEFAULT_COLORS.card,
+          cardForeground: (styles.cardForeground as string) || DEFAULT_COLORS.cardForeground,
+          muted: (styles.muted as string) || DEFAULT_COLORS.muted,
+          mutedForeground: (styles.mutedForeground as string) || DEFAULT_COLORS.mutedForeground,
+          border: (styles.border as string) || DEFAULT_COLORS.border,
+          destructive: (styles.destructive as string) || DEFAULT_COLORS.destructive,
           destructiveForeground:
-            (styles.destructiveForeground as string) || "#ffffff",
+            (styles.destructiveForeground as string) || DEFAULT_COLORS.destructiveForeground,
         });
         // Load design system values
         setFontFamily((styles.fontFamily as string) || "Inter");
