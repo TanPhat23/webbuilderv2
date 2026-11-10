@@ -62,7 +62,6 @@ class CodeGenerator {
       result = `/**
  * Generated component
  * Note: TypeScript errors in Monaco editor are expected - the editor doesn't have full project context
- * This code will work correctly when used in your actual Next.js project
  */
 ${imports}
 

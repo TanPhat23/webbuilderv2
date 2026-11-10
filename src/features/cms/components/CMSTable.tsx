@@ -105,8 +105,7 @@ export function CMSTable() {
     fieldValues: {},
   });
 
-  // Stable refs — column useMemo never re-runs on each keystroke,
-  // preventing cell remount and focus loss.
+  // Refs let cell callbacks read the latest edit state without capturing it.
   const editingIdRef = useRef<string | null>(null);
   const editValuesRef = useRef<EditableItemValues>({
     title: "",

@@ -135,7 +135,7 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
     const sourceNode = get().getNode(source);
     const targetNode = get().getNode(target);
 
-    // Prevent cycles and self-connections
+    // Reject self-connections and connections to missing nodes
     if (source === target || !sourceNode || !targetNode) {
       return "";
     }
