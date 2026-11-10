@@ -391,53 +391,7 @@ export interface CarouselElement extends Element<"Carousel", CarouselSettings> {
   elements: EditorElement[];
 }
 
-// ============================================
-// UNION TYPE
-// ============================================
-
-export type EditorElement =
-  // Inline / Leaf
-  | TextElement
-  | SpanElement
-  | HeadingElement
-  | LabelElement
-  | BlockquoteElement
-  | CodeElement
-  | SeparatorElement
-  | IconElement
-  // Media
-  | ImageElement
-  | VideoElement
-  | AudioElement
-  | IFrameElement
-  // Interactive
-  | LinkElement
-  | ButtonElement
-  // Form
-  | InputElement
-  | TextareaElement
-  | CheckboxElement
-  | RadioElement
-  | ProgressElement
-  | ListElement
-  | SelectElement
-  | FormElement
-  // Table
-  | TableElement
-  // Container / Layout
-  | FrameElement
-  | SectionElement
-  | NavElement
-  | HeaderElement
-  | FooterElement
-  | ArticleElement
-  | AsideElement
-  // CMS
-  | CMSContentListElement
-  | CMSContentItemElement
-  | CMSContentGridElement
-  // Carousel
-  | CarouselElement;
+export type EditorElement = ElementTypeMap[ElementType];
 
 /**
  * Mapping of element type names to their respective interface types.

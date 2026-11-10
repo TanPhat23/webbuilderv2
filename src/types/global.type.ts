@@ -3,103 +3,10 @@ import {
   EDITABLE_ELEMENT_TYPES,
   type ElementType,
 } from "@/features/editor";
-import {
-  ArticleElement,
-  AsideElement,
-  AudioElement,
-  BlockquoteElement,
-  ButtonElement,
-  CarouselElement,
-  CheckboxElement,
-  CMSContentGridElement,
-  CMSContentItemElement,
-  CMSContentListElement,
-  CodeElement,
-  FooterElement,
-  FormElement,
-  FrameElement,
-  HeaderElement,
-  HeadingElement,
-  IconElement,
-  IFrameElement,
-  ImageElement,
-  InputElement,
-  LabelElement,
-  LinkElement,
-  ListElement,
-  NavElement,
-  ProgressElement,
-  RadioElement,
-  SectionElement,
-  SelectElement,
-  SeparatorElement,
-  SpanElement,
-  TableElement,
-  TextElement,
-  TextareaElement,
-  VideoElement,
-} from "@/features/editor";
+import type { ElementTypeMap } from "@/features/editor/interfaces/elements.interface";
 
-type ContainerElement =
-  | FrameElement
-  | SectionElement
-  | FormElement
-  | ListElement
-  | SelectElement
-  | CarouselElement
-  | CMSContentListElement
-  | CMSContentItemElement
-  | CMSContentGridElement
-  | TableElement
-  | NavElement
-  | HeaderElement
-  | FooterElement
-  | ArticleElement
-  | AsideElement;
-
-type EditorElement =
-  // Inline / Leaf
-  | TextElement
-  | SpanElement
-  | HeadingElement
-  | LabelElement
-  | BlockquoteElement
-  | CodeElement
-  | SeparatorElement
-  | IconElement
-  // Media
-  | ImageElement
-  | VideoElement
-  | AudioElement
-  | IFrameElement
-  // Interactive
-  | LinkElement
-  | ButtonElement
-  // Form
-  | InputElement
-  | TextareaElement
-  | CheckboxElement
-  | RadioElement
-  | ProgressElement
-  | ListElement
-  | SelectElement
-  | FormElement
-  // Table
-  | TableElement
-  // Container / Layout
-  | FrameElement
-  | SectionElement
-  | NavElement
-  | HeaderElement
-  | FooterElement
-  | ArticleElement
-  | AsideElement
-  // CMS
-  | CMSContentListElement
-  | CMSContentItemElement
-  | CMSContentGridElement
-  // Carousel
-  | CarouselElement;
+type EditorElement = ElementTypeMap[ElementType];
+type ContainerElement = Extract<EditorElement, { type: ContainerElementType }>;
 
 type ExcludeType = "id" | "pageId" | "parentId";
 

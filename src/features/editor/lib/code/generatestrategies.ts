@@ -189,7 +189,7 @@ export class SelectGenerateStrategy implements GenerateStrategy {
       ...settingsToAttributes(element.settings as any),
     ];
     const options: t.JSXElement[] = [];
-    const elems = (element as ContainerElement).elements;
+    const elems = element.elements;
     if (Array.isArray(elems)) {
       elems.forEach((opt) => {
         const value = opt.content || "";
