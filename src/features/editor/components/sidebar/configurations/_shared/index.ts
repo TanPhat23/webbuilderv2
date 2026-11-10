@@ -25,3 +25,10 @@ export {
   type ToggleOption,
 } from "./ToggleGroupField";
 export { AccordionSection, SectionDivider } from "./AccordionSection";
+export {
+  ChoiceConfigurationShell,
+  getChoiceConfigurationDefaults,
+  type ChoiceSettingsBase,
+  type ChoiceDefaults,
+  type ChoiceConfigurationShellProps,
+} from "./ChoiceConfigurationSection";
