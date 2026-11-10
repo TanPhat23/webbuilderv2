@@ -20,6 +20,8 @@ import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { projectKeys } from "@/features/projects/hooks/useProjects";
 import {
   Form,
   FormControl,
@@ -209,9 +211,19 @@ export function ProjectPageCommand() {
   const { pages, deletePage } = usePageStore();
   const { id } = useParams({ strict: false });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const deleteAndNavigate = async (pageId: string) => {
     const wasCurrent = usePageStore.getState().currentPage?.Id === pageId;
-    if (await deletePage(pageId) && wasCurrent) {
+    if (!(await deletePage(pageId))) return;
+    if (id) {
+      const queryKey = projectKeys.pages(id);
+      await queryClient.cancelQueries({ queryKey, exact: true });
+      queryClient.setQueryData<Page[]>(queryKey, (pages) =>
+        pages?.filter((page) => page.Id !== pageId),
+      );
+    }
+    const routePage = new URLSearchParams(window.location.search).get("page");
+    if (wasCurrent && (!routePage || routePage === pageId)) {
       const nextPage = usePageStore.getState().currentPage;
       navigate({ to: nextPage ? `/editor/${id}?page=${nextPage.Id}` : `/editor/${id}` });
     }
