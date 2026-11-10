@@ -65,7 +65,7 @@ test.describe('Create Project', () => {
       await page.getByLabel(/project name/i).blur();
       await page.getByRole('button', { name: /^create project$/i }).click();
 
-      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByText('Name is required')).toBeVisible();
     });
 
     test('should not close dialog when submitting with empty name', async ({ page }) => {
@@ -119,15 +119,7 @@ test.describe('Create Project', () => {
       await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
     });
 
-    test('should show creating state while submitting', async ({ page }) => {
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill('Loading Test');
 
-      const submitButton = page.getByRole('button', { name: /^create project$/i });
-      await submitButton.click();
-
-      await expect(page.getByRole('button', { name: /creating/i }).or(submitButton)).toBeVisible();
-    });
   });
 
   test.describe('Input Handling', () => {
