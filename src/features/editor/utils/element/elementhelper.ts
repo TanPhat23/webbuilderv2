@@ -121,7 +121,6 @@ export const elementHelper = {
   mapRecursively: ElementTreeHelper.mapRecursively,
   mapAddChildById: ElementTreeHelper.mapAddChildById,
   mapSwapChildrenById: ElementTreeHelper.mapSwapChildrenById,
-  insertAtPosition: ElementTreeHelper.insertAtPosition,
   // misc
   isValidElementType,
 };

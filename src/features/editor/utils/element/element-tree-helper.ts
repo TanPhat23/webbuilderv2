@@ -158,76 +158,11 @@ const mapSwapChildrenById = (
   );
 };
 
-const insertAtPosition = (
-  elements: EditorElement[],
-  element: EditorElement,
-  position?: number,
-): EditorElement[] => {
-  const next = [...elements];
-  if (position !== undefined && position >= 0 && position <= elements.length) {
-    next.splice(position, 0, element);
-  } else {
-    next.push(element);
-  }
-  return next;
-};
-
-const findParent = (
-  elements: EditorElement[],
-  childId: string,
-): EditorElement | undefined => {
-  for (const el of elements) {
-    if (!hasChildren(el)) continue;
-    if (children(el).some((c) => c.id === childId)) return el;
-    const found = findParent(children(el), childId);
-    if (found) return found;
-  }
-  return undefined;
-};
-
-const countElements = (elements: EditorElement[]): number =>
-  elements.reduce(
-    (acc, el) => acc + 1 + (hasChildren(el) ? countElements(children(el)) : 0),
-    0,
-  );
-
 const flatten = (elements: EditorElement[]): EditorElement[] =>
   elements.flatMap((el) => [
     el,
     ...(hasChildren(el) ? flatten(children(el)) : []),
   ]);
-
-const getAllIds = (elements: EditorElement[]): string[] =>
-  flatten(elements).map((el) => el.id);
-
-const exists = (elements: EditorElement[], id: string): boolean =>
-  findById(elements, id) !== undefined;
-
-const getDepth = (
-  elements: EditorElement[],
-  id: string,
-  currentDepth = 0,
-): number => {
-  for (const el of elements) {
-    if (el.id === id) return currentDepth;
-    if (hasChildren(el)) {
-      const depth = getDepth(children(el), id, currentDepth + 1);
-      if (depth !== -1) return depth;
-    }
-  }
-  return -1;
-};
-
-const getPath = (elements: EditorElement[], id: string): string[] => {
-  for (const el of elements) {
-    if (el.id === id) return [id];
-    if (hasChildren(el)) {
-      const childPath = getPath(children(el), id);
-      if (childPath.length > 0) return [el.id, ...childPath];
-    }
-  }
-  return [];
-};
 
 export const ElementTreeHelper = {
   isContainerElement,
@@ -239,12 +174,5 @@ export const ElementTreeHelper = {
   mapRecursively,
   mapAddChildById,
   mapSwapChildrenById,
-  insertAtPosition,
-  findParent,
-  countElements,
   flatten,
-  getAllIds,
-  exists,
-  getDepth,
-  getPath,
 };

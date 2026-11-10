@@ -30,7 +30,6 @@ const HOUR = 60 * MINUTE;
  * | SHORT     |  1 min    |  5 min  | Rapidly-changing data (notifications, etc.)   |
  * | DEFAULT   |  5 min    | 30 min  | Standard data (content items, lists)          |
  * | LONG      | 15 min    |  1 hr   | Rarely-changing data (content types, schemas) |
- * | STATIC    | 60 min    | 24 hr   | Almost-never-changing data (feature flags)    |
  */
 export const QUERY_CONFIG = {
   /** Rapidly-changing data – re-fetches after 1 minute. */
@@ -51,11 +50,6 @@ export const QUERY_CONFIG = {
     gcTime: 1 * HOUR,
   },
 
-  /** Almost-never-changing data – re-fetches after 60 minutes. */
-  STATIC: {
-    staleTime: 60 * MINUTE,
-    gcTime: 24 * HOUR,
-  },
 } as const;
 
 /** Convenience type for spreading into `useQuery` / `useMutation` options. */
