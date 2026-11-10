@@ -1,3 +1,4 @@
+import type { NavigateActionConfig, ToggleElementActionConfig, ApiCallActionConfig, SetDataActionConfig, CustomCodeActionConfig, ScrollActionConfig, ModalActionConfig, NotificationActionConfig, CopyToClipboardActionConfig, DownloadActionConfig, AnimationActionConfig, FormActionConfig, ToggleClassActionConfig } from "@/features/editor/interfaces/events.interface";
 /**
  * Event Executor - Handles execution of event handlers
  * Manages conditions, actions, and chaining
@@ -220,7 +221,7 @@ class EventExecutor {
   /**
    * Handle navigate action
    */
-  private handleNavigate(config: any, context: EventExecutionContext): void {
+  private handleNavigate(config: NavigateActionConfig, context: EventExecutionContext): void {
     const url = config.value;
 
     if (config.openInNewTab) {
@@ -238,7 +239,7 @@ class EventExecutor {
    * Handle show/hide/toggle element
    */
   private handleToggleElement(
-    config: any,
+    config: ToggleElementActionConfig,
     context: EventExecutionContext,
   ): void {
     const element = document.getElementById(config.elementId);
@@ -259,7 +260,7 @@ class EventExecutor {
    * Handle API call action
    */
   private async handleApiCall(
-    config: any,
+    config: ApiCallActionConfig,
     context: EventExecutionContext,
   ): Promise<any> {
     try {
@@ -297,7 +298,7 @@ class EventExecutor {
   /**
    * Handle set data action
    */
-  private handleSetData(config: any, context: EventExecutionContext): void {
+  private handleSetData(config: SetDataActionConfig, context: EventExecutionContext): void {
     let value = config.value;
 
     // Get value from different sources
@@ -326,7 +327,7 @@ class EventExecutor {
   /**
    * Handle custom code action
    */
-  private handleCustomCode(config: any, context: EventExecutionContext): any {
+  private handleCustomCode(config: CustomCodeActionConfig, context: EventExecutionContext): any {
     try {
       // Create function with safe context
       const fn = new Function(
@@ -355,9 +356,9 @@ class EventExecutor {
   /**
    * Handle scroll action
    */
-  private handleScroll(config: any, context: EventExecutionContext): void {
+  private handleScroll(config: ScrollActionConfig, context: EventExecutionContext): void {
     if (config.target === "elementId") {
-      const element = document.getElementById(config.value);
+      const element = document.getElementById(config.value as string);
       if (element) {
         element.scrollIntoView({
           behavior: config.behavior || "smooth",
@@ -371,7 +372,7 @@ class EventExecutor {
       }
     } else if (config.target === "position") {
       window.scrollTo({
-        top: config.value,
+        top: config.value as number,
         behavior: config.behavior || "smooth",
       });
     }
@@ -380,7 +381,7 @@ class EventExecutor {
   /**
    * Handle modal action
    */
-  private handleModal(config: any, context: EventExecutionContext): void {
+  private handleModal(config: ModalActionConfig, context: EventExecutionContext): void {
     const modalId = config.modalId;
     if (!modalId) return;
 
@@ -400,7 +401,7 @@ class EventExecutor {
    * Handle notification action
    */
   private handleNotification(
-    config: any,
+    config: NotificationActionConfig,
     _context: EventExecutionContext,
   ): void {
     // Using sonner which is already in your dependencies
@@ -421,7 +422,7 @@ class EventExecutor {
    * Handle copy to clipboard action
    */
   private async handleCopyToClipboard(
-    config: any,
+    config: CopyToClipboardActionConfig,
     _context: EventExecutionContext,
   ): Promise<void> {
     try {
@@ -445,7 +446,7 @@ class EventExecutor {
    * Handle download file action
    */
   private handleDownloadFile(
-    config: any,
+    config: DownloadActionConfig,
     _context: EventExecutionContext,
   ): void {
     const link = document.createElement("a");
@@ -459,7 +460,7 @@ class EventExecutor {
   /**
    * Handle play animation action
    */
-  private handleAnimation(config: any, _context: EventExecutionContext): void {
+  private handleAnimation(config: AnimationActionConfig, _context: EventExecutionContext): void {
     const element = document.getElementById(config.elementId);
     if (!element) return;
 
@@ -477,7 +478,7 @@ class EventExecutor {
   /**
    * Handle form actions
    */
-  private handleFormAction(config: any, context: EventExecutionContext): void {
+  private handleFormAction(config: FormActionConfig, context: EventExecutionContext): void {
     let formElement = document.getElementById(
       config.formElementId || "",
     ) as HTMLFormElement;
@@ -502,7 +503,7 @@ class EventExecutor {
    * Handle toggle class action
    */
   private handleToggleClass(
-    config: any,
+    config: ToggleClassActionConfig,
     _context: EventExecutionContext,
   ): void {
     const element = document.getElementById(config.elementId);
