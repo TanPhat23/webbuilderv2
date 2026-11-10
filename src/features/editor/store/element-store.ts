@@ -57,7 +57,6 @@ export type ElementStore = {
   remoteDelete: (id: string) => void;
   remoteAdd: (element: EditorElement) => void;
   remoteMove: (id: string, newParentId: string | null, order: number) => void;
-  updateAllElements: (update: Partial<EditorElement>) => ElementStore;
   insertElement: (
     parentElement: EditorElement,
     elementToBeInserted: EditorElement,
@@ -65,7 +64,6 @@ export type ElementStore = {
   swapElement: (id1: string, id2: string) => ElementStore;
   undo: () => ElementStore;
   redo: () => ElementStore;
-  clearHistory: () => ElementStore;
   setYjsUpdateCallback: (
     callback: ((elements: EditorElement[]) => void) | null,
   ) => void;
@@ -252,31 +250,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       return get();
     },
 
-    updateAllElements: (update: Partial<EditorElement>) => {
-      takeSnapshot();
-      const { elements } = get();
-      const updated = elementHelper.mapRecursively(
-        elements as EditorElement[],
-        (el) => {
-          const updateEl = { ...el };
-          Object.assign(updateEl, update);
-          if (update.styles) {
-            const safeElStyles =
-              el.styles &&
-              typeof el.styles === "object" &&
-              !Array.isArray(el.styles)
-                ? el.styles
-                : {};
-            updateEl.styles = { ...safeElStyles, ...update.styles };
-          }
-          return updateEl as EditorElement;
-        },
-      );
-      set({ elements: updated });
-      triggerYjsCallback();
-      return get();
-    },
-
     undo: () => {
       const { past, elements, future } = get();
       if (past.length === 0) return get();
@@ -344,11 +317,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         newPosition: newIdx,
       });
 
-      return get();
-    },
-
-    clearHistory: () => {
-      set({ past: [], future: [] });
       return get();
     },
 

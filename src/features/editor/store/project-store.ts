@@ -3,30 +3,12 @@ import type { Project } from "@/features/projects";
 import { updateProject as updateProjectServer } from "@/features/projects/api/project.api";
 import type { ProjectUpdateFields } from "@/features/projects/schema/project";
 
-/**
- * ProjectStore (client / optimistic)
- *
- * This store uses the `Project` interface from `src/interfaces/project.interface.ts`
- * which uses camelCase field names and string dates (ISO).
- *
- * It performs optimistic local updates but still calls `projectService.updateProject`
- * so the shape returned by the server should match the `Project` interface.
- *
- * Public API:
- * - loadProject(project)
- * - resetProject()
- * - setProject(project | null)
- * - updateProject(updates, id?) -> Promise<Project | null>
- */
-
 type ProjectStoreState = {
   project: Project | null;
   isUpdating: boolean;
   errorMessage: string | null;
 
   loadProject: (project: Project) => void;
-  resetProject: () => void;
-  setProject: (project: Project | null) => void;
 
   updateProject: (
     updates: ProjectUpdateFields,
@@ -44,14 +26,6 @@ export const useProjectStore = create<ProjectStoreState>((set, get) => {
 
     loadProject: (project: Project) => {
       set({ project, errorMessage: null });
-    },
-
-    resetProject: () => {
-      set({ project: null, errorMessage: null });
-    },
-
-    setProject: (project: Project | null) => {
-      set({ project });
     },
 
     updateProject: async (updates: ProjectUpdateFields, id?: string) => {
