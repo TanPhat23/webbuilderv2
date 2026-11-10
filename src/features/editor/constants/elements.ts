@@ -1,4 +1,5 @@
-import { EditorComponentProps } from "@/features/editor";
+import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
+import type { ElementTypeMap } from "@/features/editor/interfaces/elements.interface";
 
 export const CONTAINER_ELEMENT_TYPES = [
   "Frame",
@@ -43,9 +44,13 @@ export const ALL_ELEMENT_TYPES = [
   "Checkbox",
   "Radio",
   "Progress",
-] as const;
+] as const satisfies readonly ElementType[];
 
-export type ElementType = (typeof ALL_ELEMENT_TYPES)[number];
+export type ElementType = keyof ElementTypeMap;
+type AssertAllTypesListed<T extends true> = T;
+type AllElementTypesListed = AssertAllTypesListed<
+  Exclude<ElementType, (typeof ALL_ELEMENT_TYPES)[number]> extends never ? true : false
+>;
 
 const ELEMENT_METADATA: Record<ElementType, { icon: string; label: string }> = {
   Text: { icon: "Type", label: "Text" },
