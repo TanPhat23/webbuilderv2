@@ -11,33 +11,27 @@ import {
 const items = [
   {
     id: "1",
-    title: "What is WebBuilder and who is it for?",
+    title: "Who is WebBuilder for?",
     content:
-      "WebBuilder is a modern visual builder for React and Next.js apps. It lets you create web pages by dragging and dropping prebuilt, customizable components—no coding required. It’s perfect for developers, startups, and teams who want to build and ship faster.",
+      "Freelancers, agencies and product teams where designers and developers work on the same site: designers build visually and developers take the code.",
   },
   {
     id: "2",
-    title: "Can I export the code for my website?",
+    title: "What do I get when I export?",
     content:
-      "Yes! With WebBuilder, you can export clean, production-ready React/Next.js code for any website you create. There's no vendor lock-in—download your code and host it anywhere.",
+      "A React component for each page, styled with Tailwind classes. Buttons and cards import from shadcn/ui paths, so the project you drop it into needs those set up. Code export is on the Pro plan.",
   },
   {
     id: "3",
     title: "Do I need to know how to code?",
     content:
-      "Not at all! WebBuilder is designed for everyone. Simply drag and drop components, customize colors and text, and your website is ready. Our visual editor handles all the technical stuff.",
+      "Not to build pages in the editor. Taking an export into a real project takes some React.",
   },
   {
     id: "4",
-    title: "Can I customize the design and layout?",
-    content:
-      "Absolutely! Every component is fully customizable. Change colors, fonts, spacing, and layouts with our visual editor. You can also add your own images, text, and branding.",
-  },
-  {
-    id: "5",
     title: "How do I publish my website?",
     content:
-      "You can publish directly from WebBuilder to get an instant live URL, or export your code to host on your own domain with services like Vercel, Netlify, or any web hosting provider.",
+      "Publish from the editor, or export the code and host it wherever you deploy React. Custom domains are on the Pro plan.",
   },
 ];
 
@@ -62,26 +56,13 @@ export default function LandingPageFAQ() {
       <div className="container mx-auto max-w-6xl px-4 md:px-6">
         <div className="mb-10 text-center">
           <motion.h2
-            className="mb-4 text-3xl font-bold tracking-tight md:text-4xl"
+            className="font-display mb-4 text-4xl leading-none md:text-6xl"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            Frequently Asked{" "}
-            <span className="from-primary bg-gradient-to-r to-rose-400 bg-clip-text text-transparent">
-              Questions
-            </span>
+            Questions, <em className="text-[var(--landing-signal)]">answered.</em>
           </motion.h2>
-          <motion.p
-            className="text-muted-foreground mx-auto max-w-2xl"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            Everything you need to know about WebBuilder's visual editor,
-            component library, and publishing options to get your website online
-            fast.
-          </motion.p>
         </div>
 
         <motion.div
@@ -90,10 +71,6 @@ export default function LandingPageFAQ() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          {/* Decorative gradient */}
-          <div className="bg-primary/10 absolute -top-4 -left-4 -z-10 h-72 w-72 rounded-full blur-3xl" />
-          <div className="bg-primary/10 absolute -right-4 -bottom-4 -z-10 h-72 w-72 rounded-full blur-3xl" />
-
           <Accordion
             type="single"
             collapsible

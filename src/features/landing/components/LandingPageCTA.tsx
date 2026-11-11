@@ -1,65 +1,53 @@
+import { useRef } from "react";
+import { Link } from "@tanstack/react-router";
+import { motion, useMotionValue, useReducedMotion, useSpring } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
+import KineticText from "./KineticText";
 
-import { ArrowRight } from "lucide-react";
-import { Link } from '@tanstack/react-router';
-import { Button } from "@/components/ui/button";
-import { useInView } from "@/features/ui/hooks/useInView";
+export default function LandingPageCTA({ ctaTo }: { ctaTo: "/sign-up" | "/dashboard" }) {
+  const reduce = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const mx = useMotionValue(0);
+  const my = useMotionValue(0);
+  const x = useSpring(mx, { stiffness: 220, damping: 18 });
+  const y = useSpring(my, { stiffness: 220, damping: 18 });
 
-export default function LandingPageCTA() {
-  const [ref, inView] = useInView();
+  const pull = (event: React.PointerEvent) => {
+    if (reduce || event.pointerType !== "mouse" || !ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    mx.set((event.clientX - (r.left + r.width / 2)) * 0.35);
+    my.set((event.clientY - (r.top + r.height / 2)) * 0.35);
+  };
+  const release = () => {
+    mx.set(0);
+    my.set(0);
+  };
 
   return (
-    <section
-      ref={ref}
-      className="py-24 bg-gradient-to-r from-primary/10 via-background to-accent/10 relative overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5"></div>
-      <div className="container mx-auto px-4 lg:px-6 text-center relative">
+    <section data-tone="blue" className="bg-primary text-primary-foreground">
+      <div className="container mx-auto grid items-center gap-12 px-4 py-24 lg:grid-cols-[1fr_auto] lg:px-6 lg:py-36">
+        <KineticText
+          as="h2"
+          className="font-display text-[clamp(2.8rem,8.5vw,8rem)] leading-[0.92]"
+          lines={[[{ text: "Start with" }], [{ text: "a blank canvas." }]]}
+        />
         <div
-          className={`max-w-4xl mx-auto space-y-8 transition-all duration-1000 ${
-            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          }`}
+          ref={ref}
+          onPointerMove={pull}
+          onPointerLeave={release}
+          className="grid place-items-center p-6 lg:p-12"
         >
-          <h2 className="text-3xl lg:text-6xl font-bold leading-tight">
-            Ready to build your{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              dream website?
-            </span>
-          </h2>
-          <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Join thousands of creators who trust WebBuilder to bring their
-            vision to life. No code required, just drag, drop, and publish—the
-            way it should be.
-          </p>
-          <div
-            className={`flex flex-col sm:flex-row gap-6 justify-center pt-8 transition-all duration-1000 delay-300 ${
-              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          >
-            <Button
-              size="lg"
-              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold text-xl px-12 py-6 hover:shadow-xl hover:shadow-primary/25 transition-all duration-300 hover:scale-105 group"
-              asChild
+          <motion.div style={{ x, y }}>
+            <Link
+              to={ctaTo}
+              className="grid size-44 place-items-center rounded-full bg-background text-center text-foreground transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:size-52"
             >
-              <Link to="/sign-up">
-                Start Your Free Trial
-                <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-border text-muted-foreground hover:bg-accent/10 hover:text-foreground hover:border-accent/50 transition-all duration-300 hover:scale-105 bg-transparent backdrop-blur-sm text-xl px-12 py-6"
-            >
-              Schedule a Demo
-            </Button>
-          </div>
-          <p
-            className={`text-sm text-muted-foreground pt-4 transition-all duration-1000 delay-500 ${
-              inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          >
-            14-day free trial • No credit card required • Cancel anytime
-          </p>
+              <span className="font-display flex flex-col items-center gap-1 text-2xl leading-none">
+                {ctaTo === "/dashboard" ? "Open dashboard" : "Open the editor"}
+                <ArrowUpRight className="size-6 text-primary" />
+              </span>
+            </Link>
+          </motion.div>
         </div>
       </div>
     </section>

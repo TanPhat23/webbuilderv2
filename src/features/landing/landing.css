@@ -1,0 +1,99 @@
+@import "@fontsource-variable/bricolage-grotesque/standard.css";
+
+/*
+ * Landing page. Colours, radius and body fonts come from the app theme
+ * (globals.css) untouched, so the page matches the product. Only a display
+ * face and a few layout helpers are added here, scoped to `.landing`.
+ */
+.landing {
+  --landing-signal: var(--primary);
+  --landing-ink: var(--foreground);
+  --landing-paper: var(--background);
+  --landing-rule: var(--border);
+
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.landing .font-display {
+  font-family: "Bricolage Grotesque Variable", "Geist Variable", ui-sans-serif, sans-serif;
+  font-weight: 700;
+  font-variation-settings: "opsz" 96, "wdth" 88;
+  letter-spacing: -0.045em;
+  word-spacing: 0.1em;
+}
+
+/* Emphasis is colour, not italics. */
+.landing .font-display em {
+  font-style: normal;
+}
+
+.landing .font-label {
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Blueprint ruling, tinted with the brand blue. */
+.landing .blueprint {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 10%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--primary) 10%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* The hero grid is only revealed around the pointer. */
+.landing .grid-reveal {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--primary) 38%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--primary) 38%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(340px circle at var(--mx, 70%) var(--my, 35%), #000 0%, transparent 100%);
+  mask-image: radial-gradient(340px circle at var(--mx, 70%) var(--my, 35%), #000 0%, transparent 100%);
+}
+
+.landing .grid-faint {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.landing .stroke-text {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--foreground);
+}
+
+/*
+ * globals.css makes <body> overflow-y:auto, which turns it into its own scroll
+ * container and stops position:sticky (the pinned build stage) from sticking to
+ * the viewport. On the landing page only, let the viewport do the scrolling.
+ */
+html:has(.landing) body {
+  overflow: visible;
+}
+
+/* Lenis smooth scrolling. */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing *,
+  .landing *::before,
+  .landing *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

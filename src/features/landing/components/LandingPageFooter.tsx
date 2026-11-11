@@ -1,111 +1,36 @@
-import { Sparkles } from "lucide-react";
-
-import { useInView } from "@/features/ui/hooks/useInView";
-
-const footerSections = [
-  {
-    title: "Product",
-    links: ["Features", "Templates", "Integrations", "API", "Changelog"],
-  },
-  {
-    title: "Company",
-    links: ["About", "Blog", "Careers", "Contact", "Press"],
-  },
-  {
-    title: "Support",
-    links: [
-      "Help Center",
-      "Community",
-      "Privacy Policy",
-      "Terms of Service",
-      "Status",
-    ],
-  },
-];
-
-const socialLinks = ["Twitter", "LinkedIn", "GitHub", "Discord"];
+import { Link } from "@tanstack/react-router";
+import KineticText from "./KineticText";
 
 export default function LandingPageFooter() {
-  const [ref, inView] = useInView();
-
   return (
-    <footer
-      ref={ref}
-      className="border-t border-border/50 py-16 bg-background/50 backdrop-blur-sm"
-    >
+    <footer className="overflow-hidden border-t border-border">
+      <div className="container mx-auto flex flex-col gap-8 px-4 py-10 md:flex-row md:items-start md:justify-between lg:px-6">
+        <p className="max-w-xs text-sm text-muted-foreground">A visual editor for teams who ship React.</p>
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-8 gap-y-3 text-sm">
+          <a href="#build" className="text-muted-foreground transition-colors hover:text-foreground">
+            How it works
+          </a>
+          <a href="#pricing" className="text-muted-foreground transition-colors hover:text-foreground">
+            Pricing
+          </a>
+          <Link to="/helppage" className="text-muted-foreground transition-colors hover:text-foreground">
+            Help
+          </Link>
+          <Link to="/sign-in" className="text-muted-foreground transition-colors hover:text-foreground">
+            Sign in
+          </Link>
+        </nav>
+      </div>
       <div className="container mx-auto px-4 lg:px-6">
-        <div
-          className={`grid md:grid-cols-4 gap-12 transition-all duration-1000 ${
-            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
-          }`}
-        >
-          <div className="space-y-6">
-            <div className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <Sparkles className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-bold">WebBuilder</span>
-            </div>
-            <p className="text-muted-foreground leading-relaxed max-w-sm">
-              The easiest way to build professional websites with drag-and-drop
-              components and clean code export.
-            </p>
-          </div>
-
-          {footerSections.map((section, index) => (
-            <div
-              key={index}
-              className={`transition-all duration-700 ${
-                inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-              style={{
-                transitionDelay: `${(index + 1) * 150}ms`,
-              }}
-            >
-              <h3 className="font-semibold text-lg mb-6">{section.title}</h3>
-              <ul className="space-y-3">
-                {section.links.map((link, linkIndex) => (
-                  <li key={linkIndex}>
-                    <a
-                      href="#"
-                      className="text-muted-foreground hover:text-foreground transition-all duration-300 hover:translate-x-1 inline-block"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div
-          className={`border-t border-border/50 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 transition-all duration-1000 delay-300 ${
-            inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-          }`}
-        >
-          <p className="text-muted-foreground">
-            © {new Date().getFullYear()} WebBuilder. All rights reserved.
-          </p>
-          <div className="flex space-x-8">
-            {socialLinks.map((social, index) => (
-              <a
-                key={social}
-                href="#"
-                className={`text-muted-foreground hover:text-foreground transition-all duration-500 hover:scale-110 ${
-                  inView
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-4"
-                }`}
-                style={{
-                  transitionDelay: `${600 + index * 100}ms`,
-                }}
-              >
-                {social}
-              </a>
-            ))}
-          </div>
-        </div>
+        <KineticText
+          lines={[[{ text: "webbuilder", accent: false }]]}
+          className="font-display -mb-[0.06em] text-[clamp(3.5rem,19vw,19rem)] leading-[0.85]"
+        />
+      </div>
+      <div className="border-t border-border">
+        <p className="font-label container mx-auto px-4 py-4 text-muted-foreground lg:px-6">
+          © {new Date().getFullYear()} WebBuilder
+        </p>
       </div>
     </footer>
   );

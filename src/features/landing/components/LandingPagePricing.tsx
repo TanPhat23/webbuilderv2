@@ -11,73 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Check,
-  Sparkles,
-  ArrowRight,
-  Zap,
-  Star,
-  Building2,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Check, Sparkles, ArrowRight } from "lucide-react";
 import NumberFlow from "@number-flow/react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
+import { pricingPlans } from "@/features/subscription/constants/pricing";
 
-type PricingPlan = {
-  id: string;
-  name: string;
-  price: { monthly: number | string; yearly: number | string };
-  description: string;
-  features: string[];
-  popular: boolean;
-  icon: LucideIcon;
-  cta: string;
-};
-
-const pricingPlans: PricingPlan[] = [
-  {
-    id: "hobby",
-    name: "Hobby",
-    price: { monthly: 0, yearly: 0 },
-    description: "Perfect for personal projects",
-    features: ["5 projects", "Basic components", "Community support"],
-    popular: false,
-    icon: Zap,
-    cta: "Get Started Free",
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: { monthly: 12, yearly: 99 },
-    description: "For professional developers",
-    features: [
-      "Unlimited projects",
-      "All components",
-      "Priority support",
-      "Custom domains",
-    ],
-    popular: true,
-    icon: Star,
-    cta: "Start Pro Trial",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: { monthly: 49, yearly: 399 },
-    description: "For teams and organizations",
-    features: [
-      "Everything in Pro",
-      "Team collaboration",
-      "SSO",
-      "Dedicated support",
-      "SLA",
-    ],
-    popular: false,
-    icon: Building2,
-    cta: "Contact Sales",
-  },
-];
+// Plans come from the same constants the checkout uses, so the page cannot drift from the product.
+const pro = pricingPlans.find((plan) => plan.id === "pro");
+const yearlySaving =
+  pro && typeof pro.price.monthly === "number" && typeof pro.price.yearly === "number"
+    ? Math.round((1 - pro.price.yearly / pro.price.monthly) * 100)
+    : 0;
 
 export default function LandingPagePricing() {
   const [frequency, setFrequency] = React.useState<"monthly" | "yearly">(
@@ -86,48 +31,22 @@ export default function LandingPagePricing() {
   const navigate = useNavigate();
 
   const handlePlanSelect = (planId: string) => {
-    if (planId === "hobby") {
-      navigate({ to: "/sign-up" });
-      return;
-    }
-    navigate({ to: "/sign-up" });
+    // Enterprise is priced by conversation, so it goes to the contact tab.
+    navigate({ to: planId === "enterprise" ? "/helppage" : "/sign-up" });
   };
 
   return (
     <section className="relative w-full overflow-hidden px-4 py-24 text-center sm:px-8">
-      {/* Background gradients */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="bg-primary/10 absolute -top-[10%] left-[50%] h-[40%] w-[60%] -translate-x-1/2 rounded-full blur-3xl" />
-        <div className="bg-primary/5 absolute -right-[10%] -bottom-[10%] h-[40%] w-[40%] rounded-full blur-3xl" />
-        <div className="bg-primary/5 absolute -bottom-[10%] -left-[10%] h-[40%] w-[40%] rounded-full blur-3xl" />
-      </div>
-
       <div className="flex flex-col items-center justify-center gap-8">
         <div className="flex flex-col items-center space-y-2">
-          <Badge
-            variant="outline"
-            className="border-primary/20 bg-primary/5 mb-4 rounded-full px-4 py-1 text-sm font-medium"
-          >
-            <Sparkles className="text-primary mr-1 h-3.5 w-3.5 animate-pulse" />
-            Pricing Plans
-          </Badge>
-          <motion.h1
+          <motion.h2
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="from-foreground to-foreground/30 bg-gradient-to-b bg-clip-text text-4xl font-bold text-transparent sm:text-5xl"
+            className="font-display text-4xl leading-[1.05] sm:text-6xl"
           >
-            Pick the perfect plan for your needs
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-muted-foreground max-w-md pt-2 text-lg"
-          >
-            Simple, transparent pricing that scales with your business. No
-            hidden fees, no surprises.
-          </motion.p>
+            Start free. <em className="text-[var(--landing-signal)]">Upgrade when you ship.</em>
+          </motion.h2>
         </div>
 
         <motion.div
@@ -156,7 +75,7 @@ export default function LandingPagePricing() {
                   variant="secondary"
                   className="bg-primary/10 text-primary hover:bg-primary/15 ml-2"
                 >
-                  20% off
+                  Save {yearlySaving}%
                 </Badge>
               </TabsTrigger>
             </TabsList>
