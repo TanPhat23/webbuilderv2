@@ -47,13 +47,7 @@ export {
   authorizeUserAction,
   authorizeUserAnyPermission,
   requirePermission,
-  // Collaborator-specific authorization
-  canModifyCollaborator,
-  canRemoveCollaborator,
-  // Resource ownership
-  userOwnsResource,
   // Project queries
-  getUserProjectsWithPermission,
   getUserPermissions,
   // Realtime collaboration
   canAccessRealtimeCollab,

@@ -14,8 +14,6 @@ import {
   UpdateProjectSchema,
 } from "../schema/project";
 import { getAuthToken } from "@/features/auth/lib/gettoken";
-import { projectDAL } from "../data/project";
-import { mapPrismaProjectToProject } from "../lib/mappers";
 
 export const getUserProjects = createServerFn({ method: "GET" }).handler(
   async (): Promise<Project[]> => {
@@ -34,25 +32,16 @@ export const getProjectById = createServerFn({ method: "GET" })
 export const createProject = createServerFn({ method: "POST" })
   .inputValidator((data: CreateProjectInput) => CreateProjectSchema.parse(data))
   .handler(async ({ data }): Promise<Project> => {
-    const { userId, token } = await getAuthToken();
-
-    const project: Project = {
-      id: data.id ?? uuidv4(),
-      name: data.name,
-      description: data.description ?? null,
-      subdomain: null,
-      published: false,
-      ownerId: userId,
-      styles: null,
-      header: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      deletedAt: null,
-      views: 0,
-    };
-
-    const newProject = await projectDAL.createProject(project, userId);
-    return mapPrismaProjectToProject(newProject);
+    const { token } = await getAuthToken();
+    const created = await projectService.createProjectWithPage(
+      {
+        id: data.id ?? uuidv4(),
+        name: data.name,
+        description: data.description ?? null,
+      },
+      token,
+    );
+    return { ...created, views: created.views ?? 0 };
   });
 
 export const updateProject = createServerFn({ method: "POST" })

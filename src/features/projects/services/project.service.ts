@@ -4,6 +4,26 @@ import { Project } from "@/features/projects";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import apiClient from "@/services/apiclient";
 
+export interface ProjectAccessResponse {
+  userId: string;
+  projectId: string;
+  role: string;
+  isOwner: boolean;
+  isCollaborator: boolean;
+}
+
+/** Page as the Go API serializes it (camelCase). */
+export interface ApiPage {
+  id: string;
+  projectId: string;
+  name: string;
+  type: string;
+  styles?: Page["Styles"];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
 const PROJECT_FONTS = ["Inter", "Lora", "JetBrains Mono"] as const;
 
 export const projectService = {
@@ -76,6 +96,37 @@ export const projectService = {
       .setPath(API_ENDPOINTS.PROJECTS.DELETE(id))
       .build();
     return apiClient.delete(url, undefined, token);
+  },
+
+  /** Create a project (with its first page) owned by the caller. */
+  createProjectWithPage: (
+    project: { id?: string; name: string; description?: string | null },
+    token: string,
+  ): Promise<Project> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.CREATE)
+      .build();
+    return apiClient.post<Project>(url, project, undefined, token);
+  },
+
+  /** The caller's role on a project; rejects with 404 when they have none. */
+  getProjectAccess: (projectId: string, token: string): Promise<ProjectAccessResponse> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.ACCESS(projectId))
+      .build();
+    return apiClient.get<ProjectAccessResponse>(url, undefined, token);
+  },
+
+  /** Create a page; the API requires owner or editor role on the project. */
+  createPage: (
+    projectId: string,
+    page: { id?: string; name: string; type: string; styles?: unknown },
+    token: string,
+  ): Promise<ApiPage> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PAGES.CREATE(projectId))
+      .build();
+    return apiClient.post<ApiPage>(url, page, undefined, token);
   },
 
   deleteProjectPage: (

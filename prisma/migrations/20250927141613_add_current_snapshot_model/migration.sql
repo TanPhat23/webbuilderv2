@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE "public"."CurrentSnapshot" ADD COLUMN     "CreatedAt" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP;

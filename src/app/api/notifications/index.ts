@@ -1,75 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
-import prisma from "@/lib/prisma";
+import { notificationsServer } from "@/features/notifications/server/notifications.server";
+
+/** The caller's Clerk session token, or null when signed out. */
+async function sessionToken(): Promise<string | null> {
+  const { userId, getToken } = await auth();
+  if (!userId) return null;
+  return getToken();
+}
+
+const unauthorized = () =>
+  Response.json({ error: "Unauthorized" }, { status: 401 });
+
+/** apiClient errors read "<METHOD> <url> failed (<status>)". */
+function isNotFound(error: unknown): boolean {
+  return error instanceof Error && error.message.endsWith("(404)");
+}
 
 export const Route = createFileRoute("/api/notifications/")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const { userId } = await auth();
-
-        if (!userId) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const token = await sessionToken();
+        if (!token) return unauthorized();
 
         try {
           const url = new URL(request.url);
-          const filter = url.searchParams.get("filter") || "all";
-          const search = url.searchParams.get("search") || "";
-
-          let whereClause: any = { UserId: userId };
-
-          if (filter === "unread") {
-            whereClause.Read = false;
-          } else if (filter !== "all") {
-            whereClause.Type = filter;
-          }
-
-          if (search) {
-            whereClause.OR = [
-              { Title: { contains: search, mode: "insensitive" } },
-              { Description: { contains: search, mode: "insensitive" } },
-            ];
-          }
-
-          const notifications = await prisma.notification.findMany({
-            where: whereClause,
-            orderBy: { CreatedAt: "desc" },
-            take: 50,
-          });
-
-          const stats = {
-            total: await prisma.notification.count({ where: { UserId: userId } }),
-            unread: await prisma.notification.count({
-              where: { UserId: userId, Read: false },
-            }),
-            readToday: await prisma.notification.count({
-              where: {
-                UserId: userId,
-                Read: true,
-                UpdatedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
-              },
-            }),
-          };
-
-          const filterCounts = {
-            all: stats.total,
-            unread: stats.unread,
-            messages: await prisma.notification.count({
-              where: { UserId: userId, Type: "message" },
-            }),
-            followers: await prisma.notification.count({
-              where: { UserId: userId, Type: "user" },
-            }),
-            alerts: await prisma.notification.count({
-              where: { UserId: userId, Type: "alert" },
-            }),
-            updates: await prisma.notification.count({
-              where: { UserId: userId, Type: "settings" },
-            }),
-          };
-
-          return Response.json({ notifications, stats, filterCounts });
+          return Response.json(
+            await notificationsServer.list(
+              token,
+              url.searchParams.get("filter") || "all",
+              url.searchParams.get("search") || "",
+            ),
+          );
         } catch (error) {
           console.error("Error fetching notifications:", error);
           return Response.json(
@@ -80,41 +43,27 @@ export const Route = createFileRoute("/api/notifications/")({
       },
 
       PATCH: async ({ request }) => {
-        const { userId } = await auth();
-
-        if (!userId) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const token = await sessionToken();
+        if (!token) return unauthorized();
 
         try {
-          const body = await request.json();
-          const { notificationId, read } = body;
-
+          const { notificationId, read } = await request.json();
           if (!notificationId) {
             return Response.json(
               { error: "Notification ID required" },
               { status: 400 },
             );
           }
-
-          const notification = await prisma.notification.findUnique({
-            where: { Id: notificationId },
-          });
-
-          if (!notification || notification.UserId !== userId) {
+          return Response.json(
+            await notificationsServer.setRead(token, notificationId, read ?? true),
+          );
+        } catch (error) {
+          if (isNotFound(error)) {
             return Response.json(
               { error: "Notification not found" },
               { status: 404 },
             );
           }
-
-          const updated = await prisma.notification.update({
-            where: { Id: notificationId },
-            data: { Read: read ?? true },
-          });
-
-          return Response.json(updated);
-        } catch (error) {
           console.error("Error updating notification:", error);
           return Response.json(
             { error: "Failed to update notification" },
@@ -124,18 +73,11 @@ export const Route = createFileRoute("/api/notifications/")({
       },
 
       POST: async () => {
-        const { userId } = await auth();
-
-        if (!userId) {
-          return Response.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        const token = await sessionToken();
+        if (!token) return unauthorized();
 
         try {
-          await prisma.notification.updateMany({
-            where: { UserId: userId, Read: false },
-            data: { Read: true },
-          });
-
+          await notificationsServer.markAllRead(token);
           return Response.json({ success: true });
         } catch (error) {
           console.error("Error marking all as read:", error);

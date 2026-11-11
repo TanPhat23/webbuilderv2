@@ -15,6 +15,19 @@ export const API_ENDPOINTS = {
     DELETE_PAGE: (projectId: string, pageId: string) =>
       `/api/v1/projects/${projectId}/pages/${pageId}`,
     GET_PUBLIC_BY_ID: (id: string) => `/api/v1/projects/public/${id}`,
+    ACCESS: (id: string) => `/api/v1/projects/${id}/access`,
+  },
+  PAGES: {
+    CREATE: (projectId: string) => `/api/v1/pages/${projectId}`,
+  },
+  NOTIFICATIONS: {
+    LIST: "/api/v1/notifications",
+    SET_READ: (id: string) => `/api/v1/notifications/${id}`,
+    READ_ALL: "/api/v1/notifications/read-all",
+    PROFILE_UPDATE: "/api/v1/notifications/profile-update",
+  },
+  ANALYTICS: {
+    MARKETPLACE: "/api/v1/analytics/marketplace",
   },
   SNAPSHOTS: {
     SAVE: (projectId: string) => `/api/v1/snapshots/${projectId}/save`,

@@ -62,7 +62,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-/src/generated/prisma
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md

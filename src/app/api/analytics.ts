@@ -1,38 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
-import prisma from "@/lib/prisma";
+import { URLBuilder } from "@/utils/urlbuilder";
+import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
+import apiClient from "@/services/apiclient";
+
+/** Marketplace item as the Go API serializes it. */
+interface ApiMarketplaceItem {
+  id: string;
+  title: string;
+  description: string;
+  downloads: number;
+  likes: number;
+  views: number;
+  createdAt: string;
+  categories?: { id: string; name: string }[];
+}
 
 export const Route = createFileRoute("/api/analytics")({
   server: {
     handlers: {
       GET: async () => {
-        const { userId } = await auth();
+        const { userId, getToken } = await auth();
+        const token = userId ? await getToken() : null;
 
-        if (!userId) {
+        if (!token) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         try {
-          const marketplaceItems = await prisma.marketplaceItem.findMany({
-            where: { AuthorId: userId, DeletedAt: null },
-            include: {
-              Project: true,
-              Categories: { include: { Category: true } },
-              Tags: { include: { Tag: true } },
-            },
-            orderBy: { CreatedAt: "desc" },
-          });
+          const url = new URLBuilder("api")
+            .setPath(API_ENDPOINTS.ANALYTICS.MARKETPLACE)
+            .build();
+          const marketplaceItems = (
+            await apiClient.get<ApiMarketplaceItem[]>(url, undefined, token)
+          ).map((item) => ({ ...item, createdAt: new Date(item.createdAt) }));
 
           const totalViews = marketplaceItems.reduce(
-            (sum, item) => sum + (item.Views || 0),
+            (sum, item) => sum + (item.views || 0),
             0,
           );
           const totalDownloads = marketplaceItems.reduce(
-            (sum, item) => sum + (item.Downloads || 0),
+            (sum, item) => sum + (item.downloads || 0),
             0,
           );
           const totalLikes = marketplaceItems.reduce(
-            (sum, item) => sum + (item.Likes || 0),
+            (sum, item) => sum + (item.likes || 0),
             0,
           );
           const conversionRate =
@@ -43,26 +55,26 @@ export const Route = createFileRoute("/api/analytics")({
           const chartData = generateChartData(marketplaceItems);
 
           const recentItems = marketplaceItems.slice(0, 5).map((item) => ({
-            id: item.Id,
-            template: item.Title,
+            id: item.id,
+            template: item.title,
             category:
-              item.Categories[0]?.Category?.Name || "Uncategorized",
-            views: item.Views || 0,
-            downloads: item.Downloads || 0,
-            likes: item.Likes || 0,
-            time: formatTimeAgo(item.CreatedAt),
-            avatar: item.Title.substring(0, 2).toUpperCase(),
+              item.categories?.[0]?.name || "Uncategorized",
+            views: item.views || 0,
+            downloads: item.downloads || 0,
+            likes: item.likes || 0,
+            time: formatTimeAgo(item.createdAt),
+            avatar: item.title.substring(0, 2).toUpperCase(),
             trend: "+" + Math.floor(Math.random() * 20) + "%",
           }));
 
           const topTemplates = marketplaceItems
-            .sort((a, b) => (b.Downloads || 0) - (a.Downloads || 0))
+            .sort((a, b) => (b.downloads || 0) - (a.downloads || 0))
             .slice(0, 6)
             .map((item) => ({
-              id: item.Id,
-              template: item.Title,
-              views: item.Views || 0,
-              downloads: item.Downloads || 0,
+              id: item.id,
+              template: item.title,
+              views: item.views || 0,
+              downloads: item.downloads || 0,
             }));
 
           return Response.json({
@@ -76,13 +88,13 @@ export const Route = createFileRoute("/api/analytics")({
             recentItems,
             topTemplates,
             marketplaceItems: marketplaceItems.map((item) => ({
-              id: item.Id,
-              title: item.Title,
-              description: item.Description,
-              downloads: item.Downloads,
-              likes: item.Likes,
-              views: item.Views,
-              createdAt: item.CreatedAt,
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              downloads: item.downloads,
+              likes: item.likes,
+              views: item.views,
+              createdAt: item.createdAt,
             })),
           });
         } catch (error) {
@@ -99,10 +111,10 @@ export const Route = createFileRoute("/api/analytics")({
 
 function generateChartData(
   items: Array<{
-    Downloads: number | null;
-    Likes: number | null;
-    Views: number | null;
-    CreatedAt: Date;
+    downloads: number | null;
+    likes: number | null;
+    views: number | null;
+    createdAt: Date;
   }>,
 ) {
   const today = new Date();
@@ -118,15 +130,15 @@ function generateChartData(
     });
 
     const totalDownloads = items.reduce(
-      (sum, item) => sum + (item.Downloads || 0),
+      (sum, item) => sum + (item.downloads || 0),
       0,
     );
     const totalLikes = items.reduce(
-      (sum, item) => sum + (item.Likes || 0),
+      (sum, item) => sum + (item.likes || 0),
       0,
     );
     const totalViews = items.reduce(
-      (sum, item) => sum + (item.Views || 0),
+      (sum, item) => sum + (item.views || 0),
       0,
     );
 

@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
-import prisma from "@/lib/prisma";
+import { notificationsServer } from "@/features/notifications/server/notifications.server";
 
 export const Route = createFileRoute("/api/notifications/profile-update")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { userId } = await auth();
+        const { userId, getToken } = await auth();
+        const token = userId ? await getToken() : null;
 
-        if (!userId) {
+        if (!token) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -16,15 +17,7 @@ export const Route = createFileRoute("/api/notifications/profile-update")({
           const body = await request.json();
           const { description } = body;
 
-          await prisma.notification.create({
-            data: {
-              UserId: userId,
-              Type: "settings",
-              Title: "Profile Updated",
-              Description:
-                description || "You updated your profile information.",
-            },
-          });
+          await notificationsServer.createProfileUpdate(token, description);
 
           return Response.json({ success: true });
         } catch (error) {

@@ -52,7 +52,7 @@ webbuilder/
 │   │   ├── ui/
 │   │   └── users/
 │   ├── components/              # Shared UI components (shadcn/ui)
-│   ├── lib/                     # Shared utility libraries (prisma, cn)
+│   ├── lib/                     # Shared utility libraries (cn)
 │   ├── providers/               # Global React context providers
 │   ├── types/                   # Global TypeScript type definitions
 │   ├── constants/               # Shared constants

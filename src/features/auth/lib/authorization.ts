@@ -8,24 +8,12 @@
 import { CollaboratorRole } from "@/features/collaboration";
 import { Permission } from "../constants/rbac";
 import { hasPermission } from "./permissions";
-import {
-  getUserProjectAccess,
-  getCollaboratorInfo,
-  userOwnsResource,
-  getUserProjectsWithPermission,
-  getUserPermissions,
-  countOwnedProjects,
-} from "../data/rbac";
+import { getUserProjectAccess, getUserPermissions } from "../data/rbac";
 import { type UserProjectAccess } from "../data/rbac";
 
 export type { UserProjectAccess };
 
-export {
-  getUserProjectAccess,
-  userOwnsResource,
-  getUserProjectsWithPermission,
-  getUserPermissions,
-};
+export { getUserProjectAccess, getUserPermissions };
 
 /**
  * Result of an authorization check
@@ -101,121 +89,6 @@ export async function authorizeUserAnyPermission(
   return {
     authorized: true,
     role: access.role,
-  };
-}
-
-/**
- * Check if user can modify another collaborator
- */
-export async function canModifyCollaborator(
-  userId: string,
-  projectId: string,
-  targetCollaboratorId: string,
-): Promise<AuthorizationResult> {
-  const userAccess = await getUserProjectAccess(userId, projectId);
-
-  if (!userAccess) {
-    return {
-      authorized: false,
-      reason: "User does not have access to this project",
-    };
-  }
-
-  // Only owners can modify collaborators
-  if (userAccess.role !== CollaboratorRole.OWNER) {
-    return {
-      authorized: false,
-      role: userAccess.role,
-      reason: "Only project owners can modify collaborators",
-    };
-  }
-
-  // Get target collaborator info
-  const targetCollaborator = await getCollaboratorInfo(targetCollaboratorId);
-
-  if (!targetCollaborator) {
-    return {
-      authorized: false,
-      role: userAccess.role,
-      reason: "Target collaborator not found",
-    };
-  }
-
-  // Verify the target collaborator belongs to this project
-  if (targetCollaborator.ProjectId !== projectId) {
-    return {
-      authorized: false,
-      role: userAccess.role,
-      reason: "Target collaborator does not belong to this project",
-    };
-  }
-
-  // Can't modify yourself through the collaborator API
-  // (Owners should use project transfer instead)
-  if (targetCollaborator.UserId === userId) {
-    return {
-      authorized: false,
-      role: userAccess.role,
-      reason: "Cannot modify your own access level",
-    };
-  }
-
-  return {
-    authorized: true,
-    role: userAccess.role,
-  };
-}
-
-/**
- * Check if user can remove a collaborator
- */
-export async function canRemoveCollaborator(
-  userId: string,
-  projectId: string,
-  targetUserId: string,
-): Promise<AuthorizationResult> {
-  const userAccess = await getUserProjectAccess(userId, projectId);
-
-  if (!userAccess) {
-    return {
-      authorized: false,
-      reason: "User does not have access to this project",
-    };
-  }
-
-  // Users can remove themselves (leave project)
-  if (targetUserId === userId) {
-    // Owner can't leave if they're the only owner
-    if (userAccess.isOwner) {
-      const ownerCount = await countOwnedProjects(userId);
-
-      if (ownerCount > 0) {
-        return {
-          authorized: false,
-          role: userAccess.role,
-          reason: "Project owner must transfer ownership before leaving",
-        };
-      }
-    }
-
-    return {
-      authorized: true,
-      role: userAccess.role,
-    };
-  }
-
-  // Only owners can remove other collaborators
-  if (userAccess.role !== CollaboratorRole.OWNER) {
-    return {
-      authorized: false,
-      role: userAccess.role,
-      reason: "Only project owners can remove collaborators",
-    };
-  }
-
-  return {
-    authorized: true,
-    role: userAccess.role,
   };
 }
 

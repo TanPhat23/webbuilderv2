@@ -18,6 +18,6 @@
       "tests/*": ["./tests/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "prisma/generated/**/*.ts"],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", ".output", ".vinxi"]
 }
