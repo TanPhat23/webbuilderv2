@@ -1,4 +1,3 @@
-
 import React, { memo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { viewportSizes } from "@/features/editor";
@@ -32,17 +31,21 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   const mountNode = useIframeMountNode(iframeRef, srcDoc, currentView);
   useIframeStyleInjection(iframeRef, projectHead, mountNode);
 
-  const containerStyle: React.CSSProperties = {
-    width: viewportSizes[currentView].width,
-    height: viewportSizes[currentView].height,
-    minHeight: viewportSizes[currentView].height,
-  };
+  const isDesktop = currentView === "desktop";
+
+  const containerStyle: React.CSSProperties = isDesktop
+    ? { width: "100%", height: "100%", minHeight: "100%" }
+    : {
+        width: viewportSizes[currentView].width,
+        height: viewportSizes[currentView].height,
+        minHeight: viewportSizes[currentView].height,
+      };
 
   const containerClasses = cn(
     "transition-all duration-300 bg-card relative",
-    currentView === "desktop"
-      ? "h-full w-full"
-      : "rounded-lg border-2 border-border shadow-lg",
+    isDesktop
+      ? "h-full w-full rounded-xl ring-1 ring-border/80 shadow-2xl overflow-hidden"
+      : "rounded-xl ring-1 ring-border/80 shadow-2xl overflow-hidden shrink-0 my-auto",
   );
 
   const content = isLoading ? (
@@ -52,7 +55,13 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   );
 
   return (
-    <div className="overflow-auto scrollbar-hide h-full flex items-start justify-center bg-neutral-200 dark:bg-neutral-900 p-8">
+    <div
+      className={cn(
+        "overflow-auto scrollbar-hide h-full w-full flex items-center justify-center",
+        "bg-canvas-backdrop bg-[radial-gradient(var(--canvas-dot)_1px,transparent_1px)] [background-size:16px_16px]",
+        isDesktop ? "p-4 md:p-6" : "p-8",
+      )}
+    >
       <div className={containerClasses} style={containerStyle}>
         <iframe
           ref={iframeRef}

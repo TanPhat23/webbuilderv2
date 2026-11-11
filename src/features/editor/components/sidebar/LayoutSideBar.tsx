@@ -1,6 +1,5 @@
 
 import React, { Suspense, useState } from "react";
-import { useParams } from '@tanstack/react-router';
 import {
   Sidebar,
   SidebarContent,
@@ -17,7 +16,6 @@ import {
   Settings2,
   Code2,
   Bot,
-  ExternalLink,
   PanelRightClose,
   PanelRightOpen,
 } from "lucide-react";
@@ -55,7 +53,6 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
 ];
 
 function LayoutSideBar() {
-  const params = useParams({ strict: false });
   const { toggleSidebar, state, setOpen } = useSidebar();
   const { toggleChat } = useAiChat();
   const selectedElement = useSelectedElement();
@@ -67,10 +64,6 @@ function LayoutSideBar() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     if (isCollapsed) setOpen(true);
-  };
-
-  const visitProjectSubdomain = (projectId: string) => {
-    window.open(`http://localhost:3000/preview/${projectId}`);
   };
 
   return (
@@ -202,7 +195,7 @@ function LayoutSideBar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-1.5">
+      <SidebarFooter className="border-t border-border p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -211,8 +204,9 @@ function LayoutSideBar() {
                 toggleChat();
                 toggleSidebar();
               }}
+              className="w-full justify-start gap-2.5 h-9 font-medium"
             >
-              <Bot className="h-4 w-4 shrink-0" />
+              <Bot className="h-4 w-4 shrink-0 text-primary" />
               <span
                 className={cn(
                   "text-xs transition-opacity duration-200",
@@ -220,23 +214,6 @@ function LayoutSideBar() {
                 )}
               >
                 AI Assistant
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="View Live Site"
-              onClick={() => visitProjectSubdomain(params.id as string)}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <ExternalLink className="h-4 w-4 shrink-0" />
-              <span
-                className={cn(
-                  "text-xs transition-opacity duration-200",
-                  isCollapsed && "opacity-0 w-0 overflow-hidden",
-                )}
-              >
-                View Live
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

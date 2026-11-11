@@ -49,7 +49,7 @@ function RootLayout() {
         <RootProviders>
           <Outlet />
         </RootProviders>
-        <Toaster />
+        <Toaster position="top-right" richColors closeButton />
         <Scripts />
       </body>
     </html>

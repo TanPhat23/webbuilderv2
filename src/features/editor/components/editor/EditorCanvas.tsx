@@ -1,11 +1,10 @@
-import React, { useEffect, useRef, useMemo, useState, memo } from "react";
-import { MousePointer } from "lucide-react";
+import React, { useEffect, useRef, useState, memo } from "react";
 import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/features/editor/components/ElementLoader";
-import { Button } from "@/components/ui/button";
-import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
-import { useCollaborationCursors } from "@/features/editor";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
+import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
+import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCursorsOverlay";
+import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -40,9 +39,15 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
-  const keyboardEventRef = useRef(new ElementKeyboardActions());
-  const { remoteUsers, users } = useCollaborationCursors();
   const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
+
+  // Keyboard shortcut management extracted to hook
+  useEditorShortcuts({
+    canvasRef,
+    iframeRef,
+    isReadOnly,
+    isLocked,
+  });
 
   // Assign the canvas ref to the collaboration provider for mouse tracking
   useEffect(() => {
@@ -50,110 +55,25 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       (collab.canvasRef as React.RefObject<HTMLElement | null>).current =
         canvasRef.current;
     }
-  }, [collab, canvasRef.current]);
+  }, [collab]);
 
+  // Keep scroll offsets synced for collaborative cursors
   useEffect(() => {
-    keyboardEventRef.current.setReadOnly(isReadOnly);
-    keyboardEventRef.current.setLocked(isLocked);
-  }, [isReadOnly, isLocked]);
-
-  useEffect(() => {
-    if (!innerContentRef.current) return;
+    const container = innerContentRef.current;
+    if (!container) return;
 
     const handleScroll = () => {
       setScrollOffset({
-        x: innerContentRef.current?.scrollLeft || 0,
-        y: innerContentRef.current?.scrollTop || 0,
+        x: container.scrollLeft,
+        y: container.scrollTop,
       });
     };
 
-    const container = innerContentRef.current;
     container.addEventListener("scroll", handleScroll);
     return () => {
       container.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  // Build the list of remote cursors from the mouse store
-  const remoteCursors = useMemo(() => {
-    if (!remoteUsers) return [];
-
-    return Object.entries(remoteUsers)
-      .filter(([uid]) => uid !== userId)
-      .filter(([_, pos]) => {
-        // Filter out "hidden" cursors (sent as -1, -1 on mouse leave)
-        const x = typeof pos.x === "number" ? pos.x : 0;
-        const y = typeof pos.y === "number" ? pos.y : 0;
-        return x >= 0 && y >= 0;
-      })
-      .map(([uid, pos]) => {
-        const x = typeof pos.x === "number" ? pos.x : 0;
-        const y = typeof pos.y === "number" ? pos.y : 0;
-
-        return {
-          uid,
-          x: x - scrollOffset.x,
-          y: y - scrollOffset.y,
-          userName: users[uid]?.userName || `User ${uid.slice(0, 8)}`,
-        };
-      });
-  }, [remoteUsers, userId, users, scrollOffset]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const kb = keyboardEventRef.current;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case "c":
-            e.preventDefault();
-            kb.copyElement();
-            break;
-          case "v":
-            e.preventDefault();
-            kb.pasteElement();
-            break;
-          case "x":
-            e.preventDefault();
-            kb.cutElement();
-            break;
-          case "z":
-            e.preventDefault();
-            kb.undo();
-            break;
-          case "y":
-            e.preventDefault();
-            kb.redo();
-            break;
-        }
-      } else if (e.key === "Delete") {
-        e.preventDefault();
-        kb.deleteElement();
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        kb.deselectAll();
-      }
-    };
-
-    canvas.addEventListener("keydown", handleKeyDown);
-
-    let iframeDoc: Document | null = null;
-    if (iframeRef?.current?.contentDocument) {
-      iframeDoc = iframeRef.current.contentDocument;
-      iframeDoc.addEventListener("keydown", handleKeyDown, true);
-    }
-
-    return () => {
-      canvas.removeEventListener("keydown", handleKeyDown);
-      if (iframeDoc) {
-        iframeDoc.removeEventListener("keydown", handleKeyDown, true);
-      }
-    };
-  }, [iframeRef]);
 
   return (
     <div
@@ -167,22 +87,8 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id="canvas"
       tabIndex={0}
     >
-      {remoteCursors.map(({ uid, x, y, userName }) => (
-        <div
-          key={`cursor-${uid}`}
-          className="absolute pointer-events-none z-9999 flex flex-col items-start gap-1 transition-all duration-75"
-          style={{
-            left: `${x}px`,
-            top: `${y}px`,
-            transform: "translate(-2px, -2px)",
-          }}
-        >
-          <MousePointer className="w-5 h-5 text-blue-500 drop-shadow-lg" />
-          <div className="bg-blue-500 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
-            {userName}
-          </div>
-        </div>
-      ))}
+      <RemoteCursorsOverlay userId={userId} scrollOffset={scrollOffset} />
+
       <div
         ref={innerContentRef}
         className="overflow-y-auto overflow-x-hidden flex-1 w-full scrollbar-hide p-4"
@@ -195,16 +101,12 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           />
         )}
       </div>
+
       {!selectedElement && showAddSectionButton && (
-        <div className="p-4 shrink-0">
-          <Button
-            className="w-full"
-            onClick={addNewSection}
-            disabled={isReadOnly || isLocked}
-          >
-            + Add new section
-          </Button>
-        </div>
+        <AddSectionDivider
+          onAddSection={addNewSection}
+          disabled={isReadOnly || isLocked}
+        />
       )}
     </div>
   );

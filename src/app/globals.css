@@ -18,8 +18,10 @@
   --secondary-foreground: hsl(0 0% 10.1961%);
   --muted: hsl(240 10.6383% 90.7843%);
   --muted-foreground: hsl(0 0% 41.9608%);
-  --accent: hsl(212.9412 100% 50%);
-  --accent-foreground: hsl(0 0% 10.1961%);
+  --accent: hsl(240 4.8% 95.9%);
+  --accent-foreground: hsl(240 5.9% 10%);
+  --canvas-backdrop: hsl(220 14% 94%);
+  --canvas-dot: rgba(0, 0, 0, 0.08);
   --destructive: hsl(5.6140 78.0822% 57.0588%);
   --destructive-foreground: hsl(0 0% 100%);
   --border: hsl(0 0% 92.9412%);
@@ -73,8 +75,10 @@
   --secondary-foreground: hsl(0 0% 100%);
   --muted: hsl(240 2.2222% 17.6471%);
   --muted-foreground: hsl(240 2.4876% 60.5882%);
-  --accent: hsl(212.9412 100% 50%);
-  --accent-foreground: hsl(0 0% 100%);
+  --accent: hsl(240 3.7% 15.9%);
+  --accent-foreground: hsl(0 0% 98%);
+  --canvas-backdrop: hsl(240 6% 8%);
+  --canvas-dot: rgba(255, 255, 255, 0.08);
   --destructive: hsl(3.3503 100.0000% 61.3725%);
   --destructive-foreground: hsl(0 0% 100%);
   --border: hsl(240 1.7544% 22.3529%);
@@ -128,6 +132,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-canvas-backdrop: var(--canvas-backdrop);
+  --color-canvas-dot: var(--canvas-dot);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
