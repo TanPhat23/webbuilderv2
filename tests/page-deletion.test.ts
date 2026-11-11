@@ -34,3 +34,20 @@ test('changes the selected page only when it was deleted', async () => {
   assert.equal(pageAfterDeletion({ Id: 'other', ProjectId: 'project-a' }, 'deleted', remaining)?.Id, 'other');
   assert.equal(pageAfterDeletion({ Id: 'deleted', ProjectId: 'project-a' }, 'deleted', []), null);
 });
+
+test('updates the shared page cache only after successful page deletion', async () => {
+  const { QueryClient } = await import('@tanstack/react-query');
+  const { deletePageFromCache } = await import('../src/features/editor/store/delete-page');
+  const client = new QueryClient({ defaultOptions: { queries: { gcTime: Infinity } } });
+  const key = ['projects', 'detail', 'project-a', 'pages'];
+  const pages = [{ Id: 'page-a', ProjectId: 'project-a' }, { Id: 'page-b', ProjectId: 'project-a' }];
+  client.setQueryData(key, pages);
+  await assert.rejects(deletePageFromCache(client, key, 'project-a', 'page-b', async () => { throw new Error('failure'); }));
+  assert.deepEqual(client.getQueryData(key), pages);
+  const remaining = await deletePageFromCache(client, key, 'project-a', 'page-b', async (project, page) => {
+    assert.equal(project, 'project-a'); assert.equal(page, 'page-b');
+  });
+  assert.deepEqual(remaining, [pages[0]]);
+  assert.deepEqual(client.getQueryData(key), [pages[0]]);
+  client.clear();
+});

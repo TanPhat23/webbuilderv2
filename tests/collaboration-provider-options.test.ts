@@ -72,27 +72,20 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
   }
 });
 
-test('CustomYjsProviderV2 defaults getElementState to empty elements when not provided', async () => {
+test('provider rejects a missing element state adapter before starting a connection', async () => {
   const Y = await import('yjs');
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
-  type EditorElement = import('../src/types/global.type').EditorElement;
-
   const doc = new Y.Doc();
-  const provider = new CustomYjsProviderV2({
-    url: 'ws://localhost:1234',
-    pageId: 'page-1',
-    projectId: 'project-1',
-    userId: 'user-1',
-    getToken: async () => 'mock-token',
-    doc,
-  });
-
+  let provider: InstanceType<typeof CustomYjsProviderV2> | undefined;
   try {
-    const handler = (provider as unknown as { messageHandler: { options: { getElementState: () => unknown } } }).messageHandler;
-    const state = handler.options.getElementState() as { elements: EditorElement[] };
-    assert.deepEqual(state.elements, []);
+    assert.throws(() => {
+      provider = new CustomYjsProviderV2({
+        url: 'ws://localhost:1234', pageId: 'p', projectId: 'p', userId: 'u',
+        getToken: async () => null, doc,
+      } as any);
+    }, /getElementState/);
   } finally {
-    provider.destroy();
+    provider?.destroy();
     doc.destroy();
   }
 });

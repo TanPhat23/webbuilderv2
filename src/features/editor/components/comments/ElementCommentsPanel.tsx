@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useElementCommentStore } from "@/features/editor";
 import { useSelectedElementWithSetter } from "@/features/editor";
 import { useElementComments, useProjectComments } from "@/features/comments/hooks/useElementComments";
-import { useProjectStore } from "@/features/editor";
+import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import { useCommentManager } from "@/features/comments";
 
 import { CommentsPanelHeader } from "./components/CommentsPanelHeader";
@@ -25,7 +25,7 @@ import { COMMENTS_SCROLL_HEIGHT, COMMENTS_PANEL } from "@/features/comments";
  */
 export function ElementCommentsPanel() {
   const { user } = useUser();
-  const { project } = useProjectStore();
+  const { data: project } = useCurrentProject();
   const { selectedElement, setSelectedElement } =
     useSelectedElementWithSetter();
   const {

@@ -7,7 +7,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useProjectStore } from "@/features/editor";
+import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import { useElementsWithLoad } from "@/features/editor";
 import { History, Save, RotateCcw } from "lucide-react";
 import {
@@ -19,7 +19,7 @@ import { EditorElement } from "@/types/global.type";
 
 const SnapshotManager = () => {
   const [open, setOpen] = useState(false);
-  const { project } = useProjectStore();
+  const { data: project } = useCurrentProject();
   const { elements, loadElements } = useElementsWithLoad();
 
   const { data: snapshots = [], isLoading: loading } = useSnapshots(

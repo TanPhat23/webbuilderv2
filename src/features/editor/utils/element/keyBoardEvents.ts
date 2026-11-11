@@ -1,3 +1,4 @@
+import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
 import { ContainerElement, EditorElement } from "@/types/global.type";
 import { v4 as uuidv4 } from "uuid";
 import { elementHelper } from "./elementhelper";
@@ -19,8 +20,7 @@ export class ElementKeyboardActions {
 
   public copyElement = () => {
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
   };
@@ -35,8 +35,7 @@ export class ElementKeyboardActions {
     }
 
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
     ElementStore.getState().deleteElement(selectedElement.id);
@@ -89,8 +88,7 @@ export class ElementKeyboardActions {
     }
 
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -114,8 +112,7 @@ export class ElementKeyboardActions {
     }
 
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -139,8 +136,7 @@ export class ElementKeyboardActions {
     }
 
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
     if (!selectedElement) return;
     ElementStore.getState().deleteElement(selectedElement.id);
     SelectionStore.getState().setSelectedElement(undefined);

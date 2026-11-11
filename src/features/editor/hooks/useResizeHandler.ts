@@ -22,7 +22,7 @@ const RESIZE_DOM_PROPS = new Set([
   "marginRight",
 ]);
 
-function applyStylesToDom(el: HTMLDivElement, styles: ResponsiveStyles): void {
+function applyStylesToDom(el: HTMLElement, styles: ResponsiveStyles): void {
   const s = styles.default ?? {};
   for (const [prop, val] of Object.entries(s)) {
     if (RESIZE_DOM_PROPS.has(prop) && val !== undefined) {
@@ -37,7 +37,8 @@ const MAX_PERCENT = 100;
 interface UseResizeHandlerProps {
   element: EditorElement;
   updateElement: (id: string, updates: Partial<EditorElement>) => void;
-  targetRef: React.RefObject<HTMLDivElement | null>;
+  /** The element's own canvas node. */
+  targetRef: React.RefObject<HTMLElement | null>;
   enabled?: boolean;
 }
 

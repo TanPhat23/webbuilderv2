@@ -89,7 +89,7 @@ export default function EditorProvider({
             toast.info("Working in offline mode", {
               id: "collab-offline",
               description:
-                "Collaboration server unavailable. Changes will be saved locally.",
+                "Collaboration server unavailable. Edits may not be saved until the connection is restored.",
               duration: 5000,
             });
           },

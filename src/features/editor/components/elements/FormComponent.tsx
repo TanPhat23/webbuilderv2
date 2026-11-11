@@ -6,7 +6,7 @@ import { useSelectedElement } from "@/features/editor";
 import { FormElement, FormSettings } from "@/features/editor";
 import { EditorComponentProps } from "@/features/editor";
 import ElementLoader from "../ElementLoader";
-import { usePageStore } from "@/features/editor";
+import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,7 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
   const formElement = element as FormElement;
   const { rootProps } = useCanvasElement(formElement);
   const addElement = useAddElement();
-  const { currentPage } = usePageStore();
+  const currentPage = useCurrentPage();
   const selectedElement = useSelectedElement();
 
   const isSelected = selectedElement?.id === formElement.id;

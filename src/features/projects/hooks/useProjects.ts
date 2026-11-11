@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useParams, useSearch } from "@tanstack/react-router";
 import type { Project } from "@/features/projects";
 import {
   getUserProjects,
@@ -44,6 +45,11 @@ export function useProject(projectId: string | null) {
   });
 }
 
+export function useCurrentProject() {
+  const { id } = useParams({ strict: false });
+  return useProject(id ?? null);
+}
+
 export function useProjectPages(projectId: string | null) {
   return useQuery({
     queryKey: projectKeys.pages(projectId || ""),
@@ -51,6 +57,13 @@ export function useProjectPages(projectId: string | null) {
     enabled: !!projectId,
     ...QUERY_CONFIG.DEFAULT,
   });
+}
+
+export function useCurrentPage() {
+  const { id } = useParams({ strict: false });
+  const search = useSearch({ strict: false }) as { page?: string };
+  const { data: pages } = useProjectPages(id ?? null);
+  return pages?.find((page) => page.Id === search.page) ?? null;
 }
 
 export function useCreateProject() {

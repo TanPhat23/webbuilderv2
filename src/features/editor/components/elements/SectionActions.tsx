@@ -1,7 +1,7 @@
 import React from "react";
 import { useInsertElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
-import { usePageStore } from "@/features/editor";
+import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { Button } from "@/components/ui/button";
 import { SectionElement } from "@/features/editor";
@@ -13,7 +13,7 @@ interface SectionActionsProps {
 export function SectionActions({ element }: SectionActionsProps) {
   const insertElement = useInsertElement();
   const selectedElement = useSelectedElement();
-  const { currentPage } = usePageStore();
+  const currentPage = useCurrentPage();
 
   if (!selectedElement || selectedElement.id !== element.id) return null;
   if (!insertElement || !currentPage?.Id) return null;

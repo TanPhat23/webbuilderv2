@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { EditorComponentProps } from "@/features/editor";
 import { SelectElement } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { cn } from "@/lib/utils";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 interface SelectOption {
   id: string;
@@ -20,12 +19,7 @@ interface SelectSettings {
 
 const SelectComponent = ({ element }: EditorComponentProps) => {
   const selectElement = element as SelectElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const safeStyles = elementHelper.getSafeStyles(selectElement);
+  const { rootProps, eventsActive } = useCanvasElement(selectElement);
   const settings = (selectElement.settings as unknown as SelectSettings) || {};
 
   const options: SelectOption[] = useMemo(
@@ -43,20 +37,8 @@ const SelectComponent = ({ element }: EditorComponentProps) => {
 
   return (
     <select
-      ref={elementRef as React.RefObject<HTMLSelectElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        ...eventsStyle(eventsActive),
-      }}
-      className={cn(
-        selectElement.tailwindStyles,
-        "appearance-none bg-no-repeat",
-      )}
+      {...rootProps}
+      className={cn(rootProps.className, "appearance-none bg-no-repeat")}
       defaultValue={settings.defaultValue ?? ""}
       required={settings.required}
       disabled={settings.disabled && !eventsActive}

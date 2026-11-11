@@ -1,12 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getQueryClient } from "@/client/queryclient";
 import { projectService } from "@/features/projects";
 import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import Editor from "./-editor";
 
 export const Route = createFileRoute("/_protected/editor/$id/")({
-  loader: async ({ params }) => {
-    const queryClient = getQueryClient();
+  loader: async ({ params, context }) => {
+    const queryClient = context.queryClient;
     await queryClient.prefetchQuery({
       queryKey: ["fonts"],
       queryFn: () => projectService.getFonts(),

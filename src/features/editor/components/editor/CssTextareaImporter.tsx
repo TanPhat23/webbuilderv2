@@ -21,7 +21,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useProjectStore } from "@/features/editor";
+import { useCurrentProject, useUpdateProject, projectKeys } from "@/features/projects/hooks/useProjects";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 type Props = {
@@ -31,7 +32,19 @@ type Props = {
 export default function CssTextareaImporter({
   maxInlineSize = 200 * 1024,
 }: Props) {
-  const { project, updateProject } = useProjectStore();
+  const { data: project } = useCurrentProject();
+  const mutation = useUpdateProject();
+  const queryClient = useQueryClient();
+  const updateProject = async (updates: { header: { cssStyles: string } }, projectId?: string) => {
+    if (!projectId) throw new Error("No project id available for update");
+    const updated = await mutation.mutateAsync({ projectId, updates });
+    if (updated && updated.header?.cssStyles === undefined) {
+      const merged = { ...updated, header: { ...updated.header, cssStyles: updates.header.cssStyles } };
+      queryClient.setQueryData(projectKeys.detail(projectId), merged);
+      return merged;
+    }
+    return updated;
+  };
   const [mode, setMode] = useState<"inline" | "blob">("inline");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);

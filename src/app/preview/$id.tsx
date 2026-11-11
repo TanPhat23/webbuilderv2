@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getQueryClient } from "@/client/queryclient";
 import { projectService } from "@/features/projects";
 import { elementService } from "@/features/editor";
 import { dehydrate, HydrationBoundary, useQuery } from "@tanstack/react-query";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
 
 export const Route = createFileRoute("/preview/$id")({
-  loader: async ({ params }) => {
-    const queryClient = getQueryClient();
+  loader: async ({ params, context }) => {
+    const queryClient = context.queryClient;
 
     await Promise.all([
       queryClient.prefetchQuery({

@@ -1,3 +1,4 @@
+import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
 
 import { useState } from "react";
 import {
@@ -49,8 +50,7 @@ export function SaveElementDialog({
     }
 
     const selectedElement =
-      SelectionStore.getState().selectedElement ||
-      SelectionStore.getState().hoveredElement;
+      getSelectedOrHoveredElement();
 
     if (!selectedElement) {
       setError("No element selected to save.");

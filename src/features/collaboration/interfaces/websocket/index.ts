@@ -34,6 +34,7 @@ export type {
   // Yjs provider public API and options
   CustomYjsProviderV2,
   YjsProviderV2Options,
+  RemoteElementState,
 
   // Hook types
   RoomState,

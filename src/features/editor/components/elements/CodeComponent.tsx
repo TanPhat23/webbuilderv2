@@ -1,22 +1,15 @@
 
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
-import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import { CodeElement, CodeSettings } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement, eventsStyle, resolveContent } from "./shared";
+import { useCanvasElement, resolveContent } from "./shared";
 
 const CodeComponent = ({ element, data }: EditorComponentProps) => {
   const codeElement = element as CodeElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const { getCommonProps } = useElementInteraction();
+  const { rootProps, isEditing } = useCanvasElement(codeElement);
   const safeStyles = elementHelper.getSafeStyles(codeElement);
-  const commonProps = getCommonProps(codeElement);
 
   const settings = (codeElement.settings ?? {}) as CodeSettings;
   const language = settings.language ?? "";
@@ -25,7 +18,7 @@ const CodeComponent = ({ element, data }: EditorComponentProps) => {
   const displayContent = resolveContent(
     element,
     data,
-    !!commonProps.contentEditable,
+    isEditing,
   );
 
   const codeInnerStyle: React.CSSProperties = {
@@ -43,20 +36,8 @@ const CodeComponent = ({ element, data }: EditorComponentProps) => {
   if (preformatted) {
     return (
       <pre
-        ref={elementRef as React.RefObject<HTMLPreElement>}
-        data-element-id={element.id}
-        data-element-type={element.type}
-        {...commonProps}
-        {...eventHandlers}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          margin: 0,
-          position: "relative",
-          ...eventsStyle(eventsActive),
-        }}
-        suppressContentEditableWarning
+        {...rootProps}
+        style={{ margin: 0, position: "relative", ...rootProps.style }}
       >
         {language && (
           <span
@@ -90,14 +71,10 @@ const CodeComponent = ({ element, data }: EditorComponentProps) => {
 
   return (
     <code
-      ref={elementRef as React.RefObject<HTMLElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
+      {...rootProps}
       data-language={language || undefined}
-      {...commonProps}
-      {...eventHandlers}
       style={{
-        ...safeStyles,
+        ...rootProps.style,
         display: "inline",
         padding: "2px 6px",
         borderRadius: "4px",
@@ -108,9 +85,7 @@ const CodeComponent = ({ element, data }: EditorComponentProps) => {
         fontFamily:
           safeStyles.fontFamily ??
           "'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace",
-        ...eventsStyle(eventsActive),
       }}
-      suppressContentEditableWarning
       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(displayContent) }}
     />
   );

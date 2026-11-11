@@ -1,7 +1,6 @@
 
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { ImageSettings } from "@/features/editor";
 import {
   Empty,
@@ -13,17 +12,13 @@ import {
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  useEditorElement,
-  eventsStyle,
+  useCanvasElement,
   useMediaDrop,
   DropOverlay,
 } from "./shared";
 
 const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
+  const { rootProps } = useCanvasElement(element);
   const { isDragOver, handleDragOver, handleDragLeave, handleDrop } =
     useMediaDrop({
       element,
@@ -43,20 +38,14 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
     onDrop: handleDrop,
   };
 
-  const wrapperProps = {
-    ref: elementRef as React.RefObject<HTMLDivElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...eventHandlers,
-    ...dragHandlers,
-    style: eventsStyle(eventsActive),
-  };
+  const wrapperProps = { ...rootProps, ...dragHandlers };
 
   if (element.src) {
     return (
       <div
         {...wrapperProps}
         className={cn(
+          rootProps.className,
           "relative w-full h-full",
           isDragOver && "ring-2 ring-primary ring-offset-2",
         )}
@@ -79,6 +68,7 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
     <div
       {...wrapperProps}
       className={cn(
+        rootProps.className,
         "w-full h-full",
         isDragOver && "ring-2 ring-primary ring-offset-2",
       )}

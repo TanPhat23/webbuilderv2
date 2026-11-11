@@ -5,17 +5,19 @@ import {
   ProgressElement,
   ProgressSettings,
 } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 const ProgressComponent = ({ element }: EditorComponentProps) => {
   const progressElement = element as ProgressElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const safeStyles = elementHelper.getSafeStyles(progressElement);
+  const { rootProps } = useCanvasElement(progressElement);
+  // The element's look (height, background, radius) belongs to the bar; the
+  // root takes its width and placement so the label can sit above the bar.
+  const { style: ownStyles, className, ...restRootProps } = rootProps;
+  const {
+    width, margin, marginTop, marginRight, marginBottom, marginLeft,
+    position, top, right, bottom, left, cursor,
+    ...barStyles
+  } = ownStyles;
 
   const settings = (progressElement.settings ?? {}) as ProgressSettings;
   const value = settings.value ?? 50;
@@ -27,17 +29,13 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
 
   return (
     <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...eventHandlers}
+      {...restRootProps}
       style={{
-        width: "100%",
-        height: "100%",
+        width, margin, marginTop, marginRight, marginBottom, marginLeft,
+        position, top, right, bottom, left, cursor,
         display: "flex",
         flexDirection: "column",
         gap: "4px",
-        ...eventsStyle(eventsActive),
       }}
     >
       {label && (
@@ -62,8 +60,9 @@ const ProgressComponent = ({ element }: EditorComponentProps) => {
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={label}
+        className={className}
         style={{
-          ...safeStyles,
+          ...barStyles,
           width: "100%",
           position: "relative",
           overflow: "hidden",

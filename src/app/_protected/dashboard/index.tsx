@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { projectKeys } from "@/features/projects/hooks/useProjects";
 import { getUserProjects } from "@/features/projects/api/project.api";
-import { getQueryClient } from "@/client/queryclient";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -18,8 +17,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_protected/dashboard/")({
   component: Dashboard,
-  loader: () =>
-    getQueryClient().ensureQueryData({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
       queryKey: projectKeys.userProjects(),
       queryFn: () => getUserProjects(),
     }),

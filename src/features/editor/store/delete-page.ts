@@ -12,3 +12,18 @@ export async function deletePageFromList<T extends { Id: string; ProjectId: stri
 export function pageAfterDeletion<T extends { Id: string }>(current: T | null, deletedId: string, remaining: T[]): T | null {
   return current?.Id === deletedId ? remaining[0] ?? null : current;
 }
+
+export async function deletePageFromCache<T extends { Id: string }>(
+  client: import('@tanstack/react-query').QueryClient,
+  queryKey: readonly unknown[],
+  projectId: string,
+  pageId: string,
+  remove: (projectId: string, pageId: string) => Promise<void>,
+  fallback: T[] = [],
+): Promise<T[]> {
+  await remove(projectId, pageId);
+  await client.cancelQueries({ queryKey, exact: true });
+  const remaining = (client.getQueryData<T[]>(queryKey) ?? fallback).filter((page) => page.Id !== pageId);
+  client.setQueryData(queryKey, remaining);
+  return remaining;
+}

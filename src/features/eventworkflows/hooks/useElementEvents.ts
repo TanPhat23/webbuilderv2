@@ -9,7 +9,7 @@ import { useEventModeStore } from "@/features/editor";
 import { useElementConnections } from "@/features/eventworkflows/hooks/useElementEventWorkflows";
 import { useEventWorkflows } from "@/features/eventworkflows/hooks/useEventWorkflows";
 import { transformWorkflowToEventHandlers } from "@/features/eventworkflows/utils/workflowTransformer";
-import { usePageStore } from "@/features/editor";
+import { useSearch } from "@tanstack/react-router";
 
 type ElementEventStateValue = unknown;
 type ElementEventState = Record<string, ElementEventStateValue>;
@@ -31,7 +31,7 @@ export function useElementEvents(options: UseElementEventsOptions) {
     projectId,
   } = options;
 
-  const pageId = usePageStore((state) => state.currentPage?.Id);
+  const pageId = (useSearch({ strict: false }) as { page?: string }).page;
 
   const [elementState, setElementState] = useState<ElementEventState>({});
   const elementStateRef = useRef<ElementEventState>({});

@@ -3,11 +3,8 @@ import React, { createContext, useContext, useMemo } from "react";
 import type { CollaboratorRole } from "@/features/collaboration";
 
 /**
- * Shared editor flags that are commonly prop-drilled through the
- * ElementLoader → ElementItem → ResizeHandler → EditorContextMenu chain.
- *
- * By placing these in a context, intermediate components no longer need to
- * accept and forward props they don't use themselves.
+ * Editor-wide flags provided once by the root ElementLoader and read by
+ * element renderers and the canvas interaction layer.
  */
 export interface EditorFlags {
   /** Whether the editor is in read-only mode (user cannot edit). */
@@ -19,7 +16,13 @@ export interface EditorFlags {
   /** The current collaborator's role, used for UI gating (e.g. hide context menu for viewers). */
   readonly permissionsRole: CollaboratorRole | null;
 
-  /** Ref to the iframe element, forwarded to ResizeHandler for cross-frame interactions. */
+  /** Whether the current user may edit, move and resize elements. */
+  readonly canEdit: boolean;
+
+  /** Whether the current user may add new elements. */
+  readonly canCreate: boolean;
+
+  /** Ref to the iframe the canvas renders into, for cross-frame listeners. */
   readonly iframeRef?: React.RefObject<HTMLIFrameElement>;
 }
 
@@ -32,7 +35,7 @@ const EditorFlagsContext = createContext<EditorFlags | null>(null);
  *
  * @example
  * ```tsx
- * const { isReadOnly, isLocked, permissionsRole, iframeRef } = useEditorFlags();
+ * const { canEdit, permissionsRole } = useEditorFlags();
  * ```
  */
 export function useEditorFlags(): EditorFlags {
@@ -64,33 +67,20 @@ export interface EditorFlagsProviderProps extends EditorFlags {
  * Provides editor-wide flags (read-only state, lock state, collaborator role,
  * and the iframe ref) to all descendants via context.
  *
- * Wrap this around the element tree that needs access to these flags — typically
- * at the `ElementLoader` level so that `ElementItem`,
- * `ResizeHandler`, and `EditorContextMenu` can all consume the values without
- * explicit prop drilling.
- *
- * @example
- * ```tsx
- * <EditorFlagsProvider
- *   isReadOnly={isReadOnly}
- *   isLocked={isLocked}
- *   permissionsRole={permissions?.role ?? null}
- *   iframeRef={iframeRef}
- * >
- *   <ElementItem element={element} renderElement={renderElement} ... />
- * </EditorFlagsProvider>
- * ```
+ * The root `ElementLoader` wraps the canvas in it.
  */
 export function EditorFlagsProvider({
   isReadOnly,
   isLocked,
   permissionsRole,
+  canEdit,
+  canCreate,
   iframeRef,
   children,
 }: EditorFlagsProviderProps) {
   const value = useMemo<EditorFlags>(
-    () => ({ isReadOnly, isLocked, permissionsRole, iframeRef }),
-    [isReadOnly, isLocked, permissionsRole, iframeRef],
+    () => ({ isReadOnly, isLocked, permissionsRole, canEdit, canCreate, iframeRef }),
+    [isReadOnly, isLocked, permissionsRole, canEdit, canCreate, iframeRef],
   );
 
   return (

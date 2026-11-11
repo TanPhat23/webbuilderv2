@@ -10,8 +10,6 @@ export * from './store/event-mode-store';
 export * from './store/event-workflow-store';
 export * from './store/image-store';
 export * from './store/mouse-store';
-export * from './store/page-store';
-export * from './store/project-store';
 export * from './store/selection-store';
 export * from './store/selectors/element-selectors';
 export * from './store/selectors/mouse-selectors';

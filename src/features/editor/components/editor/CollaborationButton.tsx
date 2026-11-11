@@ -11,7 +11,7 @@ import {
 import { Users, UserPlus } from "lucide-react";
 import { CollaborationManager } from "@/features/collaboration";
 import { useAuth } from '@clerk/tanstack-react-start';
-import { useProjectStore } from "@/features/editor";
+import { useProject } from "@/features/projects/hooks/useProjects";
 
 interface CollaborationButtonProps {
   projectId: string;
@@ -22,7 +22,7 @@ export default function CollaborationButton({
 }: CollaborationButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { userId } = useAuth();
-  const { project } = useProjectStore();
+  const { data: project } = useProject(projectId);
 
   const isOwner = project?.ownerId === userId;
 

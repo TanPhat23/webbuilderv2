@@ -1,9 +1,7 @@
 
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { AudioElement, AudioSettings } from "@/features/editor";
-import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import {
   Empty,
   EmptyHeader,
@@ -14,26 +12,19 @@ import {
 import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  useEditorElement,
-  eventsStyle,
+  useCanvasElement,
   useMediaDrop,
   DropOverlay,
 } from "./shared";
 
 const AudioComponent = ({ element }: EditorComponentProps) => {
   const audioElement = element as AudioElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
+  const { rootProps } = useCanvasElement(audioElement);
   const { isDragOver, handleDragOver, handleDragLeave, handleDrop } =
     useMediaDrop({
       element,
       mediaType: "audio",
     });
-
-  const { getCommonProps } = useElementInteraction();
-  const safeStyles = elementHelper.getSafeStyles(audioElement);
 
   const settings = (audioElement.settings ?? {}) as AudioSettings;
   const controls = settings.controls ?? true;
@@ -48,29 +39,17 @@ const AudioComponent = ({ element }: EditorComponentProps) => {
     onDrop: handleDrop,
   };
 
-  const wrapperProps = {
-    ref: elementRef as React.RefObject<HTMLDivElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...getCommonProps(audioElement),
-    ...eventHandlers,
-    ...dragHandlers,
-  };
+  const wrapperProps = { ...rootProps, ...dragHandlers };
 
   if (audioElement.src) {
     return (
       <div
         {...wrapperProps}
         className={cn(
+          rootProps.className,
           "relative w-full h-full",
           isDragOver && "ring-2 ring-primary ring-offset-2",
         )}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          ...eventsStyle(eventsActive),
-        }}
       >
         <audio
           src={audioElement.src}
@@ -90,15 +69,10 @@ const AudioComponent = ({ element }: EditorComponentProps) => {
     <div
       {...wrapperProps}
       className={cn(
+        rootProps.className,
         "w-full h-full",
         isDragOver && "ring-2 ring-primary ring-offset-2",
       )}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        ...eventsStyle(eventsActive),
-      }}
     >
       <Empty className="w-full h-full">
         <EmptyHeader>

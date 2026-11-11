@@ -48,3 +48,10 @@ export const useElementsWithLoad = () =>
       loadElements: s.loadElements,
     })),
   );
+
+/** Select only the moveElement action (before/after/inside another element). */
+export const useMoveElement = () => useElementStore((s) => s.moveElement);
+
+/** Select only the insertElementRelative action. */
+export const useInsertElementRelative = () =>
+  useElementStore((s) => s.insertElementRelative);

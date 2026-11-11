@@ -1,3 +1,4 @@
+import { useSelectedElement } from "@/features/editor/store/selectors/selection-selectors";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
@@ -70,7 +71,7 @@ export const WorkflowCanvas = ({
 
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const selectedElement = useSelectionStore((state) => state.selectedElement);
+  const selectedElement = useSelectedElement();
 
   const { fitView } = useReactFlow();
 

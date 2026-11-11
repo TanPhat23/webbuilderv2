@@ -23,17 +23,24 @@ interface UseMediaDropOptions {
   mediaType: MediaType;
 }
 
+/** Media library drags carry JSON; canvas element drags do not. */
+const isMediaDrag = (e: React.DragEvent) =>
+  Array.from(e.dataTransfer.types).includes("application/json");
+
 export function useMediaDrop({ element, mediaType }: UseMediaDropOptions) {
   const [isDragOver, setIsDragOver] = useState(false);
   const updateElement = useUpdateElement();
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    // Element moves and palette drags belong to the canvas, not this media slot.
+    if (!isMediaDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!isMediaDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -41,6 +48,7 @@ export function useMediaDrop({ element, mediaType }: UseMediaDropOptions) {
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
+      if (!isMediaDrag(e)) return;
       e.preventDefault();
       e.stopPropagation();
       setIsDragOver(false);

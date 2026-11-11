@@ -12,7 +12,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FileText, Layers, LayoutTemplate } from "lucide-react";
-import { usePageStore } from "@/features/editor";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ProjectPageCommand } from "../ProjectPageCommand";
@@ -57,7 +56,6 @@ const WIREFRAME_BLOCKS = [
 ];
 
 export function WireframeSidebar() {
-  const { pages, currentPage, setCurrentPage } = usePageStore();
 
   const handleDragStart = (e: React.DragEvent, type: string, name: string) => {
     e.dataTransfer.setData("wireframeBlockType", type);

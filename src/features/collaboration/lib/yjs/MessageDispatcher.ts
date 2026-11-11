@@ -1,4 +1,5 @@
 import { EventEmitter } from "./EventEmitter";
+import { v4 as uuidv4 } from "uuid";
 import type {
   PendingRequest,
   RateLimiter,
@@ -17,7 +18,6 @@ import type {
  */
 export class MessageDispatcher extends EventEmitter {
   private readonly pendingRequests = new Map<string, PendingRequest>();
-  private requestIdCounter = 0;
   private messageQueue: WSEnvelope[] = [];
 
   private readonly rateLimiter: RateLimiter = {
@@ -50,6 +50,7 @@ export class MessageDispatcher extends EventEmitter {
     options?: {
       userId?: string;
       requestId?: string;
+      clientOpId?: string;
     },
   ): WSEnvelope<T> {
     return {
@@ -58,6 +59,7 @@ export class MessageDispatcher extends EventEmitter {
       pageId,
       userId: options?.userId,
       requestId: options?.requestId,
+      clientOpId: options?.clientOpId,
       timestamp: Date.now(),
       payload,
     };
@@ -67,10 +69,10 @@ export class MessageDispatcher extends EventEmitter {
 
   /**
    * Generates a unique request ID for tracking request/response cycles.
-   * Format: `req-<timestamp>-<counter>` for easy debugging.
+   * UUIDs prevent collisions between clients connected to the same page.
    */
   public generateRequestId(): string {
-    return `req-${Date.now()}-${++this.requestIdCounter}`;
+    return `req-${uuidv4()}`;
   }
 
   // Rate Limiting (Token Bucket)
@@ -204,6 +206,14 @@ export class MessageDispatcher extends EventEmitter {
     if (this.messageQueue.length > 1000) {
       this.messageQueue.shift();
     }
+  }
+
+  /** Remove an operation that has not yet been sent. */
+  public removeQueuedRequest(requestId: string): boolean {
+    const index = this.messageQueue.findIndex((message) => message.requestId === requestId);
+    if (index < 0) return false;
+    this.messageQueue.splice(index, 1);
+    return true;
   }
 
   /**

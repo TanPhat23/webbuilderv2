@@ -26,6 +26,7 @@ export interface Element<
   readonly pageId: string;
   settings?: Settings | null;
   order?: number;
+  orderKey?: string;
   events?: ElementEvents;
   eventWorkflowConnections?: string[];
 }

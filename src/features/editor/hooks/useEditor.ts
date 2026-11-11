@@ -1,11 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useAddElement } from "@/features/editor";
+import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectedElement } from "@/features/editor";
-import { usePageStore } from "@/features/editor";
-import { useProjectStore } from "@/features/editor";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import { EditorElement, ElementType } from "@/types/global.type";
@@ -13,7 +12,6 @@ import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { Page } from "@/features/pages";
-import type { Project } from "@/features/projects";
 
 export type Viewport = "mobile" | "tablet" | "desktop";
 
@@ -60,9 +58,9 @@ export const useEditor = (
   const isLocked = options?.isLocked ?? false;
 
   const addElement = useAddElement();
+  const beginPage = useElementStore((state) => state.beginPage);
+  useLayoutEffect(() => { beginPage(id, pageId); }, [beginPage, id, pageId]);
   const selectedElement = useSelectedElement();
-  const { loadPages, setCurrentPage } = usePageStore();
-  const { loadProject } = useProjectStore();
 
   const { data: projectPages, isLoading: isLoadingPages } = useProjectPages(id);
   const { data: project, isLoading: isLoadingProject } = useProject(id);
@@ -80,12 +78,9 @@ export const useEditor = (
   const redirectToDefaultOrRequestedPage = useCallback(
     (pagesList: Page[] | undefined) => {
       if (!pagesList || pagesList.length === 0) return;
-      loadPages(pagesList);
-
       if (pageId) {
         const found = pagesList.find((p) => p.Id === pageId);
         if (found) {
-          setCurrentPage(found);
           return;
         }
       }
@@ -97,14 +92,14 @@ export const useEditor = (
         navigate({ to: `/editor/${id}` });
       }
     },
-    [loadPages, pageId, setCurrentPage, navigate, id],
+    [pageId, navigate, id],
   );
 
   useEffect(() => {
     const pages = projectPages as Page[] | undefined;
     if (!pages || pages.length === 0) return;
     redirectToDefaultOrRequestedPage(pages);
-  }, [projectPages, loadPages, pageId, setCurrentPage, navigate, id]);
+  }, [projectPages, pageId, navigate, id]);
 
   useEffect(() => {
     if (!project) return;
@@ -112,8 +107,7 @@ export const useEditor = (
       navigate({ to: "/dashboard" });
       return;
     }
-    loadProject(project as Project);
-  }, [project, loadProject, navigate]);
+  }, [project, navigate]);
 
   const showReadOnlyError = useCallback(() => {
     showErrorToast(PERMISSION_ERRORS.cannotAdd);

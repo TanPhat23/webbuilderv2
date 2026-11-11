@@ -48,7 +48,7 @@ import {
   generateColorsCSS,
   type ColorScheme,
 } from "../utils/designSystemUtils";
-import { useProjectStore } from "@/features/editor";
+import { projectKeys } from "@/features/projects/hooks/useProjects";
 
 const DEFAULT_COLORS: ColorScheme = {
   primary: "#3b82f6",
@@ -216,7 +216,6 @@ export function ProjectSettings() {
   const params = useParams({ strict: false });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { updateProject: updateProjectStore } = useProjectStore();
   const projectId = params.id as string;
 
   const [customCSS, setCustomCSS] = useState("");
@@ -316,7 +315,7 @@ export function ProjectSettings() {
     error,
     isLoading,
   } = useQuery({
-    queryKey: ["project", projectId],
+    queryKey: projectKeys.detail(projectId),
     queryFn: () => getProjectById({ data: { projectId } }),
     enabled: !!projectId,
   });
@@ -327,10 +326,8 @@ export function ProjectSettings() {
       return updateProjectServer({ data: { projectId: id, updates } });
     },
     onSuccess: (updatedProject) => {
-      queryClient.setQueryData(["project", projectId], updatedProject);
-      if (updatedProject) {
-        updateProjectStore(updatedProject);
-      }
+      queryClient.setQueryData(projectKeys.detail(projectId), updatedProject);
+      void queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       console.log("Project updated successfully!");
     },
     onError: (error: unknown) => {

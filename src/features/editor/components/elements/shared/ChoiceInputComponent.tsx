@@ -1,20 +1,15 @@
 
 import React from "react";
-import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import type { CheckboxElement, CheckboxSettings, RadioElement, RadioSettings } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement } from "./useEditorElement";
-import { eventsStyle } from "./eventsStyle";
+import { useCanvasElement } from "./useCanvasElement";
 
 export function ChoiceInputComponent({ element, type }: EditorComponentProps & { type: "checkbox" | "radio" }) {
   const choiceElement = element as CheckboxElement | RadioElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
+  const { rootProps, eventsActive } = useCanvasElement(choiceElement, {
+    style: { display: "inline-flex", alignItems: "center", gap: "8px" },
   });
-
-  useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(choiceElement);
 
   const settings = (choiceElement.settings ?? {}) as CheckboxSettings | RadioSettings;
@@ -28,21 +23,7 @@ export function ChoiceInputComponent({ element, type }: EditorComponentProps & {
   const inputId = `${type}-${element.id}`;
 
   return (
-    <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "8px",
-        ...eventsStyle(eventsActive),
-      }}
-    >
+    <div {...rootProps}>
       <input
         id={inputId}
         type={type}

@@ -3,6 +3,7 @@ import { cloneDeep } from 'lodash-es';
 import { SelectionStore } from "./selection-store";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import type { DropPosition } from "@/features/editor/utils/element/element-tree-helper";
 
 export type MoveData = {
   elementId: string;
@@ -36,6 +37,8 @@ export type CollaborativeData =
  */
 export type ElementStore = {
   elements: EditorElement[];
+  activePage: { projectId: string; pageId: string } | null;
+  beginPage: (projectId: string, pageId: string) => void;
   past: EditorElement[][];
   future: EditorElement[][];
   yjsUpdateCallback: ((elements: EditorElement[]) => void) | null;
@@ -62,6 +65,18 @@ export type ElementStore = {
     elementToBeInserted: EditorElement,
   ) => ElementStore;
   swapElement: (id1: string, id2: string) => ElementStore;
+  /** Moves an element before/after another element, or into a container. */
+  moveElement: (
+    id: string,
+    targetId: string,
+    position: DropPosition,
+  ) => ElementStore;
+  /** Inserts a new element before/after another element, or into a container. */
+  insertElementRelative: (
+    element: EditorElement,
+    targetId: string,
+    position: DropPosition,
+  ) => ElementStore;
   undo: () => ElementStore;
   redo: () => ElementStore;
   setYjsUpdateCallback: (
@@ -107,6 +122,13 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
   return {
     elements: [],
+    activePage: null,
+    beginPage: (projectId, pageId) => {
+      const active = get().activePage;
+      if (active?.projectId === projectId && active.pageId === pageId) return;
+      set({ activePage: { projectId, pageId }, elements: [], past: [], future: [] });
+      SelectionStore.getState().clearSelection();
+    },
     past: [],
     future: [],
     yjsUpdateCallback: null,
@@ -156,8 +178,16 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         parentId: newParentId ?? undefined,
         order,
       };
+      // `order` is the index in the new parent; negative means "append".
+      const index =
+        order >= 0
+          ? order
+          : (newParentId
+              ? ((elementHelper.findById(without, newParentId) as ContainerElement | undefined)
+                  ?.elements?.length ?? 0)
+              : without.length);
       set({
-        elements: elementHelper.mapAddChildById(without, moved.parentId, moved),
+        elements: elementHelper.mapInsertAt(without, newParentId, index, moved),
       });
     },
 
@@ -175,19 +205,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       ) as EditorElement[];
 
       set({ elements: updatedTree });
-
-      const { selectedElement } = SelectionStore.getState();
-      if (selectedElement?.id === id) {
-        const updatedSelected = elementHelper.findById(
-          updatedTree as EditorElement[],
-          id,
-        );
-        if (updatedSelected) {
-          SelectionStore.setState({
-            selectedElement: updatedSelected as EditorElement,
-          });
-        }
-      }
 
       triggerYjsCallback();
       triggerCollaborativeCallback("update", id, updatedElement);
@@ -223,11 +240,51 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
       set({ elements: updated });
       triggerYjsCallback();
-      triggerCollaborativeCallback(
-        "create",
-        elementToBeInserted.id,
-        elementToBeInserted,
+      // Send the inserted copy: it carries the corrected parentId.
+      const inserted =
+        elementHelper.findById(updated, elementToBeInserted.id) ??
+        elementToBeInserted;
+      triggerCollaborativeCallback("create", inserted.id, inserted);
+      return get();
+    },
+
+    insertElementRelative: (element, targetId, position) => {
+      const { elements } = get();
+      const updated = elementHelper.mapInsertRelative(
+        elements,
+        element,
+        targetId,
+        position,
       );
+      if (updated === elements) return get();
+      takeSnapshot();
+      set({ elements: updated });
+      triggerYjsCallback();
+      const inserted = elementHelper.findById(updated, element.id) ?? element;
+      triggerCollaborativeCallback("create", inserted.id, inserted);
+      return get();
+    },
+
+    moveElement: (id, targetId, position) => {
+      const { elements } = get();
+      const updated = elementHelper.mapMoveRelative(
+        elements,
+        id,
+        targetId,
+        position,
+      );
+      if (updated === elements) return get();
+      takeSnapshot();
+      set({ elements: updated });
+      triggerYjsCallback();
+      const location = elementHelper.findLocation(updated, id);
+      if (location) {
+        triggerCollaborativeCallback("move", id, {
+          elementId: id,
+          newParentId: location.parentId,
+          newPosition: location.index,
+        });
+      }
       return get();
     },
 

@@ -49,46 +49,155 @@ const findById = (
   return undefined;
 };
 
+/**
+ * The tree helpers below keep structural sharing: subtrees that do not
+ * contain the change keep their object identity, so memoized renderers for
+ * untouched elements skip re-rendering. When nothing changes, the input array
+ * itself is returned.
+ */
 const mapUpdateById = (
   elements: EditorElement[],
   id: string,
   updater: (el: EditorElement) => EditorElement,
-): EditorElement[] =>
-  elements.map((el) => {
-    if (el.id === id) return updater(el);
-    return mapChildArrays(el, (nested) => mapUpdateById(nested, id, updater));
+): EditorElement[] => {
+  let changed = false;
+  const next = elements.map((el) => {
+    if (el.id === id) {
+      changed = true;
+      return updater(el);
+    }
+    if (!hasChildren(el)) return el;
+    const kids = children(el);
+    const nextKids = mapUpdateById(kids, id, updater);
+    if (nextKids === kids) return el;
+    changed = true;
+    return { ...el, elements: nextKids } as EditorElement;
   });
+  return changed ? next : elements;
+};
 
 const mapDeleteById = (
   elements: EditorElement[],
   id: string,
-): EditorElement[] =>
-  elements
-    .filter((el) => el.id !== id)
-    .map((el) => {
-      return mapChildArrays(el, (nested) => mapDeleteById(nested, id));
-    });
+): EditorElement[] => {
+  let changed = false;
+  const next: EditorElement[] = [];
+  for (const el of elements) {
+    if (el.id === id) {
+      changed = true;
+      continue;
+    }
+    if (hasChildren(el)) {
+      const kids = children(el);
+      const nextKids = mapDeleteById(kids, id);
+      if (nextKids !== kids) {
+        changed = true;
+        next.push({ ...el, elements: nextKids } as EditorElement);
+        continue;
+      }
+    }
+    next.push(el);
+  }
+  return changed ? next : elements;
+};
+
+/** Inserts `toInsert` at `index` of the list owned by `parentId` (null = page root). */
+const mapInsertAt = (
+  elements: EditorElement[],
+  parentId: string | null | undefined,
+  index: number,
+  toInsert: EditorElement,
+): EditorElement[] => {
+  const insertInto = (list: EditorElement[]) => {
+    const next = [...list];
+    next.splice(Math.max(0, Math.min(index, list.length)), 0, toInsert);
+    return next;
+  };
+  if (!parentId) return insertInto(elements);
+  return mapUpdateById(elements, parentId, (parent) =>
+    hasChildren(parent)
+      ? ({ ...parent, elements: insertInto(children(parent)) } as EditorElement)
+      : parent,
+  );
+};
+
+/** Where an element sits: its parent's id (null = page root) and its index. */
+const findLocation = (
+  elements: EditorElement[],
+  id: string,
+  parentId: string | null = null,
+): { parentId: string | null; index: number } | undefined => {
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    if (el.id === id) return { parentId, index: i };
+    if (hasChildren(el)) {
+      const found = findLocation(children(el), id, el.id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
 
 const mapInsertAfterId = (
   elements: EditorElement[],
   targetId: string,
   toInsert: EditorElement,
 ): EditorElement[] => {
-  const idx = elements.findIndex((e) => e.id === targetId);
-  if (idx !== -1) {
-    const next = [...elements];
-    next.splice(idx + 1, 0, toInsert);
-    return next;
+  const location = findLocation(elements, targetId);
+  if (!location) return elements;
+  return mapInsertAt(elements, location.parentId, location.index + 1, {
+    ...toInsert,
+    parentId: location.parentId ?? undefined,
+  } as EditorElement);
+};
+
+export type DropPosition = "before" | "after" | "inside";
+
+/**
+ * Inserts `toInsert` before/after `targetId`, or as the last child of it
+ * (`inside`). Returns the input unchanged when the target is missing or
+ * cannot hold children.
+ */
+const mapInsertRelative = (
+  elements: EditorElement[],
+  toInsert: EditorElement,
+  targetId: string,
+  position: DropPosition,
+): EditorElement[] => {
+  if (position === "inside") {
+    const target = findById(elements, targetId);
+    if (!target || !isContainerElement(target)) return elements;
+    return mapInsertAt(elements, targetId, children(target).length, {
+      ...toInsert,
+      parentId: targetId,
+    } as EditorElement);
   }
-  return elements.map((el) => {
-    if (isContainerElement(el)) {
-      return {
-        ...el,
-        elements: mapInsertAfterId(el.elements, targetId, toInsert),
-      } as EditorElement;
-    }
-    return el;
-  });
+  const location = findLocation(elements, targetId);
+  if (!location) return elements;
+  const index = position === "before" ? location.index : location.index + 1;
+  return mapInsertAt(elements, location.parentId, index, {
+    ...toInsert,
+    parentId: location.parentId ?? undefined,
+  } as EditorElement);
+};
+
+/**
+ * Moves element `id` relative to `targetId`. Returns the input unchanged when
+ * either element is missing, or the target is the element itself or one of
+ * its descendants.
+ */
+const mapMoveRelative = (
+  elements: EditorElement[],
+  id: string,
+  targetId: string,
+  position: DropPosition,
+): EditorElement[] => {
+  if (id === targetId) return elements;
+  const moving = findById(elements, id);
+  if (!moving || findById([moving], targetId)) return elements;
+  const without = mapDeleteById(elements, id);
+  const next = mapInsertRelative(without, moving, targetId, position);
+  return next === without ? elements : next;
 };
 
 const mapRecursively = (
@@ -167,6 +276,10 @@ export const ElementTreeHelper = {
   mapUpdateById,
   mapDeleteById,
   mapInsertAfterId,
+  mapInsertAt,
+  mapInsertRelative,
+  mapMoveRelative,
+  findLocation,
   mapRecursively,
   mapAddChildById,
   mapSwapChildrenById,

@@ -11,28 +11,28 @@ import {
 } from "@/components/ui/context-menu";
 import { Copy, Trash2, Layers, ArrowUp, ArrowDown, Save } from "lucide-react";
 import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
-import { EditorElement } from "@/types/global.type";
-import { useSetSelectedElement } from "@/features/editor";
 
 import { SaveElementDialog } from "./SaveElementDialog";
 import { toast } from "sonner";
 
 interface EditorContextMenuProps {
   children: React.ReactNode;
-  element: EditorElement;
   isReadOnly?: boolean;
   isLocked?: boolean;
 }
 
 const keyboardEventHandler = new ElementKeyboardActions();
 
+/**
+ * One context menu for the whole canvas. Menu actions apply to the selected
+ * element; the canvas selects the element under the cursor on right-click
+ * and calls `preventDefault` when there is none, which keeps the menu closed.
+ */
 export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   children,
-  element,
   isReadOnly = false,
   isLocked = false,
 }) => {
-  const setSelectedElement = useSetSelectedElement();
   const [showSaveDialog, setShowSaveDialog] = React.useState(false);
   // Determine if operations are allowed
   const canEdit = !isReadOnly && !isLocked;
@@ -119,21 +119,13 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
               (typeof document !== "undefined" ? document.body : null);
 
             setPortalContainer(container);
-
-            setSelectedElement(element);
           } else {
             setPortalContainer(null);
           }
         }}
       >
         <ContextMenuTrigger asChild>
-          <div
-            ref={triggerRef}
-            onContextMenu={(e) => e.stopPropagation()}
-            style={{ width: "100%", height: "100%" }}
-          >
-            {children}
-          </div>
+          <div ref={triggerRef}>{children}</div>
         </ContextMenuTrigger>
         {portalContainer &&
           portalContainer !==

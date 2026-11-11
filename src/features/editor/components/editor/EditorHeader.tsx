@@ -27,8 +27,8 @@ import { useEditorContext } from "@/providers/editorprovider";
 import EventModeToggle from "./EventModeToggle";
 import { PageNavigationCommand } from "./PageNavigationCommand";
 import { useElementCommentStore } from "@/features/editor";
-import { useProjectStore } from "@/features/editor";
-import { usePageStore } from "@/features/editor";
+import { useCurrentProject } from "@/features/projects/hooks/useProjects";
+import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
@@ -77,8 +77,8 @@ function PillGroup({
 }
 
 function ProjectBreadcrumb() {
-  const { project } = useProjectStore();
-  const { currentPage } = usePageStore();
+  const { data: project } = useCurrentProject();
+  const currentPage = useCurrentPage();
 
   if (!project) return null;
 

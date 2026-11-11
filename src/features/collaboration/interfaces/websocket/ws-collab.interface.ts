@@ -27,6 +27,8 @@ export interface WSEnvelope<T = unknown> {
   pageId: string;
   userId?: string;
   requestId?: string;
+  clientOpId?: string;
+  seq?: number;
   /** Unix milliseconds */
   timestamp: number;
   payload: T;
@@ -51,6 +53,7 @@ export interface ElementCreatePayloadNode {
   styles?: Record<string, unknown> | null;
   tailwindStyles?: string;
   order: number;
+  orderKey?: string;
   parentId?: string | null;
   content?: string;
   name?: string;
@@ -62,6 +65,7 @@ export interface ElementCreatePayloadNode {
 
 export interface ElementCreatePayload {
   element: ElementCreatePayloadNode;
+  position?: number;
 }
 
 export interface ElementUpdatePayload {
@@ -75,6 +79,7 @@ export interface ElementMovePayload {
   id: string;
   parentId: string | null;
   order: number;
+  orderKey?: string;
 }
 
 export interface ElementDeletePayload {
@@ -100,6 +105,7 @@ export interface SyncUser {
 }
 
 export interface SyncResponsePayload {
+  seq?: number;
   elements: EditorElement[];
   users: SyncUser[];
 }

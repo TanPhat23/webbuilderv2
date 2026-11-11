@@ -49,6 +49,9 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: YjsProviderV2Options) {
+    if (typeof options.getElementState !== "function") {
+      throw new Error("getElementState is required for real-time collaboration");
+    }
     this.doc = options.doc;
     this.projectId = options.projectId;
     this.pageId = options.pageId;
@@ -65,7 +68,12 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       getToken: options.getToken,
     });
     this.dispatcher = new MessageDispatcher();
-    this.sender = new MessageSender(this.connection, this.dispatcher);
+    this.sender = new MessageSender(
+      this.connection,
+      this.dispatcher,
+      (envelope) => this.messageHandler.recordLocal(envelope),
+      (envelope) => this.messageHandler.rejectLocal(envelope),
+    );
     this.awarenessController = new AwarenessController(
       this.doc,
       this.userId,
@@ -74,7 +82,13 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     this.awareness = this.awarenessController.awareness;
 
     this.messageHandler = new ElementMessageHandler({
-      getElementState: (options.getElementState ?? (() => ({ elements: [] }))) as any,
+      getElementState: options.getElementState,
+      onPendingChange: () => options.onPendingChange?.(this.pendingUpdates),
+      requestSnapshot: () => {
+        if (!this.connection.connected) return;
+        const envelope = this.dispatcher.createEnvelope("sync:page", this.projectId, this.pageId, {}, { userId: this.userId });
+        this.connection.send(JSON.stringify(envelope));
+      },
       onError: (payload) =>
         this.onError?.({
           type: "error",
@@ -120,41 +134,14 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     });
 
     this.connection.on("close", () => {
+      this.messageHandler.suspend();
       this.connected = false;
       this.isSynced = false;
       this.emitStatus("disconnected");
     });
 
-    this.connection.on("error", (...args: unknown[]) => {
-      const [err] = args;
-      const message = err instanceof Error ? err.message : "WebSocket error";
-
-      this.emitStatus("error");
-      this.onError?.({
-        type: "error",
-        message,
-        code: "PROCESS_ERROR",
-      });
-    });
-
-    this.connection.on("message", (...args: unknown[]) => {
-      const [data] = args;
-
-      if (typeof data !== "string") {
-        console.error(
-          "[CustomYjsProviderV2] Received non-string message payload:",
-          data,
-        );
-        return;
-      }
-
-      try {
-        const envelope = JSON.parse(data) as WSEnvelope<unknown>;
-        this.messageHandler.handle(envelope);
-      } catch (err) {
-        console.error("[CustomYjsProviderV2] Failed to parse message:", err);
-      }
-    });
+    this.connection.on("error", this.handleConnectionError);
+    this.connection.on("message", this.handleMessage);
 
     this.awarenessController.on("change", (...args: unknown[]) => {
       const [data] = args;
@@ -170,6 +157,29 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.onSyncUsers?.(users);
     });
   }
+
+  private readonly handleConnectionError = (error: Error): void => {
+    const message = error instanceof Error ? error.message : "WebSocket error";
+    this.emitStatus("error");
+    this.onError?.({ type: "error", message, code: "PROCESS_ERROR" });
+  };
+
+  private readonly handleMessage = (data: unknown): void => {
+    if (typeof data !== "string") {
+      console.error(
+        "[CustomYjsProviderV2] Received non-string message payload:",
+        data,
+      );
+      return;
+    }
+
+    try {
+      const envelope = JSON.parse(data) as WSEnvelope<unknown>;
+      this.messageHandler.handle(envelope);
+    } catch (error) {
+      console.error("[CustomYjsProviderV2] Failed to parse message:", error);
+    }
+  };
 
   // Element operations (outbound)
 
@@ -261,7 +271,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   }
 
   public get pendingUpdates(): number {
-    return this.dispatcher.pendingCount;
+    return Math.max(this.dispatcher.pendingCount, this.messageHandler.pendingCount);
   }
 
   public onPresenceChange(
@@ -292,12 +302,14 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   }
 
   public async reconnect(): Promise<void> {
+    this.messageHandler.suspend();
     this.connection.disconnect();
     this.isSynced = false;
     await this.connection.connect();
   }
 
   public disconnect(): void {
+    this.messageHandler.suspend();
     this.connection.disconnect();
   }
 
@@ -311,6 +323,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.pruneInterval = null;
     }
     this.connection.destroy();
+    this.messageHandler.dispose();
     this.sender.destroy();
     this.dispatcher.destroy();
     this.awarenessController.destroy();

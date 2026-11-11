@@ -19,6 +19,9 @@ import { useMouseStore } from "@/features/editor";
 import * as Y from "yjs";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
+import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
+import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
+import { toast } from "sonner";
 import type { EditorElement } from "@/types/global.type";
 
 import type { Page } from "@/features/pages";
@@ -131,6 +134,46 @@ export default function CollaborationProvider({
       persistence = null;
     }
 
+    let latestLocalElements: EditorElement[] | undefined;
+    let disposed = false;
+    let draftStore: ReturnType<typeof createEditorDraftStore> | undefined;
+    try {
+      draftStore = createEditorDraftStore(window.localStorage, userId, projectId, pageId);
+    } catch {
+      toast.error("Local draft storage is unavailable. Offline edits may be lost.");
+    }
+    const draftToastId = `editor-draft:${projectId}:${pageId}`;
+    const offerDraftRecovery = () => {
+      try {
+        const draft = draftStore?.read();
+        if (!draft) return;
+        toast.warning("An offline draft is available", {
+          id: draftToastId,
+          duration: Infinity,
+          description: "Restoring replaces the current editor view. The draft is not automatically synchronized.",
+          action: {
+            label: "Restore draft",
+            onClick: () => {
+              if (latest.current.pageId !== pageId) return;
+              try {
+                loadElements(draft.elements, true);
+              } catch {
+                toast.error("Could not read the local draft.");
+              }
+            },
+          },
+          cancel: {
+            label: "Discard draft",
+            onClick: () => {
+              try { draftStore?.remove(draft.id); } catch { toast.error("Could not discard the local draft."); }
+            },
+          },
+        });
+      } catch {
+        toast.error("Could not read the local draft.");
+      }
+    };
+
     // Create the Yjs-backed provider (wraps WS envelope protocol).
     const provider = new CustomYjsProviderV2({
       url: wsUrl,
@@ -141,6 +184,9 @@ export default function CollaborationProvider({
       getToken: () => latest.current.getToken(),
       doc: ydoc,
       getElementState: () => ElementStore.getState(),
+      onPendingChange: (pendingUpdates) => {
+        setState((state) => ({ ...state, pendingUpdates }));
+      },
       // Called when awareness/user list changes (sync + awareness updates)
       onSyncUsers: (users) => {
         setUsers(users);
@@ -149,6 +195,7 @@ export default function CollaborationProvider({
       onError: (e: any) => {
         const msg = e?.message || e?.error || "Unknown provider error";
         latest.current.onError?.(new Error(msg));
+        offerDraftRecovery();
         setState((s: WSCollabState) => ({ ...s, error: msg }));
       },
 
@@ -190,7 +237,10 @@ export default function CollaborationProvider({
 
     provider.on("synced", (synced: boolean) => {
       setState((s: WSCollabState) => ({ ...s, isSynced: synced }));
-      if (synced) latest.current.onSync?.();
+      if (synced) {
+        latest.current.onSync?.();
+        offerDraftRecovery();
+      }
     });
 
     const yElementsText = ydoc.getText("elementsJson");
@@ -240,6 +290,17 @@ export default function CollaborationProvider({
       setUsers({ ...existingUsers, ...usersRecord });
     });
 
+    ElementStore.getState().setYjsUpdateCallback((elements) => {
+      latestLocalElements = elements;
+      if (provider.isConnected() && provider.isSynced) return;
+      if (!draftStore) return;
+      try {
+        draftStore.save(elements);
+      } catch {
+        toast.error("Could not save the local draft. Offline edits may be lost.");
+      }
+    });
+
     // Wire up the element store's collaborative callback so that local user
     // actions (create/update/delete/move) are sent over the provider.
     ElementStore.getState().setCollaborativeCallback(async (type, id, data) => {
@@ -255,9 +316,8 @@ export default function CollaborationProvider({
           await p.deleteElement(id);
         } else if (type === "create" && data) {
           const el = data as EditorElement;
-          p.createElement(el, el.parentId ?? null, el.order).catch((err) =>
-            latest.current.onError?.(err as Error),
-          );
+          const location = ElementTreeHelper.findLocation(ElementStore.getState().elements, el.id);
+          await p.createElement(el, location?.parentId ?? el.parentId ?? null, location?.index);
         } else if (type === "move" && data) {
           const moveData = data as MoveData;
           if (internalRef.current.pendingMoves.has(moveData.elementId)) return;
@@ -273,13 +333,23 @@ export default function CollaborationProvider({
           }
         }
       } catch (err) {
-        latest.current.onError?.(err as Error);
+        try {
+          const state = ElementStore.getState();
+          const isSamePage = state.activePage?.projectId === projectId && state.activePage.pageId === pageId;
+          const elements = isSamePage ? state.elements : latestLocalElements;
+          if (elements) draftStore?.save(elements);
+        } catch {
+          toast.error("Could not save the local draft. Unsynced edits may be lost.");
+        }
+        if (!disposed) latest.current.onError?.(err as Error);
       }
     });
 
     // Cleanup
     return () => {
+      disposed = true;
       unsubPresence();
+      toast.dismiss(draftToastId);
       // Remove Y.Text observer
       try {
         yElementsText.unobserve(observer);

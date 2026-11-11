@@ -8,7 +8,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { FileText } from "lucide-react";
-import { usePageStore } from "@/features/editor";
+import { useCurrentPage, useProjectPages } from "@/features/projects/hooks/useProjects";
 import { Page } from "@/features/pages";
 import { useParams, useNavigate } from '@tanstack/react-router';
 
@@ -22,11 +22,11 @@ export function PageNavigationCommand({
   open,
 }: PageNavigationCommandProps) {
   const { id } = useParams({ strict: false });
-  const { pages, setCurrentPage, currentPage } = usePageStore();
+  const { data: pages = [] } = useProjectPages(id ?? null);
+  const currentPage = useCurrentPage();
   const navigate = useNavigate();
 
   const handleSelect = (page: Page) => {
-    setCurrentPage(page);
     navigate({ to: `/editor/${id}?page=${page.Id}` });
     setOpen(false);
   };

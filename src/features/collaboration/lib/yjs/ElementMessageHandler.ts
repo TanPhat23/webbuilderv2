@@ -10,6 +10,7 @@ import type {
   ErrorPayload,
   PresenceBroadcastPayload,
 } from "@/features/collaboration";
+import { OrderedElementSession, mergeServerPatch, type ElementOperation } from "./OrderedElementSession";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
 
 type ErrorCallback = (payload: ErrorPayload & { requestId?: string }) => void;
@@ -17,17 +18,12 @@ type PresenceCallback = (payload: PresenceBroadcastPayload) => void;
 type SyncedCallback = (synced: boolean) => void;
 type SyncUsersCallback = (users: Record<string, unknown>) => void;
 
-interface RemoteElementState {
-  elements: EditorElement[];
-  loadElements: (elements: EditorElement[], skipSave?: boolean) => unknown;
-  remoteAdd: (element: EditorElement) => void;
-  remoteUpdate: (id: string, patch: Partial<EditorElement>) => void;
-  remoteMove: (id: string, parentId: string | null, order: number) => void;
-  remoteDelete: (id: string) => void;
-}
+import type { RemoteElementState } from "../../interfaces/websocket/yjs-v2.interface";
 
 export interface ElementMessageHandlerOptions {
   getElementState: () => RemoteElementState;
+  requestSnapshot?: () => void;
+  onPendingChange?: () => void;
   onError?: ErrorCallback;
   onPresence?: PresenceCallback;
   onSynced?: SyncedCallback;
@@ -37,22 +33,90 @@ export interface ElementMessageHandlerOptions {
   resolvePendingRequest: (
     requestId: string,
     isSuccess: boolean,
-    result: ElementOperationResult,
+    result: unknown,
   ) => boolean;
 }
 
 export class ElementMessageHandler {
-  constructor(private readonly options: ElementMessageHandlerOptions) {}
+  private ordered = false;
+  private readonly session: OrderedElementSession;
+
+  constructor(private readonly options: ElementMessageHandlerOptions) {
+    this.session = new OrderedElementSession({
+      render: (elements) => options.getElementState().loadElements(elements, true),
+      requestSnapshot: () => options.requestSnapshot?.(),
+      onCommitted: (operation, pending) => {
+        const requestId = pending.requestId ?? operation.requestId;
+        if (requestId) options.resolvePendingRequest(requestId, true, this.toOperationResult(operation as WSEnvelope<unknown>));
+        options.onPendingChange?.();
+      },
+    });
+  }
+
+  recordLocal(envelope: WSEnvelope<unknown>): void {
+    if (!envelope.type.startsWith("element:")) return;
+    let operation = envelope as ElementOperation;
+    if (operation.type === "element:create") {
+      const payload = operation.payload as { element?: { id?: string } };
+      const id = payload.element?.id;
+      const local = id ? ElementTreeHelper.findById(this.options.getElementState().elements, id) : undefined;
+      if (local) operation = { ...operation, payload: { ...operation.payload, element: local } };
+    }
+    this.session.recordLocal(operation);
+    this.options.onPendingChange?.();
+  }
+
+  rejectLocal(envelope: WSEnvelope<unknown>): void {
+    const id = envelope.clientOpId ?? envelope.requestId;
+    if (id) this.session.reject(id);
+    this.options.onPendingChange?.();
+  }
+
+  get pendingCount(): number { return this.session.pendingCount; }
+
+  suspend(): void { this.session.suspend(); }
+
+  dispose(): void { this.session.dispose(); }
 
   handle(envelope: WSEnvelope<unknown>): void {
+    if (envelope.type === "error") {
+      const payload = envelope.payload as ErrorPayload & { clientOpId?: string };
+      const id = envelope.clientOpId ?? payload.clientOpId ?? envelope.requestId;
+      const rejected = id ? this.session.reject(id) : undefined;
+      const requestId = envelope.requestId ?? rejected?.requestId;
+      if (requestId) this.options.resolvePendingRequest(requestId, false, envelope);
+      this.options.onPendingChange?.();
+      this.options.onError?.({ ...payload, requestId: envelope.requestId });
+      return;
+    }
+
+    if (envelope.type === "sync:page") {
+      const payload = envelope.payload as SyncResponsePayload;
+      if (Number.isSafeInteger(payload.seq) && payload.seq! >= 0) {
+        this.ordered = true;
+        this.session.snapshot(payload.elements as EditorElement[], payload.seq!);
+        this.options.handleSyncUsers(payload.users);
+        this.options.onSynced?.(true);
+        return;
+      }
+    }
+
+    if (envelope.type.startsWith("element:") && Number.isSafeInteger(envelope.seq)) {
+      this.ordered = true;
+      this.session.receive(envelope as ElementOperation);
+      return;
+    }
+
+    if (this.ordered && envelope.type.startsWith("element:")) {
+      this.session.resync();
+      return;
+    }
+
+    if (envelope.type.startsWith("element:")) {
+      this.session.acknowledge(envelope as ElementOperation);
+    }
     if (envelope.requestId) {
-      const isSuccess = envelope.type !== "error";
-      const wasResolved = this.options.resolvePendingRequest(
-        envelope.requestId,
-        isSuccess,
-        this.toOperationResult(envelope),
-      );
-      if (wasResolved && !isSuccess) return;
+      this.options.resolvePendingRequest(envelope.requestId, true, this.toOperationResult(envelope));
     }
 
     switch (envelope.type) {
@@ -85,14 +149,12 @@ export class ElementMessageHandler {
           ...(rest as Record<string, unknown>),
           ...(settings !== undefined && {
             settings: {
-              ...((existing.settings as Record<string, unknown>) ?? {}),
-              ...((settings as Record<string, unknown>) ?? {}),
+              ...mergeServerPatch((existing.settings as Record<string, unknown>) ?? {}, (settings as Record<string, unknown>) ?? {}),
             },
           }),
           ...(styles !== undefined && {
             styles: {
-              ...((existing.styles as Record<string, unknown>) ?? {}),
-              ...((styles as Record<string, unknown>) ?? {}),
+              ...mergeServerPatch((existing.styles as Record<string, unknown>) ?? {}, (styles as Record<string, unknown>) ?? {}),
             },
           }),
         } as Partial<EditorElement>;
@@ -123,14 +185,7 @@ export class ElementMessageHandler {
         break;
       }
 
-      case "error": {
-        const payload = envelope.payload as ErrorPayload;
-        this.options.onError?.({
-          ...payload,
-          requestId: envelope.requestId,
-        });
-        break;
-      }
+
     }
   }
 

@@ -116,25 +116,7 @@ test("CustomYjsProviderV2 options and element state injection", async () => {
     providerWithState.destroy();
   }
 
-  const docFallback = new Y.Doc();
-  const providerDefault = new CustomYjsProviderV2({
-    url: "ws://localhost:1234",
-    pageId: "page-2",
-    projectId: "project-2",
-    userId: "user-2",
-    getToken: async () => "mock-token",
-    doc: docFallback,
-  });
-
-  try {
-    const handler = (providerDefault as unknown as { messageHandler: { options: { getElementState: () => unknown } } }).messageHandler;
-    const state = handler.options.getElementState() as { elements: EditorElement[] };
-    assert.deepEqual(state.elements, []);
-  } finally {
-    providerDefault.destroy();
-    doc.destroy();
-    docFallback.destroy();
-  }
+  doc.destroy();
 });
 
 test("getChoiceConfigurationDefaults handles undefined and custom configurations", async () => {

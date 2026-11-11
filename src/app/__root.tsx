@@ -1,15 +1,16 @@
 import {
   Outlet,
-  createRootRoute,
+  createRootRouteWithContext,
   HeadContent,
   Scripts,
   Link,
 } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
 import RootProviders from "@/providers/rootprovider";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "./globals.css?url";
 
-export const Route = createRootRoute({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },

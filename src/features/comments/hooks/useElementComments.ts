@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { elementCommentService } from "@/features/comments/services/elementcomment.service";
 import { ElementComment, CreateElementCommentRequest, UpdateElementCommentRequest } from "@/features/comments/interfaces/elementcomment.interface";
 import { useUser } from '@clerk/tanstack-react-start';
-import { useProjectStore } from "@/features/editor";
+import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showSuccessToast } from "@/utils/errors/errorToast";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
@@ -53,7 +53,7 @@ export function useElementComments(
 ): UseElementCommentsReturn {
   const { elementId, autoLoad = true } = options;
   const { user } = useUser();
-  const { project } = useProjectStore();
+  const { data: project } = useCurrentProject();
   const queryClient = useQueryClient();
 
   // Query for fetching comments

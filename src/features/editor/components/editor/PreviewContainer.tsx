@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { viewportSizes } from "@/features/editor";
 import { Viewport } from "@/features/editor/hooks/useEditor";
 import { cn } from "@/lib/utils";
-import { useProjectStore } from "@/features/editor";
+import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import ElementLoading from "@/features/editor/components/skeleton/ElementLoading";
 import {
   useProjectHead,
@@ -25,7 +25,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   isLoading = false,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { project } = useProjectStore();
+  const { data: project } = useCurrentProject();
 
   const projectHead = useProjectHead(project?.header?.cssStyles);
   const srcDoc = useIframeSrcDoc(projectHead, currentView);

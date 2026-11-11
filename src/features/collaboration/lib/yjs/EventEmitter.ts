@@ -1,8 +1,8 @@
 type Listener<T extends unknown[]> = (...args: T) => void;
 
-type EventMap = Record<string, unknown[]>;
-
-export class EventEmitter<Events extends EventMap = Record<string, unknown[]>> {
+export class EventEmitter<
+  Events extends { [K in keyof Events]: unknown[] } = Record<string, unknown[]>,
+> {
   private readonly _listeners = new Map<string, Set<Listener<unknown[]>>>();
 
   on<K extends keyof Events & string>(event: K, listener: Listener<Events[K]>): this {
@@ -23,9 +23,7 @@ export class EventEmitter<Events extends EventMap = Record<string, unknown[]>> {
       return false;
     }
 
-    persistent?.forEach((fn) => fn(...args));
-
-
+    persistent.forEach((fn) => fn(...args));
 
     return true;
   }
@@ -38,5 +36,4 @@ export class EventEmitter<Events extends EventMap = Record<string, unknown[]>> {
     }
     return this;
   }
-
 }

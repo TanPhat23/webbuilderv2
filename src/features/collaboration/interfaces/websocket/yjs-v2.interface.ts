@@ -199,6 +199,15 @@ export interface CustomYjsProviderV2 {
 
 }
 
+export interface RemoteElementState {
+  elements: EditorElement[];
+  loadElements: (elements: EditorElement[], skipSave?: boolean) => unknown;
+  remoteAdd: (element: EditorElement) => void;
+  remoteUpdate: (id: string, patch: Partial<EditorElement>) => void;
+  remoteMove: (id: string, parentId: string | null, order: number) => void;
+  remoteDelete: (id: string) => void;
+}
+
 export interface YjsProviderV2Options {
   url: string;
   pageId: string;
@@ -207,7 +216,8 @@ export interface YjsProviderV2Options {
   userName?: string;
   getToken: () => Promise<string | null>;
   doc: Y.Doc;
-  getElementState?: () => { elements: EditorElement[] };
+  getElementState: () => RemoteElementState;
+  onPendingChange?: (count: number) => void;
   onSyncUsers?: (users: Record<string, UserInfo>) => void;
   onError?: (error: ErrorMessage) => void;
   onPresence?: (data: PresenceBroadcastPayload) => void;

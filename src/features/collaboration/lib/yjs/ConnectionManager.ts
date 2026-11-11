@@ -12,7 +12,14 @@ import { URLBuilder } from "@/utils/urlbuilder";
  *
  * @see WebSocket API Reference — Section 1: Connection
  */
-export class ConnectionManager extends EventEmitter {
+type ConnectionEvents = {
+  open: [];
+  close: [];
+  message: [data: unknown];
+  error: [error: Error];
+};
+
+export class ConnectionManager extends EventEmitter<ConnectionEvents> {
   private ws: WebSocket | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;
@@ -152,10 +159,9 @@ export class ConnectionManager extends EventEmitter {
       }
       this._connected = true;
       this.reconnectAttempts = 0;
-      this.emit("open");
-
-      // Auto-send `join` message so the server knows which page we want
+      // The server requires join before any queued operations are sent.
       this.sendJoinMessage();
+      this.emit("open");
     };
 
     this.ws.onmessage = (event) => {

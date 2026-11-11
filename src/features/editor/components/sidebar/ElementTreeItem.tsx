@@ -4,7 +4,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { useSelectedElementWithSetter } from "@/features/editor";
+import { useIsSelected, useSetSelectedElement } from "@/features/editor";
 import { cn } from "@/lib/utils";
 import { ContainerElement, EditorElement } from "@/types/global.type";
 import {
@@ -86,15 +86,13 @@ export default function ElementTreeItem({
   element: EditorElement;
   level?: number;
 }) {
-  const { selectedElement, setSelectedElement } =
-    useSelectedElementWithSetter();
+  const isSelected = useIsSelected(element.id);
+  const setSelectedElement = useSetSelectedElement();
   const [isOpen, setIsOpen] = React.useState(true);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setSelectedElement(
-      selectedElement?.id === element.id ? undefined : element,
-    );
+    setSelectedElement(isSelected ? undefined : element);
   };
 
   const displayName = element.name || element.content || element.type;
@@ -111,7 +109,7 @@ export default function ElementTreeItem({
             className={cn(
               "flex items-center flex-1 p-2 cursor-pointer text-xs hover:bg-accent hover:rounded-md transition-colors",
               {
-                "bg-accent rounded-md": selectedElement?.id === element.id,
+                "bg-accent rounded-md": isSelected,
               },
             )}
             style={{ paddingLeft: `${level * 16 + 8}px` }}

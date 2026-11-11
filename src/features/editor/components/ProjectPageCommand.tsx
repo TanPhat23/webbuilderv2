@@ -16,12 +16,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { v4 as uuidv4 } from "uuid";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectKeys } from "@/features/projects/hooks/useProjects";
+import { projectKeys, useProjectPages } from "@/features/projects/hooks/useProjects";
+import { deleteProjectPage } from "@/features/projects/api/page.api";
+import { deletePageFromCache } from "@/features/editor/store/delete-page";
+import { showErrorToast } from "@/utils/errors/errorToast";
 import {
   Form,
   FormControl,
@@ -52,7 +54,7 @@ const createPageSchema = z.object({
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
 function CreatePageDialog() {
-  const { addPage } = usePageStore();
+  const queryClient = useQueryClient();
   const { id } = useParams({ strict: false });
   const [open, setOpen] = useState(false);
 
@@ -79,7 +81,10 @@ function CreatePageDialog() {
     }
 
     const response = (await createPage({ data: newPage.data })) as Page;
-    addPage(response);
+    if (id) {
+      await queryClient.cancelQueries({ queryKey: projectKeys.pages(id), exact: true });
+    }
+    if (id) queryClient.setQueryData<Page[]>(projectKeys.pages(id), (pages) => [...(pages ?? []), response]);
     setOpen(false);
     form.reset();
   };
@@ -208,24 +213,25 @@ function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
 
 // Main component using the dialogs
 export function ProjectPageCommand() {
-  const { pages, deletePage } = usePageStore();
   const { id } = useParams({ strict: false });
+  const { data: pages = [] } = useProjectPages(id ?? null);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deleteAndNavigate = async (pageId: string) => {
-    const wasCurrent = usePageStore.getState().currentPage?.Id === pageId;
-    if (!(await deletePage(pageId))) return;
-    if (id) {
-      const queryKey = projectKeys.pages(id);
-      await queryClient.cancelQueries({ queryKey, exact: true });
-      queryClient.setQueryData<Page[]>(queryKey, (pages) =>
-        pages?.filter((page) => page.Id !== pageId),
+    if (!id) return;
+    const wasCurrent = new URLSearchParams(window.location.search).get("page") === pageId;
+    try {
+      const remaining = await deletePageFromCache(
+        queryClient, projectKeys.pages(id), id, pageId,
+        async (projectId, selectedPageId) => deleteProjectPage({ data: { projectId, pageId: selectedPageId } }),
+        pages,
       );
-    }
-    const routePage = new URLSearchParams(window.location.search).get("page");
-    if (wasCurrent && (!routePage || routePage === pageId)) {
-      const nextPage = usePageStore.getState().currentPage;
-      navigate({ to: nextPage ? `/editor/${id}?page=${nextPage.Id}` : `/editor/${id}` });
+      const routePage = new URLSearchParams(window.location.search).get("page");
+      if (wasCurrent && (!routePage || routePage === pageId)) {
+        navigate({ to: remaining[0] ? `/editor/${id}?page=${remaining[0].Id}` : `/editor/${id}` });
+      }
+    } catch {
+      showErrorToast("Failed to delete page");
     }
   };
 

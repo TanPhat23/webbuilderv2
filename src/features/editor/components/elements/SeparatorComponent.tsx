@@ -3,7 +3,7 @@ import { EditorComponentProps } from "@/features/editor";
 import { useCanvasElement } from "./shared";
 
 const SeparatorComponent = ({ element }: EditorComponentProps) => {
-  const { rootProps } = useCanvasElement(element, { fill: false });
+  const { rootProps } = useCanvasElement(element);
   return <hr {...rootProps} />;
 };
 

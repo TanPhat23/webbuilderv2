@@ -1,9 +1,7 @@
 
 import React from "react";
-import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import { IFrameElement, IFrameSettings } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import {
   Empty,
   EmptyHeader,
@@ -12,17 +10,14 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Globe } from "lucide-react";
-import { useEditorElement, eventsStyle } from "./shared";
+import { cn } from "@/lib/utils";
+import { useCanvasElement } from "./shared";
 
 const IFrameComponent = ({ element }: EditorComponentProps) => {
   const iframeElement = element as IFrameElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
+  const { rootProps, eventsActive } = useCanvasElement(iframeElement, {
+    style: { position: "relative" },
   });
-
-  const { getCommonProps } = useElementInteraction();
-  const safeStyles = elementHelper.getSafeStyles(iframeElement);
 
   const settings = (iframeElement.settings ?? {}) as IFrameSettings;
   const sandbox = settings.sandbox ?? "allow-scripts allow-same-origin";
@@ -32,30 +27,10 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
   const iframeWidth = settings.width ?? "100%";
   const iframeHeight = settings.height ?? 400;
 
-  const rootProps = {
-    ref: elementRef as React.RefObject<HTMLDivElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...getCommonProps(iframeElement),
-    ...eventHandlers,
-    style: {
-      ...safeStyles,
-      width: "100%",
-      height: "100%",
-      ...eventsStyle(eventsActive),
-    },
-  };
 
   if (iframeElement.src) {
     return (
-      <div
-        {...rootProps}
-        className="relative w-full h-full"
-        style={{
-          ...rootProps.style,
-          position: "relative",
-        }}
-      >
+      <div {...rootProps} className={cn(rootProps.className, "w-full h-full")}>
         <iframe
           src={iframeElement.src}
           title={iframeElement.name || "Embedded content"}
@@ -87,7 +62,7 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
   }
 
   return (
-    <div {...rootProps} className="w-full h-full">
+    <div {...rootProps} className={cn(rootProps.className, "w-full h-full")}>
       <Empty className="w-full h-full">
         <EmptyHeader>
           <EmptyMedia variant="icon">

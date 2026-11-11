@@ -13,6 +13,7 @@ model Element {
   Id             String                 @id @map("Id")
   Name           String?                @db.VarChar(255)
   Order          Int                    @default(0)
+  OrderKey       String?
   ParentId       String?
   Src            String?                @db.VarChar(2048)
   Styles         Json?
@@ -34,6 +35,8 @@ model Element {
   @@index([IsLocked])
   @@index([PageId, Order])
   @@index([ParentId, Order])
+  @@index([PageId, OrderKey])
+  @@index([ParentId, OrderKey])
   @@index([PageId, Type])
 }
 

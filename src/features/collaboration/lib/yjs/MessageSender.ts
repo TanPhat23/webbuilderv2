@@ -23,7 +23,12 @@ export class MessageSender extends EventEmitter {
 
   private attached = false;
 
-  constructor(connection: ConnectionManager, dispatcher: MessageDispatcher) {
+  constructor(
+    connection: ConnectionManager,
+    dispatcher: MessageDispatcher,
+    private readonly onRequest?: (envelope: WSEnvelope<unknown>) => void,
+    private readonly onRejected?: (envelope: WSEnvelope<unknown>) => void,
+  ) {
     super();
     this.connection = connection;
     this.dispatcher = dispatcher;
@@ -57,13 +62,21 @@ export class MessageSender extends EventEmitter {
     envelope: WSEnvelope<unknown>,
     requestId: string,
   ): Promise<T> {
+    this.onRequest?.(envelope);
     if (!this.dispatcher.checkRateLimit()) {
+      this.onRejected?.(envelope);
       throw new Error("Rate limit exceeded. Please slow down.");
     }
 
     const promise = this.dispatcher.createPendingRequest<T>(requestId);
     this.sendOrQueue(envelope);
-    return promise;
+    try {
+      return await promise;
+    } catch (error) {
+      // Only roll back if the operation is still queued and definitely unsent.
+      if (this.dispatcher.removeQueuedRequest(requestId)) this.onRejected?.(envelope);
+      throw error;
+    }
   }
 
   /**

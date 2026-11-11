@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid";
 import type { EditorElement } from "@/types/global.type";
 import type {
   ElementOperationResult,
@@ -59,8 +60,8 @@ export class ElementOperations {
       "element:create",
       this.projectId,
       this.pageId,
-      { element: this.toPayloadNode(element, parentId, position) },
-      { userId: this.userId, requestId },
+      { element: this.toPayloadNode(element, parentId, position), ...(position !== undefined ? { position } : {}) },
+      { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
     return this.sendRequest<ElementOperationResult>(envelope, requestId);
   }
@@ -86,7 +87,7 @@ export class ElementOperations {
         ...(updates.src !== undefined ? { src: updates.src } : {}),
         ...(updates.href !== undefined ? { href: updates.href } : {}),
       },
-      { userId: this.userId, requestId },
+      { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
     return this.sendRequest<ElementOperationResult>(envelope, requestId);
   }
@@ -102,7 +103,7 @@ export class ElementOperations {
       this.projectId,
       this.pageId,
       { id: elementId },
-      { userId: this.userId, requestId },
+      { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
     return this.sendRequest<ElementOperationResult>(envelope, requestId);
   }
@@ -118,7 +119,7 @@ export class ElementOperations {
       this.projectId,
       this.pageId,
       { id: elementId, parentId: newParentId, order: newPosition ?? 0 },
-      { userId: this.userId, requestId },
+      { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
     return this.sendRequest<ElementOperationResult>(envelope, requestId);
   }

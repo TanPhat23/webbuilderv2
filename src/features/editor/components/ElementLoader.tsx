@@ -1,13 +1,14 @@
 import React from "react";
+import { useParams } from "@tanstack/react-router";
 import type { EditorElement } from "@/types/global.type";
 import { useElements } from "@/features/editor";
-import ElementItem from "./element-loader/ElementItem";
-import useElementDragHandlers from "@/features/editor/hooks/element/useElementDragHandlers";
+import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
+import ElementRenderer from "./ElementRenderer";
 import {
   EditorFlagsProvider,
   useEditorFlagsOptional,
 } from "./context/EditorFlagsContext";
-import { DragProvider } from "./context/DragContext";
+import { CanvasInteractionLayer } from "./canvas/CanvasInteractionLayer";
 
 interface ElementLoaderProps {
   /** Elements to render. The root loader defaults to the whole page. */
@@ -29,7 +30,7 @@ function ElementList({
   return (
     <>
       {elements.map((element) => (
-        <ElementItem key={element.id} element={element} data={data} />
+        <ElementRenderer key={element.id} element={element} data={data} />
       ))}
     </>
   );
@@ -43,28 +44,30 @@ function RootElementLoader({
   iframeRef,
 }: ElementLoaderProps) {
   const pageElements = useElements();
-  const { permissions, ...drag } = useElementDragHandlers({
-    isReadOnly,
-    isLocked,
-  });
+  const params = useParams({ strict: false }) as { id?: string };
+  const permissions = useEditorPermissions(params.id ?? null);
+  const editable = !isReadOnly && !isLocked;
 
   return (
     <EditorFlagsProvider
       isReadOnly={isReadOnly}
       isLocked={isLocked}
       permissionsRole={permissions?.role ?? null}
+      canEdit={editable && !!permissions?.canEditElements}
+      canCreate={editable && !!permissions?.canCreateElements}
       iframeRef={iframeRef}
     >
-      <DragProvider {...drag}>
+      <CanvasInteractionLayer>
         <ElementList elements={elements ?? pageElements} data={data} />
-      </DragProvider>
+      </CanvasInteractionLayer>
     </EditorFlagsProvider>
   );
 }
 
 /**
- * Renders a list of canvas elements. The outermost loader owns editor flags
- * and drag state; loaders nested inside container elements reuse them.
+ * Renders a list of canvas elements. The outermost loader provides editor
+ * flags and the interaction layer (hover, selection, drag & drop, overlay);
+ * loaders nested inside container elements only render their children.
  */
 export default function ElementLoader(props: ElementLoaderProps) {
   const isNested = useEditorFlagsOptional() !== null;
