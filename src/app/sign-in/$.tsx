@@ -8,7 +8,7 @@ export const Route = createFileRoute("/sign-in/$")({
 function SignInCatchAllPage() {
   return (
     <main className="flex min-h-screen w-full items-center justify-center">
-      <SignIn path="/sign-in" routing="path" />
+      <SignIn path="/sign-in" routing="path" forceRedirectUrl={"/dashboard"}/>
     </main>
   );
 }

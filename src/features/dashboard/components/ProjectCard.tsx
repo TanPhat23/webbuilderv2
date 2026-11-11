@@ -99,14 +99,16 @@ export function ProjectCard({
 
   return (
     <>
-      <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer p-0">
+      <Card 
+        className="group hover:shadow-lg transition-all duration-200 cursor-pointer p-0"
+        onClick={() => navigate({ to: `/editor/${project.id}` })}
+      >
         <CardHeader className="p-0">
           <div className="relative overflow-hidden rounded-t-lg">
             <img
               src="/placeholder.svg"
               alt={project.name ?? "Project thumbnail"}
               className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
-              onClick={() => navigate({ to: `/editor/${project.id}` })}
             />
             <div className="absolute top-2 right-2">
               <Badge variant={project.published ? "default" : "secondary"}>
@@ -119,8 +121,7 @@ export function ProjectCard({
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-2">
             <h3
-              className="font-semibold text-lg truncate pr-2 cursor-pointer hover:text-primary"
-              onClick={() => navigate({ to: `/editor/${project.id}` })}
+              className="font-semibold text-lg truncate pr-2"
             >
               {project.name}
             </h3>
