@@ -4,8 +4,8 @@
  * Hook that encapsulates selection, mouse and contentEditable interactions
  * for editor elements. This isolates the UI interaction semantics (double click,
  * hover, editable text changes, style merging, and event handler construction)
- * so they can be composed with drag/drop behavior (which lives in
- * useElementDnD).
+ * so element renderers share one implementation. Canvas drag & drop lives in
+ * useElementDragHandlers (applied by ElementItem).
  */
 
 import React, { useCallback } from "react";
@@ -17,18 +17,6 @@ import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import type { ResponsiveStyles } from "@/features/editor";
-
-/**
- * Handlers from a DnD implementation that can be merged into the event set.
- * `useElementDnD` (or other DnD systems) can provide these to `getEventHandlers`.
- */
-export type DnDHandlers = {
-  onDragStart?: (e: React.DragEvent) => void;
-  onDragLeave?: (e: React.DragEvent) => void;
-  onDragEnd?: (e: React.DragEvent) => void;
-  onDragOver?: (e: React.DragEvent) => void;
-  onDrop?: (e: React.DragEvent) => void;
-};
 
 export interface UseElementInteractionOptions {
   isReadOnly?: boolean;
@@ -47,35 +35,8 @@ export interface UseElementInteractionReturn {
   getTailwindStyles: (element: EditorElement) => string;
   getStyles: (element: EditorElement) => React.CSSProperties;
 
-  /**
-   * Returns the interaction-focused event handlers for an element.
-   * Accepts an optional `dndHandlers` object that the caller (e.g. a DnD
-   * hook) can provide to merge drag/drop handlers in a single object.
-   */
-  getEventHandlers: (
-    element: EditorElement,
-    dndHandlers?: DnDHandlers,
-  ) => {
-    onDragStart?: (e: React.DragEvent) => void;
-    onDragLeave?: (e: React.DragEvent) => void;
-    onDragEnd?: (e: React.DragEvent) => void;
-    onDragOver?: (e: React.DragEvent) => void;
-    onDrop?: (e: React.DragEvent) => void;
-    onDoubleClick: (e: React.MouseEvent) => void;
-    onMouseEnter: (e: React.MouseEvent) => void;
-    onMouseLeave: (e: React.MouseEvent) => void;
-    onBlur: (e: React.FocusEvent) => void;
-  };
-
-  /**
-   * Convenience helper to get the common props for an element (styles,
-   * contentEditable state and merged event handlers). Accepts an optional
-   * `dndHandlers` to include DnD-related events in the returned props.
-   */
-  getCommonProps: (
-    element: EditorElement,
-    dndHandlers?: DnDHandlers,
-  ) => Record<string, any>;
+  /** Styles, contentEditable state and interaction handlers for an element's root node. */
+  getCommonProps: (element: EditorElement) => Record<string, any>;
 
   // Permission / UI flags
   canDelete: boolean;
@@ -86,8 +47,7 @@ export interface UseElementInteractionReturn {
 /**
  * useElementInteraction
  *
- * Extracts selection / mouse / contentEditable operations from the legacy
- * `useElementHandler` to make them composable and testable.
+ * Selection, hover and contentEditable behavior shared by element renderers.
  */
 export function useElementInteraction({
   isReadOnly = false,
@@ -213,49 +173,27 @@ export function useElementInteraction({
     [],
   );
 
-  const getEventHandlers = useCallback(
-    (element: EditorElement, dndHandlers: DnDHandlers = {}) => {
-      const isEditableElement = elementHelper.isEditableElement(element);
-
-      return {
-        onDragStart: (e: React.DragEvent) => dndHandlers.onDragStart?.(e),
-        onDragLeave: (e: React.DragEvent) => dndHandlers.onDragLeave?.(e),
-        onDragEnd: (e: React.DragEvent) => dndHandlers.onDragEnd?.(e),
-        onDragOver: (e: React.DragEvent) => dndHandlers.onDragOver?.(e),
-        // Do not allow drop on editable elements
-        onDrop: isEditableElement
-          ? undefined
-          : (e: React.DragEvent) => dndHandlers.onDrop?.(e),
-        onDoubleClick: (e: React.MouseEvent) => handleDoubleClick(e, element),
-        onMouseEnter: (e: React.MouseEvent) => handleMouseEnter(e, element),
-        onMouseLeave: (e: React.MouseEvent) => handleMouseLeave(e, element),
-        onBlur: (e: React.FocusEvent) => handleTextChange(e, element),
-      };
-    },
-    [handleDoubleClick, handleMouseEnter, handleMouseLeave, handleTextChange],
-  );
-
   const getCommonProps = useCallback(
-    (element: EditorElement, dndHandlers?: DnDHandlers) => {
-      const tailwindStyles = getTailwindStyles(element);
-      const mergedStyles = getStyles(element);
-      const eventHandlers = getEventHandlers(element, dndHandlers);
-
-      return {
-        style: mergedStyles,
-        draggable: canDrag,
-        className: tailwindStyles,
-        contentEditable:
-          elementHelper.isEditableElement(element) &&
-          selectedElement?.id === element.id &&
-          permissions.canEditElements,
-        suppressContentEditableWarning: true,
-        ...eventHandlers,
-      };
-    },
+    (element: EditorElement) => ({
+      style: getStyles(element),
+      draggable: canDrag,
+      className: getTailwindStyles(element),
+      contentEditable:
+        elementHelper.isEditableElement(element) &&
+        selectedElement?.id === element.id &&
+        permissions.canEditElements,
+      suppressContentEditableWarning: true,
+      onDoubleClick: (e: React.MouseEvent) => handleDoubleClick(e, element),
+      onMouseEnter: (e: React.MouseEvent) => handleMouseEnter(e, element),
+      onMouseLeave: (e: React.MouseEvent) => handleMouseLeave(e, element),
+      onBlur: (e: React.FocusEvent) => handleTextChange(e, element),
+    }),
     [
       canDrag,
-      getEventHandlers,
+      handleDoubleClick,
+      handleMouseEnter,
+      handleMouseLeave,
+      handleTextChange,
       getStyles,
       getTailwindStyles,
       permissions,
@@ -270,7 +208,6 @@ export function useElementInteraction({
     handleTextChange,
     getTailwindStyles,
     getStyles,
-    getEventHandlers,
     getCommonProps,
     canDelete,
     canEdit,

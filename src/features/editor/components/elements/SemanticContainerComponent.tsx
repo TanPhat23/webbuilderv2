@@ -1,6 +1,5 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import {
   NavElement,
@@ -9,9 +8,8 @@ import {
   ArticleElement,
   AsideElement,
 } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import ElementLoader from "../ElementLoader";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 type SemanticElement =
   | NavElement
@@ -33,33 +31,15 @@ const SemanticContainerComponent = ({
   data,
 }: EditorComponentProps) => {
   const semanticElement = element as SemanticElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const { getCommonProps } = useElementHandler();
-  const safeStyles = elementHelper.getSafeStyles(semanticElement);
   const tag = ELEMENT_TYPE_TO_TAG[element.type] ?? "div";
 
-  const props = {
-    ref: elementRef as React.RefObject<HTMLElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...getCommonProps(semanticElement),
-    ...eventHandlers,
-    style: {
-      ...safeStyles,
-      width: "100%",
-      height: "100%",
-      position: "relative" as const,
-      ...eventsStyle(eventsActive),
-    },
-  };
+  const { rootProps } = useCanvasElement(semanticElement, {
+    style: { position: "relative" },
+  });
 
   return React.createElement(
     tag,
-    props,
+    rootProps,
     <ElementLoader elements={semanticElement.elements} data={data} />,
   );
 };

@@ -4,6 +4,10 @@ import { Component } from "lucide-react";
 import React from "react";
 import { ComponentTooltip } from "../ComponentTooltip";
 import { IconRenderer, type IconName } from "@/features/editor/utils/icons/iconMap";
+import {
+  setElementTypeDrag,
+  setTemplateDrag,
+} from "@/features/editor/utils/element/dragPayload";
 
 type HolderProps = {
   icon: IconName;
@@ -11,18 +15,11 @@ type HolderProps = {
 };
 
 const ComponentHolder = ({ icon, type }: HolderProps) => {
-  const onDragStart = (
-    e: React.DragEvent<HTMLDivElement>,
-    elementType: string,
-  ) => {
-    e.dataTransfer.setData("elementType", elementType);
-  };
-
   return (
     <ComponentTooltip componentType={type}>
       <div
         draggable
-        onDragStart={(e) => onDragStart(e, type)}
+        onDragStart={(e) => setElementTypeDrag(e.dataTransfer, type)}
         className="flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
       >
         <IconRenderer
@@ -44,14 +41,10 @@ export function CustomComponentHolder({
   name,
   index,
 }: CustomComponentHolderProps) {
-  const onDragStart = (e: React.DragEvent<HTMLDivElement>) => {
-    e.dataTransfer.setData("customComponentName", index.toString());
-  };
-
   return (
     <div
       draggable
-      onDragStart={(e) => onDragStart(e)}
+      onDragStart={(e) => setTemplateDrag(e.dataTransfer, index)}
       className="flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors"
     >
       <Component className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import { IFrameElement, IFrameSettings } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
@@ -21,7 +21,7 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
     events: element.events,
   });
 
-  const { getCommonProps } = useElementHandler();
+  const { getCommonProps } = useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(iframeElement);
 
   const settings = (iframeElement.settings ?? {}) as IFrameSettings;

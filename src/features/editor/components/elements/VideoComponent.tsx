@@ -3,7 +3,7 @@ import React from "react";
 import { EditorComponentProps } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { VideoElement, VideoSettings } from "@/features/editor";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import {
   Empty,
   EmptyHeader,
@@ -32,7 +32,7 @@ const VideoComponent = ({ element }: EditorComponentProps) => {
       mediaType: "video",
     });
 
-  const { getCommonProps } = useElementHandler();
+  const { getCommonProps } = useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(videoElement);
 
   const settings = (videoElement.settings ?? {}) as VideoSettings;

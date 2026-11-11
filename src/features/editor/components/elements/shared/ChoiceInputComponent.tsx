@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import type { CheckboxElement, CheckboxSettings, RadioElement, RadioSettings } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
@@ -14,7 +14,7 @@ export function ChoiceInputComponent({ element, type }: EditorComponentProps & {
     events: element.events,
   });
 
-  useElementHandler();
+  useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(choiceElement);
 
   const settings = (choiceElement.settings ?? {}) as CheckboxSettings | RadioSettings;

@@ -1,25 +1,16 @@
 import React from "react";
 
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentGridElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
 import { getFieldValue, useCMSContent } from "@/features/cms/hooks/useCMSContent";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
+import { useCanvasElement, CMSEmptyState } from "./shared";
 
 const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentGridElement;
-
-  const { getCommonProps } = useElementHandler();
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const safeStyles = elementHelper.getSafeStyles(cmsElement);
+  const { rootProps } = useCanvasElement(cmsElement);
 
   const settings = cmsElement.settings || {};
   const {
@@ -45,20 +36,6 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
       : [];
 
   const limitedItems = itemsToRender.slice(0, limit);
-
-  const rootProps = {
-    ref: elementRef as React.RefObject<HTMLDivElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...getCommonProps(cmsElement),
-    ...eventHandlers,
-    style: {
-      ...safeStyles,
-      width: "100%",
-      height: "100%",
-      ...eventsStyle(eventsActive),
-    },
-  };
 
   if (!contentTypeId) {
     return (

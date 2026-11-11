@@ -6,49 +6,29 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import {
   CarouselElement,
   CarouselSettings,
 } from "@/features/editor";
 import { cn } from "@/lib/utils";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import ElementLoader from "../ElementLoader";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 const CarouselComponent = ({ element, data }: EditorComponentProps) => {
   const carouselElement = element as CarouselElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const { getCommonProps } = useElementHandler();
-
+  const { rootProps } = useCanvasElement(carouselElement);
   if (!carouselElement.elements) {
     return <div>No carousel content available.</div>;
   }
 
   const carouselSettings: CarouselSettings = carouselElement.settings ?? {};
   const hasNavigation = carouselSettings.withNavigation ?? true;
-  const safeStyles = elementHelper.getSafeStyles(carouselElement);
-
   return (
     <Carousel
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(carouselElement)}
-      {...eventHandlers}
+      {...rootProps}
       opts={carouselSettings}
       className={cn("w-full h-full")}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        ...eventsStyle(eventsActive),
-      }}
       role="region"
       aria-roledescription="carousel"
     >

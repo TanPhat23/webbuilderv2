@@ -1,27 +1,20 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import {
   TableElement,
   TableSettings,
   TableColumnDefinition,
 } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import ElementLoader from "../ElementLoader";
 import { cn } from "@/lib/utils";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 const TableComponent = ({ element, data }: EditorComponentProps) => {
   const tableElement = element as TableElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
+  const { rootProps } = useCanvasElement(tableElement, {
+    style: { position: "relative", overflow: "auto" },
   });
-
-  const { getCommonProps } = useElementHandler();
-  const safeStyles = elementHelper.getSafeStyles(tableElement);
-
   const settings = (tableElement.settings ?? {}) as TableSettings;
   const caption = settings.caption;
   const bordered = settings.bordered ?? true;
@@ -54,21 +47,7 @@ const TableComponent = ({ element, data }: EditorComponentProps) => {
   const hasChildren = tableElement.elements && tableElement.elements.length > 0;
 
   return (
-    <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(tableElement)}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        position: "relative",
-        overflow: "auto",
-        ...eventsStyle(eventsActive),
-      }}
-    >
+    <div {...rootProps}>
       <table
         style={{
           width: "100%",

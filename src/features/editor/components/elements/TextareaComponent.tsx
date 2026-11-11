@@ -1,24 +1,14 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import {
   TextareaElement,
   TextareaSettings,
 } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 const TextareaComponent = ({ element }: EditorComponentProps) => {
   const textareaElement = element as TextareaElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const { getCommonProps } = useElementHandler();
-  const safeStyles = elementHelper.getSafeStyles(textareaElement);
-  const commonProps = getCommonProps(textareaElement);
 
   const settings = (textareaElement.settings ?? {}) as TextareaSettings;
   const placeholder = settings.placeholder ?? "Enter text...";
@@ -33,12 +23,12 @@ const TextareaComponent = ({ element }: EditorComponentProps) => {
   const autoComplete = settings.autoComplete;
   const spellCheck = settings.spellCheck;
   const resize = settings.resize ?? "vertical";
+  const { rootProps, eventsActive } = useCanvasElement(textareaElement, {
+    style: { resize },
+  });
 
   return (
     <textarea
-      ref={elementRef as React.RefObject<HTMLTextAreaElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
       placeholder={placeholder}
       rows={rows}
       cols={cols}
@@ -51,15 +41,7 @@ const TextareaComponent = ({ element }: EditorComponentProps) => {
       autoComplete={autoComplete}
       spellCheck={spellCheck}
       defaultValue={settings.defaultValue ?? ""}
-      {...commonProps}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        resize,
-        ...eventsStyle(eventsActive),
-      }}
+      {...rootProps}
     />
   );
 };

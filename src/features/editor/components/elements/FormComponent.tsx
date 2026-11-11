@@ -1,7 +1,5 @@
 
 import React from "react";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { useAddElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
@@ -12,16 +10,11 @@ import { usePageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 export default function FormComponent({ element, data }: EditorComponentProps) {
   const formElement = element as FormElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const { getCommonProps } = useElementHandler();
+  const { rootProps } = useCanvasElement(formElement);
   const addElement = useAddElement();
   const { currentPage } = usePageStore();
   const selectedElement = useSelectedElement();
@@ -34,7 +27,6 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
     autoComplete: "on",
   };
 
-  const safeStyles = elementHelper.getSafeStyles(formElement);
 
   const handleAddField = () => {
     const newField = ElementFactory.getInstance().createElement({
@@ -47,22 +39,12 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
 
   return (
     <form
-      ref={elementRef as React.RefObject<HTMLFormElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(formElement)}
-      {...eventHandlers}
+      {...rootProps}
       className={cn(
         "flex flex-col gap-4 p-6 border rounded-xl transition-all duration-200",
         "bg-card text-card-foreground border-border shadow-sm",
         formElement.tailwindStyles,
       )}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        ...eventsStyle(eventsActive),
-      }}
       action={settings.action}
       method={settings.method}
       target={settings.target}

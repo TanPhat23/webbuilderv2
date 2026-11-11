@@ -1,71 +1,42 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { useParams } from '@tanstack/react-router';
-import { EditorElement, ElementType } from "@/types/global.type";
-import { useDragState, useDragActions } from "@/features/editor";
+import React, { useCallback } from "react";
+import { useParams } from "@tanstack/react-router";
+import type { EditorElement } from "@/types/global.type";
 import {
+  useDragState,
+  useDragActions,
   useSwapElement,
   useInsertElement,
   useAddElement,
-  useElements,
+  useSetSelectedElement,
 } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import type { EditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
-import { useElementCreator } from "@/features/editor/hooks/element/useElementCreator";
+import {
+  isCreateDrag,
+  readDropPayload,
+  setMoveDrag,
+} from "@/features/editor/utils/element/dragPayload";
 import {
   showErrorToast,
   showSuccessToast,
   PERMISSION_ERRORS,
 } from "@/utils/errors/errorToast";
 
-/**
- * Options for the `useElementDragHandlers` hook.
- */
 export interface UseElementDragHandlersOptions {
-  /**
-   * Optional override list of elements to operate on. If omitted,
-   * the global element store's items will be used.
-   */
-  elements?: EditorElement[];
-
-  /**
-   * Whether the editor is currently in read-only mode.
-   */
   isReadOnly?: boolean;
-
-  /**
-   * Whether the editor is currently locked.
-   */
   isLocked?: boolean;
-
-  /**
-   * Optional explicit project id (falls back to router params if not provided).
-   */
+  /** Falls back to the `$id` route param. */
   projectId?: string | null;
 }
 
-/**
- * Hook return shape used by the UI components.
- */
 export interface UseElementDragHandlersReturn {
-  items: EditorElement[] | undefined;
-
-  // Selection state from the selection store
   draggedOverElement: EditorElement | undefined;
   draggingElement: EditorElement | undefined;
-
-  // Local drag indicator
-  isDraggingLocal: string | null;
-
-  // Permission helpers
   canDrag: boolean;
-  canCreate: boolean;
   permissions: EditorPermissions;
-
-  // Handlers
-  resetDragState: () => void;
   handleHover: (e: React.DragEvent, element: EditorElement) => void;
   handleDragStart: (e: React.DragEvent, element: EditorElement) => void;
   handleDragEnd: () => void;
@@ -73,34 +44,24 @@ export interface UseElementDragHandlersReturn {
 }
 
 /**
- * Extracts drag/drop logic from the ElementLoader component so it
- * can be easily tested and composed.
+ * Canvas drag & drop: dragging an existing element onto another swaps them;
+ * dropping a palette element or template onto a container nests it, onto any
+ * other element inserts it as a sibling.
  */
 export function useElementDragHandlers({
-  elements,
   isReadOnly = false,
   isLocked = false,
   projectId = null,
 }: UseElementDragHandlersOptions = {}): UseElementDragHandlersReturn {
-  const params = useParams({ strict: false });
-  const routeId = (params as { id?: string | undefined })?.id;
-  const effectiveProjectId = projectId ?? routeId ?? null;
-
-  const permissions = useEditorPermissions(effectiveProjectId);
+  const params = useParams({ strict: false }) as { id?: string };
+  const permissions = useEditorPermissions(projectId ?? params.id ?? null);
 
   const { draggedOverElement, draggingElement } = useDragState();
   const { setDraggingElement, setDraggedOverElement } = useDragActions();
-
-  const allElements = useElements();
+  const setSelectedElement = useSetSelectedElement();
   const insertElement = useInsertElement();
   const swapElement = useSwapElement();
   const addElement = useAddElement();
-
-  const elementCreator = useElementCreator();
-
-  const items = useMemo(() => elements ?? allElements, [elements, allElements]);
-
-  const [isDraggingLocal, setIsDraggingLocal] = useState<string | null>(null);
 
   const canDrag = !isReadOnly && !isLocked && !!permissions?.canEditElements;
   const canCreate =
@@ -109,26 +70,18 @@ export function useElementDragHandlers({
   const resetDragState = useCallback(() => {
     setDraggedOverElement(undefined);
     setDraggingElement(undefined);
-    setIsDraggingLocal(null);
   }, [setDraggedOverElement, setDraggingElement]);
 
   const handleHover = useCallback(
     (e: React.DragEvent, element: EditorElement) => {
       e.preventDefault();
       e.stopPropagation();
-
       if (!canDrag) return;
 
-      // When creating a new element (dragging from palette or an image), only
-      // allow hovering over container elements. Existing-element drags (reorder)
-      // should still allow hover on any element.
-      const isCreating = Boolean(
-        e.dataTransfer.getData("elementType") ||
-        e.dataTransfer.getData("customComponentName") ||
-        e.dataTransfer.getData("application/json"),
-      );
-
-      if (isCreating && !elementHelper.isContainerElement(element)) return;
+      // New elements can only be nested into containers; moves may target any element.
+      if (isCreateDrag(e.dataTransfer) && !elementHelper.isContainerElement(element)) {
+        return;
+      }
 
       if (draggedOverElement?.id !== element.id) {
         setDraggedOverElement(element);
@@ -139,148 +92,110 @@ export function useElementDragHandlers({
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, element: EditorElement) => {
+      // Without this, the event bubbles to every ancestor's wrapper and the
+      // outermost one becomes the dragged element.
+      e.stopPropagation();
       if (!canDrag) {
         e.preventDefault();
         return;
       }
 
-      setIsDraggingLocal(element.id);
       setDraggingElement(element);
-
-      // Store the id on the dataTransfer so drop targets can read it
       try {
-        e.dataTransfer.setData("elementId", element.id);
-        e.dataTransfer.effectAllowed = "move";
+        setMoveDrag(e.dataTransfer, element.id);
       } catch (err) {
-        // dataTransfer operations can occasionally throw in some browsers;
-        // swallow errors to avoid breaking the UX and keep local state.
-        // eslint-disable-next-line no-console
         console.warn("Failed to set drag data:", err);
       }
     },
-    [canDrag, setIsDraggingLocal, setDraggingElement],
+    [canDrag, setDraggingElement],
   );
 
-  const handleDragEnd = useCallback(() => {
-    resetDragState();
-  }, [resetDragState]);
+  const placeNewElement = useCallback(
+    (target: EditorElement, newElement: EditorElement, select: boolean) => {
+      if (elementHelper.isContainerElement(target)) {
+        newElement.parentId = target.id;
+        addElement(newElement);
+        if (select) setSelectedElement(newElement);
+      } else {
+        insertElement(target, newElement);
+      }
+    },
+    [addElement, insertElement, setSelectedElement],
+  );
 
   const handleDrop = useCallback(
-    (e: React.DragEvent, element: EditorElement) => {
+    (e: React.DragEvent, target: EditorElement) => {
       e.preventDefault();
       e.stopPropagation();
 
-      if (!canDrag && !canCreate) {
-        showErrorToast(PERMISSION_ERRORS.cannotPerformAction);
-        resetDragState();
-        return;
-      }
-
-      const elementType = e.dataTransfer.getData("elementType");
-      const customElement = e.dataTransfer.getData("customComponentName");
-      const draggedElementId = e.dataTransfer.getData("elementId");
-
-      // Swap existing elements (drag & drop between elements)
-      if (draggedElementId && draggingElement) {
-        if (draggedElementId !== element.id) {
-          swapElement(draggedElementId, element.id);
-          showSuccessToast("Elements swapped successfully");
-        }
-        resetDragState();
-        return;
-      }
-
-      if (elementType) {
-        if (!canCreate) {
-          showErrorToast(PERMISSION_ERRORS.cannotAdd);
-          resetDragState();
+      try {
+        if (!canDrag && !canCreate) {
+          showErrorToast(PERMISSION_ERRORS.cannotPerformAction);
           return;
         }
 
-        const isContainer = elementHelper.isContainerElement(element);
+        const payload = readDropPayload(e.dataTransfer);
+        if (!payload) return;
 
-        if (isContainer) {
-          const newElement = elementCreator.createElementFromDrop(e, element);
-          if (newElement) {
-            elementCreator.completeElementCreation(newElement);
+        if (payload.kind === "move") {
+          if (draggingElement && payload.elementId !== target.id) {
+            swapElement(payload.elementId, target.id);
+            showSuccessToast("Elements swapped successfully");
           }
-        } else {
-          const newElement = ElementFactory.getInstance().createElement({
-            type: elementType as ElementType,
-            pageId: element.pageId,
+          return;
+        }
+
+        if (!canCreate) {
+          showErrorToast(PERMISSION_ERRORS.cannotAdd);
+          return;
+        }
+
+        const factory = ElementFactory.getInstance();
+        if (payload.kind === "create") {
+          const newElement = factory.createElement({
+            type: payload.elementType,
+            pageId: target.pageId,
+            parentId: elementHelper.isContainerElement(target)
+              ? target.id
+              : undefined,
           });
-          if (newElement) insertElement(element, newElement);
+          if (newElement) placeNewElement(target, newElement, true);
+          return;
         }
 
+        const template = customComps[payload.index];
+        if (!template) return;
+        const newElement = factory.createElementFromTemplate({
+          element: template,
+          pageId: target.pageId,
+        });
+        if (newElement) placeNewElement(target, newElement, false);
+      } catch (error) {
+        console.warn("Failed to handle canvas drop", error);
+      } finally {
         resetDragState();
-        return;
       }
-
-      // 2) Insert a custom component/template. If the target is a container,
-      //    attach the template as a child; otherwise, insert it as a sibling.
-      if (customElement) {
-        try {
-          if (!canCreate) {
-            showErrorToast(PERMISSION_ERRORS.cannotAdd);
-            resetDragState();
-            return;
-          }
-
-          const compIndex = parseInt(customElement, 10);
-          const customComp = customComps[compIndex];
-          const newElement =
-            ElementFactory.getInstance().createElementFromTemplate({
-              element: customComp,
-              pageId: element.pageId,
-            });
-          if (newElement) {
-            if (elementHelper.isContainerElement(element)) {
-              newElement.parentId = element.id;
-              addElement(newElement);
-            } else {
-              insertElement(element, newElement);
-            }
-          }
-        } catch (error) {
-          // Keep errors silent to avoid interrupting the drag flow.
-          // eslint-disable-next-line no-console
-          console.warn("Failed to create custom element from template", error);
-        }
-
-        resetDragState();
-        return;
-      }
-
-      resetDragState();
     },
     [
       canDrag,
       canCreate,
       draggingElement,
-      insertElement,
-      resetDragState,
       swapElement,
-      elementCreator,
-      addElement,
+      placeNewElement,
+      resetDragState,
     ],
   );
 
   return {
-    items,
     draggedOverElement,
     draggingElement,
-    isDraggingLocal,
     canDrag,
-    canCreate,
     permissions,
-    resetDragState,
     handleHover,
     handleDragStart,
-    handleDragEnd,
+    handleDragEnd: resetDragState,
     handleDrop,
-    };
+  };
 }
-
-export type UseElementDragHandlers = UseElementDragHandlersReturn;
 
 export default useElementDragHandlers;

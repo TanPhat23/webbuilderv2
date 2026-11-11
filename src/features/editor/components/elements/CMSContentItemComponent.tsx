@@ -2,25 +2,16 @@
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
 import { useCMSContentItem } from "@/features/cms/hooks/useCMSContent";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentItemElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import ElementLoader from "../ElementLoader";
 import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement, eventsStyle, CMSEmptyState } from "./shared";
+import { useCanvasElement, CMSEmptyState } from "./shared";
 
 const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentItemElement;
-  const { getCommonProps } = useElementHandler();
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-  });
-
-  const safeStyles = elementHelper.getSafeStyles(cmsElement);
-
+  const { rootProps } = useCanvasElement(cmsElement);
   const settings = cmsElement.settings || {};
   const { contentTypeId, itemSlug } = settings;
 
@@ -30,20 +21,6 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   );
 
   const itemToRender = (data as ContentItem | undefined) || contentItem;
-
-  const rootProps = {
-    ref: elementRef as React.RefObject<HTMLDivElement>,
-    "data-element-id": element.id,
-    "data-element-type": element.type,
-    ...getCommonProps(cmsElement),
-    ...eventHandlers,
-    style: {
-      ...safeStyles,
-      width: "100%",
-      height: "100%",
-      ...eventsStyle(eventsActive),
-    },
-  };
 
   if (!contentTypeId) {
     return (

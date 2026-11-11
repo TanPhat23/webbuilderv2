@@ -1,9 +1,7 @@
 import React from "react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic.mjs";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
 import { EditorComponentProps } from "@/features/editor";
 import { IconElement, IconSettings } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import {
   Empty,
   EmptyHeader,
@@ -12,17 +10,17 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Smile } from "lucide-react";
-import { useEditorElement, eventsStyle } from "./shared";
+import { useCanvasElement } from "./shared";
 
 const IconComponent = ({ element }: EditorComponentProps) => {
   const iconElement = element as IconElement;
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
+  const { rootProps } = useCanvasElement(iconElement, {
+    style: {
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+    },
   });
-
-  const { getCommonProps } = useElementHandler();
-  const safeStyles = elementHelper.getSafeStyles(iconElement);
 
   const settings = (iconElement.settings ?? {}) as IconSettings;
   const iconName = settings.iconName ?? "star";
@@ -47,22 +45,7 @@ const IconComponent = ({ element }: EditorComponentProps) => {
   );
 
   return (
-    <div
-      ref={elementRef as React.RefObject<HTMLDivElement>}
-      data-element-id={element.id}
-      data-element-type={element.type}
-      {...getCommonProps(iconElement)}
-      {...eventHandlers}
-      style={{
-        ...safeStyles,
-        width: "100%",
-        height: "100%",
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        ...eventsStyle(eventsActive),
-      }}
-    >
+    <div {...rootProps}>
       <DynamicIcon
         name={iconName as IconName}
         size={size}

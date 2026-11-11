@@ -3,7 +3,7 @@ import React from "react";
 import { EditorComponentProps } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import { AudioElement, AudioSettings } from "@/features/editor";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import {
   Empty,
   EmptyHeader,
@@ -32,7 +32,7 @@ const AudioComponent = ({ element }: EditorComponentProps) => {
       mediaType: "audio",
     });
 
-  const { getCommonProps } = useElementHandler();
+  const { getCommonProps } = useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(audioElement);
 
   const settings = (audioElement.settings ?? {}) as AudioSettings;

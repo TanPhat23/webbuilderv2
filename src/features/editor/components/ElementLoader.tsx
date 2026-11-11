@@ -1,85 +1,75 @@
-import React, { useCallback } from "react";
-import { useParams } from '@tanstack/react-router';
-import ElementRenderer from "./ElementRenderer";
+import React from "react";
 import type { EditorElement } from "@/types/global.type";
-
+import { useElements } from "@/features/editor";
 import ElementItem from "./element-loader/ElementItem";
 import useElementDragHandlers from "@/features/editor/hooks/element/useElementDragHandlers";
-import { EditorFlagsProvider } from "./context/EditorFlagsContext";
+import {
+  EditorFlagsProvider,
+  useEditorFlagsOptional,
+} from "./context/EditorFlagsContext";
 import { DragProvider } from "./context/DragContext";
 
 interface ElementLoaderProps {
+  /** Elements to render. The root loader defaults to the whole page. */
   elements?: EditorElement[];
   data?: Record<string, unknown>;
+  /** Root-only: nested loaders inherit flags from the enclosing loader. */
   isReadOnly?: boolean;
   isLocked?: boolean;
   iframeRef?: React.RefObject<HTMLIFrameElement>;
 }
 
-export default function ElementLoader({
+function ElementList({
+  elements,
+  data,
+}: {
+  elements: EditorElement[];
+  data?: Record<string, unknown>;
+}) {
+  return (
+    <>
+      {elements.map((element) => (
+        <ElementItem key={element.id} element={element} data={data} />
+      ))}
+    </>
+  );
+}
+
+function RootElementLoader({
   elements,
   data,
   isReadOnly = false,
   isLocked = false,
   iframeRef,
-}: ElementLoaderProps = {}) {
-  const { id } = useParams({ strict: false });
-
-  const {
-    items,
-    permissions,
-    canDrag,
-    canCreate,
-    isDraggingLocal,
-    draggingElement,
-    draggedOverElement,
-    handleHover,
-    handleDragStart,
-    handleDragEnd,
-    handleDrop,
-  } = useElementDragHandlers({
-    elements,
+}: ElementLoaderProps) {
+  const pageElements = useElements();
+  const { permissions, ...drag } = useElementDragHandlers({
     isReadOnly,
     isLocked,
-    projectId: (id as string) || null,
   });
 
-  const renderElement = useCallback(
-    (element: EditorElement) => (
-      <ElementRenderer key={element.id} element={element} data={data} />
-    ),
-    [data],
-  );
-
-  const editorFlagsValue = {
-    isReadOnly,
-    isLocked,
-    permissionsRole: permissions?.role ?? null,
-    iframeRef,
-  };
-
-  const dragContextValue = {
-    canDrag,
-    isDraggingLocal,
-    draggingElement,
-    draggedOverElement,
-    handleDragStart,
-    handleDragEnd,
-    handleHover,
-    handleDrop,
-  };
-
   return (
-    <EditorFlagsProvider {...editorFlagsValue}>
-      <DragProvider {...dragContextValue}>
-        {items?.map((element: EditorElement) => (
-          <ElementItem
-            key={element.id}
-            element={element}
-            renderElement={renderElement}
-          />
-        ))}
+    <EditorFlagsProvider
+      isReadOnly={isReadOnly}
+      isLocked={isLocked}
+      permissionsRole={permissions?.role ?? null}
+      iframeRef={iframeRef}
+    >
+      <DragProvider {...drag}>
+        <ElementList elements={elements ?? pageElements} data={data} />
       </DragProvider>
     </EditorFlagsProvider>
   );
+}
+
+/**
+ * Renders a list of canvas elements. The outermost loader owns editor flags
+ * and drag state; loaders nested inside container elements reuse them.
+ */
+export default function ElementLoader(props: ElementLoaderProps) {
+  const isNested = useEditorFlagsOptional() !== null;
+  if (isNested) {
+    return <ElementList elements={props.elements ?? []} data={props.data} />;
+  }
+  return <RootElementLoader {...props} />;
 }

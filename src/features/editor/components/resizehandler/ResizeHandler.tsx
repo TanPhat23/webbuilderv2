@@ -1,7 +1,7 @@
 
 import { useUpdateElement } from "@/features/editor";
 import { useDragAndSelectionState } from "@/features/editor";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
@@ -74,7 +74,7 @@ export default function ResizeHandler({
   const updateElement = useUpdateElement();
   const { draggedOverElement, selectedElement, hoveredElement } =
     useDragAndSelectionState();
-  const { handleDoubleClick } = useElementHandler();
+  const { handleDoubleClick } = useElementInteraction();
   const permissions = useEditorPermissions();
   const canResize = !isReadOnly && !isLocked && permissions.canEditElements;
 

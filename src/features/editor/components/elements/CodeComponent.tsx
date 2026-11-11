@@ -1,7 +1,7 @@
 
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
-import { useElementHandler } from "@/features/editor/hooks/element/useElementHandler";
+import { useElementInteraction } from "@/features/editor/hooks/element/useElementInteraction";
 import { EditorComponentProps } from "@/features/editor";
 import { CodeElement, CodeSettings } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
@@ -14,7 +14,7 @@ const CodeComponent = ({ element, data }: EditorComponentProps) => {
     events: element.events,
   });
 
-  const { getCommonProps } = useElementHandler();
+  const { getCommonProps } = useElementInteraction();
   const safeStyles = elementHelper.getSafeStyles(codeElement);
   const commonProps = getCommonProps(codeElement);
 
