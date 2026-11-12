@@ -28,7 +28,7 @@ import {
   ListFilter,
   GripVertical,
 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import { cn } from "@/lib/utils";
 import { ConfigField, ConfigEmpty, SectionDivider } from "./_shared";
 
@@ -79,7 +79,7 @@ export const SelectConfigurationAccordion = () => {
 
   const handleAddOption = () => {
     const newOption: SelectOption = {
-      id: uuidv4(),
+      id: newEntityId(),
       label: `Option ${options.length + 1}`,
       value: `option-${options.length + 1}`,
     };

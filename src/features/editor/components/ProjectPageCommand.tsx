@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { projectKeys, useProjectPages } from "@/features/projects/hooks/useProjects";
@@ -68,7 +68,7 @@ function CreatePageDialog() {
 
   const onSubmit = async (data: CreatePageFormValues) => {
     const newPage = CreatePageSchema.safeParse({
-      Id: uuidv4(),
+      Id: newEntityId(),
       Name: data.name,
       ProjectId: id as string,
       Styles: {},

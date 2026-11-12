@@ -7,7 +7,7 @@ import {
   ElementType,
 } from "@/types/global.type";
 import type { ResponsiveStyles, ElementTypeMap } from "@/features/editor";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import { getElementStrategy } from "./elementStrategyMap";
 import { BuilderState } from "./elementCreateStrategy";
 import { SelectionStore } from "@/features/editor";
@@ -93,7 +93,7 @@ export class ElementFactory {
   }
 
   private generateId(): string {
-    return uuidv4();
+    return newEntityId();
   }
 
   private isContainerTemplate(

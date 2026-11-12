@@ -5,7 +5,7 @@ import {
   type CreatePageInput,
   type JsonRecord,
 } from "@/features/projects/schema/page";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import { deletePageInputSchema } from "@/features/projects/schema/page-deletion";
 import { getAuthToken } from "@/features/auth/lib/gettoken";
 import {
@@ -20,7 +20,7 @@ export const createPage = createServerFn({ method: "POST" })
     const created = await projectService.createPage(
       data.ProjectId,
       {
-        id: data.Id ?? uuidv4(),
+        id: data.Id ?? newEntityId(),
         name: data.Name,
         type: data.Type,
         styles: (data.Styles ?? {}) as JsonRecord,

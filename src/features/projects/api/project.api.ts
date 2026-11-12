@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { projectService } from "@/features/projects/services/project.service";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import type { Page } from "@/features/pages";
 import type { Project } from "@/features/projects";
 import {
@@ -35,7 +35,7 @@ export const createProject = createServerFn({ method: "POST" })
     const { token } = await getAuthToken();
     const created = await projectService.createProjectWithPage(
       {
-        id: data.id ?? uuidv4(),
+        id: data.id ?? newEntityId(),
         name: data.name,
         description: data.description ?? null,
       },

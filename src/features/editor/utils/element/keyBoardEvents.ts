@@ -1,6 +1,6 @@
 import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
 import { ContainerElement, EditorElement } from "@/types/global.type";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import { elementHelper } from "./elementhelper";
 import { ElementStore } from "@/features/editor";
 import { SelectionStore } from "@/features/editor";
@@ -55,14 +55,14 @@ export class ElementKeyboardActions {
     if (!copiedElement) return;
 
     const elementData = JSON.parse(copiedElement) as EditorElement;
-    let newElement = { ...elementData, id: uuidv4() };
+    let newElement = { ...elementData, id: newEntityId() };
 
     if (elementHelper.isContainerElement(newElement)) {
       const updateIdsRecursively = (
         element: ContainerElement,
       ): ContainerElement => {
         const updatedElements = element.elements.map((child) => {
-          const newChild = { ...child, id: uuidv4() };
+          const newChild = { ...child, id: newEntityId() };
           if (elementHelper.isContainerElement(newChild)) {
             return updateIdsRecursively(newChild);
           }

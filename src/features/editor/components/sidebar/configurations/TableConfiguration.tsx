@@ -49,7 +49,7 @@ import {
   ChevronUp,
   FileText,
 } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 
 const ALIGN_OPTIONS = [
   { value: "left", label: "Left", icon: <AlignLeft className="h-3 w-3" /> },
@@ -311,7 +311,7 @@ export default function TableConfiguration() {
 
   const addColumn = () => {
     const newColumn: TableColumnDefinition = {
-      id: uuidv4(),
+      id: newEntityId(),
       header: `Column ${columns.length + 1}`,
       accessor: undefined,
       width: undefined,

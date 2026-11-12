@@ -1,3 +1,4 @@
+import { newEntityId } from "@/lib/entity-id";
 import { useSelectedElement } from "@/features/editor/store/selectors/selection-selectors";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -278,7 +279,7 @@ export const WorkflowCanvas = ({
   const handleAddNode = (type: NodeType) => {
     const position = { x: Math.random() * 300, y: Math.random() * 300 };
     const node = createReactFlowNode(type, {
-      id: crypto.randomUUID(),
+      id: newEntityId(),
       position,
       label: `${type.charAt(0).toUpperCase()}${type.slice(1)}`,
     });
@@ -372,7 +373,7 @@ export const WorkflowCanvas = ({
       };
 
       const node = createReactFlowNode(nodeType, {
-        id: crypto.randomUUID(),
+        id: newEntityId(),
         position,
         label:
           elementName ||

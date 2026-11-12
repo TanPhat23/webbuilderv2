@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { v4 as uuidv4 } from "uuid";
+import { newEntityId } from "@/lib/entity-id";
 import {
   Connection,
   NodeType,
@@ -71,7 +71,7 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
   ...initialState,
 
   addNode: (type, position, data) => {
-    const nodeId = uuidv4();
+    const nodeId = newEntityId();
     const newNode: WorkflowNode = {
       id: nodeId,
       type,
@@ -131,7 +131,7 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
   },
 
   addConnection: (source: string, target: string, sourcePort?: string) => {
-    const connectionId = uuidv4();
+    const connectionId = newEntityId();
     const sourceNode = get().getNode(source);
     const targetNode = get().getNode(target);
 
