@@ -16,8 +16,6 @@ import {
   type MoveData,
 } from "@/features/editor";
 import { useMouseStore } from "@/features/editor";
-import * as Y from "yjs";
-import { IndexeddbPersistence } from "y-indexeddb";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
 import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
@@ -126,14 +124,6 @@ export default function CollaborationProvider({
     if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
       return;
 
-    const ydoc = new Y.Doc();
-    let persistence: IndexeddbPersistence | null = null;
-    try {
-      persistence = new IndexeddbPersistence(pageId, ydoc);
-    } catch {
-      persistence = null;
-    }
-
     let latestLocalElements: EditorElement[] | undefined;
     let disposed = false;
     let draftStore: ReturnType<typeof createEditorDraftStore> | undefined;
@@ -182,7 +172,6 @@ export default function CollaborationProvider({
       userId,
       userName: userId,
       getToken: () => latest.current.getToken(),
-      doc: ydoc,
       getElementState: () => ElementStore.getState(),
       onPendingChange: (pendingUpdates) => {
         setState((state) => ({ ...state, pendingUpdates }));
@@ -242,22 +231,6 @@ export default function CollaborationProvider({
         offerDraftRecovery();
       }
     });
-
-    const yElementsText = ydoc.getText("elementsJson");
-    const observer = (event: Y.YEvent<Y.Text>, transaction: Y.Transaction) => {
-      if (internalRef.current.isApplyingRemoteUpdate) return;
-      try {
-        const json = yElementsText.toString();
-        const elements = json ? JSON.parse(json) : [];
-        loadElements(elements, true);
-        if ((transaction as any)?.origin === "v2-sync") {
-          setState((s: WSCollabState) => ({ ...s, isSynced: true }));
-        }
-      } catch (err) {
-        console.warn("[YJS] Failed to parse remote elements", err);
-      }
-    };
-    yElementsText.observe(observer);
 
     // Subscribe to normalized presence changes from the provider
     const unsubPresence = provider.onPresenceChange((presences) => {
@@ -350,18 +323,11 @@ export default function CollaborationProvider({
       disposed = true;
       unsubPresence();
       toast.dismiss(draftToastId);
-      // Remove Y.Text observer
-      try {
-        yElementsText.unobserve(observer);
-      } catch {
-        // ignore
-      }
       ElementStore.getState().setCollaborativeCallback(null);
       // Also clear the yjs callback if it was set (backward compat)
       ElementStore.getState().setYjsUpdateCallback(null);
       provider.destroy();
       providerRef.current = null;
-      persistence?.destroy();
     };
   }, [
     pageId,

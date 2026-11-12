@@ -1,152 +1,55 @@
 import { EventEmitter } from "./EventEmitter";
-import * as Y from "yjs";
-import { Awareness } from "y-protocols/awareness";
 import type {
   UserInfo,
   MousePosition,
-  AwarenessState,
   PresenceBroadcastPayload,
   RemotePresence,
 } from "@/features/collaboration";
 
 /**
- * Bridges Yjs Awareness with the new WebSocket presence protocol.
+ * Tracks presence (cursor + selection) for the current page.
  *
- * This controller manages two concerns:
- *   1. **Local state** — Keeps the Yjs Awareness instance updated with the
- *      current user's cursor position and element selection so that the
- *      Provider can read it and send `presence` envelope messages.
- *   2. **Remote state** — Receives incoming `presence` broadcasts from the
- *      server and updates both the Awareness instance and an internal
- *      RemotePresence map so the UI can render remote cursors.
+ * Presence is ephemeral and travels as plain `presence` messages over the
+ * WebSocket, so no CRDT state is involved:
+ *   1. **Local state**: the current user's cursor and selection, read by the
+ *      Provider when it builds outgoing `presence` envelopes.
+ *   2. **Remote state**: incoming `presence` broadcasts and `sync` user lists,
+ *      exposed as a RemotePresence map and a normalized `change` event.
  *
- * The actual WebSocket sending is NOT done here — the Provider reads local
- * state from this controller and creates the envelope messages itself.
- *
- * @see WebSocket API Reference — Section 3: Presence (Cursor/Selection)
+ * The WebSocket sending itself is done by the Provider.
  */
 export class AwarenessController extends EventEmitter {
-  public readonly awareness: Awareness;
-
   /** Tracks remote users' presence keyed by userId */
   private readonly _remotePresences = new Map<string, RemotePresence>();
 
-  private lastSentSelectedElement: string | null = null;
-  private lastAwarenessChangeTime = 0;
-  private readonly awarenessThrottleMs = 100;
+  private localCursor: MousePosition | null = null;
+  private localSelectedElement: string | null = null;
 
   constructor(
-    doc: Y.Doc,
     private readonly userId: string,
     private readonly userName: string = userId,
   ) {
     super();
-    this.awareness = this.initializeAwareness(doc);
-    this.setupAwarenessState();
-    this.awareness.on("change", this.handleAwarenessChange);
-  }
-
-  // ==========================================================================
-  // Initialization
-  // ==========================================================================
-
-  /**
-   * Initializes the Awareness instance, reusing one already attached to
-   * the Y.Doc if present.
-   */
-  private initializeAwareness(doc: Y.Doc): Awareness {
-    const existing = (doc as any).awareness;
-    if (existing) return existing;
-
-    const newAwareness = new Awareness(doc);
-    (doc as any).awareness = newAwareness;
-    return newAwareness;
-  }
-
-  /**
-   * Sets the initial local state for the current user.
-   */
-  private setupAwarenessState(): void {
-    try {
-      this.awareness.setLocalState({
-        user: {
-          userId: this.userId,
-          userName: this.userName,
-          email: "",
-          color: this.generateUserColor(this.userId),
-        },
-        cursor: { x: 0, y: 0 },
-        selectedElement: null,
-      });
-      this.lastSentSelectedElement = null;
-    } catch (err) {
-      console.error(
-        "[AwarenessController] Failed to setup awareness state:",
-        err,
-      );
-    }
   }
 
   // ==========================================================================
   // Local State Updates (written by the Provider before sending `presence`)
   // ==========================================================================
 
-  /**
-   * Updates the local user's cursor position in the Awareness instance.
-   * The Provider reads this to build the `presence` envelope payload.
-   */
   public updateLocalCursor(position: MousePosition): void {
-    try {
-      this.awareness.setLocalStateField("cursor", position);
-    } catch (err) {
-      console.error(
-        "[AwarenessController] Failed to update local cursor:",
-        err,
-      );
-    }
+    this.localCursor = position;
   }
 
-  /**
-   * Updates the local user's selected element in the Awareness instance.
-   * Skips the update if the value hasn't changed.
-   */
   public updateLocalSelection(elementId: string | null): void {
-    try {
-      if (this.lastSentSelectedElement === elementId) return;
-
-      this.awareness.setLocalStateField("selectedElement", elementId);
-      this.lastSentSelectedElement = elementId;
-    } catch (err) {
-      console.error(
-        "[AwarenessController] Failed to update local selection:",
-        err,
-      );
-    }
+    this.localSelectedElement = elementId;
   }
 
-  /**
-   * Returns the current local cursor position from Awareness.
-   * Used by the Provider to build presence payloads.
-   */
   public getLocalCursor(): MousePosition | null {
-    try {
-      const state = this.awareness.getLocalState() as AwarenessState | null;
-      return state?.cursor ?? null;
-    } catch {
-      return null;
-    }
+    return this.localCursor;
   }
 
-  /**
-   * Returns the current local selected element from Awareness.
-   */
   public getLocalSelectedElement(): string | null {
-    try {
-      const state = this.awareness.getLocalState() as AwarenessState | null;
-      return state?.selectedElement ?? null;
-    } catch {
-      return null;
-    }
+    return this.localSelectedElement;
   }
 
   // ==========================================================================
@@ -228,34 +131,12 @@ export class AwarenessController extends EventEmitter {
   }
 
   // ==========================================================================
-  // Awareness Event Handling
+  // Change notification
   // ==========================================================================
 
   /**
-   * Returns all current Awareness states.
-   */
-  public getStates(): Map<number, AwarenessState> {
-    return this.awareness.getStates() as Map<number, AwarenessState>;
-  }
-
-  /**
-   * Internal handler for Yjs Awareness changes.
-   * Throttled to avoid excessive re-renders. Emits a normalized `change`
-   * event that the Provider and mouse store can consume.
-   */
-  private handleAwarenessChange = (): void => {
-    const now = Date.now();
-    if (now - this.lastAwarenessChangeTime < this.awarenessThrottleMs) {
-      return;
-    }
-    this.lastAwarenessChangeTime = now;
-
-    this.emitNormalizedChange();
-  };
-
-  /**
-   * Extracts normalized data from both the Awareness states and the
-   * internal remote presences map, then emits a `change` event.
+   * Extracts normalized data from the remote presences map and emits a
+   * `change` event.
    *
    * The emitted data shape is compatible with the mouse store setters:
    *   - `remoteUsers`   — Record<string, MousePosition>
@@ -267,7 +148,6 @@ export class AwarenessController extends EventEmitter {
     const selectedByUser: Record<string, string | null> = {};
     const users: Record<string, UserInfo> = {};
 
-    // 1. Pull data from the internal remote presences (sourced from WS broadcasts)
     for (const [uid, presence] of this._remotePresences) {
       remoteUsers[uid] = {
         x: presence.cursorX,
@@ -284,34 +164,6 @@ export class AwarenessController extends EventEmitter {
         email: "",
       };
     }
-
-    // 2. Also pull from Awareness states for any data not covered above
-    //    (e.g., local state, or if some peer is using Awareness directly)
-    const states = this.getStates();
-    states.forEach((state, clientId) => {
-      if (!state) return;
-      const clientIdStr = clientId.toString();
-
-      // Skip if we already have this user from WS presences
-      if (this._remotePresences.has(clientIdStr)) return;
-
-      if (state.user) {
-        const u = state.user;
-        users[clientIdStr] = {
-          userId: u.userId || clientIdStr,
-          userName: u.userName || u.name || "Unknown",
-          email: u.email || "",
-        };
-      }
-
-      if (state.cursor) {
-        remoteUsers[clientIdStr] = state.cursor;
-      }
-
-      if (state.selectedElement !== undefined) {
-        selectedByUser[clientIdStr] = state.selectedElement;
-      }
-    });
 
     this.emit("change", { remoteUsers, selectedByUser, users });
   }
@@ -342,31 +194,13 @@ export class AwarenessController extends EventEmitter {
   }
 
   // ==========================================================================
-  // Utility
-  // ==========================================================================
-
-  /**
-   * Generates a stable HSL color for a user based on their ID string.
-   */
-  private generateUserColor(userId: string): string {
-    const hash = Array.from(userId).reduce(
-      (acc, char) => acc + char.charCodeAt(0),
-      0,
-    );
-    const hue = hash % 360;
-    return `hsl(${hue}, 70%, 50%)`;
-  }
-
-  // ==========================================================================
   // Cleanup
   // ==========================================================================
 
   /**
-   * Cleans up all resources: removes Awareness listener, clears remote
-   * presences, and removes all event listeners.
+   * Clears remote presences and removes all event listeners.
    */
   public destroy(): void {
-    this.awareness.off("change", this.handleAwarenessChange);
     this._remotePresences.clear();
     this.removeAllListeners();
   }

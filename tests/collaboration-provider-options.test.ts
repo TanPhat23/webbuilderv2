@@ -16,11 +16,9 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
 test('CustomYjsProviderV2 accepts injected getElementState without element store dependency', async () => {
-  const Y = await import('yjs');
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   type EditorElement = import('../src/types/global.type').EditorElement;
 
-  const doc = new Y.Doc();
   const mockElement: EditorElement = {
     id: 'el-1',
     name: 'Test Element',
@@ -45,7 +43,6 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
     projectId: 'project-1',
     userId: 'user-1',
     getToken: async () => 'mock-token',
-    doc,
     getElementState: () => {
       getterCalled = true;
       return mockState;
@@ -68,24 +65,20 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
     assert.equal(getterCalled, true);
   } finally {
     provider.destroy();
-    doc.destroy();
   }
 });
 
 test('provider rejects a missing element state adapter before starting a connection', async () => {
-  const Y = await import('yjs');
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
-  const doc = new Y.Doc();
   let provider: InstanceType<typeof CustomYjsProviderV2> | undefined;
   try {
     assert.throws(() => {
       provider = new CustomYjsProviderV2({
         url: 'ws://localhost:1234', pageId: 'p', projectId: 'p', userId: 'u',
-        getToken: async () => null, doc,
+        getToken: async () => null,
       } as any);
     }, /getElementState/);
   } finally {
     provider?.destroy();
-    doc.destroy();
   }
 });

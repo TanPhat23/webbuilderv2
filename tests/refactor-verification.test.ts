@@ -60,13 +60,11 @@ test("NODE_META and NODE_TYPES_ORDER define expected canvas node structure and o
 });
 
 test("CustomYjsProviderV2 options and element state injection", async () => {
-  const Y = await import("yjs");
   const { CustomYjsProviderV2 } = await import(
     "../src/features/collaboration/lib/yjs/Provider"
   );
   type EditorElement = import("../src/types/global.type").EditorElement;
 
-  const doc = new Y.Doc();
   const mockElement: EditorElement = {
     id: "el-integration",
     name: "Verification Element",
@@ -91,7 +89,6 @@ test("CustomYjsProviderV2 options and element state injection", async () => {
     projectId: "project-1",
     userId: "user-1",
     getToken: async () => "mock-token",
-    doc,
     getElementState: () => {
       getterCalled = true;
       return mockState;
@@ -116,7 +113,6 @@ test("CustomYjsProviderV2 options and element state injection", async () => {
     providerWithState.destroy();
   }
 
-  doc.destroy();
 });
 
 test("getChoiceConfigurationDefaults handles undefined and custom configurations", async () => {

@@ -1,7 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
 import type { Page } from "@/features/pages";
-import type { Awareness } from "y-protocols/awareness";
-import type * as Y from "yjs";
 import type React from "react";
 import type {
   WSEnvelope,
@@ -158,8 +156,6 @@ export interface ConnectionOptions {
 }
 
 export interface CustomYjsProviderV2 {
-  doc: Y.Doc;
-  awareness: Awareness;
   connected: boolean;
   isSynced: boolean;
 
@@ -215,7 +211,6 @@ export interface YjsProviderV2Options {
   userId: string;
   userName?: string;
   getToken: () => Promise<string | null>;
-  doc: Y.Doc;
   getElementState: () => RemoteElementState;
   onPendingChange?: (count: number) => void;
   onSyncUsers?: (users: Record<string, UserInfo>) => void;
@@ -252,7 +247,6 @@ export interface UseYjsCollabV2Return {
   error: string | null;
   isSynced: boolean;
   pendingUpdates: number;
-  ydoc: Y.Doc | null;
   provider: CustomYjsProviderV2 | null;
   canvasRef: React.RefObject<HTMLElement | null>;
   createElement: (

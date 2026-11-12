@@ -1,4 +1,3 @@
-import * as Y from "yjs";
 import { ConnectionManager } from "./ConnectionManager";
 import { MessageDispatcher } from "./MessageDispatcher";
 import { MessageSender } from "./MessageSender";
@@ -19,12 +18,9 @@ import type {
   RemotePresence,
   CustomYjsProviderV2 as ICustomYjsProviderV2,
 } from "@/features/collaboration";
-import { Awareness } from "y-protocols/awareness";
 import type { EditorElement } from "@/types/global.type";
 
 export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
-  public readonly doc: Y.Doc;
-  public readonly awareness: Awareness;
   public connected = false;
   public isSynced = false;
 
@@ -52,7 +48,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     if (typeof options.getElementState !== "function") {
       throw new Error("getElementState is required for real-time collaboration");
     }
-    this.doc = options.doc;
     this.projectId = options.projectId;
     this.pageId = options.pageId;
     this.userId = options.userId;
@@ -75,11 +70,9 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       (envelope) => this.messageHandler.rejectLocal(envelope),
     );
     this.awarenessController = new AwarenessController(
-      this.doc,
       this.userId,
       this.userName,
     );
-    this.awareness = this.awarenessController.awareness;
 
     this.messageHandler = new ElementMessageHandler({
       getElementState: options.getElementState,
