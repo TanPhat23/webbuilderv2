@@ -28,8 +28,9 @@ export default function EditorLayout({
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Rehydrate after mount so the first client render matches the server.
+  // `persist` is absent when storage is unavailable (e.g. blocked cookies).
   useEffect(() => {
-    void useEditorChromeStore.persist.rehydrate();
+    void useEditorChromeStore.persist?.rehydrate();
   }, []);
 
   useChromeShortcuts({ onShowShortcuts: () => setShortcutsOpen(true) });

@@ -328,6 +328,8 @@ export default function CollaborationProvider({
       ElementStore.getState().setYjsUpdateCallback(null);
       provider.destroy();
       providerRef.current = null;
+      // The next page is not synced until its own sync:page arrives.
+      setState((s: WSCollabState) => ({ ...s, isSynced: false }));
     };
   }, [
     pageId,

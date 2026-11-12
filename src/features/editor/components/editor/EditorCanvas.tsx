@@ -7,6 +7,8 @@ import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCurs
 import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
 import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStarter";
 import { useElements } from "@/features/editor";
+import { useEditorContext } from "@/providers/editorprovider";
+import { useForwardChromeShortcuts } from "@/features/editor/components/layout/useForwardChromeShortcuts";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -38,9 +40,16 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   iframeRef,
 }) => {
   const collab = useCollaborationOptional();
+  const { editor } = useEditorContext();
   const elements = useElements();
-  const isEmpty = !isLoading && elements.length === 0;
-  const canInsert = !isReadOnly && !isLocked;
+  // Elements arrive over the collab socket after the REST queries finish, so
+  // the page is only known to be empty once it has synced.
+  const isSynced = collab ? collab.isSynced : true;
+  const isEmpty = !isLoading && isSynced && elements.length === 0;
+  const canInsert =
+    !isReadOnly && !isLocked && editor.permissions.canCreateElements;
+
+  useForwardChromeShortcuts(iframeRef);
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
