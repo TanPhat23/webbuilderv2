@@ -34,9 +34,9 @@ export default function CollaborationButton({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="flex items-center gap-2 hover:text-foreground bg-blue-500 hover:bg-blue-600 text-white"
+          className="h-7 px-2.5 text-xs font-medium"
         >
           Share
         </Button>

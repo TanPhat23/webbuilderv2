@@ -1,12 +1,16 @@
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronsUpDown } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCurrentProject, useCurrentPage } from "@/features/projects/hooks/useProjects";
+import {
+  useCurrentProject,
+  useCurrentPage,
+} from "@/features/projects/hooks/useProjects";
 
 interface ProjectBreadcrumbProps {
+  /** Opens page navigation. */
   onNavigate?: () => void;
 }
 
@@ -16,41 +20,33 @@ export default function ProjectBreadcrumb({ onNavigate }: ProjectBreadcrumbProps
 
   if (!project) return null;
 
+  const pageName = currentPage ? currentPage.Name || "Home" : "Select page";
+
   return (
-    <div className="flex items-center gap-1.5 min-w-0">
+    <div className="flex min-w-0 items-center gap-1.5">
       <span
-        className="text-sm font-semibold text-foreground truncate max-w-[130px] sm:max-w-[180px]"
+        className="max-w-[130px] truncate text-sm font-semibold text-foreground sm:max-w-[180px]"
         title={project.name}
       >
         {project.name}
       </span>
-      {currentPage && (
-        <>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0" />
-          <span
-            className="text-sm text-muted-foreground truncate max-w-[100px] sm:max-w-[140px]"
-            title={currentPage.Name || "Home"}
+      <span className="text-muted-foreground/50">/</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label={`Current page: ${pageName}. Switch page`}
+            className="inline-flex h-7 min-w-0 items-center gap-1 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            {currentPage.Name || "Home"}
-          </span>
-        </>
-      )}
-      {onNavigate && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={onNavigate}
-              aria-label="Open page navigation (Cmd+K)"
-              className="inline-flex items-center justify-center h-7 w-7 text-muted-foreground rounded-md hover:bg-muted hover:text-foreground transition-all duration-150 shrink-0"
-            >
-              <Search className="w-3.5 h-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            Pages <kbd className="font-mono opacity-60 text-[10px] ml-1">⌘K</kbd>
-          </TooltipContent>
-        </Tooltip>
-      )}
+            <span className="max-w-[140px] truncate">{pageName}</span>
+            <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-60" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          Switch page <kbd className="ml-1 font-mono text-[10px] opacity-60">⌘K</kbd>
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

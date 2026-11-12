@@ -6,7 +6,8 @@ import { useEditorContext } from "@/providers/editorprovider";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { ElementCommentsPanel } from "../comments/ElementCommentsPanel";
 import Inspector from "../sidebar/Inspector";
-import EditorHeader from "../editor/EditorHeader";
+import ShortcutsDialog from "../editor/ShortcutsDialog";
+import EditorTopBar from "../topbar/EditorTopBar";
 import EditorRail from "./EditorRail";
 import EditorPanel from "./EditorPanel";
 import { useChromeShortcuts } from "./useChromeShortcuts";
@@ -20,11 +21,11 @@ export default function EditorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { editingMode, projectId, editor } = useEditorContext();
+  const { editingMode, projectId } = useEditorContext();
   const panelOpen = useEditorChromeStore((s) => s.panelOpen);
   const inspectorOpen = useEditorChromeStore((s) => s.inspectorOpen);
   const toggleInspector = useEditorChromeStore((s) => s.toggleInspector);
-  const [, setShortcutsOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   // Rehydrate after mount so the first client render matches the server.
   useEffect(() => {
@@ -38,10 +39,9 @@ export default function EditorLayout({
   return (
     <TooltipProvider>
       <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
-        <EditorHeader
-          currentView={editor.currentView}
-          setCurrentView={editor.setCurrentView}
+        <EditorTopBar
           projectId={projectId ?? ""}
+          onShowShortcuts={() => setShortcutsOpen(true)}
         />
         <div className="flex min-h-0 flex-1">
           {showChrome && <EditorRail />}
@@ -64,6 +64,7 @@ export default function EditorLayout({
           <ElementCommentsPanel />
         </div>
       </div>
+      <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </TooltipProvider>
   );
 }
