@@ -16,7 +16,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useAiChat } from "@/providers/aiprovider";
-import { useSidebar } from "@/components/ui/sidebar";
 import { useSelectedElementWithSetter } from "@/features/editor";
 
 interface UseAutoResizeTextareaProps {
@@ -127,7 +126,11 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 Textarea.displayName = "Textarea";
 
-export default function AnimatedAIChat() {
+export default function AnimatedAIChat({
+  onClose,
+}: {
+  onClose?: () => void;
+} = {}) {
   const [value, setValue] = useState("");
   const [attachments, setAttachments] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
@@ -141,7 +144,6 @@ export default function AnimatedAIChat() {
     maxHeight: 200,
   });
   const { closeChat } = useAiChat();
-  const { open: sidebarOpen, setOpen } = useSidebar();
   const [inputFocused, setInputFocused] = useState(false);
   const commandPaletteRef = useRef<HTMLDivElement>(null);
   const { selectedElement, setSelectedElement } =
@@ -283,19 +285,20 @@ export default function AnimatedAIChat() {
   };
 
   return (
-    <div className="flex w-1/3 overflow-x-hidden">
+    <div className="relative flex h-full w-full overflow-x-hidden">
       <Button
-        className="relative   z-50 rounded-full bg-primary/10  hover transition-colors"
+        variant="ghost"
+        size="icon"
+        aria-label="Close AI assistant"
+        className="absolute right-2 top-2 z-50 h-7 w-7"
         onClick={() => {
           closeChat();
-          if (!sidebarOpen) {
-            setOpen(true);
-          }
+          onClose?.();
         }}
       >
-        x
+        <XIcon className="h-4 w-4" />
       </Button>
-      <div className="text-foreground relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-transparent p-6">
+      <div className="text-foreground relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-transparent p-6">
         <div className="absolute inset-0 h-full w-full overflow-hidden">
           <div className="bg-primary/10 absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter" />
           <div className="bg-secondary/10 absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter delay-700" />

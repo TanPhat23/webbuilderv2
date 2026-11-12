@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import EditorHeader from "@/features/editor/components/editor/EditorHeader";
 import PreviewContainer from "@/features/editor/components/editor/PreviewContainer";
 import EditorCanvas from "@/features/editor/components/editor/EditorCanvas";
 import CodeSplit from "@/features/editor/components/editor/CodeSplit";
@@ -54,9 +53,9 @@ const PreviewChild = React.memo(function PreviewChild({
 
 PreviewChild.displayName = "PreviewChild";
 
-export default function Editor({ id }: EditorProps) {
+export default function Editor(_props: EditorProps) {
   const { editor, editingMode } = useEditorContext();
-  const { currentView, setCurrentView, isLoading } = editor;
+  const { currentView, isLoading } = editor;
   const isCodeMode = editingMode === "code";
 
   const previewContent = useMemo(
@@ -70,11 +69,6 @@ export default function Editor({ id }: EditorProps) {
 
   return (
     <div className="flex-1 w-full h-full flex flex-col bg-background text-foreground relative">
-      <EditorHeader
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        projectId={id}
-      />
       <div className="flex-1 min-h-0 overflow-hidden">
         {isCodeMode ? <CodeSplit canvas={previewContent} /> : previewContent}
       </div>
