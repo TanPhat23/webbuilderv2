@@ -88,8 +88,7 @@ export default function EditorProvider({
             console.error("[Collaboration] Synchronization failed:", error);
             toast.error("Page synchronization failed", {
               id: "collab-offline",
-              description:
-                "The collaboration server could not load or save this page. Local edits may not be saved until synchronization is restored.",
+              description: `${error.message} Local edits may not be saved until synchronization is restored.`,
               duration: 5000,
             });
           },

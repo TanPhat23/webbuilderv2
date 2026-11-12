@@ -1,4 +1,7 @@
 import getToken from "./token";
+import { networkError, parseErrorResponse } from "./api-error";
+
+const REQUEST_TIMEOUT_MS = 15_000;
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -14,6 +17,36 @@ class ApiClient {
     return ApiClient.instance;
   }
 
+  private async request(
+    method: HttpMethod,
+    url: string,
+    data: unknown,
+    options: RequestInit,
+    token: string | undefined,
+  ): Promise<Response> {
+    // Honour a caller-supplied signal as well as our own timeout.
+    const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+
+    try {
+      return await fetch(url, {
+        ...options,
+        method,
+        signal,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers ?? {}),
+        },
+        body: data !== undefined ? JSON.stringify(data) : undefined,
+      });
+    } catch (cause) {
+      // A caller-initiated abort is not a failure to report.
+      if (options.signal?.aborted) throw cause;
+      throw networkError(cause, { method, url });
+    }
+  }
+
   private async execute<TResponse>(
     method: HttpMethod,
     url: string,
@@ -21,26 +54,27 @@ class ApiClient {
     options: RequestInit = {},
     token?: string,
   ): Promise<TResponse> {
-    const resolvedToken = token ?? await getToken();
+    let resolvedToken = token ?? (await getToken());
+    let response = await this.request(method, url, data, options, resolvedToken);
 
-    const response = await fetch(url, {
-      ...options,
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
-        ...(options.headers ?? {}),
-      },
-      body: data !== undefined ? JSON.stringify(data) : undefined,
-    });
+    // A token can expire between being fetched and being checked. Fetch a
+    // fresh one and retry once, but only when we own the token.
+    if (response.status === 401 && token === undefined) {
+      resolvedToken = await getToken();
+      response = await this.request(method, url, data, options, resolvedToken);
+    }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[API] ${method} ${url} failed:`, {
-        status: response.status,
-        error: errorText,
+      const error = parseErrorResponse(response.status, await response.text().catch(() => ""), {
+        method,
+        url,
       });
-      throw new Error(`${method} ${url} failed (${response.status})`);
+      console.error(`[API] ${method} ${url} failed:`, {
+        status: error.status,
+        message: error.message,
+        requestId: error.requestId,
+      });
+      throw error;
     }
 
     if (response.status === 204) return undefined as unknown as TResponse;

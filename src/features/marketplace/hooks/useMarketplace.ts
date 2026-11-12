@@ -10,6 +10,7 @@ import {
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showSuccessToast } from "@/utils/errors/errorToast";
 import { onMutationError } from "@/hooks/utils/mutationUtils";
+import { isApiError } from "@/services/api-error";
 
 export const marketplaceKeys = {
   all: ["marketplace"] as const,
@@ -49,7 +50,7 @@ export function useMarketplaceItem(id: string, enabled: boolean = true) {
         return await marketplaceService.getMarketplaceItemByID(id);
       } catch (error) {
         // Don't log 404 errors for deleted items
-        if (error instanceof Error && !error.message.includes("404")) {
+        if (!(isApiError(error) && error.status === 404)) {
           // eslint-disable-next-line no-console
           console.error("Failed to fetch marketplace item:", error);
         }

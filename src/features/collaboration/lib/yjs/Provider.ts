@@ -3,6 +3,7 @@ import { MessageDispatcher } from "./MessageDispatcher";
 import { MessageSender } from "./MessageSender";
 import { AwarenessController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
+import { handleServerError } from "./connectionErrors";
 import { ElementOperations } from "./ElementOperations";
 import type {
   ElementOperationResult,
@@ -43,6 +44,8 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private readonly statusListeners = new Set<StatusListener>();
   private readonly syncedListeners = new Set<SyncedListener>();
   private lastStatus: string | null = null;
+  private overflowReported = false;
+  private lastRejoinAt = 0;
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: YjsProviderV2Options) {
@@ -63,7 +66,16 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       pageId: options.pageId,
       getToken: options.getToken,
     });
-    this.dispatcher = new MessageDispatcher();
+    this.dispatcher = new MessageDispatcher(() => {
+      if (this.overflowReported) return;
+      this.overflowReported = true;
+      this.onError?.({
+        type: "error",
+        code: "PROCESS_ERROR",
+        message:
+          "Too many offline changes are waiting to sync. The oldest were dropped; reload the page after reconnecting.",
+      });
+    });
     this.sender = new MessageSender(
       this.connection,
       this.dispatcher,
@@ -84,11 +96,18 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         this.connection.send(JSON.stringify(envelope));
       },
       onError: (payload) => {
+        const handling = handleServerError(payload.code, payload.message);
+        if (handling.rejoin && Date.now() - this.lastRejoinAt > 5_000) {
+          // The server lost our join (e.g. it restarted); join again quietly,
+          // but not in a loop if it keeps refusing.
+          this.lastRejoinAt = Date.now();
+          if (this.connection.rejoin()) return;
+        }
         // The transport can be open while the server failed to load the page.
-        if (!this.isSynced) this.emitStatus("error");
+        if (!this.isSynced || handling.blocking) this.emitStatus("error");
         this.onError?.({
           type: "error",
-          message: payload.message,
+          message: handling.message,
           code: payload.code,
           requestId: payload.requestId,
         });
@@ -138,6 +157,13 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.emitStatus("disconnected");
     });
 
+    this.connection.on("fatal", (info) => {
+      this.messageHandler.suspend();
+      this.connected = false;
+      this.isSynced = false;
+      this.emitStatus("error");
+      this.onError?.({ type: "error", message: info.message, code: "PROCESS_ERROR" });
+    });
     this.connection.on("error", this.handleConnectionError);
     this.connection.on("message", this.handleMessage);
 

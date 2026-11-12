@@ -1,7 +1,8 @@
 import { toast } from "sonner";
+import { isApiError } from "@/services/api-error";
 
 /** Default duration (ms) for error toasts. */
-const DEFAULT_ERROR_DURATION = 2000;
+const DEFAULT_ERROR_DURATION = 4000;
 
 /** Default duration (ms) for success toasts. */
 const DEFAULT_SUCCESS_DURATION = 1500;
@@ -26,7 +27,15 @@ export function showErrorToast(
   options: { duration?: number } = {},
 ): void {
   const message = typeof error === "string" ? error : error.message;
-  toast.error(message, { duration: options.duration ?? DEFAULT_ERROR_DURATION });
+  // Server faults carry a request id; surfacing it lets support find the log line.
+  const reference =
+    isApiError(error) && error.kind === "server" && error.requestId
+      ? `Reference: ${error.requestId}`
+      : undefined;
+  toast.error(message, {
+    description: reference,
+    duration: options.duration ?? DEFAULT_ERROR_DURATION,
+  });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { notificationsServer } from "@/features/notifications/server/notifications.server";
+import { isApiError } from "@/services/api-error";
 
 /** The caller's Clerk session token, or null when signed out. */
 async function sessionToken(): Promise<string | null> {
@@ -12,9 +13,8 @@ async function sessionToken(): Promise<string | null> {
 const unauthorized = () =>
   Response.json({ error: "Unauthorized" }, { status: 401 });
 
-/** apiClient errors read "<METHOD> <url> failed (<status>)". */
 function isNotFound(error: unknown): boolean {
-  return error instanceof Error && error.message.endsWith("(404)");
+  return isApiError(error) && error.status === 404;
 }
 
 export const Route = createFileRoute("/api/notifications/")({

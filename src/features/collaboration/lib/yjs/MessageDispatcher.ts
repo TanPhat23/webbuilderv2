@@ -27,7 +27,7 @@ export class MessageDispatcher extends EventEmitter {
     lastRefill: Date.now(),
   };
 
-  constructor() {
+  constructor(private readonly onOverflow?: (dropped: number) => void) {
     super();
   }
 
@@ -205,6 +205,7 @@ export class MessageDispatcher extends EventEmitter {
     // Keep queue size manageable
     if (this.messageQueue.length > 1000) {
       this.messageQueue.shift();
+      this.onOverflow?.(1);
     }
   }
 

@@ -1,6 +1,7 @@
 import { EventEmitter } from "./EventEmitter";
 import type { ConnectionOptions } from "@/features/collaboration";
 import { URLBuilder } from "@/utils/urlbuilder";
+import { classifyClose } from "./connectionErrors";
 
 /**
  * Manages the WebSocket connection lifecycle for the Yjs-backed provider.
@@ -15,6 +16,8 @@ import { URLBuilder } from "@/utils/urlbuilder";
 type ConnectionEvents = {
   open: [];
   close: [];
+  /** The server refused the connection in a way retrying will not fix. */
+  fatal: [info: { code: number; reason: string; message: string }];
   message: [data: unknown];
   error: [error: Error];
 };
@@ -168,7 +171,7 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
       this.emit("message", event.data);
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
       const wasConnected = this._connected;
       this._connected = false;
 
@@ -176,9 +179,20 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
         this.emit("close");
       }
 
-      if (!this.isDestroyed) {
-        this.scheduleReconnect();
+      if (this.isDestroyed) return;
+
+      const verdict = classifyClose(event?.code ?? 1006);
+      if (verdict.fatal) {
+        // Auth and permission failures do not fix themselves; stop retrying.
+        this.isDestroyed = true;
+        this.emit("fatal", {
+          code: event?.code ?? 1006,
+          reason: verdict.reason,
+          message: verdict.message,
+        });
+        return;
       }
+      this.scheduleReconnect();
     };
 
     this.ws.onerror = () => {
@@ -192,7 +206,12 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
    *
    * @see WebSocket API Reference — Section 3: Join Page
    */
-  private sendJoinMessage(): void {
+  /** Ask the server to (re)join this page, e.g. after a JOIN_REQUIRED error. */
+  public rejoin(): boolean {
+    return this.sendJoinMessage();
+  }
+
+  private sendJoinMessage(): boolean {
     const joinEnvelope = JSON.stringify({
       type: "join",
       projectId: this.options.projectId,
@@ -203,7 +222,7 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
       },
     });
 
-    this.send(joinEnvelope);
+    return this.send(joinEnvelope);
   }
 
   // Internal — Reconnection with exponential backoff + jitter
