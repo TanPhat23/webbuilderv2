@@ -24,6 +24,20 @@ export interface ApiPage {
   deletedAt?: string | null;
 }
 
+/** Map the Go API's camelCase page to the app's `Page` shape. */
+export function toPage(page: ApiPage): Page {
+  return {
+    Id: page.id,
+    Name: page.name,
+    Type: page.type,
+    Styles: page.styles ?? null,
+    ProjectId: page.projectId,
+    CreatedAt: new Date(page.createdAt),
+    UpdatedAt: new Date(page.updatedAt),
+    DeletedAt: page.deletedAt ? new Date(page.deletedAt) : null,
+  };
+}
+
 const PROJECT_FONTS = ["Inter", "Lora", "JetBrains Mono"] as const;
 
 export const projectService = {
@@ -45,7 +59,9 @@ export const projectService = {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id))
       .build();
-    return apiClient.get<Page[]>(url, undefined, token);
+    return apiClient
+      .get<ApiPage[]>(url, undefined, token)
+      .then((pages) => pages.map(toPage));
   },
 
   getProjectPublic: (id: string): Promise<Project> => {

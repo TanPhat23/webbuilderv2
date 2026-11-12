@@ -10,7 +10,7 @@ import { deletePageInputSchema } from "@/features/projects/schema/page-deletion"
 import { getAuthToken } from "@/features/auth/lib/gettoken";
 import {
   projectService,
-  type ApiPage,
+  toPage,
 } from "@/features/projects/services/project.service";
 
 export const createPage = createServerFn({ method: "POST" })
@@ -29,20 +29,6 @@ export const createPage = createServerFn({ method: "POST" })
     );
     return toPage(created);
   });
-
-/** Map the Go API's camelCase page to the app's `Page` shape. */
-function toPage(page: ApiPage): Page {
-  return {
-    Id: page.id,
-    Name: page.name,
-    Type: page.type,
-    Styles: page.styles ?? null,
-    ProjectId: page.projectId,
-    CreatedAt: new Date(page.createdAt),
-    UpdatedAt: new Date(page.updatedAt),
-    DeletedAt: page.deletedAt ? new Date(page.deletedAt) : null,
-  };
-}
 
 export const deleteProjectPage = createServerFn({ method: "POST" })
   .inputValidator((data: { projectId: string; pageId: string }) =>

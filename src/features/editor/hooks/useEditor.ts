@@ -85,12 +85,10 @@ export const useEditor = (
         }
       }
 
-      const defaultPage = pagesList.find((p) => p.Name === "");
-      if (defaultPage) {
-        navigate({ to: `/editor/${id}?page=${defaultPage.Id}` });
-      } else if (!pageId) {
-        navigate({ to: `/editor/${id}` });
-      }
+      // The collaboration socket only connects once `?page=` is set, so always
+      // resolve a page: the unnamed default page, else the first one.
+      const defaultPage = pagesList.find((p) => p.Name === "") ?? pagesList[0];
+      navigate({ to: `/editor/${id}?page=${defaultPage.Id}`, replace: true });
     },
     [pageId, navigate, id],
   );

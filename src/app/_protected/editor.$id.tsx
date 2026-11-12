@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, notFound, Outlet, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { getUserProjectAccess, requirePermission, Permission } from "@/features/auth";
@@ -19,8 +19,16 @@ const checkEditorAccess = createServerFn({ method: "GET" })
     return { userId };
   });
 
+/**
+ * Project ids are plain tokens (letters, digits, "-" and "_"). Anything else,
+ * such as a browser extension asking for `installHook.js.map` relative to this
+ * URL, is not a project and must not reach the API.
+ */
+const PROJECT_ID = /^[A-Za-z0-9_-]+$/;
+
 export const Route = createFileRoute("/_protected/editor/$id")({
   beforeLoad: async ({ params }) => {
+    if (!PROJECT_ID.test(params.id)) throw notFound();
     return await checkEditorAccess({ data: params.id });
   },
   component: EditorLayout,
