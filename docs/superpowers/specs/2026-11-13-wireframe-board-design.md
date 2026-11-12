@@ -151,7 +151,8 @@ contents):
   - `groupByPage(elements)` returns a `Map<pageId, EditorElement[]>` of
     top-level elements. It accepts both nested trees and flat lists with
     `parentId`;
-  - `templateCategories(customComps)`.
+  - `cloneWithNewIds` and `dropTarget`. The template groups are a static
+    `sectionTemplateGroups` export in `lib/customcomponents/customComponents.ts`.
 - `Sketch.tsx`: renders a `SketchNode`.
 - `useBoardPages.ts`: combines `useProjectPages`, the live elements for the
   open page, and a react-query fetch of all project elements for the others.
@@ -199,7 +200,8 @@ Deleted: `editor/WireframeView.tsx`, `wireframe/WireframeManager.tsx`,
 - The depth limit (a "…" node at depth 4) and the child limit ("+N").
 - `groupByPage` with a nested tree, with a flat list using `parentId`, and
   with elements spread over two pages.
-- `templateCategories`: grouping and the exclusion of site templates.
+- `cloneWithNewIds` (fresh ids, re-parented children) and `dropTarget` (gap to
+  move, no-ops).
 
 Manual browser check:
 
