@@ -42,6 +42,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
 
   private readonly statusListeners = new Set<StatusListener>();
   private readonly syncedListeners = new Set<SyncedListener>();
+  private lastStatus: string | null = null;
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: YjsProviderV2Options) {
@@ -82,16 +83,20 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         const envelope = this.dispatcher.createEnvelope("sync:page", this.projectId, this.pageId, {}, { userId: this.userId });
         this.connection.send(JSON.stringify(envelope));
       },
-      onError: (payload) =>
+      onError: (payload) => {
+        // The transport can be open while the server failed to load the page.
+        if (!this.isSynced) this.emitStatus("error");
         this.onError?.({
           type: "error",
           message: payload.message,
           code: payload.code,
           requestId: payload.requestId,
-        }),
+        });
+      },
       onPresence: this.onPresence,
       onSynced: (synced) => {
         this.isSynced = synced;
+        if (synced && this.connected) this.emitStatus("connected");
         this.emitSynced(synced);
       },
       handleSyncUsers: (users) =>
@@ -325,6 +330,8 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   }
 
   private emitStatus(status: string): void {
+    if (status === this.lastStatus) return;
+    this.lastStatus = status;
     this.statusListeners.forEach((l) => l({ status }));
   }
 

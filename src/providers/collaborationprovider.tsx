@@ -217,7 +217,7 @@ export default function CollaborationProvider({
       setState((s: WSCollabState) => ({
         ...s,
         roomState,
-        error: status === "error" ? "Connection failed" : s.error,
+        error: status === "error" ? "Connection failed" : status === "connected" ? null : s.error,
         pendingUpdates: providerRef.current?.pendingUpdates ?? s.pendingUpdates,
       }));
       if (status === "connected") latest.current.onReconnect?.();

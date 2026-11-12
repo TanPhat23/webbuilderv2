@@ -84,11 +84,12 @@ export default function EditorProvider({
               duration: 3000,
             });
           },
-          onError: () => {
-            toast.info("Working in offline mode", {
+          onError: (error) => {
+            console.error("[Collaboration] Synchronization failed:", error);
+            toast.error("Page synchronization failed", {
               id: "collab-offline",
               description:
-                "Collaboration server unavailable. Edits may not be saved until the connection is restored.",
+                "The collaboration server could not load or save this page. Local edits may not be saved until synchronization is restored.",
               duration: 5000,
             });
           },

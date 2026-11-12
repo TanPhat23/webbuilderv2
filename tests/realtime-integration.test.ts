@@ -327,3 +327,34 @@ test('a missing sequence requests a snapshot and then applies buffered changes',
     assert.equal(state.elements[0].content, 'third');
   } finally { provider.destroy(); globalThis.WebSocket = originalSocket; }
 });
+
+test('a rejected page join reports an error state and recovers on a valid snapshot', async () => {
+  const originalSocket = globalThis.WebSocket;
+  globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
+  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
+  const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
+  const errors: string[] = [];
+  const statuses: string[] = [];
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state, onError: error => errors.push(("message" in error ? error.message : error.payload?.message) ?? "Unknown error") });
+  provider.on('status', ({status}: {status: string}) => statuses.push(status));
+  try {
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const socket = FakeWebSocket.instances.at(-1)!;
+    socket.open();
+    socket.receive({ type: 'error', payload: { code: 'PROCESS_ERROR', message: 'Page data could not be loaded' } });
+    assert.equal(provider.isSynced, false);
+    assert.deepEqual(errors, ['Page data could not be loaded']);
+    assert.equal(statuses.at(-1), 'error', 'an open socket with a failed join must not be reported as healthy');
+    socket.receive({ type: 'sync:page', payload: { elements: [], users: [], seq: 0 } });
+    assert.equal(provider.isSynced, true);
+    assert.equal(statuses.at(-1), 'connected');
+    const item = {id:'created-after-recovery',type:'Text',pageId:'page',content:''} as const;
+    state.elements = [item];
+    const pending = provider.createElement(item);
+    const sent = JSON.parse(socket.sent.at(-1)!);
+    assert.equal(sent.type, 'element:create');
+    socket.receive({ type: 'element:create', seq: 1, clientOpId: sent.clientOpId, requestId: sent.requestId, payload: {element:item} });
+    await pending;
+    assert.equal(provider.pendingUpdates,0);
+  } finally { provider.destroy(); globalThis.WebSocket = originalSocket; }
+});

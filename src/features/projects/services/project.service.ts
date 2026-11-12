@@ -122,7 +122,16 @@ export const projectService = {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.CREATE)
       .build();
-    return apiClient.post<Project>(url, project, undefined, token);
+    return apiClient.post<Project>(
+      url,
+      {
+        ...project,
+        // Empty optional text is absent data; the deployed API accepts null.
+        description: project.description?.trim() ? project.description : null,
+      },
+      undefined,
+      token,
+    );
   },
 
   /** The caller's role on a project; rejects with 404 when they have none. */
