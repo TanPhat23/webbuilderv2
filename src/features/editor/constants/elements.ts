@@ -1,5 +1,6 @@
 import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
 import type { ElementTypeMap } from "@/features/editor/interfaces/elements.interface";
+import type { IconName } from "@/features/editor/utils/icons/iconMap";
 
 export const CONTAINER_ELEMENT_TYPES = [
   "Frame",
@@ -52,7 +53,7 @@ type AllElementTypesListed = AssertAllTypesListed<
   Exclude<ElementType, (typeof ALL_ELEMENT_TYPES)[number]> extends never ? true : false
 >;
 
-const ELEMENT_METADATA: Record<ElementType, { icon: string; label: string }> = {
+const ELEMENT_METADATA: Record<ElementType, { icon: IconName; label: string }> = {
   Text: { icon: "Type", label: "Text" },
   Span: { icon: "TextCursorInput", label: "Span" },
   Heading: { icon: "Heading", label: "Heading" },
@@ -72,11 +73,11 @@ const ELEMENT_METADATA: Record<ElementType, { icon: string; label: string }> = {
   Checkbox: { icon: "CheckSquare", label: "Checkbox" },
   Radio: { icon: "Circle", label: "Radio" },
   Select: { icon: "TextSelection", label: "Select" },
-  Form: { icon: "FormInput", label: "Form" },
+  Form: { icon: "ClipboardList", label: "Form" },
   Progress: { icon: "BarChart3", label: "Progress" },
   Table: { icon: "Table", label: "Table" },
-  Frame: { icon: "CardSim", label: "Frame" },
-  Section: { icon: "CardSim", label: "Section" },
+  Frame: { icon: "Frame", label: "Frame" },
+  Section: { icon: "RectangleHorizontal", label: "Section" },
   Nav: { icon: "Navigation", label: "Nav" },
   Header: { icon: "PanelTop", label: "Header" },
   Footer: { icon: "PanelBottom", label: "Footer" },
@@ -84,14 +85,14 @@ const ELEMENT_METADATA: Record<ElementType, { icon: string; label: string }> = {
   Aside: { icon: "PanelRight", label: "Aside" },
   Carousel: { icon: "SlidersHorizontal", label: "Carousel" },
   List: { icon: "List", label: "List" },
-  CMSContentList: { icon: "List", label: "CMS List" },
+  CMSContentList: { icon: "ListTree", label: "CMS List" },
   CMSContentItem: { icon: "Database", label: "CMS Item" },
-  CMSContentGrid: { icon: "Database", label: "CMS Grid" },
+  CMSContentGrid: { icon: "LayoutGrid", label: "CMS Grid" },
 };
 
 interface ElementHolder {
   readonly type: ElementType;
-  readonly icon: string;
+  readonly icon: IconName;
   readonly label: string;
 }
 

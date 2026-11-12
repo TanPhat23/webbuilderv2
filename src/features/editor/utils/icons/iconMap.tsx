@@ -1,48 +1,88 @@
 import {
-  Type,
-  MousePointerClick,
-  CardSim,
-  Image,
-  FormInput,
-  TextSelection,
-  Link,
-  SlidersHorizontal,
-  List,
-  Database,
+  AlignLeft,
+  BarChart3,
+  CheckSquare,
+  Circle,
+  ClipboardList,
+  Code,
   Component,
+  Database,
+  FileText,
+  FormInput,
+  Frame,
+  Globe,
+  Heading,
+  Image,
+  LayoutGrid,
+  Link,
+  List,
+  ListTree,
+  Minus,
+  MousePointerClick,
+  Navigation,
+  PanelBottom,
+  PanelRight,
+  PanelTop,
+  Quote,
+  RectangleHorizontal,
+  SlidersHorizontal,
+  Smile,
+  Table,
+  Tag,
+  TextCursorInput,
+  TextSelection,
+  Type,
+  Video,
+  Volume2,
 } from "lucide-react";
 import React from "react";
 
-export type IconName =
-  | "Type"
-  | "MousePointerClick"
-  | "CardSim"
-  | "Image"
-  | "FormInput"
-  | "TextSelection"
-  | "Link"
-  | "SlidersHorizontal"
-  | "List"
-  | "Database";
-
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-const iconMap: Record<IconName, IconComponent> = {
-  Type,
-  MousePointerClick,
-  CardSim,
-  Image,
-  FormInput,
-  TextSelection,
-  Link,
-  SlidersHorizontal,
-  List,
+/**
+ * Icons for the element picker. `ELEMENT_METADATA` in constants/elements.ts
+ * is typed against `IconName`, so an unmapped icon is a compile error.
+ */
+const iconMap = {
+  AlignLeft,
+  BarChart3,
+  CheckSquare,
+  Circle,
+  ClipboardList,
+  Code,
   Database,
-};
+  FileText,
+  FormInput,
+  Frame,
+  Globe,
+  Heading,
+  Image,
+  LayoutGrid,
+  Link,
+  List,
+  ListTree,
+  Minus,
+  MousePointerClick,
+  Navigation,
+  PanelBottom,
+  PanelRight,
+  PanelTop,
+  Quote,
+  RectangleHorizontal,
+  SlidersHorizontal,
+  Smile,
+  Table,
+  Tag,
+  TextCursorInput,
+  TextSelection,
+  Type,
+  Video,
+  Volume2,
+} satisfies Record<string, IconComponent>;
 
-export function getIconComponent(
-  iconName: IconName,
-): IconComponent | undefined {
+export type IconName = keyof typeof iconMap;
+
+export function getIconComponent(iconName: IconName): IconComponent | undefined {
   return iconMap[iconName];
 }
 
@@ -53,7 +93,7 @@ export function IconRenderer({
   name: IconName;
   className?: string;
 }): React.ReactNode {
-  const IconComponent = iconMap[name];
+  const IconComponent: IconComponent | undefined = iconMap[name];
   return IconComponent ? (
     <IconComponent className={className} />
   ) : (

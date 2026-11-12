@@ -5,6 +5,8 @@ import { useCollaborationOptional } from "@/providers/collaborationprovider";
 import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
 import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCursorsOverlay";
 import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
+import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStarter";
+import { useElements } from "@/features/editor";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -36,6 +38,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   iframeRef,
 }) => {
   const collab = useCollaborationOptional();
+  const elements = useElements();
+  const isEmpty = !isLoading && elements.length === 0;
+  const canInsert = !isReadOnly && !isLocked;
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
@@ -93,7 +98,9 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         ref={innerContentRef}
         className="overflow-y-auto overflow-x-hidden flex-1 w-full scrollbar-hide p-4"
       >
-        {isLoading ? null : (
+        {isLoading ? null : isEmpty && canInsert && showAddSectionButton ? (
+          <EmptyPageStarter onAddSection={addNewSection} />
+        ) : (
           <ElementLoader
             isReadOnly={isReadOnly}
             isLocked={isLocked}
@@ -102,7 +109,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         )}
       </div>
 
-      {!selectedElement && showAddSectionButton && (
+      {!selectedElement && !isEmpty && showAddSectionButton && (
         <AddSectionDivider
           onAddSection={addNewSection}
           disabled={isReadOnly || isLocked}

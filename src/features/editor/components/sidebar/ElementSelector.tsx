@@ -13,7 +13,6 @@ import { ELEMENT_CATEGORIES } from "@/features/editor/constants/elementCategorie
 import ComponentHolder, { CustomComponentHolder } from "./ComponentHolder";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import type { ElementTemplate } from "@/types/global.type";
-import type { IconName } from "@/features/editor/utils/icons/iconMap";
 
 type SortedCustomComponent = {
   component: ElementTemplate;
@@ -101,7 +100,7 @@ export function ElementSelector() {
                     className="p-0 rounded-lg transition-all border-none bg-transparent hover:bg-transparent data-[selected=true]:bg-transparent cursor-pointer"
                   >
                     <ComponentHolder
-                      icon={element.icon as IconName}
+                      icon={element.icon}
                       type={element.type}
                       label={element.label}
                       variant="card"
