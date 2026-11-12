@@ -69,3 +69,22 @@ const customComponents: CustomComponent[] = [
 export const customComps = customComponents
   .flat()
   .map((customComp) => customComp.component);
+
+export type SectionTemplateGroup = {
+  id: string;
+  label: string;
+  templates: ElementTemplate[];
+};
+
+const templatesOf = (items: CustomComponent[]): ElementTemplate[] =>
+  items.map((c) => c.component);
+
+/** Section templates grouped for the wireframe Sections library. Whole-site templates are excluded. */
+export const sectionTemplateGroups: SectionTemplateGroup[] = [
+  { id: "navigation", label: "Navigation", templates: templatesOf([navbarComponent, navbarComponent2, navbarComponent3, navbarComponent4, navbarComponent5]) },
+  { id: "header", label: "Header", templates: templatesOf([headerComponent, headerComponent2, headerComponent3]) },
+  { id: "landing", label: "Hero & landing", templates: templatesOf(landingPageSections) },
+  { id: "sidebar", label: "Sidebar", templates: templatesOf([sidebarLeftComponent, sidebarLeftComponent2, sidebarLeftComponent3, sidebarLeftComponent4, sidebarRightComponent, sidebarRightComponent2, sidebarRightComponent3, sidebarRightComponent4]) },
+  { id: "form", label: "Form", templates: templatesOf([formComponent1, formComponent2]) },
+  { id: "footer", label: "Footer", templates: templatesOf([footerComponent, footerComponent2, footerComponent3, footerComponent4]) },
+];
