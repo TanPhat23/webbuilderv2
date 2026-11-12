@@ -14,11 +14,13 @@ import {
   useEditorChromeStore,
   type RailId,
 } from "@/features/editor/store/editor-chrome-store";
+import { useEditorContext } from "@/providers/editorprovider";
 import { ElementSelector } from "../sidebar/ElementSelector";
 import PagesPanel from "./PagesPanel";
 import LayersPanel from "./LayersPanel";
 import WorkflowsPanel from "./WorkflowsPanel";
 
+const SectionsLibrary = React.lazy(() => import("../wireframe/SectionsLibrary"));
 const AIChat = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
 const CmsPanel = React.lazy(() => import("./CmsPanel"));
 const SnapshotManager = React.lazy(() => import("../sidebar/SnapshotManager"));
@@ -47,8 +49,14 @@ function CloseableAIChat() {
   return <AIChat onClose={closePanel} />;
 }
 
+/** Insert shows the element list in Design and the Sections library in Wireframe. */
+function InsertPanel() {
+  const { mode } = useEditorContext();
+  return mode === "wireframe" ? <SectionsLibrary /> : <ElementSelector />;
+}
+
 export const RAIL_ITEMS: RailItem[] = [
-  { id: "insert", label: "Insert", icon: Plus, group: "main", selfScroll: true, render: () => <ElementSelector /> },
+  { id: "insert", label: "Insert", icon: Plus, group: "main", selfScroll: true, render: () => <InsertPanel /> },
   { id: "layers", label: "Layers", icon: Layers, group: "main", render: () => <LayersPanel /> },
   { id: "pages", label: "Pages", icon: FileText, group: "main", render: () => <PagesPanel /> },
   { id: "assets", label: "Assets", icon: ImageIcon, group: "main", render: () => <ImageSelector /> },

@@ -21,7 +21,7 @@ export default function EditorLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { editingMode, projectId } = useEditorContext();
+  const { editingMode, mode, projectId } = useEditorContext();
   const panelOpen = useEditorChromeStore((s) => s.panelOpen);
   const inspectorOpen = useEditorChromeStore((s) => s.inspectorOpen);
   const toggleInspector = useEditorChromeStore((s) => s.toggleInspector);
@@ -36,6 +36,8 @@ export default function EditorLayout({
   useChromeShortcuts({ onShowShortcuts: () => setShortcutsOpen(true) });
 
   const showChrome = editingMode !== "code";
+  // Wireframe is about structure, not styling: the inspector stays hidden.
+  const showInspector = showChrome && mode !== "wireframe";
 
   return (
     <TooltipProvider>
@@ -52,7 +54,7 @@ export default function EditorLayout({
           {showChrome && panelOpen && <EditorPanel />}
           <main className="relative min-w-0 flex-1 overflow-hidden">
             {children}
-            {showChrome && !inspectorOpen && (
+            {showInspector && !inspectorOpen && (
               <Button
                 variant="outline"
                 size="icon"
@@ -64,7 +66,7 @@ export default function EditorLayout({
               </Button>
             )}
           </main>
-          {showChrome && inspectorOpen && <Inspector />}
+          {showInspector && inspectorOpen && <Inspector />}
           <ElementCommentsPanel />
         </div>
       </div>

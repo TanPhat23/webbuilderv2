@@ -9,7 +9,6 @@ import { useEditor } from "@/features/editor/hooks/useEditor";
 import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorLayout from "@/features/editor/components/layout/EditorLayout";
-import WireframeView from "@/features/editor/components/editor/WireframeView";
 import { toast } from "sonner";
 import AIChatProvider from "./aiprovider";
 
@@ -96,11 +95,7 @@ export default function EditorProvider({
         }}
       >
         <AIChatProvider>
-          {mode === "wireframe" ? (
-            <WireframeView mode={mode} setMode={setMode} pageId={pageId} />
-          ) : (
-            <EditorLayout>{children}</EditorLayout>
-          )}
+          <EditorLayout>{children}</EditorLayout>
         </AIChatProvider>
       </CollaborationProvider>
     </EditorContext.Provider>
