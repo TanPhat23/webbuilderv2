@@ -1,83 +1,22 @@
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { useIsSelected, useSetSelectedElement } from "@/features/editor";
-import { cn } from "@/lib/utils";
-import { ContainerElement, EditorElement } from "@/types/global.type";
-import {
-  BarChart2,
-  ChevronDown,
-  Files,
-  FormInput,
-  Images,
-  LayoutGrid,
-  Square,
-  Table2,
-  Type,
-  Link as LinkIcon,
-  MousePointer,
-  Image as ImageIcon,
-  Frame,
-  List as ListIcon,
-} from "lucide-react";
 import React from "react";
+import { ChevronRight } from "lucide-react";
+import { useIsSelected, useSetSelectedElement } from "@/features/editor";
+import elementHolders from "@/features/editor/constants/elements";
+import { IconRenderer, type IconName } from "@/features/editor/utils/icons/iconMap";
+import { cn } from "@/lib/utils";
+import type { ContainerElement, EditorElement } from "@/types/global.type";
 
-const iconColorMap: Record<string, string> = {
-  Text: "text-blue-500",
-  Link: "text-indigo-500",
-  Button: "text-pink-500",
-  Image: "text-yellow-500",
-  Frame: "text-teal-500",
-  List: "text-orange-500",
-  ListItem: "text-orange-300",
-  Carousel: "text-purple-500",
-  Input: "text-green-500",
-  Select: "text-cyan-500",
-  Chart: "text-rose-500",
-  DataTable: "text-lime-500",
-  Form: "text-fuchsia-500",
-  Section: "text-gray-500",
-  default: "text-gray-400",
-};
+const ICON_BY_TYPE = new Map<string, IconName>(
+  elementHolders.map((h) => [h.type, h.icon]),
+);
 
-const getElementIcon = (type: string) => {
-  const colorClass = iconColorMap[type] || iconColorMap.default;
-  switch (type) {
-    case "Text":
-      return <Type className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Link":
-      return <LinkIcon className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Button":
-      return <MousePointer className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Image":
-      return <ImageIcon className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Frame":
-      return <Frame className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "List":
-      return <ListIcon className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "ListItem":
-      return <Square className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Carousel":
-      return <Images className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Input":
-      return <FormInput className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Select":
-      return <LayoutGrid className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Chart":
-      return <BarChart2 className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "DataTable":
-      return <Table2 className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Form":
-      return <Files className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    case "Section":
-      return <Square className={`h-4 w-4 mr-2 ${colorClass}`} />;
-    default:
-      return <Square className={`h-4 w-4 mr-2 ${colorClass}`} />;
-  }
-};
+const INDENT = 12;
+
+function childrenOf(element: EditorElement): EditorElement[] {
+  return "elements" in element && Array.isArray(element.elements)
+    ? (element as ContainerElement).elements
+    : [];
+}
 
 export default function ElementTreeItem({
   element,
@@ -88,72 +27,68 @@ export default function ElementTreeItem({
 }) {
   const isSelected = useIsSelected(element.id);
   const setSelectedElement = useSetSelectedElement();
-  const [isOpen, setIsOpen] = React.useState(true);
+  const [isOpen, setIsOpen] = React.useState(level < 2);
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedElement(isSelected ? undefined : element);
-  };
-
-  const displayName = element.name || element.content || element.type;
-  const hasChildren =
-    "elements" in element &&
-    Array.isArray(element.elements) &&
-    element.elements.length > 0;
+  const children = childrenOf(element);
+  const hasChildren = children.length > 0;
+  const name = element.name || element.type;
+  const icon = ICON_BY_TYPE.get(element.type);
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="w-full">
-        <div className="flex items-center group">
-          <div
-            className={cn(
-              "flex items-center flex-1 p-2 cursor-pointer text-xs hover:bg-accent hover:rounded-md transition-colors",
-              {
-                "bg-accent rounded-md": isSelected,
-              },
-            )}
-            style={{ paddingLeft: `${level * 16 + 8}px` }}
-            onClick={handleClick}
+    <div role="treeitem" aria-expanded={hasChildren ? isOpen : undefined} aria-selected={isSelected}>
+      <div
+        onClick={(e) => {
+          e.stopPropagation();
+          setSelectedElement(isSelected ? undefined : element);
+        }}
+        className={cn(
+          "group mx-1.5 flex h-7 cursor-pointer items-center gap-1 rounded-md pr-2 text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
+          isSelected && "bg-primary/10 text-foreground ring-1 ring-inset ring-primary/40 hover:bg-primary/15",
+        )}
+        style={{ paddingLeft: level * INDENT + 4 }}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            aria-label={isOpen ? "Collapse" : "Expand"}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen((o) => !o);
+            }}
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-sm hover:bg-foreground/10"
           >
-            {getElementIcon(element.type)}
-            <span className="truncate flex-1">{displayName}</span>
-          </div>
-
-          {hasChildren && (
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-3 w-3 transition-transform",
-                    isOpen && "rotate-180",
-                  )}
-                />
-              </Button>
-            </CollapsibleTrigger>
-          )}
-        </div>
-
-        {hasChildren && (
-          <CollapsibleContent>
-            <div>
-              {(element as ContainerElement).elements.map(
-                (child: EditorElement) => (
-                  <ElementTreeItem
-                    key={child.id}
-                    element={child}
-                    level={level + 1}
-                  />
-                ),
-              )}
-            </div>
-          </CollapsibleContent>
+            <ChevronRight
+              className={cn("h-3 w-3 transition-transform", isOpen && "rotate-90")}
+            />
+          </button>
+        ) : (
+          <span className="w-4 shrink-0" />
+        )}
+        {icon ? (
+          <IconRenderer name={icon} className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <span className="h-3.5 w-3.5 shrink-0 rounded-sm border border-current opacity-50" />
+        )}
+        <span className="ml-1 truncate">{name}</span>
+        {element.name && element.name !== element.type && (
+          <span className="ml-auto shrink-0 pl-2 text-[10px] text-muted-foreground/60 opacity-0 group-hover:opacity-100">
+            {element.type}
+          </span>
         )}
       </div>
-    </Collapsible>
+
+      {hasChildren && isOpen && (
+        <div role="group" className="relative">
+          <span
+            aria-hidden
+            className="absolute bottom-1 top-0 w-px bg-border"
+            style={{ left: level * INDENT + 6 + 8 + 4 }}
+          />
+          {children.map((child) => (
+            <ElementTreeItem key={child.id} element={child} level={level + 1} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

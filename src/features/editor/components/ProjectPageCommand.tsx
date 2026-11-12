@@ -53,7 +53,7 @@ const createPageSchema = z.object({
 });
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
-function CreatePageDialog() {
+export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}) {
   const queryClient = useQueryClient();
   const { id } = useParams({ strict: false });
   const [open, setOpen] = useState(false);
@@ -100,9 +100,11 @@ function CreatePageDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start h-6">
-          + Add New Page
-        </Button>
+        {trigger ?? (
+          <Button variant="ghost" className="w-full justify-start h-6">
+            + Add New Page
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -173,10 +175,11 @@ function CreatePageDialog() {
 type DeletePageDialogProps = {
   page: Page;
   onDelete: (id: string) => void;
+  trigger?: React.ReactNode;
 };
 
 // DeletePageDialog component
-function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
+export function DeletePageDialog({ page, onDelete, trigger }: DeletePageDialogProps) {
   const [open, setOpen] = useState(false);
   const handleDelete = () => {
     onDelete(page.Id);
@@ -185,9 +188,11 @@ function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" className="text-xs h-6 px-2">
-          Delete
-        </Button>
+        {trigger ?? (
+          <Button variant="ghost" className="text-xs h-6 px-2">
+            Delete
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -211,10 +216,8 @@ function DeletePageDialog({ page, onDelete }: DeletePageDialogProps) {
   );
 }
 
-// Main component using the dialogs
-export function ProjectPageCommand() {
-  const { id } = useParams({ strict: false });
-  const { data: pages = [] } = useProjectPages(id ?? null);
+/** Deletes a page and, if it was open, moves the editor to another one. */
+export function useDeletePage(id: string | undefined, pages: Page[]) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const deleteAndNavigate = async (pageId: string) => {
@@ -234,6 +237,15 @@ export function ProjectPageCommand() {
       showErrorToast("Failed to delete page");
     }
   };
+
+  return deleteAndNavigate;
+}
+
+// Main component using the dialogs
+export function ProjectPageCommand() {
+  const { id } = useParams({ strict: false });
+  const { data: pages = [] } = useProjectPages(id ?? null);
+  const deleteAndNavigate = useDeletePage(id, pages);
 
   return (
     <Command className="rounded-lg border shadow-md">

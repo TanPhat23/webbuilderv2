@@ -20,7 +20,7 @@ function CMSManagerDialog() {
       <Button
         variant="outline"
         size="sm"
-        className="w-full gap-2 justify-start"
+        className="h-8 w-full gap-2 text-xs"
         onClick={() => setOpen(true)}
       >
         <Database className="h-3.5 w-3.5" />

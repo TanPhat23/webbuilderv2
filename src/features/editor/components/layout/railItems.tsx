@@ -15,14 +15,12 @@ import {
   type RailId,
 } from "@/features/editor/store/editor-chrome-store";
 import { ElementSelector } from "../sidebar/ElementSelector";
-import { ProjectPageCommand } from "../ProjectPageCommand";
+import PagesPanel from "./PagesPanel";
 import LayersPanel from "./LayersPanel";
 import WorkflowsPanel from "./WorkflowsPanel";
 
 const AIChat = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
-const CMSManager = React.lazy(
-  () => import("@/features/cms/components/CMSManagerDialog"),
-);
+const CmsPanel = React.lazy(() => import("./CmsPanel"));
 const SnapshotManager = React.lazy(() => import("../sidebar/SnapshotManager"));
 const ImageSelector = React.lazy(() =>
   import("@/features/images/components/ImageSelector").then((m) => ({
@@ -37,8 +35,8 @@ export type RailItem = {
   group: "main" | "tools";
   /** Panel width in px; defaults to 240. */
   width?: number;
-  /** Wrap the content in standard padding. */
-  padded?: boolean;
+  /** The content manages its own scrolling (e.g. a fixed search box). */
+  selfScroll?: boolean;
   /** The panel draws its own header (no title bar). */
   bare?: boolean;
   render: () => React.ReactNode;
@@ -50,13 +48,13 @@ function CloseableAIChat() {
 }
 
 export const RAIL_ITEMS: RailItem[] = [
-  { id: "insert", label: "Insert", icon: Plus, group: "main", render: () => <ElementSelector /> },
+  { id: "insert", label: "Insert", icon: Plus, group: "main", selfScroll: true, render: () => <ElementSelector /> },
   { id: "layers", label: "Layers", icon: Layers, group: "main", render: () => <LayersPanel /> },
-  { id: "pages", label: "Pages", icon: FileText, group: "main", padded: true, render: () => <ProjectPageCommand /> },
-  { id: "assets", label: "Assets", icon: ImageIcon, group: "main", padded: true, render: () => <ImageSelector /> },
-  { id: "cms", label: "CMS", icon: Database, group: "main", padded: true, render: () => <CMSManager /> },
-  { id: "workflows", label: "Workflows", icon: Zap, group: "tools", padded: true, render: () => <WorkflowsPanel /> },
-  { id: "history", label: "History", icon: History, group: "tools", padded: true, render: () => <SnapshotManager /> },
+  { id: "pages", label: "Pages", icon: FileText, group: "main", render: () => <PagesPanel /> },
+  { id: "assets", label: "Assets", icon: ImageIcon, group: "main", render: () => <ImageSelector /> },
+  { id: "cms", label: "CMS", icon: Database, group: "main", render: () => <CmsPanel /> },
+  { id: "workflows", label: "Workflows", icon: Zap, group: "tools", render: () => <WorkflowsPanel /> },
+  { id: "history", label: "History", icon: History, group: "tools", render: () => <SnapshotManager /> },
   { id: "ai", label: "AI assistant", icon: Sparkles, group: "tools", width: 360, bare: true, render: () => <CloseableAIChat /> },
 ];
 

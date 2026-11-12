@@ -39,7 +39,10 @@ export default function EditorLayout({
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
+      {/* Pinned to the viewport: the document behind it may still scroll
+          (global CSS sets body overflow-y: auto), which used to drag the
+          editor up and leave an empty strip below it. */}
+      <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
         <EditorTopBar
           projectId={projectId ?? ""}
           onShowShortcuts={() => setShortcutsOpen(true)}

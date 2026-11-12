@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { PanelLeftClose } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { railItem } from "./railItems";
 
@@ -26,7 +25,10 @@ export default function EditorPanel() {
     >
       {!item.bare && (
         <div className="flex h-10 shrink-0 items-center justify-between border-b border-border pl-3 pr-1.5">
-          <span className="text-xs font-semibold">{item.label}</span>
+          <span className="flex items-center gap-2 text-xs font-semibold">
+            <item.icon className="h-3.5 w-3.5 text-muted-foreground" />
+            {item.label}
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -38,12 +40,7 @@ export default function EditorPanel() {
           </Button>
         </div>
       )}
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto",
-          item.padded && "p-3",
-        )}
-      >
+      <div className={item.selfScroll ? "min-h-0 flex-1 overflow-hidden" : "min-h-0 flex-1 overflow-y-auto"}>
         <Suspense fallback={<PanelFallback />}>{item.render()}</Suspense>
       </div>
     </aside>

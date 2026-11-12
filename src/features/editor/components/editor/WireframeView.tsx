@@ -52,7 +52,7 @@ function WireframeHeader({ mode, setMode }: Pick<WireframeViewProps, "mode" | "s
 
 export default function WireframeView({ mode, setMode, pageId }: WireframeViewProps) {
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
       <WireframeHeader mode={mode} setMode={setMode} />
       <div className="flex-1 min-h-0">
         <Suspense

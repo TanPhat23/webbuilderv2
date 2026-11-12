@@ -2,9 +2,8 @@
 import { useState } from "react";
 import { useImageStore } from "@/features/editor";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ImageIcon, Plus, X, GripVertical } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { ImageIcon, Plus, X } from "lucide-react";
+import PanelIntro from "@/features/editor/components/layout/PanelIntro";
 import { ImageDragDataSchema } from "@/features/images/schema/imageupload";
 import { ImageManagerDialog } from "@/features/images/components/ImageManagerDialog";
 
@@ -43,76 +42,62 @@ export function ImageSelector() {
   };
 
   return (
-    <div className="space-y-3">
-      {/* Add Images Button */}
+    <div className="flex flex-col gap-2 p-2">
       <Button
         variant="outline"
-        className="w-full"
+        size="sm"
+        className="h-8 w-full gap-2 text-xs"
         onClick={() => setDialogOpen(true)}
       >
-        <Plus className="mr-2 h-4 w-4" />
-        Manage Images
+        <Plus className="h-3.5 w-3.5" />
+        {selectedImages.length === 0 ? "Add images" : "Manage images"}
       </Button>
 
-      {/* Selected Images Display */}
       {selectedImages.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-            <ImageIcon className="h-12 w-12 text-muted-foreground mb-2" />
-            <p className="text-sm text-muted-foreground">No images selected</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Click "Manage Images" to add images
-            </p>
-          </CardContent>
-        </Card>
+        <PanelIntro
+          icon={ImageIcon}
+          title="No images yet"
+          description="Upload or pick images, then drag them onto the canvas."
+        />
       ) : (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            {selectedImages.length} selected image
-            {selectedImages.length !== 1 ? "s" : ""} • Drag to use
+        <>
+          <p className="px-0.5 text-[11px] text-muted-foreground">
+            {selectedImages.length} image{selectedImages.length !== 1 ? "s" : ""} · drag onto the canvas
           </p>
-          <ScrollArea className="h-[300px] rounded-md border">
-            <div className="grid grid-cols-2 gap-2 p-2">
-              {selectedImages.map((image) => (
-                <div
-                  key={image.imageId}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, image)}
-                  className="group relative aspect-square overflow-hidden rounded-lg border-2 border-transparent hover:border-primary cursor-grab active:cursor-grabbing transition-all"
+          <div className="grid grid-cols-2 gap-1.5">
+            {selectedImages.map((image) => (
+              <div
+                key={image.imageId}
+                draggable
+                onDragStart={(e) => handleDragStart(e, image)}
+                title={image.imageName ?? undefined}
+                className="group relative aspect-square cursor-grab overflow-hidden rounded-md border border-border bg-muted/40 transition-colors hover:border-primary/60 active:cursor-grabbing"
+              >
+                <img
+                  src={image.imageLink}
+                  alt={image.imageName || "Image"}
+                  className="h-full w-full object-cover"
+                  draggable={false}
+                  loading="lazy"
+                />
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Remove from panel"
+                  className="absolute right-1 top-1 h-5 w-5 opacity-0 shadow-sm transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                  onClick={(e) => handleRemoveImage(image.imageId, e)}
                 >
-                  <img
-                    src={image.imageLink}
-                    alt={image.imageName || "Selected image"}
-                    className="object-cover w-full h-full"
-                    draggable={false}
-                  />
-
-                  {/* Drag Indicator */}
-                  <div className="absolute top-1 left-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 rounded p-0.5">
-                    <GripVertical className="h-3 w-3 text-muted-foreground" />
+                  <X className="h-3 w-3" />
+                </Button>
+                {image.imageName && (
+                  <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 pb-1 pt-3 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                    {image.imageName}
                   </div>
-
-                  {/* Remove Button */}
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleRemoveImage(image.imageId, e)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-
-                  {/* Image Name */}
-                  {image.imageName && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-1 truncate">
-                      {image.imageName}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {/* Image Manager Dialog */}

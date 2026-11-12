@@ -63,17 +63,12 @@ export function ElementSelector() {
   }, []);
 
   return (
-    <Command className="flex h-full w-full flex-col border-none bg-transparent shadow-none [&_[data-slot=command-input-wrapper]]:border-none [&_[data-slot=command-input-wrapper]]:bg-muted/40 [&_[data-slot=command-input-wrapper]]:mx-3 [&_[data-slot=command-input-wrapper]]:mt-3 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:transition-colors [&_[data-slot=command-input-wrapper]]:focus-within:bg-muted/60">
-      <div className="flex flex-col gap-2">
-        <CommandInput placeholder="Search elements..." className="h-9" />
-        <div className="px-4 pt-1.5 pb-0.5">
-          <h2 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-            Components
-          </h2>
-        </div>
+    <Command className="flex h-full w-full flex-col border-none bg-transparent shadow-none [&_[data-slot=command-input-wrapper]]:border-none [&_[data-slot=command-input-wrapper]]:bg-muted/40 [&_[data-slot=command-input-wrapper]]:mx-2.5 [&_[data-slot=command-input-wrapper]]:mt-2.5 [&_[data-slot=command-input-wrapper]]:h-8 [&_[data-slot=command-input-wrapper]]:rounded-lg [&_[data-slot=command-input-wrapper]]:transition-colors [&_[data-slot=command-input-wrapper]]:focus-within:bg-muted/60">
+      <div className="shrink-0 pb-2">
+        <CommandInput placeholder="Search elements…" className="h-8 text-xs" />
       </div>
 
-      <CommandList className="flex-1 px-3 pb-6 scrollbar-none max-h-none overflow-y-auto">
+      <CommandList className="min-h-0 flex-1 px-2.5 pb-4 scrollbar-none max-h-none overflow-y-auto">
         <CommandEmpty className="py-12 text-center text-xs text-muted-foreground">
           No matches found.
         </CommandEmpty>
@@ -81,7 +76,7 @@ export function ElementSelector() {
         {categorizedGroups.map((group, groupIdx) => (
           <div key={group.id} className="mb-3">
             <div className="flex items-center justify-between px-1 py-1.5">
-              <span className="text-[11px] font-semibold tracking-tight text-foreground/80">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
               </span>
               <span className="text-[10px] text-muted-foreground/60 tabular-nums">
@@ -110,7 +105,7 @@ export function ElementSelector() {
               </div>
             </CommandGroup>
             {groupIdx < categorizedGroups.length - 1 && (
-              <CommandSeparator className="my-2.5 opacity-20" />
+              <CommandSeparator className="my-2 opacity-40" />
             )}
           </div>
         ))}
@@ -119,8 +114,8 @@ export function ElementSelector() {
           <div className="mt-2 mb-3">
             <CommandSeparator className="my-2.5 opacity-20" />
             <div className="flex items-center justify-between px-1 py-1.5">
-              <span className="text-[11px] font-semibold tracking-tight text-foreground/80">
-                Custom Components
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Custom components
               </span>
               <span className="text-[10px] text-muted-foreground/60 tabular-nums">
                 {customComponents.length}

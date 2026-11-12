@@ -1,138 +1,159 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { History, RotateCcw, Save } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import { useElementsWithLoad } from "@/features/editor";
-import { History, Save, RotateCcw } from "lucide-react";
+import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import {
   useSnapshots,
   useSaveSnapshot,
   useLoadSnapshot,
 } from "@/features/editor/hooks/useSnapshot";
-import { EditorElement } from "@/types/global.type";
+import type { EditorElement } from "@/types/global.type";
+import PanelIntro from "../layout/PanelIntro";
 
-const SnapshotManager = () => {
-  const [open, setOpen] = useState(false);
+function relativeTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.round(diff / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+/** Saved versions of the project, listed inline in the History panel. */
+export default function SnapshotManager() {
   const { data: project } = useCurrentProject();
   const { elements, loadElements } = useElementsWithLoad();
+  const permissions = useEditorPermissions(project?.id);
+  const { data: snapshots = [], isLoading } = useSnapshots(project?.id);
+  const save = useSaveSnapshot();
+  const load = useLoadSnapshot();
+  const [restoreId, setRestoreId] = useState<string | null>(null);
 
-  const { data: snapshots = [], isLoading: loading } = useSnapshots(
-    project?.id,
-  );
-  const saveSnapshotMutation = useSaveSnapshot();
-  const loadSnapshotMutation = useLoadSnapshot();
+  const canSave = permissions.canCreateSnapshots && elements.length > 0;
 
-  const handleSaveSnapshot = async () => {
-    if (!project?.id) return;
-    if (!elements || elements.length === 0) {
-      return;
-    }
-
-    const snapshot = {
-      id: `snapshot-${Date.now()}`,
-      elements: elements,
-      type: "version" as const,
-      name: `Version ${new Date().toLocaleString()}`,
-      timestamp: Date.now(),
-      createdAt: new Date().toISOString(),
-    };
-
-    saveSnapshotMutation.mutate({ projectId: project.id, snapshot });
-  };
-
-  const handleLoadSnapshot = async (snapshotId: string) => {
-    if (!project?.id) return;
-
-    loadSnapshotMutation.mutate(
-      { projectId: project.id, snapshotId },
-      {
-        onSuccess: (elements) => {
-          loadElements(elements as EditorElement[]);
-          setOpen(false);
-        },
+  const handleSave = () => {
+    if (!project?.id || !canSave) return;
+    const now = new Date();
+    save.mutate({
+      projectId: project.id,
+      snapshot: {
+        id: `snapshot-${now.getTime()}`,
+        elements,
+        type: "version" as const,
+        name: `Version ${now.toLocaleString()}`,
+        timestamp: now.getTime(),
+        createdAt: now.toISOString(),
       },
-    );
+    });
   };
+
+  const handleRestore = () => {
+    if (!project?.id || !restoreId) return;
+    load.mutate(
+      { projectId: project.id, snapshotId: restoreId },
+      { onSuccess: (els) => loadElements(els as EditorElement[]) },
+    );
+    setRestoreId(null);
+  };
+
+  const sorted = [...snapshots].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 w-full">
-          <History className="h-4 w-4" />
-          Manage Snapshots
+    <div className="flex flex-col gap-2 p-2">
+      {permissions.canCreateSnapshots && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-full gap-2 text-xs"
+          onClick={handleSave}
+          disabled={!canSave || save.isPending}
+          title={elements.length === 0 ? "Add elements before saving a version" : undefined}
+        >
+          <Save className="h-3.5 w-3.5" />
+          {save.isPending ? "Saving…" : "Save current version"}
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-[75vw] max-h-[95vh] h-[75vw] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5" />
-            Snapshot Management
-          </DialogTitle>
-        </DialogHeader>
+      )}
 
-        <div className="flex-1 overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Project Snapshots</h3>
-            <Button
-              onClick={handleSaveSnapshot}
-              className="gap-2"
-              disabled={saveSnapshotMutation.isPending}
-            >
-              <Save className="h-4 w-4" />
-              {saveSnapshotMutation.isPending
-                ? "Saving..."
-                : "Save Current Version"}
-            </Button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="text-center py-8">Loading snapshots...</div>
-            ) : snapshots.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                No snapshots found. Save your first version!
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {snapshots.map((snapshot) => (
-                  <div
-                    key={snapshot.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <h4 className="font-medium">{snapshot.name}</h4>
-                      <p className="text-sm text-gray-500">
-                        {new Date(snapshot.createdAt).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Type: {snapshot.type}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLoadSnapshot(snapshot.id)}
-                      className="gap-2"
-                      disabled={loadSnapshotMutation.isPending}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      {loadSnapshotMutation.isPending ? "Loading..." : "Load"}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+      {isLoading ? (
+        <div className="space-y-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-11 animate-pulse rounded-md bg-muted/50" />
+          ))}
         </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+      ) : sorted.length === 0 ? (
+        <PanelIntro
+          icon={History}
+          title="No saved versions"
+          description="Save a version to create a restore point you can return to."
+        />
+      ) : (
+        <ol className="relative space-y-0.5 before:absolute before:bottom-3 before:left-[11px] before:top-3 before:w-px before:bg-border">
+          {sorted.map((snapshot, i) => (
+            <li
+              key={snapshot.id}
+              className="group relative flex items-center gap-2.5 rounded-md py-1.5 pl-1 pr-1 hover:bg-accent/50"
+            >
+              <span
+                className={
+                  i === 0
+                    ? "relative z-10 ml-[3px] h-2.5 w-2.5 shrink-0 rounded-full bg-primary ring-2 ring-card"
+                    : "relative z-10 ml-[3px] h-2.5 w-2.5 shrink-0 rounded-full border border-muted-foreground/50 bg-card"
+                }
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium">{snapshot.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {relativeTime(snapshot.createdAt)}
+                </p>
+              </div>
+              {permissions.canRestoreSnapshots && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Restore ${snapshot.name}`}
+                  title="Restore"
+                  className="h-6 w-6 shrink-0 text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                  disabled={load.isPending}
+                  onClick={() => setRestoreId(snapshot.id)}
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
 
-export default SnapshotManager;
+      <AlertDialog open={restoreId !== null} onOpenChange={(o) => !o && setRestoreId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore this version?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The page will be replaced with the saved version. Save the current
+              version first if you want to keep it.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestore}>Restore</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
