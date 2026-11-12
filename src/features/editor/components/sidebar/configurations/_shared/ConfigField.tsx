@@ -50,11 +50,16 @@ export function ConfigField({
   fullWidth = false,
 }: ConfigFieldProps) {
   const labelContent = (
-    <div className="flex items-center gap-1 shrink-0">
+    <div
+      className={cn(
+        "flex items-center gap-1 min-w-0",
+        !vertical && !fullWidth ? "w-[72px] shrink-0" : "shrink-0",
+      )}
+    >
       <Label
         htmlFor={htmlFor}
         className={cn(
-          "text-[11px] font-medium text-muted-foreground select-none leading-none",
+          "truncate text-[11px] font-medium text-muted-foreground select-none leading-none",
           hint && "cursor-help"
         )}
       >
@@ -94,12 +99,13 @@ export function ConfigField({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 min-h-[28px]",
+        "flex items-center gap-2 min-h-[28px]",
         className
       )}
     >
       {labelContent}
-      <div className="flex items-center gap-1.5 flex-1 justify-end min-w-0">
+      {/* The last control stretches, so rows line up into one column. */}
+      <div className="flex items-center gap-1.5 flex-1 min-w-0 [&>*:last-child]:min-w-0 [&>*:last-child]:flex-1 [&>*:last-child]:w-auto!">
         {children}
       </div>
     </div>

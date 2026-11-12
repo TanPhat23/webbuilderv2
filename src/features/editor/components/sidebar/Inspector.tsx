@@ -22,6 +22,16 @@ const CssTextareaImporter = React.lazy(
   () => import("../editor/CssTextareaImporter"),
 );
 
+/**
+ * The shared shadcn Input/Select carry `h-9` and `md:text-sm` (and Select's
+ * `data-[size=default]:h-9` beats a plain `h-7`), so property controls came
+ * out 36px tall in 14px text. Force one compact density inside the inspector.
+ */
+const DENSE =
+  "[&_[data-slot=input]]:h-7! [&_[data-slot=input]]:text-[11px]! [&_[data-slot=input]]:px-2! " +
+  "[&_[data-slot=select-trigger]]:h-7! [&_[data-slot=select-trigger]]:text-[11px]! [&_[data-slot=select-trigger]]:px-2! " +
+  "[&_[data-slot=select-trigger]_svg]:size-3.5!";
+
 function Fallback() {
   return (
     <div className="flex items-center justify-center py-8">
@@ -51,7 +61,7 @@ export default function Inspector() {
   return (
     <aside
       aria-label="Inspector"
-      className="flex h-full w-[260px] shrink-0 flex-col border-l border-border bg-card"
+      className="flex h-full w-[280px] shrink-0 flex-col border-l border-border bg-card"
     >
       {selected ? (
         <Tabs defaultValue="style" className="flex min-h-0 flex-1 flex-col gap-0">
@@ -68,7 +78,7 @@ export default function Inspector() {
             <CollapseButton />
           </div>
 
-          <TabsContent value="style" className="min-h-0 flex-1 overflow-y-auto p-3">
+          <TabsContent value="style" className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3 pt-1 ${DENSE}`}>
             <Suspense fallback={<Fallback />}>
               <Styles />
               <Collapsible className="mt-4 border-t border-border pt-3">
@@ -83,7 +93,7 @@ export default function Inspector() {
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="settings" className="min-h-0 flex-1 overflow-y-auto p-3">
+          <TabsContent value="settings" className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 ${DENSE}`}>
             <Suspense fallback={<Fallback />}>
               <Settings />
             </Suspense>

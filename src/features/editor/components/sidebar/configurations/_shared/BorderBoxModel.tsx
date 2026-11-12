@@ -411,7 +411,7 @@ function UniformControls({
   }, [draftColor, onColorChange]);
 
   return (
-    <div className="flex items-center gap-2 mt-2 px-0.5">
+    <div className="mt-2 flex flex-wrap items-center gap-1.5 px-0.5">
       {/* Link toggle */}
       <button
         type="button"
@@ -450,7 +450,7 @@ function UniformControls({
       )}
 
       {/* Style cycle */}
-      <div className="flex items-center gap-0.5">
+      <div className="flex min-w-0 flex-1 items-center gap-0.5">
         {BORDER_STYLES.map((s) => (
           <button
             key={s}
@@ -458,7 +458,7 @@ function UniformControls({
             onClick={() => onStyleChange(s)}
             title={s}
             className={cn(
-              "h-6 px-1.5 text-[9px] font-mono rounded-md border transition-colors",
+              "h-6 min-w-0 flex-1 px-1 text-[9px] font-mono rounded-md border transition-colors",
               currentStyle === s
                 ? "border-sky-500/40 bg-sky-500/10 text-sky-300"
                 : "border-border/40 bg-muted/10 text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/30",
@@ -470,7 +470,7 @@ function UniformControls({
       </div>
 
       {/* Color swatch + hex input */}
-      <div className="flex items-center gap-1 flex-1 min-w-0">
+      <div className="flex basis-full items-center gap-1 min-w-0">
         <div className="relative h-5 w-5 shrink-0 rounded border border-border/60 overflow-hidden">
           <input
             type="color"

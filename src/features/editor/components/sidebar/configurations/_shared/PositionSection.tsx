@@ -391,12 +391,12 @@ export function PositionSection({
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       {/* ── Position Type Selector ── */}
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+      <div className="flex items-center gap-2">
+        <span className="w-[72px] shrink-0 text-[11px] font-medium text-muted-foreground">
           Position
         </span>
         <Select value={positionValue} onValueChange={handlePositionChange}>
-          <SelectTrigger className="h-6 w-[90px] px-2 text-[10px] rounded-md border-border/40 bg-muted/30">
+          <SelectTrigger className="h-7 min-w-0 flex-1 px-2 text-[11px] rounded-md">
             <SelectValue placeholder="Static" />
           </SelectTrigger>
           <SelectContent>
