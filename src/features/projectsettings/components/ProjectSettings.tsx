@@ -43,12 +43,9 @@ import type {
 } from "@/features/projects/schema/project";
 import { ProjectPreview } from "./ProjectPreview";
 import { ColorInput } from "./ColorInput";
-import {
-  generateDesignSystemCSS,
-  generateColorsCSS,
-  type ColorScheme,
-} from "../utils/designSystemUtils";
+import { type ColorScheme } from "../utils/designSystemUtils";
 import { projectKeys } from "@/features/projects/hooks/useProjects";
+import { sanitizeProjectCss } from "@/features/projects/lib/project-css";
 
 const DEFAULT_COLORS: ColorScheme = {
   primary: "#3b82f6",
@@ -396,27 +393,13 @@ export function ProjectSettings() {
   };
 
   const handleSave = () => {
-    const colorCSS = generateColorsCSS(selectedColors);
-    const designSystemCSS = generateDesignSystemCSS({
-      fontFamily,
-      letterTracking,
-      borderRadius,
-      spacing,
-      shadowStyle,
-    });
-    const combinedCSS =
-      customCSS +
-      "\n\n/* Auto-generated Design System */\n" +
-      designSystemCSS +
-      "\n\n/* Auto-generated Color Scheme */\n" +
-      colorCSS;
-
     const updatedProject = {
       id: projectId,
       name: projectName,
       description: projectDescription || null,
       published: isPublished,
       subdomain: subdomain || null,
+      header: { ...project?.header, cssStyles: sanitizeProjectCss(customCSS) },
       styles: {
         ...selectedColors,
         fontFamily,

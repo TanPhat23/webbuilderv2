@@ -2,15 +2,10 @@
 import { useState, useEffect, useMemo } from "react";
 import type React from "react";
 import type { Viewport } from "./useEditor";
+import { projectCssToStyleTag } from "@/features/projects/lib/project-css";
 
 export function useProjectHead(cssStyles: string | undefined): string {
-  return useMemo(() => {
-    const cs = (cssStyles ?? "").trim();
-    if (!cs) return "";
-    const looksLikeHtml =
-      cs.startsWith("<") || /<link\b|<style\b|<meta\b|<script\b/i.test(cs);
-    return looksLikeHtml ? cs : `<style>${cs}</style>`;
-  }, [cssStyles]);
+  return useMemo(() => projectCssToStyleTag(cssStyles), [cssStyles]);
 }
 
 export function useIframeSrcDoc(

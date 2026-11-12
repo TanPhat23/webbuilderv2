@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { projectService } from "@/features/projects";
 import { elementService } from "@/features/editor";
 import { dehydrate, HydrationBoundary, useQuery } from "@tanstack/react-query";
+import { sanitizeProjectCss } from "@/features/projects/lib/project-css";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
 
 export const Route = createFileRoute("/preview/$id")({
@@ -86,7 +87,7 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
     <div className="min-h-screen min-w-screen bg-white">
       <style
         dangerouslySetInnerHTML={{
-          __html: (project.styles?.css as string) || "",
+          __html: sanitizeProjectCss(project.header?.cssStyles),
         }}
       />
       <PreviewElementLoader elements={elements} />
