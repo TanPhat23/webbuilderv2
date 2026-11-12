@@ -1,26 +1,16 @@
-import React, { Suspense } from "react";
-import { ChevronDown, PanelRightClose } from "lucide-react";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import React, { Suspense, useState } from "react";
+import { PanelRightClose } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useSelectedElement } from "@/features/editor";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import PageProperties from "./PageProperties";
 
+import { BreakpointButtons } from "./style/BreakpointButtons";
+import type { Breakpoint } from "./style/styleModel";
+
 const Settings = React.lazy(() => import("./configurations/Settings"));
-const Styles = React.lazy(() => import("./configurations/Styles"));
-const CssTextareaImporter = React.lazy(
-  () => import("../editor/CssTextareaImporter"),
-);
+const StyleTab = React.lazy(() => import("./style/StyleTab"));
 
 /**
  * The shared shadcn Input/Select carry `h-9` and `md:text-sm` (and Select's
@@ -57,6 +47,8 @@ function CollapseButton() {
 
 export default function Inspector() {
   const selected = useSelectedElement();
+  const [tab, setTab] = useState("style");
+  const [breakpoint, setBreakpoint] = useState<Breakpoint>("default");
 
   return (
     <aside
@@ -64,36 +56,43 @@ export default function Inspector() {
       className="flex h-full w-[280px] shrink-0 flex-col border-l border-border bg-card"
     >
       {selected ? (
-        <Tabs defaultValue="style" className="flex min-h-0 flex-1 flex-col gap-0">
+        <Tabs
+          value={tab}
+          onValueChange={setTab}
+          className="flex min-h-0 flex-1 flex-col gap-0"
+        >
           <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border pl-2 pr-1.5">
-            <TabsList className="h-7">
-              <TabsTrigger value="style" className="px-2.5 text-xs">
+            <TabsList variant="line" className="h-7! shrink-0 gap-0">
+              <TabsTrigger value="style" className="px-1.5 text-[11px]">
                 Style
               </TabsTrigger>
-              <TabsTrigger value="settings" className="px-2.5 text-xs">
+              <TabsTrigger value="settings" className="px-1.5 text-[11px]">
                 Settings
               </TabsTrigger>
             </TabsList>
             <span className="flex-1" />
+            {tab === "style" && (
+              <BreakpointButtons value={breakpoint} onChange={setBreakpoint} />
+            )}
             <CollapseButton />
           </div>
 
-          <TabsContent value="style" className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3 pt-1 ${DENSE}`}>
+          <TabsContent
+            value="style"
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          >
             <Suspense fallback={<Fallback />}>
-              <Styles />
-              <Collapsible className="mt-4 border-t border-border pt-3">
-                <CollapsibleTrigger className="group flex w-full items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground">
-                  Import CSS
-                  <ChevronDown className="h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
-                  <CssTextareaImporter />
-                </CollapsibleContent>
-              </Collapsible>
+              <StyleTab
+                key={`${selected.id}:${breakpoint}`}
+                breakpoint={breakpoint}
+              />
             </Suspense>
           </TabsContent>
 
-          <TabsContent value="settings" className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 ${DENSE}`}>
+          <TabsContent
+            value="settings"
+            className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-3 ${DENSE}`}
+          >
             <Suspense fallback={<Fallback />}>
               <Settings />
             </Suspense>

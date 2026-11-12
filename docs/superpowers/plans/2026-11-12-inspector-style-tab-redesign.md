@@ -107,7 +107,7 @@ Test: `tests/style-model.test.ts`, `tests/style-clipboard.test.ts`.
   - `isTextElement(type: string): boolean`
   - `SHADOW_PRESETS: { id: string; label: string; value: string }[]`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/style-model.test.ts`:
 
@@ -207,12 +207,12 @@ test('isTextElement', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 Run: `bun run test:unit`
 Expected: FAIL with `Cannot find module '.../style/styleModel'`.
 
-- [ ] **Step 3: Implement `styleModel.ts`**
+- [x] **Step 3: Implement `styleModel.ts`**
 
 ```ts
 /**
@@ -405,12 +405,12 @@ export function isTextElement(type: string): boolean {
 
 `TEXT_TYPES` mirrors `EDITABLE_ELEMENT_TYPES` in `constants/elements.ts`. It's copied because that module imports React components, which can't load under node:test; the `satisfies` clause keeps the names type-checked.
 
-- [ ] **Step 4: Run the tests and confirm they pass**
+- [x] **Step 4: Run the tests and confirm they pass**
 
 Run: `bun run test:unit`
 Expected: all `style-model` tests PASS, and the existing tests still pass.
 
-- [ ] **Step 5: Record the deviations in the spec**
+- [x] **Step 5: Record the deviations in the spec**
 
 In the spec, under "Sections", change the Position row to read: `position`, `zIndex`; when not static: `top`/`right`/`bottom`/`left` as four fields.
 
@@ -446,7 +446,7 @@ git commit -m "feat(style): pure style model for the redesigned Style tab"
   - `ColorRow` props: `{ sp: StyleProps; k: string; label: string }`
   - `Section` props: `{ title: string; optional?: { on: boolean; onAdd(): void; onRemove(): void }; actions?: ReactNode; disabled?: boolean; children?: ReactNode }`
 
-- [ ] **Step 1: Write the failing clipboard test**
+- [x] **Step 1: Write the failing clipboard test**
 
 `tests/style-clipboard.test.ts`:
 
@@ -463,12 +463,12 @@ test('copy stores a detached copy', () => {
 });
 ```
 
-- [ ] **Step 2: Run it and confirm it fails**
+- [x] **Step 2: Run it and confirm it fails**
 
 Run: `bun run test:unit`
 Expected: FAIL, because the module is not found.
 
-- [ ] **Step 3: Implement `styleClipboard.ts`**
+- [x] **Step 3: Implement `styleClipboard.ts`**
 
 ```ts
 import { create } from "zustand";
@@ -484,12 +484,12 @@ export const useStyleClipboard = create<{
 }));
 ```
 
-- [ ] **Step 4: Run it and confirm it passes**
+- [x] **Step 4: Run it and confirm it passes**
 
 Run: `bun run test:unit`
 Expected: PASS.
 
-- [ ] **Step 5: Implement `useStyleProps.ts`**
+- [x] **Step 5: Implement `useStyleProps.ts`**
 
 ```ts
 import type React from "react";
@@ -535,7 +535,7 @@ export function useStyleProps(breakpoint: Breakpoint) {
 export type StyleProps = ReturnType<typeof useStyleProps>;
 ```
 
-- [ ] **Step 6: Implement `PropInput.tsx`**
+- [x] **Step 6: Implement `PropInput.tsx`**
 
 ```tsx
 import React, { useEffect, useRef, useState } from "react";
@@ -714,7 +714,7 @@ export function StyleField({
 }
 ```
 
-- [ ] **Step 7: Implement `controls.tsx`**
+- [x] **Step 7: Implement `controls.tsx`**
 
 ```tsx
 import React from "react";
@@ -816,7 +816,7 @@ export function MoreToggle({ open, onToggle, label }: { open: boolean; onToggle:
 }
 ```
 
-- [ ] **Step 8: Implement `ColorRow.tsx`**
+- [x] **Step 8: Implement `ColorRow.tsx`**
 
 ```tsx
 import { useEffect, useState } from "react";
@@ -892,7 +892,7 @@ export function ColorRow({ sp, k, label }: { sp: StyleProps; k: string; label: s
 }
 ```
 
-- [ ] **Step 9: Implement `SectionHeader.tsx`**
+- [x] **Step 9: Implement `SectionHeader.tsx`**
 
 ```tsx
 import React from "react";
@@ -934,7 +934,7 @@ export function Section({
 }
 ```
 
-- [ ] **Step 10: Type-check and test**
+- [x] **Step 10: Type-check and test**
 
 Run: `npx tsc --noEmit && bun run test:unit`
 Expected: the type check is clean and all tests pass.
@@ -960,7 +960,7 @@ git commit -m "feat(style): style hook, clipboard and input primitives"
   - `AlignmentMatrix` from `../configurations/_shared/display/AlignmentMatrix`, with props `{ justifyContent?: string; alignItems?: string; onBatchUpdate(partial): void }`.
 - Produces: `LayoutSection`, `SpacingSection`, `PositionSection`, each taking `({ sp }: { sp: StyleProps })`.
 
-- [ ] **Step 1: Implement `LayoutSection.tsx`**
+- [x] **Step 1: Implement `LayoutSection.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1066,7 +1066,7 @@ export function LayoutSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 2: Implement `SpacingSection.tsx`**
+- [x] **Step 2: Implement `SpacingSection.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1152,7 +1152,7 @@ export function SpacingSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 3: Implement `PositionSection.tsx`**
+- [x] **Step 3: Implement `PositionSection.tsx`**
 
 ```tsx
 import { Section } from "./SectionHeader";
@@ -1186,7 +1186,7 @@ export function PositionSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 4: Type-check**
+- [x] **Step 4: Type-check**
 
 Run: `npx tsc --noEmit`
 Expected: clean. If `AlignmentMatrix`'s `onBatchUpdate` partial type rejects the cast, cast with `as never` at that one call site and nowhere else.
@@ -1215,7 +1215,7 @@ git commit -m "feat(style): layout, spacing and position sections"
   - `Slider` from `@/components/ui/slider`.
 - Produces: `TypographySection`, `FillSection`, `BorderSection`, `ShadowSection`, `EffectsSection` and `AdvancedSection`, each taking `({ sp })`. `AdvancedSection` also works without `sp`.
 
-- [ ] **Step 1: Implement `TypographySection.tsx`**
+- [x] **Step 1: Implement `TypographySection.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1281,7 +1281,7 @@ export function TypographySection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 2: Implement `FillSection.tsx`**
+- [x] **Step 2: Implement `FillSection.tsx`**
 
 ```tsx
 import { Image as ImageIcon, X } from "lucide-react";
@@ -1351,7 +1351,7 @@ export function FillSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 3: Implement `BorderSection.tsx`**
+- [x] **Step 3: Implement `BorderSection.tsx`**
 
 ```tsx
 import { useState } from "react";
@@ -1397,7 +1397,7 @@ export function BorderSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 4: Implement `ShadowSection.tsx`**
+- [x] **Step 4: Implement `ShadowSection.tsx`**
 
 ```tsx
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1443,7 +1443,7 @@ export function ShadowSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 5: Implement `EffectsSection.tsx`**
+- [x] **Step 5: Implement `EffectsSection.tsx`**
 
 ```tsx
 import { Slider } from "@/components/ui/slider";
@@ -1498,7 +1498,7 @@ export function EffectsSection({ sp }: { sp: StyleProps }) {
 }
 ```
 
-- [ ] **Step 6: Implement `TailwindClassesEditor.tsx`**
+- [x] **Step 6: Implement `TailwindClassesEditor.tsx`**
 
 This is the `TailwindAccordion` body without its accordion wrapper.
 
@@ -1558,7 +1558,7 @@ export default function TailwindClassesEditor({ disabled }: { disabled?: boolean
 }
 ```
 
-- [ ] **Step 7: Implement `AdvancedSection.tsx`**
+- [x] **Step 7: Implement `AdvancedSection.tsx`**
 
 ```tsx
 import React, { Suspense, useState } from "react";
@@ -1601,7 +1601,7 @@ export function AdvancedSection({ disabled }: { disabled?: boolean }) {
 }
 ```
 
-- [ ] **Step 8: Type-check**
+- [x] **Step 8: Type-check**
 
 Run: `npx tsc --noEmit`
 Expected: clean. If `projectService.getFonts()` is typed as something other than `string[]`, keep the `as string[]` cast only at the `fonts=` prop.
@@ -1627,7 +1627,7 @@ git commit -m "feat(style): typography, fill, border, shadow, effects and advanc
   - `StyleTab({ breakpoint }: { breakpoint: Breakpoint })`;
   - `BreakpointButtons({ value, onChange }: { value: Breakpoint; onChange(b: Breakpoint): void })`.
 
-- [ ] **Step 1: Implement `BreakpointButtons.tsx`**
+- [x] **Step 1: Implement `BreakpointButtons.tsx`**
 
 ```tsx
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -1663,7 +1663,7 @@ export function BreakpointButtons({ value, onChange }: { value: Breakpoint; onCh
 }
 ```
 
-- [ ] **Step 2: Implement `StyleTab.tsx`**
+- [x] **Step 2: Implement `StyleTab.tsx`**
 
 ```tsx
 import { MoreHorizontal } from "lucide-react";
@@ -1742,7 +1742,7 @@ export default function StyleTab({ breakpoint }: { breakpoint: Breakpoint }) {
 }
 ```
 
-- [ ] **Step 3: Wire it into `Inspector.tsx`**
+- [x] **Step 3: Wire it into `Inspector.tsx`**
 
 Replace the imports and the Style tab:
 
@@ -1783,7 +1783,7 @@ const [breakpoint, setBreakpoint] = useState<Breakpoint>("default");
 
 6. Keep `DENSE` on the Settings `TabsContent` only.
 
-- [ ] **Step 4: Type-check, test and build**
+- [x] **Step 4: Type-check, test and build**
 
 Run: `npx tsc --noEmit && bun run test:unit && bun run build`
 Expected: all three succeed.
@@ -1806,7 +1806,7 @@ git commit -m "feat(style): new Style tab with breakpoint buttons in the inspect
   - `configurations/_shared/display/*`, except `AlignmentMatrix.tsx` and `types.ts`.
 - Modify: `configurations/_shared/index.ts` and `_shared/display/index.ts`, removing the deleted exports.
 
-- [ ] **Step 1: List the importers of every candidate**
+- [x] **Step 1: List the importers of every candidate**
 
 Run:
 
@@ -1819,11 +1819,11 @@ done
 
 Expected: each candidate's only hits are other candidates or the two `index.ts` barrels. A candidate with any other importer (e.g. a Settings configuration that uses `ColorPickerField` or `SliderField`) is **kept**; note it in the commit message.
 
-- [ ] **Step 2: Delete the unreferenced files and remove their barrel exports**
+- [x] **Step 2: Delete the unreferenced files and remove their barrel exports**
 
 Use `git rm` on the files cleared in Step 1. Edit `_shared/index.ts` and `_shared/display/index.ts` to drop the export lines for the deleted modules (and the type exports, such as `TypographyValues`, that only they used).
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 Run: `npx tsc --noEmit && bun run test:unit && bun run build`
 Expected: all three succeed. A missing-module error means a file was deleted that something still imports: restore it with `git checkout -- <file>` and keep it.
@@ -1865,3 +1865,11 @@ On http://localhost:3000, open a project and check:
   - removal with grep: Task 6;
   - tests: Tasks 1–2.
 - **Types:** `StyleProps`, `StyleMap`, `Breakpoint` and `OptionalSection` are used consistently, and `sp.set/setMany/replace/clear` keep the same names everywhere.
+
+## Implementation verification (2026-11-12)
+
+Implemented in the working tree. `SliderField` and `ColorPickerField` are retained because `IconConfiguration` in Settings imports them. Position offsets use four fields, and the style clipboard uses a dedicated in-memory zustand store, as planned.
+
+Verified with `npx tsc --noEmit`, `bun run test:unit` (111 passing tests), `bun run test:style-controls` (real Chromium controls at 280px), and `bun run build`.
+
+The browser regression test also covers Escape cancellation, unit preservation after Enter and blur, invalid input rejection, keyword stepping, reverse flex direction, spacing shorthand expansion, optional section round trips, image field focus, non-hex colours, breakpoint clearing and locked controls. Authenticated project checks in Task 6 remain manual. Commit steps are left unchecked; the implementation is available for review in the working tree.

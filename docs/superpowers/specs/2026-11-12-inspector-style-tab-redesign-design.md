@@ -61,7 +61,7 @@ The current tab (`sidebar/configurations/Styles.tsx` → `AppearanceAccordion`,
   - a type chip (`Section`);
   - the element name (`element.name`, falling back to the type);
   - a `⋯` menu with **Reset styles at this breakpoint**, **Copy styles** and
-    **Paste styles**. Copy and paste use an in-memory clipboard in the chrome
+    **Paste styles**. Copy and paste use an in-memory clipboard in a dedicated zustand
     store, not the system clipboard.
 
 ### Sections
@@ -70,7 +70,7 @@ The current tab (`sidebar/configurations/Styles.tsx` → `AppearanceAccordion`,
 |---|---|---|
 | Layout | `display`. Flex: `flexDirection`, `gap`/`rowGap`/`columnGap`, `flexWrap`, `justifyContent`, `alignItems`. Grid: `gridTemplateColumns`, `gridTemplateRows`, `gap`. Always: `width`, `height`, and behind `⋯`: `minWidth`, `maxWidth`, `minHeight`, `maxHeight`, `aspectRatio`, `objectFit`. Child-of-flex extras behind `⋯`: `alignSelf`, `flexGrow`, `flexShrink`, `flexBasis`, `order`. | Always |
 | Spacing | `padding*`, `margin*` | Always |
-| Position | `position`, `zIndex`. When not static: `top`/`right`/`bottom`/`left`, using the existing constraint toggles. | Always |
+| Position | `position`, `zIndex`. When not static: `top`/`right`/`bottom`/`left`, using four compact T/R/B/L fields. | Always |
 | Typography | Font family (existing `FontFamilyPicker`), `fontWeight`, `fontSize`, `lineHeight`, `letterSpacing`, `textAlign`, `color`, `textTransform`, `textDecoration` | Element type in `EDITABLE_ELEMENT_TYPES` |
 | Fill | `backgroundColor`, plus an optional image row: `backgroundImage`, `backgroundSize`, `backgroundPosition`, `backgroundRepeat` | Always; `+` adds the image row |
 | Border | `borderWidth`, `borderStyle`, `borderColor`, `borderRadius` and the four corner radii | Optional |
@@ -98,7 +98,7 @@ Text-overflow properties (`textOverflow`, `whiteSpace`, `wordBreak`,
 
 One shared `PropInput`:
 
-- 26px tall, with a prefix (icon or one or two letters) and an optional unit suffix.
+- 28px tall, with a prefix (icon or one or two letters) and an optional unit suffix.
 - Scrubbing: dragging the prefix horizontally changes the number by 1 per
   2px (Shift for ×10, Alt for ×0.1). ↑/↓ step by 1 (Shift ×10).
 - Commits on Enter or blur; Escape reverts. Keyword values (`auto`, `none`,
@@ -147,13 +147,12 @@ New folder `src/features/editor/components/sidebar/style/`:
   - `isTextElement(type)`.
 - `PropInput.tsx`, `ColorRow.tsx`, `SectionHeader.tsx` (title, `+`/`−`, `⋯` slot).
 - One file per section: `LayoutSection`, `SpacingSection`, `PositionSection`
-  (wrapping the existing constraint logic), `TypographySection`,
+  (four compact T/R/B/L fields), `TypographySection`,
   `FillSection`, `BorderSection`, `ShadowSection`, `EffectsSection`,
   `AdvancedSection`.
 
-Reused as-is: `_shared/display/AlignmentMatrix`, `_shared/FontFamilyPicker`,
-the position constraint toggles from `_shared/PositionSection`, and the
-`TailwindAccordion` body.
+Reused as-is: `_shared/FontFamilyPicker`,
+the `TailwindAccordion` body, extracted into `TailwindClassesEditor`.
 
 Wiring:
 
@@ -167,8 +166,9 @@ Removed after the switch, but only once nothing imports them:
 
 - `Styles.tsx`, `AppearanceAccordion.tsx`, `TypographyAccordion.tsx`, `BreakpointSelector.tsx`;
 - the Style-only `_shared` pieces: `SpacingBoxModel`, `BorderBoxModel`,
-  `PositionSection` (once its toggles are extracted), `display/*` other than
-  `AlignmentMatrix`, `SliderField`, `ColorPickerField`, `TypographyPanel`.
+  `PositionSection`, `display/*` other than
+  `AlignmentMatrix`, `TypographyPanel`.
+- `SliderField` and `ColorPickerField` remain because Settings uses them.
 
 Each removal is checked with a grep for importers first.
 
@@ -198,3 +198,7 @@ Each removal is checked with a grep for importers first.
 Manual browser check: every section on a Section, Text, Image and Button
 element; `+` then `−` round-trips; per-breakpoint dots; scrub and arrow keys;
 no horizontal overflow at 280px.
+
+## Visual refinement after screenshot review
+
+The panel uses 28px controls with 12px values and restrained 5px corner radii. A dedicated 68px `AlignmentControl` sits beside direction, gap and wrap, rather than spanning the panel. Row and column gap controls live under Layout's more options. Spacing has explicit Padding and Margin labels; per-side mode uses two columns so values and units remain legible. Color expressions preserve their original case. Inspector tabs use the line variant. Both dark and light appearances are captured by `bun run test:style-controls`.
