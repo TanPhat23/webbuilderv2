@@ -122,6 +122,11 @@ async function runStep(step: Step, ctx: RunContext, path: string, depth: number)
   }
   const value = (template: string) => interpolate(template, scopeOf(ctx));
   const s = step as Step & Record<string, unknown>;
+  const record = (result: unknown) => {
+    if (typeof s.id === "string") {
+      Object.defineProperty(ctx.steps, s.id, { value: result, writable: true, enumerable: true, configurable: true });
+    }
+  };
 
   try {
     let result: unknown;
@@ -136,6 +141,7 @@ async function runStep(step: Step, ctx: RunContext, path: string, depth: number)
           `${path}.${yes ? "then" : "else"}`,
           depth,
         );
+        record(yes);
         return;
       }
       case "run": {
@@ -151,6 +157,7 @@ async function runStep(step: Step, ctx: RunContext, path: string, depth: number)
         }
         log("ok");
         await runSteps(flow.do, ctx, `flow:${name}.do`, depth + 1);
+        record(true);
         return;
       }
       case "set": {
@@ -178,13 +185,18 @@ async function runStep(step: Step, ctx: RunContext, path: string, depth: number)
         }
       }
     }
-    if (typeof s.id === "string") Object.defineProperty(ctx.steps, s.id, { value: result, writable: true, enumerable: true, configurable: true });
-    log("ok");
+    record(result);
+    if (verb === "call" && result && typeof result === "object" && "ok" in result && result.ok === false) {
+      const failed = result as CallResult;
+      log("error", failed.error ?? `HTTP ${failed.status}`);
+    } else {
+      log("ok");
+    }
   } catch (e) {
     if (e instanceof Stop) throw e;
     if (verb === "call") {
       const failed: CallResult = { ok: false, status: 0, data: null, error: message(e) };
-      if (typeof s.id === "string") Object.defineProperty(ctx.steps, s.id, { value: failed, writable: true, enumerable: true, configurable: true });
+      record(failed);
       log("error", message(e));
       return;
     }

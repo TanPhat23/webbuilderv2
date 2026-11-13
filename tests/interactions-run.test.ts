@@ -57,6 +57,8 @@ test("a failed call does not stop the interaction; the else branch can handle it
     c,
   );
   assert.deepEqual(c.calls, ["toast:failed 500"]);
+  assert.equal(c.logs[0].status, "error");
+  assert.equal(c.logs[0].detail, "HTTP 500");
 });
 
 test("a call executor that throws is turned into ok:false and logged", async () => {
@@ -123,4 +125,15 @@ test("step results cannot change the steps object prototype", async () => {
   await runInteraction({ on: "click", do: [{ id: "__proto__", call: "api", method: "GET", url: "/ok" }] }, c);
   assert.equal(Object.getPrototypeOf(c.steps), original);
   assert.equal(Object.hasOwn(c.steps, "__proto__"), true);
+});
+
+test("control steps expose their result after execution", async () => {
+  const c = ctx({ flows: { greet: { do: [{ toast: "inside" }] } } });
+  const result = await runInteraction({ on: "click", do: [
+    { id: "decision", if: "{{ 2 > 1 }}", then: [] },
+    { id: "flow", run: "greet" },
+    { toast: "{{ steps.decision }} / {{ steps.flow }}" },
+  ] }, c);
+  assert.equal(result, "done");
+  assert.deepEqual(c.calls, ["toast:inside", "toast:true / true"]);
 });
