@@ -121,3 +121,19 @@ test("element suggestions generate valid expressions for UUID element IDs", asyn
   assert.doesNotThrow(() => parseExpression(`${item.insert}value`));
   assert.deepEqual(suggest(`{{ ${item.insert}v`, 3 + item.insert.length + 1, ctx)!.items.map((i) => i.label), ["value", "visible"]);
 });
+
+test("form root suggestion inserts a complete expression", async () => {
+  const { parseExpression } = await import("../src/features/interactions/runtime/expression");
+  const items = suggest("{{ fo", 5, { variables: [], stepIds: [], elements: [] })!.items;
+  const form = items.find((item) => item.label === "form")!;
+  assert.equal(form.insert, "form");
+  assert.doesNotThrow(() => parseExpression(form.insert));
+});
+
+test("incomplete conditionals accept and suggest steps in missing branches", () => {
+  const draft: any[] = [{ if: "{{ true }}" }];
+  assert.deepEqual(stepIdsBefore(draft, [0, "then", 0]), []);
+  const updated = insertStep(draft, [0, "then"], 0, { toast: "ok" } as any);
+  assert.deepEqual((updated[0] as any).then, [{ toast: "ok" }]);
+  assert.equal(draft[0].then, undefined);
+});

@@ -40,7 +40,7 @@ export function suggest(
   let items: Suggestion[] = [];
 
   if (rest.length === 0) {
-    items = ROOTS.filter((r) => starts(r, root)).map((r) => ({ label: r, insert: `${r}.` }));
+    items = ROOTS.filter((r) => starts(r, root)).map((r) => ({ label: r, insert: r === "form" ? r : `${r}.` }));
   } else if (rest.length === 1) {
     const p = rest[0];
     if (root === "vars") {

@@ -17,7 +17,7 @@ function listAt(steps: Step[], listPath: StepPath): Step[] | undefined {
   for (let i = 0; i < listPath.length; i += 2) {
     const step: Step | undefined = list?.[listPath[i] as number];
     if (!isIf(step)) return undefined;
-    list = listPath[i + 1] === "then" ? step.then : (step.else ?? []);
+    list = (listPath[i + 1] === "then" ? step.then : step.else) ?? [];
   }
   return list;
 }
@@ -27,7 +27,7 @@ function updateList(steps: Step[], listPath: StepPath, fn: (list: Step[]) => Ste
   const [index, branch, ...rest] = listPath as [number, Branch, ...StepPath];
   return steps.map((s, i) => {
     if (i !== index || !isIf(s)) return s;
-    const current = branch === "then" ? s.then : (s.else ?? []);
+    const current = (branch === "then" ? s.then : s.else) ?? [];
     return { ...s, [branch]: updateList(current, rest, fn) } as Step;
   });
 }
@@ -83,7 +83,7 @@ export function stepIdsBefore(steps: Step[], path: StepPath): string[] {
     const branch = path[i + 1] as Branch | undefined;
     const step = list[index];
     if (!branch || !isIf(step)) break;
-    list = branch === "then" ? step.then : (step.else ?? []);
+    list = (branch === "then" ? step.then : step.else) ?? [];
   }
   return [...seen];
 }
