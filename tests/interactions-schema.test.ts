@@ -106,3 +106,15 @@ test("deep nesting is bounded", () => {
   const issues = validateInteractionMap({ ix_aaaaaaaa: { on: "click", do: steps } });
   assert.ok(issues.some((i) => /nested too deeply/.test(i.message)));
 });
+
+test("missing conditional branches remain editable drafts while malformed branches fail", () => {
+  const missing = validateInteractionMap({ ix_aaaaaaaa: { on: "click", do: [{ if: "{{ true }}" }] } });
+  assert.deepEqual(missing.filter((i) => i.path.endsWith(".then")).map((i) => i.level), ["incomplete"]);
+  const malformed = validateInteractionMap({ ix_aaaaaaaa: { on: "click", do: [{ if: "{{ true }}", then: "bad" }] } });
+  assert.ok(malformed.some((i) => i.path.endsWith(".then") && i.level === "error"));
+});
+
+test("non-plain objects cannot serve as interaction maps or entries", () => {
+  assert.equal(validateInteractionMap(new Date())[0]?.level, "error");
+  assert.equal(validateInteractionMap({ ix_aaaaaaaa: new Date() })[0]?.level, "error");
+});

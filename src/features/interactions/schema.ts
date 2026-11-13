@@ -151,7 +151,9 @@ export const InteractionHead = z.strictObject({
 });
 
 export function isPlainObject(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const prototype = Object.getPrototypeOf(v);
+  return prototype === Object.prototype || prototype === null;
 }
 
 export function verbOf(step: unknown): Verb | null {
@@ -234,7 +236,7 @@ function validateStep(step: unknown, path: string, out: Issue[], depth: number) 
     }
   }
   if (verb === "if") {
-    validateSteps(step.then, `${path}.then`, out, depth + 1);
+    if (step.then !== undefined) validateSteps(step.then, `${path}.then`, out, depth + 1);
     if (step.else !== undefined) validateSteps(step.else, `${path}.else`, out, depth + 1);
   }
 }
