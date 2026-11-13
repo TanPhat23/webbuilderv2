@@ -1,6 +1,7 @@
 
 import React, { memo } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Zap } from "lucide-react";
+import { hasInteractions } from "@/features/interactions/ops";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
 import { useParentLayout } from "@/features/editor/hooks/useParentLayout";
@@ -36,6 +37,9 @@ export const ElementLabel = memo(function ElementLabel({
       }}
     >
       <span className="font-semibold truncate max-w-25">{element.type}</span>
+      {hasInteractions(element) && (
+        <Zap size={10} strokeWidth={3} aria-label="Has interactions" className="shrink-0" />
+      )}
 
       <div
         className={cn(

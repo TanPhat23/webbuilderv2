@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { EditorElement } from "@/types/global.type";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElementStore } from "@/features/editor/store/element-store";
@@ -20,10 +20,12 @@ import EditorContextMenu from "@/features/editor/components/EditorContextMenu";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { CanvasOverlay, type DropIndicatorState } from "./CanvasOverlay";
 import { findElementNode } from "./useElementRect";
+import { usePickStore } from "@/features/interactions/editing/pick-store";
 
 const CANVAS_CSS = `
 [data-canvas-root] [draggable="true"] { cursor: grab; }
 [data-canvas-root] [data-dragging="true"] { opacity: 0.5; }
+[data-canvas-root][data-picking] *, [data-canvas-root][data-picking] { cursor: crosshair !important; }
 `;
 
 /** The innermost canvas element under an event target, if inside `root`. */
@@ -80,6 +82,36 @@ export function CanvasInteractionLayer({
   const dropRef = useRef<DropIndicatorState | null>(null);
   const draggingIdRef = useRef<string | null>(null);
   const draggingId = useSelectionStore((s) => s.draggingElementId);
+  const picking = usePickStore((s) => s.onPick !== null);
+
+  useEffect(() => {
+    if (!picking) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      usePickStore.getState().cancel();
+    };
+    // The canvas may live in a different document from the inspector.
+    const views = new Set<Window>([window]);
+    if (root?.ownerDocument.defaultView) views.add(root.ownerDocument.defaultView);
+    views.forEach((view) => view.addEventListener("keydown", onKeyDown, true));
+    return () => views.forEach((view) => view.removeEventListener("keydown", onKeyDown, true));
+  }, [picking, root]);
+
+  const blockPickPointer = (event: React.MouseEvent) => {
+    if (!usePickStore.getState().onPick) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const onClickCapture = (event: React.MouseEvent) => {
+    if (!usePickStore.getState().onPick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const id = elementNodeFrom(root, event.target)?.dataset.elementId;
+    if (id) usePickStore.getState().pick(id);
+  };
 
   const updateDrop = useCallback((next: DropIndicatorState | null) => {
     const prev = dropRef.current;
@@ -257,7 +289,11 @@ export function CanvasInteractionLayer({
     <div
       ref={setRoot}
       data-canvas-root
+      data-picking={picking || undefined}
       className="relative"
+      onMouseDownCapture={blockPickPointer}
+      onMouseUpCapture={blockPickPointer}
+      onClickCapture={onClickCapture}
       onMouseOver={onMouseOver}
       onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
