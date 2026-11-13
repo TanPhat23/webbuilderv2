@@ -83,6 +83,7 @@ export function CanvasInteractionLayer({
   const draggingIdRef = useRef<string | null>(null);
   const draggingId = useSelectionStore((s) => s.draggingElementId);
   const picking = usePickStore((s) => s.onPick !== null);
+  const suppressMultiClick = useRef(false);
 
   useEffect(() => {
     if (!picking) return;
@@ -100,17 +101,29 @@ export function CanvasInteractionLayer({
   }, [picking, root]);
 
   const blockPickPointer = (event: React.MouseEvent) => {
-    if (!usePickStore.getState().onPick) return;
+    if (event.type === "mousedown" && event.detail === 1) suppressMultiClick.current = false;
+    if (!usePickStore.getState().onPick && !(suppressMultiClick.current && event.detail > 1)) return;
     event.preventDefault();
     event.stopPropagation();
   };
 
   const onClickCapture = (event: React.MouseEvent) => {
-    if (!usePickStore.getState().onPick) return;
+    const waiting = usePickStore.getState().onPick;
+    if (!waiting && !(suppressMultiClick.current && event.detail > 1)) return;
     event.preventDefault();
     event.stopPropagation();
     const id = elementNodeFrom(root, event.target)?.dataset.elementId;
-    if (id) usePickStore.getState().pick(id);
+    if (waiting && id) {
+      suppressMultiClick.current = true;
+      usePickStore.getState().pick(id);
+    }
+  };
+
+  const onDoubleClickCapture = (event: React.MouseEvent) => {
+    if (!suppressMultiClick.current && !usePickStore.getState().onPick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressMultiClick.current = false;
   };
 
   const updateDrop = useCallback((next: DropIndicatorState | null) => {
@@ -294,6 +307,8 @@ export function CanvasInteractionLayer({
       onMouseDownCapture={blockPickPointer}
       onMouseUpCapture={blockPickPointer}
       onClickCapture={onClickCapture}
+      onDoubleClickCapture={onDoubleClickCapture}
+      onContextMenuCapture={blockPickPointer}
       onMouseOver={onMouseOver}
       onMouseLeave={onMouseLeave}
       onDoubleClick={onDoubleClick}
