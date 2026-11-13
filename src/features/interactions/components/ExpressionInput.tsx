@@ -34,10 +34,12 @@ export function ExpressionInput({ id, value, onChange, ctx, placeholder, multili
     const caret = node.selectionStart ?? value.length;
     const next = value.slice(0, menu.from) + item.insert + value.slice(caret);
     onChange(next);
+    const opensChildren = item.insert.endsWith(".");
+    if (!opensChildren) setMenu(null);
     const pos = menu.from + item.insert.length;
     requestAnimationFrame(() => {
       node.setSelectionRange(pos, pos);
-      refresh(next, pos);
+      if (opensChildren) refresh(next, pos);
     });
   };
 
