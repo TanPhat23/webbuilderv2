@@ -5,6 +5,10 @@ import {
   type SizingStyles,
 } from "@/features/editor/utils/element/sizing";
 import { cloneDeep } from 'lodash-es';
+import {
+  diffTrees,
+  patchWithDeletions,
+} from "@/features/editor/utils/element/treeDiff";
 import { SelectionStore } from "./selection-store";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
@@ -100,7 +104,12 @@ export type ElementStore = {
 function fitToParent(
   tree: EditorElement[],
   id: string,
-): { tree: EditorElement[]; styles?: EditorElement["styles"] } {
+): {
+  tree: EditorElement[];
+  styles?: EditorElement["styles"];
+  /** The same change as a merge patch (removed keys are null), for the wire. */
+  stylesPatch?: Record<string, unknown>;
+} {
   const el = elementHelper.findById(tree, id);
   const location = elementHelper.findLocation(tree, id);
   if (!el || !location?.parentId) return { tree };
@@ -116,6 +125,7 @@ function fitToParent(
       (e) => ({ ...e, styles }) as EditorElement,
     ) as EditorElement[],
     styles,
+    stylesPatch: patchWithDeletions(el.styles, styles),
   };
 }
 
@@ -149,6 +159,22 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     const { collaborativeCallback } = get();
     if (collaborativeCallback && typeof collaborativeCallback === "function") {
       collaborativeCallback(type, id, data);
+    }
+  };
+
+  /** Sends what changed between two trees, for undo and redo. */
+  const syncTreeChange = (from: EditorElement[], to: EditorElement[]) => {
+    for (const op of diffTrees(from, to)) {
+      if (op.type === "delete") triggerCollaborativeCallback("delete", op.id);
+      else if (op.type === "create")
+        triggerCollaborativeCallback("create", op.element.id, op.element);
+      else if (op.type === "move")
+        triggerCollaborativeCallback("move", op.id, {
+          elementId: op.id,
+          newParentId: op.newParentId,
+          newPosition: op.newPosition,
+        });
+      else triggerCollaborativeCallback("update", op.id, op.patch);
     }
   };
 
@@ -226,6 +252,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     updateElement: (id: string, updatedElement: Partial<EditorElement>) => {
       takeSnapshot();
       const { elements } = get();
+      const before = elementHelper.findById(elements as EditorElement[], id);
       const updatedTree = elementHelper.mapUpdateById(
         elements as EditorElement[],
         id,
@@ -239,7 +266,16 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       set({ elements: updatedTree });
 
       triggerYjsCallback();
-      triggerCollaborativeCallback("update", id, updatedElement);
+      // The server deep-merges styles and settings, so a key removed here
+      // must travel as null or it would survive there.
+      const wire: Partial<EditorElement> = { ...updatedElement };
+      for (const key of ["styles", "settings"] as const) {
+        if (updatedElement[key] === undefined || !before) continue;
+        const delta = patchWithDeletions(before[key], updatedElement[key]);
+        if (delta) (wire as Record<string, unknown>)[key] = delta;
+        else delete wire[key];
+      }
+      triggerCollaborativeCallback("update", id, wire);
       return get();
     },
 
@@ -310,7 +346,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         position,
       );
       if (moved === elements) return get();
-      const { tree: updated, styles: fittedStyles } = fitToParent(moved, id);
+      const { tree: updated, stylesPatch } = fitToParent(moved, id);
       takeSnapshot();
       set({ elements: updated });
       triggerYjsCallback();
@@ -322,8 +358,10 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
           newPosition: location.index,
         });
       }
-      if (fittedStyles) {
-        triggerCollaborativeCallback("update", id, { styles: fittedStyles });
+      if (stylesPatch) {
+        triggerCollaborativeCallback("update", id, {
+          styles: stylesPatch,
+        } as Partial<EditorElement>);
       }
       return get();
     },
@@ -362,6 +400,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         future: [elements, ...future],
       });
       triggerYjsCallback();
+      syncTreeChange(elements, previous);
       return get();
     },
 
@@ -376,6 +415,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         future: newFuture,
       });
       triggerYjsCallback();
+      syncTreeChange(elements, next);
       return get();
     },
 
