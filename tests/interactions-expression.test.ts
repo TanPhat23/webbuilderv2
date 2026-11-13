@@ -90,3 +90,17 @@ test("templateRefs lists member chains rooted at identifiers", () => {
   assert.deepEqual(templateRefs("{{ vars[event.value] }}"), [["vars"], ["event", "value"]]);
   assert.deepEqual(templateRefs("{{ broken + }}"), []);
 });
+
+test("templates parse quoted closing braces and reject unclosed expressions efficiently", () => {
+  assert.equal(interpolate("Value: {{ '}}' }}!", {}), "Value: }}!");
+  assert.deepEqual(templateErrors("{{ '}}' }}"), []);
+  assert.match(templateErrors("{{ ".repeat(20000))[0], /unclosed/);
+  assert.equal(interpolate("{{ ".repeat(20000), {}), "{{ ".repeat(20000));
+});
+
+test("nesting limit accepts 64 parentheses and rejects deeper syntax and member chains", () => {
+  assert.equal(evaluate("(".repeat(64) + "1" + ")".repeat(64), {}), 1);
+  assert.throws(() => parseExpression("(".repeat(65) + "1" + ")".repeat(65)), /deeply/);
+  assert.throws(() => parseExpression("x" + ".a".repeat(65)), /deeply/);
+  assert.throws(() => parseExpression("1" + "+1".repeat(65)), /deeply/);
+});

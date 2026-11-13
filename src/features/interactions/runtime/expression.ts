@@ -175,12 +175,12 @@ export function parseExpression(src: string): ExprNode {
       next();
       return { k: "un", op: t.v, arg: unary(depth + 1) };
     }
-    return postfix(primary(depth + 1), depth + 1);
+    return postfix(primary(depth), depth);
   };
 
   const expr = (minPrec: number, depth: number): ExprNode => {
     guard(depth);
-    let left = unary(depth + 1);
+    let left = unary(depth);
     for (;;) {
       const t = peek();
       if (t.t === "op" && t.v === "?" && minPrec <= 1) {
@@ -203,6 +203,19 @@ export function parseExpression(src: string): ExprNode {
   const root = expr(0, 0);
   const end = peek();
   if (end.t !== "end") throw unexpected(end);
+  // Iterative validation also bounds left-associated operators and member
+  // chains, which the Pratt parser constructs without recursive calls.
+  const pending: Array<[ExprNode, number]> = [[root, 0]];
+  while (pending.length) {
+    const [node, depth] = pending.pop()!;
+    guard(depth);
+    switch (node.k) {
+      case "mem": pending.push([node.obj, depth + 1], [node.prop, depth + 1]); break;
+      case "un": pending.push([node.arg, depth + 1]); break;
+      case "bin": pending.push([node.l, depth + 1], [node.r, depth + 1]); break;
+      case "cond": pending.push([node.test, depth + 1], [node.yes, depth + 1], [node.no, depth + 1]); break;
+    }
+  }
   return root;
 }
 
@@ -284,32 +297,66 @@ export function evaluate(src: string, scope: Scope): unknown {
   return run(node, scope);
 }
 
-const WHOLE = /^\s*\{\{([\s\S]*?)\}\}\s*$/;
-const ANY = /\{\{([\s\S]*?)\}\}/g;
+type TemplateExpression = { start: number; end: number; source: string };
 
-/**
- * Fills a template. A template that is exactly one `{{ expr }}` returns the
- * value with its type (an object stays an object); mixed text returns a string.
- */
-export function interpolate(template: string, scope: Scope): unknown {
-  const whole = WHOLE.exec(template);
-  if (whole && !whole[1].includes("{{") && !whole[1].includes("}}")) {
-    return evaluate(whole[1], scope);
+/** Find template expressions in one pass, respecting quoted strings. */
+function scanTemplate(template: string): { expressions: TemplateExpression[]; unclosed: boolean } {
+  const expressions: TemplateExpression[] = [];
+  let cursor = 0;
+  while (cursor < template.length) {
+    const start = template.indexOf("{{", cursor);
+    if (start < 0) break;
+    let i = start + 2;
+    let quote = "";
+    while (i < template.length) {
+      const c = template[i];
+      if (quote) {
+        if (c === "\\") { i += 2; continue; }
+        if (c === quote) quote = "";
+      } else if (c === "'" || c === '"') {
+        quote = c;
+      } else if (c === "}" && template[i + 1] === "}") {
+        break;
+      }
+      i++;
+    }
+    if (i >= template.length) return { expressions, unclosed: true };
+    expressions.push({ start, end: i + 2, source: template.slice(start + 2, i) });
+    cursor = i + 2;
   }
-  if (!template.includes("{{")) return template;
-  return template.replace(ANY, (_m, src: string) => toText(evaluate(src, scope)));
+  return { expressions, unclosed: false };
+}
+
+/** A whole expression retains its type; mixed text is rendered as a string. */
+export function interpolate(template: string, scope: Scope): unknown {
+  const { expressions } = scanTemplate(template);
+  if (expressions.length === 1) {
+    const part = expressions[0];
+    if (!template.slice(0, part.start).trim() && !template.slice(part.end).trim()) {
+      return evaluate(part.source, scope);
+    }
+  }
+  const out: string[] = [];
+  let cursor = 0;
+  for (const part of expressions) {
+    out.push(template.slice(cursor, part.start), toText(evaluate(part.source, scope)));
+    cursor = part.end;
+  }
+  out.push(template.slice(cursor));
+  return out.join("");
 }
 
 export function templateErrors(template: string): string[] {
   const out: string[] = [];
-  for (const m of template.matchAll(ANY)) {
+  const { expressions, unclosed } = scanTemplate(template);
+  for (const part of expressions) {
     try {
-      parseExpression(m[1]);
+      parseExpression(part.source);
     } catch (e) {
-      out.push(`{{${m[1]}}}: ${(e as Error).message}`);
+      out.push(`{{${part.source}}}: ${(e as Error).message}`);
     }
   }
-  if (template.replace(ANY, "").includes("{{")) out.push("unclosed {{");
+  if (unclosed) out.push("unclosed {{");
   return out;
 }
 
@@ -338,9 +385,9 @@ export function templateRefs(template: string): string[][] {
       case "cond": walk(n.test); walk(n.yes); walk(n.no); break;
     }
   };
-  for (const m of template.matchAll(ANY)) {
+  for (const part of scanTemplate(template).expressions) {
     try {
-      walk(parseExpression(m[1]));
+      walk(parseExpression(part.source));
     } catch {
       // Syntax errors are reported by templateErrors.
     }
