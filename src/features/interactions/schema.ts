@@ -101,7 +101,8 @@ export const VERB_SCHEMAS = {
     id: stepId,
     class: z.enum(["add", "remove", "toggle"]),
     target: elementRef,
-    name: z.string().regex(/^[A-Za-z0-9_:\-/[\].%]+$/, "one class name, no spaces"),
+    // A dynamic class is checked again after interpolation by the executor.
+    name: z.string().regex(/^(?:[A-Za-z0-9_:\-/[\].%]+|[\s\S]*\{\{[\s\S]*)$/, "one class name, no spaces"),
   }),
   set: z.strictObject({ id: stepId, set: z.string().regex(NAME_RE, "must be a variable name"), to: z.string() }),
   call: z.strictObject({
@@ -134,10 +135,10 @@ export const ELEMENT_FIELDS: Partial<Record<Verb, string[]>> = {
 
 /** Fields that may contain `{{ }}` templates. */
 export const TEMPLATE_FIELDS: Record<Verb, string[]> = {
-  navigate: ["navigate"], show: [], hide: [], toggle: [], scroll: [], modal: [],
+  navigate: ["navigate"], show: ["show"], hide: ["hide"], toggle: ["toggle"], scroll: ["scroll"], modal: ["target"],
   toast: ["toast"], copy: ["copy"], download: ["download", "filename"],
-  animate: [], class: [], set: ["to"], call: ["url", "body"], submit: [],
-  reset: [], wait: [], if: ["if"], run: [], code: [],
+  animate: ["animate"], class: ["target", "name"], set: ["to"], call: ["url", "body"], submit: ["submit"],
+  reset: ["reset"], wait: [], if: ["if"], run: [], code: [],
 };
 
 export const InteractionHead = z.strictObject({

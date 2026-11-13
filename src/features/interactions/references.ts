@@ -36,7 +36,7 @@ export function referenceWarnings(map: InteractionMap, ctx: RefContext, at = "in
       const p = `${path}[${i}]`;
       for (const field of ELEMENT_FIELDS[verb] ?? []) {
         const value = raw[field];
-        if (typeof value === "string" && value && !ctx.elementIds.has(value)) {
+        if (typeof value === "string" && value && !value.includes("{{") && !ctx.elementIds.has(value)) {
           warn(`${p}.${field}`, `missing element ${value}`);
         }
       }

@@ -61,3 +61,20 @@ test("call header templates receive reference warnings with header paths", () =>
     ["custom.ix_aaaaaaaa.do[0].headers.X-Element", "missing element gone"],
   ]);
 });
+
+test("dynamic element targets check expression references rather than looking up the template text", () => {
+  const warnings = referenceWarnings({ ix_aaaaaaaa: { on: "click", do: [
+    { show: "{{ vars.user.target }}" },
+    { hide: "{{ vars.missing }}" },
+    { class: "add", target: "{{ el.gone.value }}", name: "{{ vars.missingClass }}" },
+    { show: "gone" },
+    { call: "api", method: "GET", url: "/", headers: { Authorization: "{{ vars.missingToken }}" } },
+  ] } }, ctx);
+  assert.deepEqual(warnings.map((w) => [w.path, w.message]), [
+    ["interactions.ix_aaaaaaaa.do[1].hide", "no variable named missing"],
+    ["interactions.ix_aaaaaaaa.do[2].target", "missing element gone"],
+    ["interactions.ix_aaaaaaaa.do[2].name", "no variable named missingClass"],
+    ["interactions.ix_aaaaaaaa.do[3].show", "missing element gone"],
+    ["interactions.ix_aaaaaaaa.do[4].headers.Authorization", "no variable named missingToken"],
+  ]);
+});

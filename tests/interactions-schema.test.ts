@@ -118,3 +118,16 @@ test("non-plain objects cannot serve as interaction maps or entries", () => {
   assert.equal(validateInteractionMap(new Date())[0]?.level, "error");
   assert.equal(validateInteractionMap({ ix_aaaaaaaa: new Date() })[0]?.level, "error");
 });
+
+test("element targets and class names accept templates and validate their syntax", () => {
+  ok({ ix_aaaaaaaa: { on: "click", do: [
+    { show: "{{ vars.user.target }}" },
+    { class: "add", target: "{{ vars.user.target }}", name: "{{ vars.user.className }}" },
+  ] } });
+  const issues = validateInteractionMap({ ix_aaaaaaaa: { on: "click", do: [
+    { show: "{{ vars. }}" }, { class: "add", target: "btn", name: "{{ vars. }}" },
+  ] } });
+  for (const field of ["show", "name"]) {
+    assert.ok(issues.some((issue) => issue.path.endsWith(`.${field}`) && issue.level === "incomplete"));
+  }
+});
