@@ -23,7 +23,21 @@ test("host prevents submit reload, limits self events and stops native propagati
     await page.locator("#form").waitFor({ timeout: 5000 });
     await page.locator("#unmarked").focus();
     await page.waitForTimeout(30);
-    assert.deepEqual(await page.evaluate(() => (window as any).events), []);
+    await page.waitForFunction(
+      () => (window as any).events.includes("broken"),
+      null,
+      { timeout: 2000 },
+    );
+    await page
+      .locator("#broken")
+      .evaluate((el) => el.dispatchEvent(new Event("error")));
+    const initialEvents = await page.evaluate(
+      () => (window as any).events as string[],
+    );
+    assert.equal(initialEvents.filter((x) => x === "broken").length, 1);
+    assert.equal(initialEvents.includes("empty"), false);
+    assert.equal(initialEvents.includes("pending"), false);
+    assert.equal(initialEvents.includes("outer focus"), false);
     const prevented = await page
       .locator("#form")
       .evaluate(
@@ -57,6 +71,24 @@ test("host prevents submit reload, limits self events and stops native propagati
         "outer click",
       ),
       false,
+    );
+    await page.locator("#snapshot").click();
+    assert.equal(
+      (await page.evaluate(() => (window as any).events)).includes("late load"),
+      false,
+    );
+    await page.locator("#load-dom").click();
+    await page.waitForFunction(
+      () => (window as any).events.includes("late load"),
+      null,
+      { timeout: 2000 },
+    );
+    await page.locator("#rerender").click();
+    assert.equal(
+      (await page.evaluate(() => (window as any).events as string[])).filter(
+        (x) => x === "late load",
+      ).length,
+      1,
     );
     await page.locator("#show").click();
     await page.waitForFunction(

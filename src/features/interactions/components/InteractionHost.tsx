@@ -97,6 +97,15 @@ export function InteractionHost({
 }: InteractionHostProps) {
   const ref = useRef<HTMLDivElement>(null);
   const tracker = useRef(createVisibleTracker());
+  const loadState = useRef({
+    namespace,
+    fired: new Map<string, Set<string>>(),
+  });
+  const imageErrors = useRef(new WeakMap<Element, string>());
+  if (loadState.current.namespace !== namespace) {
+    loadState.current = { namespace, fired: new Map() };
+    imageErrors.current = new WeakMap();
+  }
   const index = useMemo(() => indexInteractions(elements), [elements]);
   const ids = useMemo(() => pageIds(elements), [elements]);
   const indexRef = useRef(index);
@@ -114,6 +123,13 @@ export function InteractionHost({
   );
 
   useLayoutEffect(() => {
+    const fired = loadState.current.fired;
+    for (const [elementId, seen] of fired) {
+      const map = index.get(elementId);
+      for (const ixId of seen)
+        if (!map || map[ixId]?.on !== "load") seen.delete(ixId);
+      if (!seen.size) fired.delete(elementId);
+    }
     const root = ref.current;
     if (!enabled || !root) return;
     const p = platform(root.ownerDocument, root, (id) =>
@@ -186,33 +202,73 @@ export function InteractionHost({
       if (result.stopPropagation) event.stopPropagation();
       fire(result.runs, event);
     };
-    const onError = (event: Event) => {
-      const target = event.target as Element | null;
+    const imageKey = (target: Element) => {
+      if (target.tagName !== "IMG") return "";
+      const image = target as HTMLImageElement;
+      const source =
+        image.getAttribute("src")?.trim() ||
+        image.getAttribute("srcset")?.trim();
+      return source ? image.currentSrc || source : "";
+    };
+    const dispatchError = (target: Element | null, event: Event | null) => {
       const id = target?.getAttribute?.("data-element-id");
-      if (!id || chainIds(target as unknown as ChainNode, root)[0] !== id)
+      if (
+        !target ||
+        !id ||
+        chainIds(target as unknown as ChainNode, root)[0] !== id
+      )
         return;
       const result = plan(indexRef.current, [id], "error", { bubble: false });
-      if (result.preventDefault) event.preventDefault();
-      if (result.stopPropagation) event.stopPropagation();
+      if (!result.runs.length) return;
+      const key = imageKey(target);
+      if (key && imageErrors.current.get(target) === key) return;
+      if (key) imageErrors.current.set(target, key);
+      if (result.preventDefault) event?.preventDefault();
+      if (result.stopPropagation) event?.stopPropagation();
       fire(result.runs, event);
+    };
+    const onError = (event: Event) =>
+      dispatchError(event.target as Element | null, event);
+    const dispatchPending = () => {
+      for (const [elementId] of indexRef.current) {
+        const node = p.byId(elementId) as unknown as Element | null;
+        if (!node) continue;
+        const load = plan(indexRef.current, [elementId], "load", {
+          bubble: false,
+        }).runs;
+        let seen = fired.get(elementId);
+        if (!seen) fired.set(elementId, (seen = new Set()));
+        const pending = load.filter(({ ixId }) => {
+          if (seen!.has(ixId)) return false;
+          seen!.add(ixId);
+          return true;
+        });
+        if (pending.length) fire(pending, null);
+        if (node.tagName === "IMG") {
+          const image = node as HTMLImageElement;
+          if (imageKey(node) && image.complete && image.naturalWidth === 0)
+            dispatchError(node, null);
+        }
+      }
     };
     const types = Object.keys(NATIVE_EVENTS);
     types.forEach((type) => root.addEventListener(type, onEvent));
     root.addEventListener("mouseover", onHover);
     root.addEventListener("mouseout", onHover);
     root.addEventListener("error", onError, true);
-    for (const [elementId] of indexRef.current)
-      fire(
-        plan(indexRef.current, [elementId], "load", { bubble: false }).runs,
-        null,
-      );
+    dispatchPending();
+    const mutations = new root.ownerDocument.defaultView!.MutationObserver(
+      dispatchPending,
+    );
+    mutations.observe(root, { childList: true, subtree: true });
     return () => {
+      mutations.disconnect();
       types.forEach((type) => root.removeEventListener(type, onEvent));
       root.removeEventListener("mouseover", onHover);
       root.removeEventListener("mouseout", onHover);
       root.removeEventListener("error", onError, true);
     };
-  }, [enabled, platform, flows, vars]);
+  }, [enabled, platform, flows, vars, index]);
 
   useLayoutEffect(() => {
     tracker.current.reconcile(index);

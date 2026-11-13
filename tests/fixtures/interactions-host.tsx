@@ -35,6 +35,24 @@ const elements = [
         },
       },
       {
+        id: "broken",
+        settings: {
+          interactions: { ix_hhhhhhhh: interaction("error", "broken") },
+        },
+      },
+      {
+        id: "empty",
+        settings: {
+          interactions: { ix_iiiiiiii: interaction("error", "empty") },
+        },
+      },
+      {
+        id: "pending",
+        settings: {
+          interactions: { ix_jjjjjjjj: interaction("error", "pending") },
+        },
+      },
+      {
         id: "visible",
         settings: {
           interactions: {
@@ -90,28 +108,102 @@ class FakeObserver {
 function App() {
   const [version, setVersion] = React.useState(0);
   const [shown, setShown] = React.useState(false);
+  const [snapshot, setSnapshot] = React.useState(false);
+  const [loadedDom, setLoadedDom] = React.useState(false);
+  const page = snapshot
+    ? [
+        ...elements,
+        {
+          id: "late",
+          settings: {
+            interactions: { ix_gggggggg: interaction("load", "late load") },
+          },
+        },
+      ]
+    : elements;
   return (
     <>
       <button id="rerender" onClick={() => setVersion((v) => v + 1)}>
         Update
       </button>
+      <button id="snapshot" onClick={() => setSnapshot(true)}>
+        Snapshot
+      </button>
+      <button id="load-dom" onClick={() => setLoadedDom(true)}>
+        Mount loaded element
+      </button>
       <button id="show" onClick={() => setShown(true)}>
         Show
       </button>
       <InteractionHost
-        elements={[...elements]}
+        elements={[...page]}
         enabled
         namespace="test"
         platform={platform}
       >
         <div data-element-id="outer" data-version={version}>
           <input id="unmarked" />
+          <img
+            data-element-id="broken"
+            id="broken"
+            src="data:image/png;base64,AAAA"
+            ref={(el) => {
+              if (el) {
+                Object.defineProperty(el, "complete", {
+                  value: true,
+                  configurable: true,
+                });
+                Object.defineProperty(el, "naturalWidth", {
+                  value: 0,
+                  configurable: true,
+                });
+              }
+            }}
+          />
+          <img
+            data-element-id="empty"
+            id="empty"
+            ref={(el) => {
+              if (el) {
+                Object.defineProperty(el, "complete", {
+                  value: true,
+                  configurable: true,
+                });
+                Object.defineProperty(el, "naturalWidth", {
+                  value: 0,
+                  configurable: true,
+                });
+              }
+            }}
+          />
+          <img
+            data-element-id="pending"
+            id="pending"
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
+            ref={(el) => {
+              if (el) {
+                Object.defineProperty(el, "complete", {
+                  value: false,
+                  configurable: true,
+                });
+                Object.defineProperty(el, "naturalWidth", {
+                  value: 0,
+                  configurable: true,
+                });
+              }
+            }}
+          />
           <form data-element-id="form" id="form">
             <button type="submit">Submit</button>
           </form>
           <button data-element-id="inner" id="inner">
             Click
           </button>
+          {loadedDom && (
+            <div id="late" data-element-id="late">
+              Late
+            </div>
+          )}
           {shown && (
             <div data-element-id="visible" id="visible">
               Visible
