@@ -45,6 +45,16 @@ export function handleServerError(code: WSErrorCode | string, serverMessage?: st
     case "JOIN_REQUIRED":
       return { message: "Reconnecting to the page…", rejoin: true, blocking: false };
     case "NOT_FOUND":
+      // The server also answers NOT_FOUND when a teammate deleted the element
+      // (or its parent) this change was aimed at. That's a lost race on one
+      // element, not a missing page, so the editor stays usable.
+      if (/element|parent/i.test(serverMessage ?? "")) {
+        return {
+          message: "A teammate removed that element, so your change wasn't applied.",
+          rejoin: false,
+          blocking: false,
+        };
+      }
       return { message: serverMessage || "This page no longer exists.", rejoin: false, blocking: true };
     case "VALIDATION_ERROR":
       return { message: serverMessage || "That change was rejected by the server.", rejoin: false, blocking: false };
