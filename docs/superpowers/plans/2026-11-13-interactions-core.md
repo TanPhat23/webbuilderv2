@@ -23,7 +23,7 @@ The core is plugged into the DOM through a `Platform` port, and an `InteractionH
 **Later plans:**
 
 - **Plan 2:** the Page and Project `Logic` documents. This covers the Go columns, the `page:logic` and `project:logic` ops, and the Logic rail panel.
-- **Plan 3:** codegen, migration of the old workflows, and removal of `features/eventworkflows`.
+- **Plan 3:** codegen, migration of the old workflows, and removal of `features/eventworkflows`. The migration maps `onX` names to DOM names, maps `onScroll` to `visible` with `once: false`, and maps the `resetForm` action to the `reset` step.
 
 Until Plan 2, no variables or flows are declared. So `set` and `run` steps validate and run, but they are skipped with "no variable/flow named …". The verb menu hides `set` and `run` while nothing is declared. The old workflow runtime (`useElementEvents`) keeps running side by side until Plan 3.
 
@@ -599,9 +599,9 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `templateErrors` (Task 1).
 - Produces:
-  - Constants: `ON_EVENTS`, `type OnEvent`, `VERBS`, `type Verb`, `VERB_SCHEMAS`, `InteractionHead`, `NAME_RE`, `IX_ID_RE`, `TOAST_KINDS`, `ANIMATION_PRESETS`, `HTTP_METHODS`.
+  - Constants: `ON_EVENTS` (16 events), `KEY_EVENTS`, `type OnEvent`, `VERBS`, `type Verb`, `VERB_SCHEMAS`, `InteractionHead`, `NAME_RE`, `IX_ID_RE`, `TOAST_KINDS`, `ANIMATION_PRESETS`, `HTTP_METHODS`.
   - Step types: `type Step`, `type IfStep`, `type CallStep`.
-  - `interface Interaction { on; enabled?; preventDefault?; stopPropagation?; do: Step[] }`
+  - `interface Interaction { on; enabled?; preventDefault?; stopPropagation?; key?; once?; do: Step[] }`
   - `type InteractionMap = Record<string, Interaction>`
   - `interface Issue { path: string; message: string; level: "error" | "incomplete" | "warning" }`
   - `verbOf(step: unknown): Verb | null`
@@ -654,7 +654,7 @@ test("every verb has a schema and a valid minimal step", () => {
     toast: { toast: "hi" }, copy: { copy: "x" }, download: { download: "/f.pdf" },
     animate: { animate: "e1", preset: "bounce" }, class: { class: "toggle", target: "e1", name: "open" },
     set: { set: "user", to: "1" }, call: { call: "api", method: "GET", url: "/a" },
-    submit: { submit: "f1" }, wait: { wait: 10 }, if: { if: "{{ true }}", then: [] },
+    submit: { submit: "f1" }, reset: { reset: "f1" }, wait: { wait: 10 }, if: { if: "{{ true }}", then: [] },
     run: { run: "flowA" }, code: { code: "return 1" },
   };
   assert.deepEqual([...VERBS].sort(), Object.keys(minimal).sort());
@@ -704,6 +704,23 @@ test("interaction-level checks", () => {
   assert.equal(validateInteractionMap([])[0].path, "interactions");
 });
 
+test("key belongs to key events and once belongs to visible", () => {
+  ok({
+    ix_aaaaaaaa: { on: "keydown", key: "Enter", do: [] },
+    ix_bbbbbbbb: { on: "visible", once: false, do: [] },
+    ix_cccccccc: { on: "mousedown", do: [] },
+    ix_dddddddd: { on: "error", do: [] },
+  });
+  const paths = validateInteractionMap({
+    ix_aaaaaaaa: { on: "click", key: "Enter", do: [] },
+    ix_bbbbbbbb: { on: "click", once: true, do: [] },
+    ix_cccccccc: { on: "keyup", key: "", do: [] },
+  }).map((i) => `${i.path}|${i.level}`);
+  assert.ok(paths.includes("interactions.ix_aaaaaaaa.key|error"));
+  assert.ok(paths.includes("interactions.ix_bbbbbbbb.once|error"));
+  assert.ok(paths.includes("interactions.ix_cccccccc.key|incomplete"));
+});
+
 test("deep nesting is bounded", () => {
   let steps: any[] = [{ toast: "x" }];
   for (let i = 0; i < 40; i++) steps = [{ if: "{{ true }}", then: steps }];
@@ -736,9 +753,13 @@ import { z } from "zod";
 import { templateErrors } from "./runtime/expression";
 
 export const ON_EVENTS = [
-  "click", "dblclick", "mouseenter", "mouseleave", "focus", "blur",
-  "change", "input", "submit", "keydown", "keyup", "load",
+  "click", "dblclick", "mousedown", "mouseup", "mouseenter", "mouseleave",
+  "focus", "blur", "change", "input", "submit", "keydown", "keyup",
+  "load", "error", "visible",
 ] as const;
+
+/** Events whose interactions may filter on `key`. */
+export const KEY_EVENTS: ReadonlySet<string> = new Set(["keydown", "keyup"]);
 export type OnEvent = (typeof ON_EVENTS)[number];
 
 export const NAME_RE = /^[a-zA-Z_][a-zA-Z0-9_]{0,63}$/;
@@ -773,6 +794,7 @@ export type Step = WithId &
     | { set: string; to: string }
     | Omit<CallStep, "id">
     | { submit: string }
+    | { reset: string }
     | { wait: number }
     | Omit<IfStep, "id">
     | { run: string }
@@ -784,6 +806,10 @@ export interface Interaction {
   enabled?: boolean;
   preventDefault?: boolean;
   stopPropagation?: boolean;
+  /** keydown/keyup only: run just for this KeyboardEvent.key (case-insensitive). */
+  key?: string;
+  /** visible only: run the first time only (default true). */
+  once?: boolean;
   do: Step[];
 }
 export type InteractionMap = Record<string, Interaction>;
@@ -827,6 +853,7 @@ export const VERB_SCHEMAS = {
     timeout: z.number().positive().max(60_000).optional(),
   }),
   submit: z.strictObject({ id: stepId, submit: elementRef }),
+  reset: z.strictObject({ id: stepId, reset: elementRef }),
   wait: z.strictObject({ id: stepId, wait: z.number().nonnegative().max(60_000) }),
   if: z.strictObject({ id: stepId, if: nonEmpty, then: z.array(z.unknown()), else: z.array(z.unknown()).optional() }),
   run: z.strictObject({ id: stepId, run: z.string().regex(NAME_RE, "must be a flow name") }),
@@ -841,6 +868,7 @@ const VERB_SET = new Set<string>(VERBS);
 export const ELEMENT_FIELDS: Partial<Record<Verb, string[]>> = {
   show: ["show"], hide: ["hide"], toggle: ["toggle"], scroll: ["scroll"],
   modal: ["target"], animate: ["animate"], class: ["target"], submit: ["submit"],
+  reset: ["reset"],
 };
 
 /** Fields that may contain `{{ }}` templates. */
@@ -848,7 +876,7 @@ export const TEMPLATE_FIELDS: Record<Verb, string[]> = {
   navigate: ["navigate"], show: [], hide: [], toggle: [], scroll: [], modal: [],
   toast: ["toast"], copy: ["copy"], download: ["download", "filename"],
   animate: [], class: [], set: ["to"], call: ["url", "body"], submit: [],
-  wait: [], if: ["if"], run: [], code: [],
+  reset: [], wait: [], if: ["if"], run: [], code: [],
 };
 
 export const InteractionHead = z.strictObject({
@@ -856,6 +884,8 @@ export const InteractionHead = z.strictObject({
   enabled: z.boolean().optional(),
   preventDefault: z.boolean().optional(),
   stopPropagation: z.boolean().optional(),
+  key: z.string().min(1).optional(),
+  once: z.boolean().optional(),
   do: z.array(z.unknown()),
 });
 
@@ -966,6 +996,12 @@ export function validateInteractionMap(value: unknown, at = "interactions"): Iss
       continue;
     }
     zodIssues(InteractionHead, ix, path, out);
+    if (ix.key !== undefined && !KEY_EVENTS.has(String(ix.on))) {
+      out.push({ path: `${path}.key`, message: "key only applies to keydown and keyup", level: "error" });
+    }
+    if (ix.once !== undefined && ix.on !== "visible") {
+      out.push({ path: `${path}.once`, message: "once only applies to visible", level: "error" });
+    }
     if (Array.isArray(ix.do)) validateSteps(ix.do, `${path}.do`, out, 0);
   }
   return out;
@@ -977,7 +1013,7 @@ If `reportInput` turns out not to exist in the installed zod (it does in 4.x), t
 - [ ] **Step 4: Run the tests to make sure they pass**
 
 Run: `node --import tsx --test tests/interactions-schema.test.ts`
-Expected: PASS (5 tests).
+Expected: PASS (6 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -1755,7 +1791,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: `Executors`, `skip`, `CallResult` (Task 5); `toText` (Task 1); `CallStep` (Task 2).
 - Produces:
-  - `interface NodeLike { tagName: string; style: { display: string }; hidden?: boolean; classList: { add(c): void; remove(c): void; toggle(c): void }; setAttribute(n, v): void; scrollIntoView(o: { behavior: "smooth" | "auto"; block: "start" }): void; getBoundingClientRect(): { top: number }; requestSubmit?(): void; value?: unknown; checked?: unknown; textContent?: string | null }`
+  - `interface NodeLike { tagName: string; style: { display: string }; hidden?: boolean; classList: { add(c): void; remove(c): void; toggle(c): void }; setAttribute(n, v): void; scrollIntoView(o: { behavior: "smooth" | "auto"; block: "start" }): void; getBoundingClientRect(): { top: number }; requestSubmit?(): void; reset?(): void; value?: unknown; checked?: unknown; textContent?: string | null }`
   - `interface Platform { byId; navigate; toast; copy; fetch; download; scrollTo; scrollY; later; runCode }` (exact signatures in the code below)
   - `createExecutors(p: Platform): Executors`
   - `browserPlatform(doc: Document): Platform`
@@ -1867,10 +1903,14 @@ test("navigate, toast, copy, download, scroll, class, animate, modal, submit", a
   assert.equal(submitted, 1);
 });
 
-test("submit on something that is not a form is skipped", async () => {
-  const { p } = platform({ box: node() });
-  const { logs } = await go(p, [{ submit: "box" }]);
-  assert.equal(logs[0].status, "skipped");
+test("submit or reset on something that is not a form is skipped; reset clears a form", async () => {
+  const form = node("FORM");
+  let resets = 0;
+  form.reset = () => void resets++;
+  const { p } = platform({ box: node(), form });
+  const { logs } = await go(p, [{ submit: "box" }, { reset: "box" }, { reset: "form" }]);
+  assert.deepEqual(logs.map((l) => l.status), ["skipped", "skipped", "ok"]);
+  assert.equal(resets, 1);
 });
 
 test("call returns ok/status/data, sends JSON bodies and never throws", async () => {
@@ -1936,6 +1976,7 @@ export interface NodeLike {
   scrollIntoView(opts: { behavior: "smooth" | "auto"; block: "start" }): void;
   getBoundingClientRect(): { top: number };
   requestSubmit?(): void;
+  reset?(): void;
   value?: unknown;
   checked?: unknown;
   textContent?: string | null;
@@ -2033,6 +2074,14 @@ export function createExecutors(p: Platform): Executors {
         return skip(`element ${s.submit} is not a form`);
       }
       node.requestSubmit();
+    },
+    reset: (s) => {
+      const node = p.byId(s.reset);
+      if (!node) return missing(s.reset);
+      if (node.tagName !== "FORM" || !node.reset) {
+        return skip(`element ${s.reset} is not a form`);
+      }
+      node.reset();
     },
     call: (s, { value }) => callApi(p, s as CallStep, value),
     code: (s, { ctx }) =>
@@ -2188,9 +2237,10 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `chainIds(node: ChainNode | null, root: unknown): string[]` (innermost first)
   - `enteredIds(into: string[], from: string[]): string[]`
   - `interface Planned { elementId: string; ixId: string; ix: Interaction }`
-  - `plan(index, ids: string[], on: OnEvent, opts: { bubble: boolean }): { runs: Planned[]; preventDefault: boolean }`
+  - `plan(index, ids: string[], on: OnEvent, opts: { bubble: boolean; key?: string }): { runs: Planned[]; preventDefault: boolean }`. An interaction with `key` runs only when `opts.key` matches, ignoring case.
   - `NATIVE_EVENTS: Record<string, OnEvent>` (native type → `on`)
-  - `SELF_ONLY: ReadonlySet<OnEvent>`
+  - `SELF_ONLY: ReadonlySet<OnEvent>` (focus, blur, error)
+  - `visibleTargets(index): Map<string, { repeat: boolean }>`
   - `useRunLogStore` (zustand: `{ entries: RunLogEntry[]; push(e): void; clear(): void }`)
   - `RUN_LOG_LIMIT = 200`
 
@@ -2200,7 +2250,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 // tests/interactions-dispatch.test.ts
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { chainIds, enteredIds, indexInteractions, plan } from "../src/features/interactions/runtime/dispatch";
+import { chainIds, enteredIds, indexInteractions, plan, visibleTargets } from "../src/features/interactions/runtime/dispatch";
 import { useRunLogStore, RUN_LOG_LIMIT } from "../src/features/interactions/runtime/run-log-store";
 
 const tree = [
@@ -2248,6 +2298,31 @@ test("submit prevents the page reload unless the maker opted out", () => {
   assert.equal(plan(index, ["form", "card"], "submit", { bubble: true }).preventDefault, true);
   assert.equal(plan(index, ["form2", "card"], "submit", { bubble: true }).preventDefault, false);
   assert.equal(plan(index, ["btn", "card"], "click", { bubble: true }).preventDefault, false);
+});
+
+test("a key filter matches KeyboardEvent.key ignoring case", () => {
+  const index = indexInteractions([
+    {
+      id: "input",
+      settings: {
+        interactions: {
+          ix_enter001: { on: "keydown", key: "Enter", do: [] },
+          ix_anykey01: { on: "keydown", do: [] },
+        },
+      },
+    },
+  ]);
+  assert.deepEqual(plan(index, ["input"], "keydown", { bubble: true, key: "enter" }).runs.map((r) => r.ixId), ["ix_enter001", "ix_anykey01"]);
+  assert.deepEqual(plan(index, ["input"], "keydown", { bubble: true, key: "a" }).runs.map((r) => r.ixId), ["ix_anykey01"]);
+});
+
+test("visibleTargets lists elements to observe and whether they repeat", () => {
+  const index = indexInteractions([
+    { id: "hero", settings: { interactions: { ix_vis00001: { on: "visible", do: [] } } } },
+    { id: "ticker", settings: { interactions: { ix_vis00002: { on: "visible", once: false, do: [] } } } },
+    { id: "off", settings: { interactions: { ix_vis00003: { on: "visible", enabled: false, do: [] } } } },
+  ]);
+  assert.deepEqual(Object.fromEntries(visibleTargets(index)), { hero: { repeat: false }, ticker: { repeat: true } });
 });
 
 test("bubble:false only uses the given ids", () => {
@@ -2346,16 +2421,18 @@ export function plan(
   index: Map<string, InteractionMap>,
   ids: string[],
   on: OnEvent,
-  opts: { bubble: boolean },
+  opts: { bubble: boolean; key?: string },
 ): { runs: Planned[]; preventDefault: boolean } {
   const runs: Planned[] = [];
   let preventDefault = false;
+  const pressed = opts.key?.toLowerCase();
   for (const elementId of ids) {
     const map = index.get(elementId);
     if (!map) continue;
     let stop = false;
     for (const [ixId, ix] of Object.entries(map)) {
       if (!isPlainObject(ix) || ix.on !== on || ix.enabled === false) continue;
+      if (typeof ix.key === "string" && ix.key.toLowerCase() !== pressed) continue;
       runs.push({ elementId, ixId, ix });
       if (ix.preventDefault || (on === "submit" && ix.preventDefault !== false)) {
         preventDefault = true;
@@ -2367,10 +2444,17 @@ export function plan(
   return { runs, preventDefault };
 }
 
-/** Native event type → interaction `on`. mouseover/mouseout are handled separately. */
+/**
+ * Native event type → interaction `on`, for events delegated from the host.
+ * Handled separately by InteractionHost: mouseover/mouseout (enter/leave),
+ * error (doesn't bubble, so a capture listener), load and visible (no DOM
+ * event on the element).
+ */
 export const NATIVE_EVENTS: Record<string, OnEvent> = {
   click: "click",
   dblclick: "dblclick",
+  mousedown: "mousedown",
+  mouseup: "mouseup",
   focusin: "focus",
   focusout: "blur",
   change: "change",
@@ -2381,7 +2465,20 @@ export const NATIVE_EVENTS: Record<string, OnEvent> = {
 };
 
 /** Events that belong to the element itself, not its ancestors. */
-export const SELF_ONLY: ReadonlySet<OnEvent> = new Set<OnEvent>(["focus", "blur"]);
+export const SELF_ONLY: ReadonlySet<OnEvent> = new Set<OnEvent>(["focus", "blur", "error"]);
+
+/** Element ids with an enabled `visible` interaction, and whether each should keep firing. */
+export function visibleTargets(index: Map<string, InteractionMap>): Map<string, { repeat: boolean }> {
+  const out = new Map<string, { repeat: boolean }>();
+  for (const [elementId, map] of index) {
+    for (const ix of Object.values(map)) {
+      if (!isPlainObject(ix) || ix.on !== "visible" || ix.enabled === false) continue;
+      const repeat = ix.once === false || out.get(elementId)?.repeat === true;
+      out.set(elementId, { repeat });
+    }
+  }
+  return out;
+}
 ```
 
 ```ts
@@ -2409,7 +2506,7 @@ export const useRunLogStore = create<RunLogState>()((set) => ({
 - [ ] **Step 4: Run the tests to make sure they pass**
 
 Run: `node --import tsx --test tests/interactions-dispatch.test.ts`
-Expected: PASS (7 tests).
+Expected: PASS (9 tests).
 
 - [ ] **Step 5: Commit**
 
@@ -2434,7 +2531,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes:
-  - `indexInteractions`, `chainIds`, `enteredIds`, `plan`, `NATIVE_EVENTS`, `SELF_ONLY`, `useRunLogStore` (Task 7)
+  - `indexInteractions`, `chainIds`, `enteredIds`, `plan`, `visibleTargets`, `NATIVE_EVENTS`, `SELF_ONLY`, `useRunLogStore` (Task 7)
   - `runInteraction` (Task 5)
   - `createExecutors`, `browserPlatform`, `editorPlatform`, `elementScope`, `Platform` (Task 6)
   - `createVariableStore`, `safeStorage`, `VariableDef` (Task 4)
@@ -2518,6 +2615,7 @@ import {
   enteredIds,
   indexInteractions,
   plan,
+  visibleTargets,
   type ChainNode,
   type Planned,
 } from "../runtime/dispatch";
@@ -2625,7 +2723,7 @@ export function InteractionHost({
         indexRef.current,
         self ? chain.slice(0, 1) : chain,
         on,
-        { bubble: !self },
+        { bubble: !self, key: (e as KeyboardEvent).key },
       );
       if (!runs.length) return;
       if (preventDefault) e.preventDefault();
@@ -2640,10 +2738,19 @@ export function InteractionHost({
       fire(plan(indexRef.current, enteredIds(into, from), on, { bubble: false }).runs, e);
     };
 
+    // `error` doesn't bubble (a broken <img>), so listen in the capture phase
+    // and only for the element that failed.
+    const onError = (e: Event) => {
+      const id = chainIds(e.target as unknown as ChainNode, root)[0];
+      if (!id) return;
+      fire(plan(indexRef.current, [id], "error", { bubble: false }).runs, e);
+    };
+
     const types = Object.keys(NATIVE_EVENTS);
     types.forEach((t) => root.addEventListener(t, onEvent));
     root.addEventListener("mouseover", onHover);
     root.addEventListener("mouseout", onHover);
+    root.addEventListener("error", onError, true);
 
     // `load` interactions run once when the host turns on.
     for (const [elementId] of indexRef.current) {
@@ -2654,8 +2761,39 @@ export function InteractionHost({
       types.forEach((t) => root.removeEventListener(t, onEvent));
       root.removeEventListener("mouseover", onHover);
       root.removeEventListener("mouseout", onHover);
+      root.removeEventListener("error", onError, true);
     };
   }, [enabled, platform, flows, vars]);
+
+  // `visible`: watch elements with a visible interaction. Re-run when the
+  // index changes so new or edited interactions are picked up.
+  useEffect(() => {
+    const root = ref.current;
+    if (!enabled || !root || typeof IntersectionObserver === "undefined") return;
+    const targets = visibleTargets(index);
+    if (!targets.size) return;
+    const doc = root.ownerDocument;
+    const executors = createExecutors(platform(doc));
+    const el = elementScope((id) => doc.getElementById(id) as never);
+    const log = useRunLogStore.getState().push;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const id = (entry.target as HTMLElement).dataset.elementId;
+        if (!id) continue;
+        if (!targets.get(id)?.repeat) observer.unobserve(entry.target);
+        for (const { elementId, ixId, ix } of plan(index, [id], "visible", { bubble: false }).runs) {
+          void runInteraction(ix, { elementId, ixId, executors, flows, vars, el, log, steps: {} })
+            .catch((e) => console.error("Interaction failed", ixId, e));
+        }
+      }
+    }, { threshold: 0.25 });
+    for (const id of targets.keys()) {
+      const node = doc.getElementById(id);
+      if (node) observer.observe(node);
+    }
+    return () => observer.disconnect();
+  }, [enabled, index, platform, flows, vars]);
 
   return (
     <>
@@ -3487,6 +3625,7 @@ export function defaultStep(verb: Verb): Step {
     set: { set: "", to: "" },
     call: { call: "api", method: "GET", url: "" },
     submit: { submit: "" },
+    reset: { reset: "" },
     wait: { wait: 500 },
     if: { if: "", then: [], else: [] },
     run: { run: "" },
@@ -3519,6 +3658,7 @@ export function summarize(step: Step, nameOf: (id: string) => string | undefined
     case "set": return `Set ${or(s.set)} = ${or(s.to)}`;
     case "call": return `Call API ${s.method} ${or(s.url)}${s.id ? ` → ${s.id}` : ""}`;
     case "submit": return `Submit ${name(s.submit)}`;
+    case "reset": return `Reset ${name(s.reset)}`;
     case "wait": return `Wait ${s.wait} ms`;
     case "if": return `If ${or(strip(s.if ?? ""))}`;
     case "run": return `Run flow ${or(s.run)}`;
@@ -3607,6 +3747,7 @@ export const FIELDS: Record<Verb, FieldDef[]> = {
     { key: "timeout", label: "Timeout (ms)", kind: "number", optional: true },
   ],
   submit: [{ key: "submit", label: "Form", kind: "element" }],
+  reset: [{ key: "reset", label: "Form", kind: "element" }],
   wait: [{ key: "wait", label: "Milliseconds", kind: "number" }],
   if: [{ key: "if", label: "Condition", kind: "expr", placeholder: "{{ steps.signup.ok }}" }],
   run: [{ key: "run", label: "Flow", kind: "flow" }],
@@ -3618,7 +3759,7 @@ export const VERB_LABELS: Record<Verb, string> = {
   toggle: "Toggle element", scroll: "Scroll to", modal: "Open or close modal",
   toast: "Show toast", copy: "Copy to clipboard", download: "Download file",
   animate: "Animate element", class: "Add, remove or toggle class",
-  set: "Set variable", call: "Call API", submit: "Submit form", wait: "Wait",
+  set: "Set variable", call: "Call API", submit: "Submit form", reset: "Reset form", wait: "Wait",
   if: "If / else", run: "Run flow", code: "Run code",
 };
 
@@ -4182,15 +4323,19 @@ function StepRow({ step, path, index, shared, onDragStart }: { step: Step; path:
 // src/features/interactions/components/InteractionCard.tsx
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ON_EVENTS, type Interaction, type OnEvent, type Step } from "../schema";
+import { KEY_EVENTS, ON_EVENTS, type Interaction, type OnEvent, type Step } from "../schema";
 import { StepList, type StepListShared } from "./StepList";
 
 export const EVENT_LABELS: Record<OnEvent, string> = {
-  click: "Clicked", dblclick: "Double-clicked", mouseenter: "Hovered", mouseleave: "Hover ends",
+  click: "Clicked", dblclick: "Double-clicked", mousedown: "Mouse pressed", mouseup: "Mouse released",
+  mouseenter: "Hovered", mouseleave: "Hover ends",
   focus: "Focused", blur: "Loses focus", change: "Changed", input: "Typed into",
   submit: "Submitted", keydown: "Key pressed", keyup: "Key released", load: "Page loads",
+  error: "Fails to load", visible: "Scrolled into view",
 };
 
 interface Props {
@@ -4207,7 +4352,17 @@ export function InteractionCard({ ixId, ix, onChange, onRemove, shared }: Props)
     <section aria-label={`When ${EVENT_LABELS[ix.on] ?? ix.on}`} className="space-y-2 rounded-md border border-border p-2">
       <div className="flex items-center gap-1.5">
         <span className="text-[11px] text-muted-foreground">When</span>
-        <Select value={ix.on} onValueChange={(v) => onChange({ on: v as OnEvent })}>
+        <Select
+          value={ix.on}
+          onValueChange={(v) =>
+            // key and once belong to specific events: drop them when they no longer apply.
+            onChange({
+              on: v as OnEvent,
+              ...(KEY_EVENTS.has(v) ? {} : { key: undefined }),
+              ...(v === "visible" ? {} : { once: undefined }),
+            })
+          }
+        >
           <SelectTrigger aria-label="Event" className="h-7 min-w-0 flex-1"><SelectValue /></SelectTrigger>
           <SelectContent>
             {ON_EVENTS.map((e) => <SelectItem key={e} value={e} className="text-[11px]">{EVENT_LABELS[e]}</SelectItem>)}
@@ -4218,6 +4373,24 @@ export function InteractionCard({ ixId, ix, onChange, onRemove, shared }: Props)
           <Trash2 className="h-3 w-3" />
         </Button>
       </div>
+      {KEY_EVENTS.has(ix.on) && (
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor={`${ixId}.key`} className="text-[11px] text-muted-foreground">Only key</Label>
+          <Input
+            id={`${ixId}.key`}
+            className="h-7 flex-1 font-mono"
+            placeholder="Any key (e.g. Enter, Escape, a)"
+            value={ix.key ?? ""}
+            onChange={(e) => onChange({ key: e.target.value || undefined })}
+          />
+        </div>
+      )}
+      {ix.on === "visible" && (
+        <div className="flex items-center justify-between gap-1.5">
+          <Label htmlFor={`${ixId}.once`} className="text-[11px] text-muted-foreground">Only the first time</Label>
+          <Switch id={`${ixId}.once`} checked={ix.once !== false} onCheckedChange={(c) => onChange({ once: c ? undefined : false })} />
+        </div>
+      )}
       <StepList
         listPath={[]}
         steps={steps}
@@ -4381,6 +4554,9 @@ Run `bun run dev`, sign in yourself in your own browser, and open a project's ed
 5. Drag a step by its grip above another step. The order changes.
 6. Press Ctrl/Cmd+Z. The last edit is undone.
 7. Turn on events with the ⚡ toggle in the top bar and click the button. The toast shows and the **Run log** button appears bottom-right. The log lists `ok toast ix_….do[0]`.
+8. On an input, set the event to **Key pressed** and **Only key** to `Enter`. Typing letters does nothing, but Enter runs the steps. Switch the event to **Clicked**: the key field disappears and the key is dropped.
+9. On an element below the fold, set the event to **Scrolled into view**. Scrolling to it runs once. Turn off **Only the first time**: it runs again each time it comes back into view.
+10. On an image with a broken source, set the event to **Fails to load** and reload Preview. The steps run.
 
 - [ ] **Step 10: Commit**
 
