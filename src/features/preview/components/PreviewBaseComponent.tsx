@@ -16,7 +16,7 @@ const PreviewBaseComponent = ({ element, data }: PreviewBaseComponentProps) => {
 
   return (
     <div
-      className={element.tailwindStyles}
+      id={element.id} data-element-id={element.id} className={element.tailwindStyles}
       style={safeStyles}
       dangerouslySetInnerHTML={{
         __html: DOMPurify.sanitize(content),

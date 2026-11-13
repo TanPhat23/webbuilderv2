@@ -55,6 +55,7 @@ const PreviewCMSContentListComponent = ({
   if (loading) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -72,6 +73,7 @@ const PreviewCMSContentListComponent = ({
   if (error) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -88,7 +90,7 @@ const PreviewCMSContentListComponent = ({
   }
 
   return (
-    <div className={element.tailwindStyles} style={safeStyles}>
+    <div id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       {contentItems.map((item, index) => (
         <div key={item.id || index}>
           <PreviewElementLoader

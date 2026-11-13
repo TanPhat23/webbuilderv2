@@ -15,7 +15,7 @@ const PreviewFrameComponent = ({
   const safeStyles = elementHelper.getSafeStyles(element);
 
   return (
-    <div className={element.tailwindStyles} style={safeStyles}>
+    <div id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <PreviewElementLoader elements={element.elements} data={data} />
     </div>
   );

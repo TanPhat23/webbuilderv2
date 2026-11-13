@@ -54,6 +54,7 @@ const PreviewCMSContentGridComponent = ({
   if (loading) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -71,6 +72,7 @@ const PreviewCMSContentGridComponent = ({
   if (error) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -88,6 +90,7 @@ const PreviewCMSContentGridComponent = ({
 
   return (
     <div
+      id={element.id} data-element-id={element.id}
       style={{
         ...safeStyles,
         width: "100%",

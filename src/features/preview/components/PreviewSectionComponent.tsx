@@ -15,7 +15,7 @@ const PreviewSectionComponent = ({
   const safeStyles = elementHelper.getSafeStyles(element);
 
   return (
-    <section className={element.tailwindStyles} style={safeStyles}>
+    <section id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <PreviewElementLoader elements={element.elements} data={data} />
     </section>
   );

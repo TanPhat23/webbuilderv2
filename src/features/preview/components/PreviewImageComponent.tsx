@@ -14,7 +14,7 @@ const PreviewImageComponent = ({ element }: PreviewImageComponentProps) => {
     <img
       src={element.src || ""}
       alt={element.content || "Image"}
-      className={element.tailwindStyles}
+      id={element.id} data-element-id={element.id} className={element.tailwindStyles}
       style={{
         ...safeStyles,
         objectFit: "cover",

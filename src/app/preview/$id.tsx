@@ -4,6 +4,7 @@ import { elementService } from "@/features/editor";
 import { dehydrate, HydrationBoundary, useQuery } from "@tanstack/react-query";
 import { sanitizeProjectCss } from "@/features/projects/lib/project-css";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
+import { InteractionHost } from "@/features/interactions/components/InteractionHost";
 
 export const Route = createFileRoute("/preview/$id")({
   loader: async ({ params, context }) => {
@@ -90,7 +91,9 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
           __html: sanitizeProjectCss(project.header?.cssStyles),
         }}
       />
-      <PreviewElementLoader elements={elements} />
+      <InteractionHost elements={elements} enabled namespace={projectId} showLog>
+        <PreviewElementLoader elements={elements} />
+      </InteractionHost>
     </div>
   );
 }

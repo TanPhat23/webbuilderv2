@@ -16,7 +16,7 @@ const PreviewListComponent = ({ element, data }: PreviewListComponentProps) => {
 
   if (Array.isArray(data)) {
     return (
-      <ul className={element.tailwindStyles} style={safeStyles}>
+      <ul id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
         {data.map((item, index) => (
           <li key={index}>
             <PreviewElementLoader elements={element.elements} data={item} />
@@ -27,7 +27,7 @@ const PreviewListComponent = ({ element, data }: PreviewListComponentProps) => {
   }
 
   return (
-    <ul className={element.tailwindStyles} style={safeStyles}>
+    <ul id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <PreviewElementLoader elements={element.elements} data={data} />
     </ul>
   );

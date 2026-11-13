@@ -19,7 +19,7 @@ const PreviewFormComponent = ({ element, data }: PreviewFormComponentProps) => {
       target={settings.target}
       encType={settings.encType}
       acceptCharset={settings.acceptCharset}
-      className={element.tailwindStyles}
+      id={element.id} data-element-id={element.id} className={element.tailwindStyles}
       style={safeStyles}
     >
       <PreviewElementLoader elements={element.elements} data={data} />

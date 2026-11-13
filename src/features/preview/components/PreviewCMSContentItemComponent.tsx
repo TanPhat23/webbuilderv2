@@ -49,6 +49,7 @@ const PreviewCMSContentItemComponent = ({
   if (loading) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -66,6 +67,7 @@ const PreviewCMSContentItemComponent = ({
   if (error) {
     return (
       <div
+        id={element.id} data-element-id={element.id}
         style={{
           ...safeStyles,
           width: "100%",
@@ -82,7 +84,7 @@ const PreviewCMSContentItemComponent = ({
   }
 
   return (
-    <div className={element.tailwindStyles} style={safeStyles}>
+    <div id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <PreviewElementLoader
         elements={element.elements}
         data={contentItem as unknown as Record<string, unknown>}

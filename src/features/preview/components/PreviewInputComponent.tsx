@@ -22,7 +22,7 @@ const PreviewInputComponent = ({ element }: PreviewInputComponentProps) => {
       required={settings.required}
       pattern={settings.pattern}
       autoComplete={settings.autoComplete}
-      className={element.tailwindStyles}
+      id={element.id} data-element-id={element.id} className={element.tailwindStyles}
       style={safeStyles}
     />
   );

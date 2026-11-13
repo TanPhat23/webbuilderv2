@@ -24,11 +24,11 @@ const PreviewCarouselComponent = ({
   const hasNavigation = carouselSettings.withNavigation ?? true;
 
   if (!element || !element.elements) {
-    return <div>No carousel content available.</div>;
+    return <div id={element.id} data-element-id={element.id}>No carousel content available.</div>;
   }
 
   return (
-    <div className={element.tailwindStyles} style={safeStyles}>
+    <div id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <Carousel
         opts={{
           align: "start",

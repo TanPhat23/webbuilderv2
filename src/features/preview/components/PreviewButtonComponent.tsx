@@ -15,7 +15,7 @@ const PreviewButtonComponent = ({ element }: PreviewButtonComponentProps) => {
   return (
     <button
       type="button"
-      className={element.tailwindStyles}
+      id={element.id} data-element-id={element.id} className={element.tailwindStyles}
       style={safeStyles}
       dangerouslySetInnerHTML={{
         __html: DOMPurify.sanitize(element.content || "Button"),

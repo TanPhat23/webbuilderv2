@@ -11,7 +11,7 @@ const PreviewSelectComponent = ({ element }: PreviewSelectComponentProps) => {
   const safeStyles = elementHelper.getSafeStyles(element);
 
   return (
-    <select className={element.tailwindStyles} style={safeStyles}>
+    <select id={element.id} data-element-id={element.id} className={element.tailwindStyles} style={safeStyles}>
       <option value="">{element.content || "Select an option"}</option>
       {element.elements?.map((option, index) => (
         <option key={index} value={option.content || ""}>
