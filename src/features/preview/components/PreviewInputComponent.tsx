@@ -13,9 +13,10 @@ const PreviewInputComponent = ({ element }: PreviewInputComponentProps) => {
 
   return (
     <input
+      name={settings.name}
       type={settings.type || "text"}
       placeholder={settings.placeholder || element.content || "Input field"}
-      defaultValue={settings.defaultValue || ""}
+      defaultValue={settings.defaultValue ?? ""}
       min={settings.min}
       max={settings.max}
       step={settings.step}

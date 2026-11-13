@@ -11,6 +11,7 @@ interface SelectOption {
 }
 
 interface SelectSettings {
+  name?: string;
   selectOptions: SelectOption[];
   defaultValue?: string;
   required?: boolean;
@@ -38,6 +39,7 @@ const SelectComponent = ({ element }: EditorComponentProps) => {
   return (
     <select
       {...rootProps}
+      name={settings.name}
       className={cn(rootProps.className, "appearance-none bg-no-repeat")}
       defaultValue={settings.defaultValue ?? ""}
       required={settings.required}

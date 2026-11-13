@@ -90,9 +90,9 @@ test("navigate, toast, copy, download, scroll, class, animate, modal, submit", a
     "scrollTo:140", "scrollTo:300",
   ]);
   assert.ok(box.classes.has("open"));
-  assert.ok(box.classes.has("animate-bounce"));
+  assert.ok(box.classes.has("ix-animate-bounce"));
   timers.forEach((t) => t());
-  assert.ok(!box.classes.has("animate-bounce"), "animation class removed after the duration");
+  assert.ok(!box.classes.has("ix-animate-bounce"), "animation class removed after the duration");
   assert.equal(box.style.display, "block");
   assert.equal(box.attrs["aria-hidden"], "false");
   assert.equal(submitted, 1);
@@ -220,4 +220,24 @@ test("browser lookup only exposes allowed page elements inside its host", async 
   assert.equal(chrome.style.display, "");
   allowed.delete("page");
   assert.equal(p.byId("page"), null, "removed ids are immediately inaccessible");
+});
+
+
+test("overlapping animations restore the original duration only after the latest finishes", async () => {
+  const box = node();
+  box.style.animationDuration = "3s";
+  const { p, timers } = platform({ box });
+  const executors = createExecutors(p);
+  const api = { value: (v: string) => v, ctx: {} } as any;
+  await executors.animate!({ animate: "box", preset: "fadeIn", duration: 100 } as any, api);
+  assert.equal(box.style.animationDuration, "100ms");
+  await createExecutors(p).animate!({ animate: "box", preset: "spin", duration: 200 } as any, api);
+  assert.equal(box.classes.has("ix-animate-fadeIn"), false);
+  assert.equal(box.style.animationDuration, "200ms");
+  timers[0]();
+  assert.equal(box.classes.has("ix-animate-spin"), true);
+  assert.equal(box.style.animationDuration, "200ms");
+  timers[1]();
+  assert.equal(box.classes.has("ix-animate-spin"), false);
+  assert.equal(box.style.animationDuration, "3s");
 });

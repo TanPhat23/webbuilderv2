@@ -1,0 +1,14 @@
+/* Explicit names keep these presets available in production builds, where
+   dynamically constructed Tailwind class names are not discovered. */
+@keyframes ix-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ix-slide-in { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ix-bounce { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-1rem); } 70% { transform: translateY(-0.4rem); } }
+@keyframes ix-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes ix-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-0.5rem); } 40%, 80% { transform: translateX(0.5rem); } }
+@keyframes ix-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.ix-animate-fadeIn { animation-name: ix-fade-in; animation-timing-function: ease; }
+.ix-animate-slideIn { animation-name: ix-slide-in; animation-timing-function: ease; }
+.ix-animate-bounce { animation-name: ix-bounce; animation-timing-function: ease; }
+.ix-animate-pulse { animation-name: ix-pulse; animation-timing-function: ease; }
+.ix-animate-shake { animation-name: ix-shake; animation-timing-function: ease; }
+.ix-animate-spin { animation-name: ix-spin; animation-timing-function: linear; }

@@ -13,7 +13,7 @@ import type { CallStep } from "../schema";
 
 export interface NodeLike {
   tagName: string;
-  style: { display: string };
+  style: { display: string; animationDuration?: string };
   hidden?: boolean;
   classList: { add(c: string): void; remove(c: string): void; toggle(c: string): void };
   setAttribute(name: string, value: string): void;
@@ -57,6 +57,9 @@ function webUrl(value: unknown): string {
   }
   return url;
 }
+
+// Executor instances are created per event, so animation ownership must be shared.
+const animations = new WeakMap<NodeLike, { cls: string; duration: string }>();
 
 export function createExecutors(p: Platform): Executors {
   const visibility =
@@ -118,9 +121,22 @@ export function createExecutors(p: Platform): Executors {
       const id = toText(value(s.animate));
       const node = p.byId(id);
       if (!node) return missing(id);
-      const cls = `animate-${s.preset}`;
+      const cls = `ix-animate-${s.preset}`;
+      const previous = animations.get(node);
+      const originalDuration = previous?.duration ?? node.style.animationDuration ?? "";
+      if (previous) node.classList.remove(previous.cls);
+      // Force style resolution so repeating a preset restarts it.
+      node.getBoundingClientRect();
+      const active = { cls, duration: originalDuration };
+      animations.set(node, active);
+      node.style.animationDuration = `${s.duration ?? 1000}ms`;
       node.classList.add(cls);
-      p.later(() => node.classList.remove(cls), s.duration ?? 1000);
+      p.later(() => {
+        if (animations.get(node) !== active) return;
+        node.classList.remove(cls);
+        node.style.animationDuration = originalDuration;
+        animations.delete(node);
+      }, s.duration ?? 1000);
     },
     class: (s, { value }) => {
       const id = toText(value(s.target));

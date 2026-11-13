@@ -6,6 +6,7 @@ import PreviewButtonComponent from "@/features/preview/components/PreviewButtonC
 import PreviewFrameComponent from "@/features/preview/components/PreviewFrameComponent";
 import PreviewImageComponent from "@/features/preview/components/PreviewImageComponent";
 import PreviewInputComponent from "@/features/preview/components/PreviewInputComponent";
+import PreviewTextareaComponent from "@/features/preview/components/PreviewTextareaComponent";
 import PreviewListComponent from "@/features/preview/components/PreviewListComponent";
 import PreviewSectionComponent from "@/features/preview/components/PreviewSectionComponent";
 import PreviewSelectComponent from "@/features/preview/components/PreviewSelectComponent";
@@ -37,6 +38,7 @@ const PreviewComponentMap = new Map([
   ["Section", PreviewSectionComponent],
   ["Image", PreviewImageComponent],
   ["Input", PreviewInputComponent],
+  ["Textarea", PreviewTextareaComponent],
   ["Select", PreviewSelectComponent],
   ["Link", PreviewBaseComponent],
   ["Form", PreviewFormComponent],

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../features/interactions/runtime/animations.css";
 @import "@clerk/themes/shadcn.css";
 @import "@fontsource-variable/geist";
 @import "@fontsource-variable/geist-mono";

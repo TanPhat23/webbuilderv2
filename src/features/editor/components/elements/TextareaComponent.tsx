@@ -29,6 +29,7 @@ const TextareaComponent = ({ element }: EditorComponentProps) => {
 
   return (
     <textarea
+      name={settings.name}
       placeholder={placeholder}
       rows={rows}
       cols={cols}
