@@ -211,3 +211,42 @@ test('duplicating then undoing removes the copy everywhere', async () => {
   await until(() => b.tree.length === 1, 'bob sees the copy removed');
   assert.deepEqual(ids(await saved(page)), ['orig']);
 });
+
+test('concurrent interaction additions, removal, and undo sync across clients', async () => {
+  const page = nextPage();
+  const a = await connect('alice', page);
+  const b = await connect('bob', page);
+  a.store.getState().addElement(el('btn', { pageId: page }));
+  await until(() => b.tree.length === 1, 'bob sees the element');
+
+  const { addInteraction, removeInteraction } = await import('../../src/features/interactions/ops');
+  const { commit } = await import('../../src/features/interactions/ops-store');
+  const interactions = (tree: any[]) => tree[0]?.settings?.interactions ?? {};
+
+  // Both clients submit their edits synchronously, before either can receive the other's update.
+  const ra = commit(uid('btn'), (e) => addInteraction(e, 'click', [{ toast: 'from alice' }]), a.store);
+  const rb = commit(uid('btn'), (e) => addInteraction(e, 'mouseenter', [{ toast: 'from bob' }]), b.store);
+  assert.ok(ra.ok && ra.id);
+  assert.ok(rb.ok && rb.id);
+  assert.notEqual(ra.id, rb.id);
+  const expected = {
+    [ra.id]: { on: 'click', do: [{ toast: 'from alice' }] },
+    [rb.id]: { on: 'mouseenter', do: [{ toast: 'from bob' }] },
+  };
+  await until(() => Object.keys(interactions(a.tree)).length === 2 && Object.keys(interactions(b.tree)).length === 2, 'both see both interactions');
+  assert.deepEqual(interactions(a.tree), expected);
+  assert.deepEqual(interactions(b.tree), expected);
+  assert.deepEqual(interactions(await saved(page)), expected, 'server keeps both interactions');
+
+  const removed = commit(uid('btn'), (e) => removeInteraction(e, ra.id!), a.store);
+  assert.ok(removed.ok);
+  await until(() => !Object.hasOwn(interactions(b.tree), ra.id!), 'bob sees the removal');
+  assert.deepEqual(interactions(b.tree), { [rb.id]: expected[rb.id] });
+  assert.deepEqual(interactions(await saved(page)), { [rb.id]: expected[rb.id] }, 'server keeps the other interaction');
+
+  a.store.getState().undo();
+  await until(() => Object.hasOwn(interactions(b.tree), ra.id!), 'bob sees the undo');
+  assert.deepEqual(interactions(b.tree), expected);
+  assert.deepEqual(interactions(await saved(page)), expected, 'server restores the removed interaction');
+  assert.equal(a.failures.length + b.failures.length, 0);
+});
