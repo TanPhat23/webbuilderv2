@@ -102,5 +102,5 @@ export function updateInteraction(
 
 export function removeInteraction(el: HasSettings, ixId: string): OpResult {
   const { [ixId]: _removed, ...rest } = getInteractions(el);
-  return finish(el, rest, null, { allowIncomplete: true });
+  return finish(el, rest, ixId, { allowIncomplete: true });
 }

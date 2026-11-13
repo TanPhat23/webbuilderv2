@@ -40,6 +40,13 @@ export function buildJsonSchema(): Record<string, unknown> {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "interactions.schema.json",
     title: "Element interactions (settings.interactions)",
+    description: "Validating this schema checks document structure. Expression syntax also requires validateInteractionMap.",
+    "x-template-validation": {
+      validator: "validateInteractionMap",
+      module: "src/features/interactions/schema.ts",
+      blockingLevels: ["error", "incomplete"],
+      description: "Strict agent writes must reject errors and incomplete issues, including malformed {{ ... }} expressions. Editor drafts may allow incomplete issues.",
+    },
     type: "object",
     propertyNames: { pattern: IX_ID_RE.source },
     additionalProperties: { $ref: "#/$defs/interaction" },

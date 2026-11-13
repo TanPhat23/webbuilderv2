@@ -117,3 +117,27 @@ test("published schema enforces event-specific options", async () => {
   assert.equal(validate(doc("visible", { once: false })), true);
   assert.equal(validate(doc("click", {})), true);
 });
+
+test("published schema declares the additional expression-validation contract", async () => {
+  const { validateInteractionMap } = await import("../src/features/interactions/schema");
+  const bad = { ix_abcdefgh: { on: "click", do: [{ toast: "{{ 1 + }}" }] } };
+  const schema: any = buildJsonSchema();
+  assert.equal(schema["x-template-validation"].validator, "validateInteractionMap");
+  assert.match(schema["x-template-validation"].module, /features\/interactions\/schema/);
+  assert.ok(schema["x-template-validation"].blockingLevels.includes("incomplete"));
+  const { createRequire } = await import("node:module");
+  const Ajv = createRequire(import.meta.url)("ajv");
+  delete schema.$schema;
+  assert.equal(new Ajv({ schemaId: "auto" }).compile(schema)(bad), true, "structural schema cannot validate expression grammar");
+  assert.ok(validateInteractionMap(bad).some((issue) => issue.level === "incomplete" && issue.path.endsWith(".toast")));
+});
+
+test("removal is possible when another stored interaction is invalid", () => {
+  const base = el("b", { settings: { interactions: {
+    ix_aaaaaaaa: { on: "click", do: [{ toast: "remove" }] },
+    ix_bbbbbbbb: { on: "click", do: [{ toast: 5 }] },
+  } } });
+  const result = removeInteraction(base, "ix_aaaaaaaa");
+  assert.ok(result.ok);
+  assert.deepEqual(result.settings.interactions, { ix_bbbbbbbb: { on: "click", do: [{ toast: 5 }] } });
+});
