@@ -101,7 +101,9 @@ export function InteractionHost({
     namespace,
     fired: new Map<string, Set<string>>(),
   });
-  const imageErrors = useRef(new WeakMap<Element, string>());
+  const imageErrors = useRef(
+    new WeakMap<Element, { key: string; pendingNative: boolean }>(),
+  );
   if (loadState.current.namespace !== namespace) {
     loadState.current = { namespace, fired: new Map() };
     imageErrors.current = new WeakMap();
@@ -220,11 +222,20 @@ export function InteractionHost({
         return;
       const result = plan(indexRef.current, [id], "error", { bubble: false });
       if (!result.runs.length) return;
-      const key = imageKey(target);
-      if (key && imageErrors.current.get(target) === key) return;
-      if (key) imageErrors.current.set(target, key);
       if (result.preventDefault) event?.preventDefault();
       if (result.stopPropagation) event?.stopPropagation();
+      const key = imageKey(target);
+      if (key) {
+        const previous = imageErrors.current.get(target);
+        if (previous?.key === key) {
+          if (!event) return;
+          if (previous.pendingNative) {
+            previous.pendingNative = false;
+            return;
+          }
+        }
+        imageErrors.current.set(target, { key, pendingNative: !event });
+      }
       fire(result.runs, event);
     };
     const onError = (event: Event) =>
@@ -258,9 +269,24 @@ export function InteractionHost({
     root.addEventListener("error", onError, true);
     dispatchPending();
     const mutations = new root.ownerDocument.defaultView!.MutationObserver(
-      dispatchPending,
+      (records) => {
+        for (const record of records) {
+          if (
+            record.type === "attributes" &&
+            record.target instanceof root.ownerDocument.defaultView!.Element
+          ) {
+            imageErrors.current.delete(record.target);
+          }
+        }
+        dispatchPending();
+      },
     );
-    mutations.observe(root, { childList: true, subtree: true });
+    mutations.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["src", "srcset"],
+    });
     return () => {
       mutations.disconnect();
       types.forEach((type) => root.removeEventListener(type, onEvent));

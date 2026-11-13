@@ -28,9 +28,6 @@ test("host prevents submit reload, limits self events and stops native propagati
       null,
       { timeout: 2000 },
     );
-    await page
-      .locator("#broken")
-      .evaluate((el) => el.dispatchEvent(new Event("error")));
     const initialEvents = await page.evaluate(
       () => (window as any).events as string[],
     );
@@ -38,6 +35,16 @@ test("host prevents submit reload, limits self events and stops native propagati
     assert.equal(initialEvents.includes("empty"), false);
     assert.equal(initialEvents.includes("pending"), false);
     assert.equal(initialEvents.includes("outer focus"), false);
+    await page
+      .locator("#broken")
+      .evaluate((el) => el.setAttribute("src", el.getAttribute("src")!));
+    await page.waitForFunction(
+      () =>
+        (window as any).events.filter((x: string) => x === "broken").length ===
+        2,
+      null,
+      { timeout: 2000 },
+    );
     const prevented = await page
       .locator("#form")
       .evaluate(
