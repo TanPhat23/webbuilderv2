@@ -13,7 +13,8 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
     "test:style-controls": "node --import tsx --test tests/style-controls.browser.ts",
-    "test:unit": "node --import tsx --test tests/*.test.ts"
+    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "test:integration": "bash scripts/it-realtime.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.2.0",

@@ -17,6 +17,7 @@ import {
 } from "@/features/editor";
 import { useMouseStore } from "@/features/editor";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
+import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
 import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
 import { toast } from "sonner";
@@ -283,28 +284,14 @@ export default function CollaborationProvider({
 
       const p = providerRef.current;
       try {
-        if (type === "update" && id && data) {
-          await p.updateElement(id, data as Partial<EditorElement>);
-        } else if (type === "delete" && id) {
-          await p.deleteElement(id);
-        } else if (type === "create" && data) {
-          const el = data as EditorElement;
-          const location = ElementTreeHelper.findLocation(ElementStore.getState().elements, el.id);
-          await p.createElement(el, location?.parentId ?? el.parentId ?? null, location?.index);
-        } else if (type === "move" && data) {
-          const moveData = data as MoveData;
-          if (internalRef.current.pendingMoves.has(moveData.elementId)) return;
-          internalRef.current.pendingMoves.add(moveData.elementId);
-          try {
-            await p.moveElement(
-              moveData.elementId,
-              moveData.newParentId,
-              moveData.newPosition,
-            );
-          } finally {
-            internalRef.current.pendingMoves.delete(moveData.elementId);
-          }
-        }
+        await sendElementOp(
+          p,
+          () => ElementStore.getState().elements,
+          internalRef.current.pendingMoves,
+          type,
+          id,
+          data,
+        );
       } catch (err) {
         try {
           const state = ElementStore.getState();

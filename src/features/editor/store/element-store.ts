@@ -475,7 +475,11 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   };
 };
 
-export const useElementStore = create<ElementStore>()(createElementStoreImpl);
+/** A fresh, independent store. The app uses the singleton below; tests that simulate several users need one each. */
+export const createElementStore = () =>
+  create<ElementStore>()(createElementStoreImpl);
+
+export const useElementStore = createElementStore();
 
 /**
  * Direct access to the element store instance for use outside of React
