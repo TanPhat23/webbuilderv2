@@ -11,6 +11,71 @@ import { Section } from "./SectionHeader";
 import { StyleField } from "./PropInput";
 import { MoreToggle, Segmented, StyleSelect } from "./controls";
 import type { StyleProps } from "./useStyleProps";
+import { useParentLayout } from "@/features/editor/hooks/useParentLayout";
+import {
+  isSizeClass,
+  readSizeMode,
+  writeSizeMode,
+  type SizeAxis,
+  type SizeMode,
+} from "@/features/editor/utils/element/sizing";
+
+const SIZE_MODES: { value: SizeMode; label: string }[] = [
+  { value: "fixed", label: "Fixed" },
+  { value: "fill", label: "Fill" },
+  { value: "hug", label: "Hug" },
+];
+
+/** The element's rendered size on the canvas, for switching to Fixed. */
+function measuredSize(id: string, axis: SizeAxis): string | undefined {
+  for (const frame of Array.from(document.querySelectorAll("iframe"))) {
+    try {
+      const node = frame.contentDocument?.querySelector<HTMLElement>(
+        `[data-element-id="${CSS.escape(id)}"]`,
+      );
+      if (node) {
+        const r = node.getBoundingClientRect();
+        return `${Math.round(axis === "width" ? r.width : r.height)}px`;
+      }
+    } catch {
+      // Cross-origin frame: not the canvas.
+    }
+  }
+  return undefined;
+}
+
+/** Fixed / Fill / Hug for one axis, resolved against the parent's layout. */
+function SizeModeControl({ sp, axis }: { sp: StyleProps; axis: SizeAxis }) {
+  const layout = useParentLayout(sp.element);
+  const merged = { ...sp.inherited, ...sp.values };
+  const mode = readSizeMode(merged, axis, layout);
+  const name = axis === "width" ? "Width" : "Height";
+  const hint: Record<SizeMode, string> = {
+    fixed: `${name}: fixed size`,
+    fill: `${name}: fill the space the parent has left`,
+    hug: `${name}: hug the content`,
+  };
+  return (
+    <Segmented
+      value={mode}
+      options={SIZE_MODES.map((m) => ({ ...m, title: hint[m.value] }))}
+      onChange={(v) => {
+        if (v === mode || !sp.element) return;
+        sp.replace(
+          writeSizeMode(
+            sp.values,
+            axis,
+            v as SizeMode,
+            layout,
+            measuredSize(sp.element.id, axis),
+          ),
+          (cls) => isSizeClass(cls, axis, sp.breakpoint),
+        );
+      }}
+      disabled={sp.disabled}
+    />
+  );
+}
 
 const DISPLAY = [
   { value: "block", label: "Block", title: "Block" },
@@ -140,6 +205,10 @@ export function LayoutSection({ sp }: { sp: StyleProps }) {
       <div className="grid grid-cols-2 gap-1.5">
         <StyleField sp={sp} k="width" prefix="W" label="Width" />
         <StyleField sp={sp} k="height" prefix="H" label="Height" />
+      </div>
+      <div className="grid grid-cols-2 gap-1.5">
+        <SizeModeControl sp={sp} axis="width" />
+        <SizeModeControl sp={sp} axis="height" />
       </div>
 
       {more && (

@@ -18,6 +18,7 @@ import { ElementLabel } from "../resizehandler/ElementLabel";
 import { ResizeContext } from "../resizehandler/ResizeContext";
 import type { DropPosition } from "@/features/editor/utils/element/dropPosition";
 import { useElementRect, type ElementRect } from "./useElementRect";
+import { handlesForSize } from "@/features/editor/constants/direction";
 
 export interface DropIndicatorState {
   targetId: string;
@@ -38,6 +39,11 @@ const SPACING_HANDLES: ResizeDirection[] = [
   "padding-e",
   "padding-w",
 ];
+
+/** A box too small to carry the comment button on its corner. */
+function isSmallBox(rect: ElementRect) {
+  return rect.width < 96 || rect.height < 48;
+}
 
 function boxStyle(rect: ElementRect): React.CSSProperties {
   return {
@@ -82,8 +88,12 @@ function SelectionBox({
         handles.push("gap");
       }
     } else {
-      handles = getResizeHandles(element.styles?.default).filter((h) =>
-        STANDARD_DIRECTIONS.has(h),
+      handles = handlesForSize(
+        getResizeHandles(element.styles?.default).filter((h) =>
+          STANDARD_DIRECTIONS.has(h),
+        ),
+        rect.width,
+        rect.height,
       );
     }
   }
@@ -97,7 +107,20 @@ function SelectionBox({
           onToggleSpacing={() => setManualSpacingMode((prev) => !prev)}
         />
         {showCommentButtons && (
-          <div className="pointer-events-auto">
+          <div
+            className="pointer-events-auto"
+            // The button hangs off its anchor's top-right corner. On a small
+            // element, move the anchor so it sits beside the box, not on it.
+            style={
+              isSmallBox(rect)
+                ? {
+                    position: "absolute",
+                    left: rect.width + 36,
+                    top: rect.height / 2 - 3,
+                  }
+                : undefined
+            }
+          >
             <ElementCommentButton element={element} />
           </div>
         )}

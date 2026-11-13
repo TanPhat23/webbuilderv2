@@ -3,6 +3,11 @@ import React, { memo } from "react";
 import { X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
+import { useParentLayout } from "@/features/editor/hooks/useParentLayout";
+import {
+  sizeLabel,
+  type SizingStyles,
+} from "@/features/editor/utils/element/sizing";
 
 interface ElementLabelProps {
   element: EditorElement;
@@ -15,17 +20,19 @@ export const ElementLabel = memo(function ElementLabel({
   showSpacingInfo,
   onToggleSpacing,
 }: ElementLabelProps) {
+  const layout = useParentLayout(element);
+  const base = (element.styles?.default ?? {}) as SizingStyles;
   return (
     <div
       className={cn(
-        "absolute top-0 left-0 z-40 text-xs px-2 py-1 pointer-events-none select-none rounded-sm flex items-center gap-2 transition-all duration-200 shadow-sm",
+        "absolute top-0 left-0 z-40 w-max whitespace-nowrap text-xs px-2 py-1 pointer-events-none select-none rounded-sm flex items-center gap-2 transition-all duration-200 shadow-sm",
         showSpacingInfo
           ? "bg-orange-50 text-orange-700 border border-orange-200"
           : "bg-blue-500 text-white border border-blue-600",
       )}
       style={{
-        transform: "translateY(-100%) translateY(-4px)",
-        maxWidth: "200px",
+        // Sits clear of the top handles, which stick out above the box.
+        transform: "translateY(-100%) translateY(-10px)",
       }}
     >
       <span className="font-semibold truncate max-w-25">{element.type}</span>
@@ -43,8 +50,8 @@ export const ElementLabel = memo(function ElementLabel({
         </span>
       ) : (
         <span className="text-[10px] opacity-90 font-mono">
-          {element.styles?.default?.width ?? "auto"} &times;{" "}
-          {element.styles?.default?.height ?? "auto"}
+          {sizeLabel(base, "width", layout)} &times;{" "}
+          {sizeLabel(base, "height", layout)}
         </span>
       )}
 

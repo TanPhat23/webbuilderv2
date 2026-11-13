@@ -29,6 +29,12 @@ function applyStylesToDom(el: HTMLElement, styles: ResponsiveStyles): void {
       (el.style as unknown as Record<string, string>)[prop] = String(val);
     }
   }
+  // Fill uses flex-grow; once a drag has removed it, stop it live as well.
+  if (s.flexGrow === undefined && el.style.flexGrow) {
+    el.style.flexGrow = "";
+    el.style.flexBasis = "";
+    el.style.flexShrink = "0";
+  }
 }
 
 const MIN_SIZE = 20;
@@ -248,8 +254,30 @@ function computeDimensionStyles(
     (directionFlags.isEast || directionFlags.isWest) &&
     !(directionFlags.isNorth || directionFlags.isSouth);
 
-  if (!isVerticalOnly) updatedDefault.width = `${widthPercent.toFixed(2)}%`;
-  if (!isHorizontalOnly) updatedDefault.height = `${heightPercent.toFixed(2)}%`;
+  // Dragging a handle makes that axis a fixed size, so drop what Fill left
+  // behind (see sizing.ts); otherwise flex-grow would override the new size.
+  const parentStyle =
+    parentElement.ownerDocument.defaultView?.getComputedStyle(parentElement);
+  const mainAxis = !parentStyle?.display.includes("flex")
+    ? null
+    : parentStyle.flexDirection.startsWith("column")
+      ? "height"
+      : "width";
+  const fixAxis = (axis: "width" | "height", value: string) => {
+    updatedDefault[axis] = value;
+    if (mainAxis === axis) {
+      if (updatedDefault.flexGrow !== undefined) {
+        delete updatedDefault.flexGrow;
+        delete updatedDefault.flexBasis;
+        updatedDefault.flexShrink = "0";
+      }
+    } else if (mainAxis && updatedDefault.alignSelf === "stretch") {
+      delete updatedDefault.alignSelf;
+    }
+  };
+
+  if (!isVerticalOnly) fixAxis("width", `${widthPercent.toFixed(2)}%`);
+  if (!isHorizontalOnly) fixAxis("height", `${heightPercent.toFixed(2)}%`);
 
   if (defaultStyles.position === "absolute") {
     updatedDefault.left = `${clamp((newLeft / parentWidth) * 100, 0, MAX_PERCENT).toFixed(2)}%`;

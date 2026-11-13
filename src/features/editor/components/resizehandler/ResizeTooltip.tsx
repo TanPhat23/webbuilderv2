@@ -74,6 +74,19 @@ function getHandleTooltip(
   }
 }
 
+/** Open away from the element so the tooltip never covers it or its label. */
+function tooltipSide(
+  direction: ResizeDirection,
+): "top" | "bottom" | "left" | "right" {
+  if (direction === "n" || direction === "gap") return "top";
+  if (direction === "e" || direction === "ne") return "right";
+  if (direction === "w" || direction === "nw") return "left";
+  if (direction.endsWith("-n")) return "top";
+  if (direction.endsWith("-e")) return "right";
+  if (direction.endsWith("-w")) return "left";
+  return "bottom";
+}
+
 interface ResizeTooltipProps {
   direction: ResizeDirection;
   element: EditorElement;
@@ -129,7 +142,7 @@ export default function ResizeTooltip({
   return (
     <Tooltip open={isResizing ? true : undefined}>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent side="top">
+      <TooltipContent side={tooltipSide(direction)}>
         {getHandleTooltip(direction, displayStyles)}
       </TooltipContent>
     </Tooltip>

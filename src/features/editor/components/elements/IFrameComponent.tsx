@@ -30,7 +30,7 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
 
   if (iframeElement.src) {
     return (
-      <div {...rootProps} className={cn(rootProps.className, "w-full h-full")}>
+      <div {...rootProps}>
         <iframe
           src={iframeElement.src}
           title={iframeElement.name || "Embedded content"}
@@ -62,8 +62,8 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
   }
 
   return (
-    <div {...rootProps} className={cn(rootProps.className, "w-full h-full")}>
-      <Empty className="w-full h-full">
+    <div {...rootProps}>
+      <Empty className="w-full h-full min-w-56 md:p-6">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <Globe />

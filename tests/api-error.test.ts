@@ -61,6 +61,12 @@ test('close codes: transient vs fatal', () => {
 test('server error codes map to actions', () => {
   assert.equal(handleServerError('JOIN_REQUIRED').rejoin, true);
   assert.equal(handleServerError('NOT_FOUND').blocking, true);
+  // A teammate deleted the element: not a missing page.
+  for (const m of ['element not found in cache', 'element not found', 'parent not found']) {
+    const r = handleServerError('NOT_FOUND', m);
+    assert.equal(r.blocking, false);
+    assert.match(r.message, /teammate removed/);
+  }
   assert.equal(handleServerError('VALIDATION_ERROR', 'bad').message, 'bad');
   assert.equal(handleServerError('PROCESS_ERROR').blocking, false);
 });

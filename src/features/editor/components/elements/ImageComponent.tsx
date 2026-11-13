@@ -46,7 +46,7 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
         {...wrapperProps}
         className={cn(
           rootProps.className,
-          "relative w-full h-full",
+          "relative",
           isDragOver && "ring-2 ring-primary ring-offset-2",
         )}
       >
@@ -69,11 +69,10 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
       {...wrapperProps}
       className={cn(
         rootProps.className,
-        "w-full h-full",
         isDragOver && "ring-2 ring-primary ring-offset-2",
       )}
     >
-      <Empty className="w-full h-full">
+      <Empty className="w-full h-full min-w-56 md:p-6">
         <EmptyHeader>
           <EmptyMedia variant="icon">
             <ImageIcon />

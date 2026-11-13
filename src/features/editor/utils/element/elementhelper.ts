@@ -45,6 +45,8 @@ const updateElementStyle = (
   styles: React.CSSProperties,
   breakpoint: Breakpoint,
   updateElement: (id: string, updates: Partial<EditorElement>) => void,
+  /** Extra classes to remove, e.g. a stale size class on a re-sized axis. */
+  dropClass?: (cls: string) => boolean,
 ): void => {
   const currentStyles = element.styles || {};
   const newStyles = { ...currentStyles, [breakpoint]: styles };
@@ -53,9 +55,17 @@ const updateElementStyle = (
     const computedTailwind = computeTailwindFromStyles(
       newStyles as ResponsiveStyles,
     );
-    const mergedTailwind = twMerge(
-      cn(element.tailwindStyles || "", computedTailwind),
+    // Classes generated from the previous styles must go first; otherwise a
+    // removed style (say a width) lives on as its class and still applies.
+    const generatedBefore = new Set(
+      computeTailwindFromStyles(currentStyles as ResponsiveStyles)
+        .split(/\s+/)
+        .filter(Boolean),
     );
+    const kept = (element.tailwindStyles || "")
+      .split(/\s+/)
+      .filter((c) => c && !generatedBefore.has(c) && !dropClass?.(c));
+    const mergedTailwind = twMerge(cn(kept.join(" "), computedTailwind));
     updateElement(element.id, {
       styles: newStyles as ResponsiveStyles,
       tailwindStyles: mergedTailwind,

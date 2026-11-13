@@ -21,13 +21,14 @@ export function useStyleProps(breakpoint: Breakpoint) {
   const inherited: StyleMap =
     breakpoint === "default" ? {} : (all.default ?? {});
 
-  const replace = (next: StyleMap) => {
+  const replace = (next: StyleMap, dropClass?: (cls: string) => boolean) => {
     if (!element || disabled) return;
     elementHelper.updateElementStyle(
       element,
       compactStyles(next) as React.CSSProperties,
       breakpoint,
       updateElement,
+      dropClass,
     );
   };
 

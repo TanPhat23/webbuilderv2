@@ -1,4 +1,9 @@
 import { create, type StateCreator } from "zustand";
+import {
+  adaptToParent,
+  parentLayout,
+  type SizingStyles,
+} from "@/features/editor/utils/element/sizing";
 import { cloneDeep } from 'lodash-es';
 import { SelectionStore } from "./selection-store";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
@@ -86,6 +91,33 @@ export type ElementStore = {
     callback: ElementStore["collaborativeCallback"],
   ) => void;
 };
+
+/**
+ * After an element lands in a parent, fix a size that doesn't fit that
+ * parent's layout (see sizing.ts). Returns the patched tree and the new
+ * styles, or the same tree when nothing changed.
+ */
+function fitToParent(
+  tree: EditorElement[],
+  id: string,
+): { tree: EditorElement[]; styles?: EditorElement["styles"] } {
+  const el = elementHelper.findById(tree, id);
+  const location = elementHelper.findLocation(tree, id);
+  if (!el || !location?.parentId) return { tree };
+  const parent = elementHelper.findById(tree, location.parentId);
+  const all = (el.styles ?? {}) as Record<string, SizingStyles | undefined>;
+  const fitted = adaptToParent(all.default ?? {}, parentLayout(parent));
+  if (!fitted) return { tree };
+  const styles = { ...all, default: fitted } as EditorElement["styles"];
+  return {
+    tree: elementHelper.mapUpdateById(
+      tree,
+      id,
+      (e) => ({ ...e, styles }) as EditorElement,
+    ) as EditorElement[],
+    styles,
+  };
+}
 
 const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   const MAX_HISTORY = 50;
@@ -232,11 +264,14 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     ) => {
       takeSnapshot();
       const { elements } = get();
-      const updated = elementHelper.mapInsertAfterId(
-        elements as EditorElement[],
-        parentElement.id,
-        elementToBeInserted,
-      ) as EditorElement[];
+      const updated = fitToParent(
+        elementHelper.mapInsertAfterId(
+          elements as EditorElement[],
+          parentElement.id,
+          elementToBeInserted,
+        ) as EditorElement[],
+        elementToBeInserted.id,
+      ).tree;
 
       set({ elements: updated });
       triggerYjsCallback();
@@ -250,13 +285,14 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
     insertElementRelative: (element, targetId, position) => {
       const { elements } = get();
-      const updated = elementHelper.mapInsertRelative(
+      const placed = elementHelper.mapInsertRelative(
         elements,
         element,
         targetId,
         position,
       );
-      if (updated === elements) return get();
+      if (placed === elements) return get();
+      const updated = fitToParent(placed, element.id).tree;
       takeSnapshot();
       set({ elements: updated });
       triggerYjsCallback();
@@ -267,13 +303,14 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
     moveElement: (id, targetId, position) => {
       const { elements } = get();
-      const updated = elementHelper.mapMoveRelative(
+      const moved = elementHelper.mapMoveRelative(
         elements,
         id,
         targetId,
         position,
       );
-      if (updated === elements) return get();
+      if (moved === elements) return get();
+      const { tree: updated, styles: fittedStyles } = fitToParent(moved, id);
       takeSnapshot();
       set({ elements: updated });
       triggerYjsCallback();
@@ -285,6 +322,9 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
           newPosition: location.index,
         });
       }
+      if (fittedStyles) {
+        triggerCollaborativeCallback("update", id, { styles: fittedStyles });
+      }
       return get();
     },
 
@@ -293,7 +333,10 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       const { elements } = get();
       const updatedTree = newElements.reduce<EditorElement[]>(
         (acc, newEl) =>
-          elementHelper.mapAddChildById(acc, newEl.parentId, newEl),
+          fitToParent(
+            elementHelper.mapAddChildById(acc, newEl.parentId, newEl),
+            newEl.id,
+          ).tree,
         elements as EditorElement[],
       ) as EditorElement[];
 
@@ -302,7 +345,8 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       });
       triggerYjsCallback();
       for (const newEl of newElements) {
-        triggerCollaborativeCallback("create", newEl.id, newEl);
+        const added = elementHelper.findById(updatedTree, newEl.id) ?? newEl;
+        triggerCollaborativeCallback("create", added.id, added);
       }
       return get();
     },

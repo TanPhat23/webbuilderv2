@@ -124,3 +124,29 @@ export function getResizeHandles(
     ...(hasGap(styles) ? ["gap" as ResizeDirection] : []),
   ];
 }
+
+/** Below this an edge has no room for a mid-edge handle between its corners. */
+const EDGE_HANDLE_MIN = 48;
+/** Below this the two corners on an edge would touch. */
+const CORNER_PAIR_MIN = 24;
+
+/**
+ * Drops handles that would sit on top of each other on a small element.
+ * Corners resize both axes, so no resize is lost.
+ */
+export function handlesForSize(
+  handles: ResizeDirection[],
+  width: number,
+  height: number,
+): ResizeDirection[] {
+  if (width < CORNER_PAIR_MIN && height < CORNER_PAIR_MIN) {
+    return handles.filter((h) => h === "se");
+  }
+  return handles.filter((h) => {
+    if (h === "n" || h === "s") return width >= EDGE_HANDLE_MIN;
+    if (h === "e" || h === "w") return height >= EDGE_HANDLE_MIN;
+    if (width < CORNER_PAIR_MIN) return h === "ne" || h === "se";
+    if (height < CORNER_PAIR_MIN) return h === "sw" || h === "se";
+    return true;
+  });
+}
