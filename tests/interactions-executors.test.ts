@@ -1,7 +1,7 @@
 // tests/interactions-executors.test.ts
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { createExecutors, elementScope, type Platform, type NodeLike } from "../src/features/interactions/runtime/executors";
+import { browserPlatform, createExecutors, elementScope, type Platform, type NodeLike } from "../src/features/interactions/runtime/executors";
 import { runInteraction, type RunLogEntry } from "../src/features/interactions/runtime/run";
 import { createVariableStore } from "../src/features/interactions/runtime/variables";
 import { evaluate } from "../src/features/interactions/runtime/expression";
@@ -187,4 +187,37 @@ test("a numeric scroll expression scrolls to that position", async () => {
   const { logs } = await go(p, [{ scroll: "{{ 300 }}" }]);
   assert.equal(logs[0].status, "ok");
   assert.deepEqual(events, ["scrollTo:300"]);
+});
+
+
+test("browser lookup only exposes allowed page elements inside its host", async () => {
+  const page = node("DIV", { textContent: "page" });
+  const chrome = node("DIV", { textContent: "editor secret" });
+  const foreign = node("DIV", { textContent: "foreign" });
+  const asElement = (id: string, n: NodeLike) => Object.assign(n, {
+    getAttribute: (key: string) => key === "data-element-id" ? id : null,
+  });
+  const inside = asElement("page", page);
+  const foreignInside = asElement("foreign", foreign);
+  const outside = asElement("chrome", chrome);
+  const host = {
+    getAttribute: () => null,
+    querySelectorAll: () => [inside, foreignInside],
+  } as unknown as Element;
+  const doc = {
+    defaultView: {},
+    getElementById: (id: string) => id === "chrome" ? outside : null,
+  } as unknown as Document;
+  const allowed = new Set(["page", "chrome"]);
+  const p = browserPlatform(doc, host, (id) => allowed.has(id));
+  assert.equal(p.byId("page"), page);
+  assert.equal(p.byId("foreign"), null, "ids outside the page map are not exposed");
+  assert.equal(p.byId("chrome"), null, "outside the host is not exposed even if allowed");
+  const el = elementScope(p.byId);
+  assert.equal(evaluate("el.chrome.text", { el }), undefined);
+  const { logs } = await go(p, [{ hide: "chrome" }]);
+  assert.equal(logs[0].status, "skipped");
+  assert.equal(chrome.style.display, "");
+  allowed.delete("page");
+  assert.equal(p.byId("page"), null, "removed ids are immediately inaccessible");
 });

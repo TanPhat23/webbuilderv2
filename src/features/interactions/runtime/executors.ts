@@ -226,10 +226,21 @@ export function elementScope(byId: (id: string) => NodeLike | null): Record<stri
   });
 }
 
-export function browserPlatform(doc: Document): Platform {
+export function browserPlatform(
+  doc: Document,
+  host: Element,
+  isPageElement: (id: string) => boolean,
+): Platform {
   const win = doc.defaultView ?? window;
   return {
-    byId: (id) => doc.getElementById(id) as unknown as NodeLike | null,
+    byId: (id) => {
+      if (!isPageElement(id)) return null;
+      if (host.getAttribute("data-element-id") === id) return host as unknown as NodeLike;
+      for (const node of host.querySelectorAll("[data-element-id]")) {
+        if (node.getAttribute("data-element-id") === id) return node as unknown as NodeLike;
+      }
+      return null;
+    },
     navigate(url, { newTab, replace }) {
       if (newTab) win.open(url, "_blank", "noopener");
       else if (replace) win.location.replace(url);
@@ -261,9 +272,13 @@ export function browserPlatform(doc: Document): Platform {
 }
 
 /** In the editor, navigation would leave the editor: say where it would go. */
-export function editorPlatform(doc: Document): Platform {
+export function editorPlatform(
+  doc: Document,
+  host: Element,
+  isPageElement: (id: string) => boolean,
+): Platform {
   return {
-    ...browserPlatform(doc),
+    ...browserPlatform(doc, host, isPageElement),
     navigate: (url, { newTab }) => {
       sonner.info(`Would ${newTab ? "open" : "go to"} ${url}`, {
         description: "Navigation runs in Preview.",
