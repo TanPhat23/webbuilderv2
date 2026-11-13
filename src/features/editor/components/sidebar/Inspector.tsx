@@ -11,6 +11,7 @@ import type { Breakpoint } from "./style/styleModel";
 
 const Settings = React.lazy(() => import("./configurations/Settings"));
 const StyleTab = React.lazy(() => import("./style/StyleTab"));
+const InteractTab = React.lazy(() => import("@/features/interactions/components/InteractTab"));
 
 /**
  * The shared shadcn Input/Select carry `h-9` and `md:text-sm` (and Select's
@@ -69,6 +70,9 @@ export default function Inspector() {
               <TabsTrigger value="settings" className="px-1.5 text-[11px]">
                 Settings
               </TabsTrigger>
+              <TabsTrigger value="interact" className="px-1.5 text-[11px]">
+                Interact
+              </TabsTrigger>
             </TabsList>
             <span className="flex-1" />
             {tab === "style" && (
@@ -96,6 +100,9 @@ export default function Inspector() {
             <Suspense fallback={<Fallback />}>
               <Settings />
             </Suspense>
+          </TabsContent>
+          <TabsContent value="interact" className={`min-h-0 flex-1 overflow-x-hidden overflow-y-auto ${DENSE}`}>
+            <Suspense fallback={<Fallback />}><InteractTab key={selected.id} /></Suspense>
           </TabsContent>
         </Tabs>
       ) : (
