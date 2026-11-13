@@ -1,0 +1,562 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "interactions.schema.json",
+  "title": "Element interactions (settings.interactions)",
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^ix_[a-z0-9]{8}$"
+  },
+  "additionalProperties": {
+    "$ref": "#/$defs/interaction"
+  },
+  "$defs": {
+    "step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "navigate": {
+              "type": "string",
+              "minLength": 1
+            },
+            "newTab": {
+              "type": "boolean"
+            },
+            "replace": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "navigate"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "show": {
+              "type": "string",
+              "minLength": 1
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "show"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "hide": {
+              "type": "string",
+              "minLength": 1
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "hide"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "toggle": {
+              "type": "string",
+              "minLength": 1
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "toggle"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "scroll": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "smooth": {
+              "type": "boolean"
+            },
+            "offset": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "scroll"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "modal": {
+              "type": "string",
+              "enum": [
+                "open",
+                "close"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "modal"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "toast": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "success",
+                "error",
+                "info",
+                "warning"
+              ]
+            },
+            "duration": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "toast"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "copy": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "copy"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "download": {
+              "type": "string",
+              "minLength": 1
+            },
+            "filename": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "download"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "animate": {
+              "type": "string",
+              "minLength": 1
+            },
+            "preset": {
+              "type": "string",
+              "enum": [
+                "fadeIn",
+                "slideIn",
+                "bounce",
+                "pulse",
+                "shake",
+                "spin"
+              ]
+            },
+            "duration": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "required": [
+            "animate",
+            "preset"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "class": {
+              "type": "string",
+              "enum": [
+                "add",
+                "remove",
+                "toggle"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9_:\\-/[\\].%]+|[\\s\\S]*\\{\\{[\\s\\S]*)$"
+            }
+          },
+          "required": [
+            "class",
+            "target",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "set": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "to": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "set",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "call": {
+              "type": "string",
+              "const": "api"
+            },
+            "method": {
+              "type": "string",
+              "enum": [
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "PATCH"
+              ]
+            },
+            "url": {
+              "type": "string",
+              "minLength": 1
+            },
+            "headers": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "body": {
+              "type": "string"
+            },
+            "timeout": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 60000
+            }
+          },
+          "required": [
+            "call",
+            "method",
+            "url"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "submit": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "submit"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "reset": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "reset"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "wait": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 60000
+            }
+          },
+          "required": [
+            "wait"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "if": {
+              "type": "string",
+              "minLength": 1
+            },
+            "then": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            },
+            "else": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/step"
+              }
+            }
+          },
+          "required": [
+            "if",
+            "then"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "run": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            }
+          },
+          "required": [
+            "run"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][a-zA-Z0-9_]{0,63}$"
+            },
+            "code": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "code"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "interaction": {
+      "type": "object",
+      "properties": {
+        "on": {
+          "type": "string",
+          "enum": [
+            "click",
+            "dblclick",
+            "mousedown",
+            "mouseup",
+            "mouseenter",
+            "mouseleave",
+            "focus",
+            "blur",
+            "change",
+            "input",
+            "submit",
+            "keydown",
+            "keyup",
+            "load",
+            "error",
+            "visible"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "preventDefault": {
+          "type": "boolean"
+        },
+        "stopPropagation": {
+          "type": "boolean"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "once": {
+          "type": "boolean"
+        },
+        "do": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      },
+      "required": [
+        "on",
+        "do"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "key"
+            ]
+          },
+          "then": {
+            "properties": {
+              "on": {
+                "enum": [
+                  "keydown",
+                  "keyup"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "once"
+            ]
+          },
+          "then": {
+            "properties": {
+              "on": {
+                "const": "visible"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
