@@ -6,4 +6,4 @@ Set `E2E_EMAIL` and `E2E_PASSWORD` in the ignored `.env.test` file or the enviro
 
 Run `bun run test:e2e` for the suite, `bun run test:e2e:ui` for the interactive runner, or `bun run test:e2e:report` to view the latest report. The configuration starts the Vite development server on port 3000 unless an existing server is already listening there. The backend and authentication service must be available.
 
-The tests in `create-project.spec.ts` cover the dashboard's project creation dialog. `sanity.spec.ts` checks basic navigation and unauthenticated access.
+The tests in `create-project.spec.ts` cover the dashboard's project creation dialog: the dialog itself, validation, creating projects (the project must appear on the dashboard and survive a reload), and a failing server (the dialog keeps what was typed and a retry works). Projects are named `e2e-<run>-<label>` and deleted after each test through `helpers/projects.ts`; if a run crashes, delete leftovers named `e2e-…` by hand. `sanity.spec.ts` checks basic navigation and unauthenticated access.

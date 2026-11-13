@@ -1,248 +1,239 @@
 /**
- * @file e2e/create-project.spec.ts
+ * Dashboard "Create Project" flow.
  *
- * Requirements & Constraints:
- * 1. Authenticated backend requirement:
- *    - These tests interact with protected routes (/dashboard) and server actions that require
- *      an active, authenticated Clerk session and a reachable backend/database instance.
- * 2. Need for test account isolation:
- *    - Dedicated test accounts or isolated user contexts must be used to avoid test cross-talk,
- *      concurrency races, and cluttering production or shared user workspaces.
- * 3. Caution regarding project creation cleanup:
- *    - Notice that dialog dismissal tests only cancel the creation modal without persisting records,
- *      whereas successful creation tests generate permanent database records. Proper teardown or
- *      periodic cleanup of test projects is required to prevent database bloat and query slowdown.
+ * Needs a signed-in Clerk session (see global.setup.ts) and a reachable
+ * backend. Use a dedicated test account: these tests create real projects.
+ * Every project is named `e2e-<run>-<label>` and removed after its test, so a
+ * crashed run leaves only clearly marked leftovers.
+ *
+ * Creation goes through a TanStack server function, not a URL the browser
+ * calls directly, so success is judged by what the user sees: the success
+ * toast, the dialog closing, and the project card persisting after a reload.
  */
+import {
+  test,
+  expect,
+  createDialog,
+  createdToast,
+  fillCreateForm,
+  gotoDashboard,
+  openCreateDialog,
+  projectCard,
+  submitCreate,
+  uniqueName,
+} from './helpers/projects';
 
-import { test, expect } from '@playwright/test';
+test.beforeEach(async ({ page }) => {
+  await gotoDashboard(page);
+});
 
-test.describe('Create Project', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('heading', { name: /my projects/i })).toBeVisible({ timeout: 20000 });
+test.describe('dialog', () => {
+  test('opens with its fields and actions', async ({ page }) => {
+    await openCreateDialog(page);
+    const dialog = createDialog(page);
+
+    await expect(dialog.getByRole('heading', { name: /create new project/i })).toBeVisible();
+    await expect(dialog.getByLabel(/project name/i)).toBeVisible();
+    await expect(dialog.getByLabel(/description/i)).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /^create project$/i })).toBeEnabled();
+    await expect(dialog.getByRole('button', { name: /cancel/i })).toHaveAttribute('type', 'button');
+    await expect(dialog.getByRole('button', { name: /^create project$/i })).toHaveAttribute('type', 'submit');
   });
 
-  const openCreateDialog = async (page: any) => {
-    const btn = page.getByRole('button', { name: /create project/i }).first();
-    await btn.scrollIntoViewIfNeeded();
-    await expect(btn).toBeVisible();
-    await expect(btn).toBeEnabled();
-    await btn.click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-  };
+  test('cancel and Escape close it without creating anything', async ({ page }) => {
+    const name = uniqueName('cancelled');
 
-  test.describe('Dialog Interactions', () => {
-    test('should open create project dialog when clicking create button', async ({ page }) => {
-      await openCreateDialog(page);
+    await openCreateDialog(page);
+    await fillCreateForm(page, name);
+    await createDialog(page).getByRole('button', { name: /cancel/i }).click();
+    await expect(createDialog(page)).toBeHidden();
 
-      await expect(page.getByRole('dialog')).toBeVisible();
-      await expect(page.getByRole('heading', { name: /create new project/i })).toBeVisible();
-      await expect(page.getByText(/set up a new project/i)).toBeVisible();
-    });
+    await openCreateDialog(page);
+    await page.keyboard.press('Escape');
+    await expect(createDialog(page)).toBeHidden();
 
-    test('should display all required form fields', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await expect(page.getByLabel(/project name/i)).toBeVisible();
-      await expect(page.getByLabel(/description/i)).toBeVisible();
-      await expect(page.getByRole('button', { name: /^create project$/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /cancel/i })).toBeVisible();
-    });
-
-    test('should close dialog when cancel button is clicked', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await page.getByRole('button', { name: /cancel/i }).click();
-      await expect(page.getByRole('dialog')).not.toBeVisible();
-    });
-
-    test('should reset form after successful project creation', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await page.getByLabel(/project name/i).fill('Test Project');
-      await page.getByPlaceholder('Brief description').fill('Test Description');
-      await page.getByRole('button', { name: /^create project$/i }).click();
-
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-
-      await page.getByRole('button', { name: /create project/i }).first().click();
-
-      await expect(page.getByLabel(/project name/i)).toHaveValue('');
-      await expect(page.getByLabel(/description/i)).toHaveValue('');
-    });
+    await expect(projectCard(page, name)).toHaveCount(0);
   });
 
-  test.describe('Form Validation', () => {
-    test('should show validation error when submitting empty name', async ({ page }) => {
-      await openCreateDialog(page);
+  test('moves focus from name to description with Tab', async ({ page }) => {
+    await openCreateDialog(page);
+    const dialog = createDialog(page);
 
-      await page.getByLabel(/project name/i).focus();
-      await page.getByLabel(/project name/i).blur();
-      await page.getByRole('button', { name: /^create project$/i }).click();
-
-      await expect(page.getByText('Name is required')).toBeVisible();
-    });
-
-    test('should not close dialog when submitting with empty name', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await page.getByRole('button', { name: /^create project$/i }).click();
-
-      await expect(page.getByRole('dialog')).toBeVisible();
-    });
-
-    test('should enable submit button when name field has value', async ({ page }) => {
-      await openCreateDialog(page);
-
-      const dialog = page.getByRole('dialog');
-      await expect(dialog).toBeVisible();
-
-      await dialog.getByLabel(/project name/i).fill('Valid Project Name');
-
-      await expect(dialog.getByRole('button', { name: /^create project$/i })).toBeEnabled();
-    });
-
-    test('should close dialog only when name is provided', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await page.getByRole('button', { name: /^create project$/i }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-
-      await page.getByLabel(/project name/i).fill('Now Valid');
-      await page.getByRole('button', { name: /^create project$/i }).click();
-
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
+    await dialog.getByLabel(/project name/i).focus();
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByLabel(/description/i)).toBeFocused();
   });
 
-  test.describe('Project Creation', () => {
-    test('should create project with name only', async ({ page }) => {
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill(`Test Project ${Date.now()}`);
-      await page.getByRole('button', { name: /^create project$/i }).click();
+  test('submits from the keyboard with Enter', async ({ page, trackProject }) => {
+    const name = trackProject(uniqueName('enter'));
 
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
+    await openCreateDialog(page);
+    await fillCreateForm(page, name);
+    await page.keyboard.press('Enter');
 
-    test('should create project with name and description', async ({ page }) => {
-      await openCreateDialog(page);
+    await expect(createdToast(page)).toBeVisible();
+    await expect(createDialog(page)).toBeHidden();
+  });
+});
 
-      await page.getByLabel(/project name/i).fill(`Project ${Date.now()}`);
-      await page.getByPlaceholder('Brief description').fill('This is a test project description');
-      await page.getByRole('button', { name: /^create project$/i }).click();
+test.describe('validation', () => {
+  test('an empty name is rejected and the dialog stays open', async ({ page }) => {
+    await openCreateDialog(page);
+    await submitCreate(page);
 
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
-
-
+    await expect(page.getByText('Name is required')).toBeVisible();
+    await expect(createDialog(page)).toBeVisible();
+    await expect(createdToast(page)).toBeHidden();
   });
 
-  test.describe('Input Handling', () => {
-    test('should accept special characters in project name', async ({ page }) => {
-      const specialName = 'Project #1 - Test & Co. (Beta)';
+  test('fixing the name lets the same dialog submit', async ({ page, trackProject }) => {
+    const name = trackProject(uniqueName('fixed'));
 
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill(specialName);
+    await openCreateDialog(page);
+    await submitCreate(page);
+    await expect(page.getByText('Name is required')).toBeVisible();
 
-      await expect(page.getByLabel(/project name/i)).toHaveValue(specialName);
+    await fillCreateForm(page, name);
+    await submitCreate(page);
 
-      await page.getByRole('button', { name: /^create project$/i }).click();
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
+    await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+    await expect(page.getByText('Name is required')).toBeHidden();
+    await expect(projectCard(page, name)).toBeVisible();
+  });
+});
 
-    test('should accept long project names', async ({ page }) => {
-      const longName = 'A'.repeat(100);
+test.describe('creating', () => {
+  test('a project with only a name appears on the dashboard and survives a reload', async ({
+    page,
+    trackProject,
+  }) => {
+    const name = trackProject(uniqueName('name-only'));
 
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill(longName);
+    await openCreateDialog(page);
+    await fillCreateForm(page, name);
+    await submitCreate(page);
 
-      await expect(page.getByLabel(/project name/i)).toHaveValue(longName);
-      await page.getByRole('button', { name: /cancel/i }).click();
-    });
+    await expect(createdToast(page)).toBeVisible();
+    await expect(createDialog(page)).toBeHidden();
+    await expect(projectCard(page, name)).toBeVisible();
 
-    test('should accept long descriptions', async ({ page }) => {
-      const longDescription = 'Lorem ipsum dolor sit amet. '.repeat(5);
-
-      await openCreateDialog(page);
-      await page.getByPlaceholder('Brief description').fill(longDescription);
-
-      await expect(page.getByPlaceholder('Brief description')).toHaveValue(longDescription);
-      await page.getByRole('button', { name: /cancel/i }).click();
-    });
-
-    test('should handle whitespace in project name', async ({ page }) => {
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill('   Project Name   ');
-
-      await page.getByRole('button', { name: /^create project$/i }).click();
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
-
-    test('should handle numeric project names', async ({ page }) => {
-      await openCreateDialog(page);
-      await page.getByLabel(/project name/i).fill('12345');
-
-      await page.getByRole('button', { name: /^create project$/i }).click();
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-    });
+    await page.reload();
+    await expect(projectCard(page, name)).toBeVisible({ timeout: 20_000 });
   });
 
-  test.describe('Multiple Operations', () => {
-    test('should handle creating multiple projects in sequence', async ({ page }) => {
-      for (let i = 1; i <= 3; i++) {
-        await openCreateDialog(page);
+  test('a description is saved with the project', async ({ page, trackProject }) => {
+    const name = trackProject(uniqueName('with-description'));
+    const description = 'Created by the e2e suite';
 
-        await page.getByLabel(/project name/i).fill(`Sequential Project ${Date.now()}-${i}`);
-        await page.getByRole('button', { name: /^create project$/i }).click();
+    await openCreateDialog(page);
+    await fillCreateForm(page, name, description);
+    await submitCreate(page);
 
-        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15000 });
-        await page.waitForLoadState('networkidle');
+    await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+    await expect(projectCard(page, name)).toBeVisible();
+    await expect(page.getByText(description).first()).toBeVisible();
+  });
+
+  test('the form is empty again after a successful create', async ({ page, trackProject }) => {
+    const name = trackProject(uniqueName('reset'));
+
+    await openCreateDialog(page);
+    await fillCreateForm(page, name, 'to be cleared');
+    await submitCreate(page);
+    await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+
+    await openCreateDialog(page);
+    await expect(createDialog(page).getByLabel(/project name/i)).toHaveValue('');
+    await expect(createDialog(page).getByLabel(/description/i)).toHaveValue('');
+  });
+
+  test('can create several projects in a row', async ({ page, trackProject }) => {
+    const names = [1, 2, 3].map((n) => trackProject(uniqueName(`seq-${n}`)));
+
+    for (const name of names) {
+      await openCreateDialog(page);
+      await fillCreateForm(page, name);
+      await submitCreate(page);
+      await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+      await expect(projectCard(page, name)).toBeVisible();
+    }
+  });
+
+  for (const [label, name] of [
+    ['special characters', `${uniqueName('special')} #1 - Test & Co. (Beta) <b>`],
+    ['non-ASCII text', `${uniqueName('unicode')} プロジェクト ✓`],
+    ['digits', uniqueName('12345')],
+    ['a long name', `${uniqueName('long')}-${'A'.repeat(80)}`],
+  ] as const) {
+    test(`accepts a name with ${label}`, async ({ page, trackProject }) => {
+      trackProject(name);
+
+      await openCreateDialog(page);
+      await fillCreateForm(page, name);
+      await expect(createDialog(page).getByLabel(/project name/i)).toHaveValue(name);
+      await submitCreate(page);
+
+      await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+      await expect(projectCard(page, name)).toBeVisible();
+    });
+  }
+});
+
+test.describe('when the server fails', () => {
+  test('keeps the dialog and what was typed, shows an error, creates nothing', async ({ page }) => {
+    const name = uniqueName('server-error');
+    const description = 'must not be lost';
+
+    // Fail only the create request that carries our unique name; everything
+    // else (auth, project list) goes through untouched.
+    await page.route('**/_serverFn/**', async (route) => {
+      const request = route.request();
+      if (request.method() === 'POST' && (request.postData() ?? '').includes(name)) {
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"boom"}' });
+      } else {
+        await route.continue();
       }
     });
 
-    test('should maintain empty form when reopening dialog', async ({ page }) => {
-      for (let i = 0; i < 2; i++) {
-        await openCreateDialog(page);
+    await openCreateDialog(page);
+    await fillCreateForm(page, name, description);
+    await submitCreate(page);
 
-        await expect(page.getByLabel(/project name/i)).toHaveValue('');
-        await expect(page.getByLabel(/description/i)).toHaveValue('');
+    await expect(page.getByText(/failed to create project/i).first()).toBeVisible({ timeout: 15_000 });
+    await expect(createdToast(page)).toBeHidden();
 
-        await page.getByRole('button', { name: /cancel/i }).click();
-        await expect(page.getByRole('dialog')).not.toBeVisible();
-      }
-    });
+    // Nothing is lost, and the button is usable again for a retry.
+    const dialog = createDialog(page);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel(/project name/i)).toHaveValue(name);
+    await expect(dialog.getByPlaceholder('Brief description')).toHaveValue(description);
+    await expect(dialog.getByRole('button', { name: /^create project$/i })).toBeEnabled();
+
+    await dialog.getByRole('button', { name: /cancel/i }).click();
+    await expect(projectCard(page, name)).toHaveCount(0);
   });
 
-  test.describe('Accessibility', () => {
-    test('should have proper labels for form inputs', async ({ page }) => {
-      await openCreateDialog(page);
+  test('a retry after a failure succeeds', async ({ page, trackProject }) => {
+    const name = trackProject(uniqueName('retry'));
+    let failed = false;
 
-      const dialog = page.getByRole('dialog');
-      await expect(dialog).toBeVisible();
-
-      await expect(dialog.getByText(/project name/i)).toBeVisible();
-      await expect(dialog.getByText(/description/i)).toBeVisible();
+    await page.route('**/_serverFn/**', async (route) => {
+      const request = route.request();
+      if (!failed && request.method() === 'POST' && (request.postData() ?? '').includes(name)) {
+        failed = true;
+        await route.fulfill({ status: 500, contentType: 'application/json', body: '{"error":"boom"}' });
+      } else {
+        await route.continue();
+      }
     });
 
-    test('should be navigable with keyboard', async ({ page }) => {
-      await openCreateDialog(page);
+    await openCreateDialog(page);
+    await fillCreateForm(page, name);
+    await submitCreate(page);
+    await expect(page.getByText(/failed to create project/i).first()).toBeVisible({ timeout: 15_000 });
 
-      const nameInput = page.getByLabel(/project name/i);
-      const descriptionInput = page.getByLabel(/description/i);
-
-      await nameInput.focus();
-      await expect(nameInput).toBeFocused();
-
-      await page.keyboard.press('Tab');
-      await expect(descriptionInput).toBeFocused();
-    });
-
-    test('should have proper button types', async ({ page }) => {
-      await openCreateDialog(page);
-
-      await expect(page.getByRole('button', { name: /cancel/i })).toHaveAttribute('type', 'button');
-      await expect(page.getByRole('button', { name: /^create project$/i })).toHaveAttribute('type', 'submit');
-    });
+    await submitCreate(page);
+    await expect(createDialog(page)).toBeHidden({ timeout: 15_000 });
+    await expect(projectCard(page, name)).toBeVisible();
   });
 });
