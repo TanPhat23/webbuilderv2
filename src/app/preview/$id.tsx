@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { projectService } from "@/features/projects";
 import { elementService } from "@/features/editor";
@@ -5,6 +6,7 @@ import { dehydrate, HydrationBoundary, useQuery } from "@tanstack/react-query";
 import { sanitizeProjectCss } from "@/features/projects/lib/project-css";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
 import { InteractionHost } from "@/features/interactions/components/InteractionHost";
+import { mergedLogic, snapshotFromServer } from "@/features/interactions/logic-store";
 
 export const Route = createFileRoute("/preview/$id")({
   loader: async ({ params, context }) => {
@@ -14,6 +16,10 @@ export const Route = createFileRoute("/preview/$id")({
       queryClient.prefetchQuery({
         queryKey: ["project", params.id],
         queryFn: () => projectService.getProjectPublic(params.id),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ["pages-public", params.id],
+        queryFn: () => projectService.getPagesPublic(params.id),
       }),
       queryClient.prefetchQuery({
         queryKey: ["elements", params.id],
@@ -48,6 +54,21 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
     queryFn: () => projectService.getProjectPublic(projectId),
   });
 
+  // Published logic comes from the server; the preview renders every page at once.
+  const {
+    data: pages,
+    isLoading: pagesLoading,
+    error: pagesError,
+  } = useQuery({
+    queryKey: ["pages-public", projectId],
+    queryFn: () => projectService.getPagesPublic(projectId),
+  });
+
+  const logic = useMemo(
+    () => mergedLogic(snapshotFromServer(project?.logic, pages ?? [])),
+    [project?.logic, pages],
+  );
+
   const {
     data: elements,
     isLoading: elementsLoading,
@@ -57,7 +78,7 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
     queryFn: () => elementService.getElementsPublic(projectId),
   });
 
-  if (projectLoading || elementsLoading) {
+  if (projectLoading || elementsLoading || pagesLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen min-w-screen">
         <div className="text-lg">Loading preview...</div>
@@ -65,12 +86,12 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
     );
   }
 
-  if (projectError || elementsError) {
+  if (projectError || elementsError || pagesError) {
     return (
       <div className="flex items-center justify-center min-h-screen min-w-screen">
         <div className="text-lg text-destructive">
           Error loading preview:{" "}
-          {projectError?.message || elementsError?.message}
+          {projectError?.message || elementsError?.message || pagesError?.message}
         </div>
       </div>
     );
@@ -91,7 +112,7 @@ function PreviewRenderer({ projectId }: { projectId: string }) {
           __html: sanitizeProjectCss(project.header?.cssStyles),
         }}
       />
-      <InteractionHost elements={elements} enabled namespace={projectId} showLog>
+      <InteractionHost elements={elements} enabled namespace={projectId} variables={logic.variables} flows={logic.flows} showLog>
         <PreviewElementLoader elements={elements} />
       </InteractionHost>
     </div>

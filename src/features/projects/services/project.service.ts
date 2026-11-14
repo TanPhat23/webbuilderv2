@@ -19,6 +19,8 @@ export interface ApiPage {
   name: string;
   type: string;
   styles?: Page["Styles"];
+  /** Interaction logic (variables and flows); absent until the page has some. */
+  logic?: unknown;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
@@ -69,6 +71,14 @@ export const projectService = {
       .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id))
       .build();
     return apiClient.getPublic<Project>(url);
+  },
+
+  /** Pages of a published project, with their logic, for the preview. */
+  getPagesPublic: (id: string): Promise<ApiPage[]> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PAGES.GET_PUBLIC(id))
+      .build();
+    return apiClient.getPublic<ApiPage[]>(url);
   },
 
   getProjects: (): Promise<Project[]> => {

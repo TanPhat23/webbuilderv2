@@ -17,6 +17,8 @@ export interface Project {
   ownerId: string;
   styles?: JsonObject | null;
   header?: Header | null;
+  /** Project-wide interaction logic (variables and flows); absent until it has some. */
+  logic?: JsonObject | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;

@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   },
   PAGES: {
     CREATE: (projectId: string) => `/api/v1/pages/${projectId}`,
+    GET_PUBLIC: (projectId: string) => `/api/v1/pages/public/${projectId}`,
   },
   NOTIFICATIONS: {
     LIST: "/api/v1/notifications",
