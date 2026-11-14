@@ -9,6 +9,7 @@ export const RAIL_IDS = [
   "assets",
   "cms",
   "workflows",
+  "logic",
   "history",
   "ai",
 ] as const;

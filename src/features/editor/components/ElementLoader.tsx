@@ -3,6 +3,7 @@ import { useParams } from "@tanstack/react-router";
 import type { EditorElement } from "@/types/global.type";
 import { useElements, useEventModeStore } from "@/features/editor";
 import { InteractionHost } from "@/features/interactions/components/InteractionHost";
+import { useActiveLogic } from "@/features/interactions/logic-hooks";
 import { editorPlatform } from "@/features/interactions/runtime/executors";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import ElementRenderer from "./ElementRenderer";
@@ -51,6 +52,7 @@ function RootElementLoader({
   const editable = !isReadOnly && !isLocked;
   const eventsOn = useEventModeStore((s) => s.isEventModeEnabled);
   const list = elements ?? pageElements;
+  const logic = useActiveLogic();
 
   return (
     <EditorFlagsProvider
@@ -62,7 +64,7 @@ function RootElementLoader({
       iframeRef={iframeRef}
     >
       <CanvasInteractionLayer>
-        <InteractionHost elements={list} enabled={eventsOn} namespace={params.id ?? "editor"} platform={editorPlatform} showLog>
+        <InteractionHost elements={list} enabled={eventsOn} namespace={params.id ?? "editor"} variables={logic.variables} flows={logic.flows} platform={editorPlatform} showLog>
           <ElementList elements={list} data={data} />
         </InteractionHost>
       </CanvasInteractionLayer>

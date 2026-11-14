@@ -21,6 +21,7 @@ import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
 import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
 import { toast } from "sonner";
+import { useLogicStore } from "@/features/interactions/logic-store";
 import type { EditorElement } from "@/types/global.type";
 
 import type { Page } from "@/features/pages";
@@ -189,6 +190,11 @@ export default function CollaborationProvider({
         setState((s: WSCollabState) => ({ ...s, error: msg }));
       },
 
+      // Variables and flows: the server's documents replace the store's confirmed state.
+      onLogicSync: (payload) => useLogicStore.getState().receiveSync(payload),
+      onLogicChanged: (payload) =>
+        useLogicStore.getState().receiveChange(payload.scope, payload.pageId, payload.logic, payload.revision),
+
       // Presence envelopes from the server can be handled immediately
       onPresence: (data: PresenceBroadcastPayload) => {
         if (data.userId === userId) return;
@@ -207,6 +213,15 @@ export default function CollaborationProvider({
     });
 
     providerRef.current = provider;
+
+    useLogicStore.getState().load(projectId);
+    useLogicStore.getState().bindRemote({
+      pageId,
+      isOnline: () => provider.isConnected(),
+      send: (scope, patch) => provider.updateLogic(scope, patch),
+      requestSync: () => provider.requestLogicSync(),
+      onRejected: (message) => toast.error(`Change not saved: ${message}`),
+    });
 
     provider.on("status", ({ status }: { status: string }) => {
       const roomState: WSRoomState =
@@ -309,6 +324,7 @@ export default function CollaborationProvider({
     return () => {
       disposed = true;
       unsubPresence();
+      useLogicStore.getState().unbindRemote();
       toast.dismiss(draftToastId);
       ElementStore.getState().setCollaborativeCallback(null);
       // Also clear the yjs callback if it was set (backward compat)

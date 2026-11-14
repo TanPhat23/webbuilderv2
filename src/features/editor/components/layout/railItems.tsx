@@ -9,6 +9,7 @@ import {
   Zap,
   History,
   Sparkles,
+  Braces,
 } from "lucide-react";
 import {
   useEditorChromeStore,
@@ -22,6 +23,7 @@ import WorkflowsPanel from "./WorkflowsPanel";
 
 const SectionsLibrary = React.lazy(() => import("../wireframe/SectionsLibrary"));
 const AIChat = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
+const LogicPanel = React.lazy(() => import("@/features/interactions/components/LogicPanel"));
 const CmsPanel = React.lazy(() => import("./CmsPanel"));
 const SnapshotManager = React.lazy(() => import("../sidebar/SnapshotManager"));
 const ImageSelector = React.lazy(() =>
@@ -62,6 +64,7 @@ export const RAIL_ITEMS: RailItem[] = [
   { id: "assets", label: "Assets", icon: ImageIcon, group: "main", render: () => <ImageSelector /> },
   { id: "cms", label: "CMS", icon: Database, group: "main", render: () => <CmsPanel /> },
   { id: "workflows", label: "Workflows", icon: Zap, group: "tools", render: () => <WorkflowsPanel /> },
+  { id: "logic", label: "Logic", icon: Braces, group: "tools", width: 280, render: () => <LogicPanel /> },
   { id: "history", label: "History", icon: History, group: "tools", render: () => <SnapshotManager /> },
   { id: "ai", label: "AI assistant", icon: Sparkles, group: "tools", width: 360, bare: true, render: () => <CloseableAIChat /> },
 ];

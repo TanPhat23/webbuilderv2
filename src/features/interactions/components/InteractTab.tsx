@@ -11,6 +11,7 @@ import { addInteraction, getInteractions, removeInteraction, updateInteraction, 
 import { commit } from "../ops-store";
 import { menuVerbs } from "../editing/fields";
 import { InteractionCard } from "./InteractionCard";
+import { useActiveLogic } from "../logic-hooks";
 
 function flatten(tree: EditorElement[]): { id: string; name: string }[] {
   const out: { id: string; name: string }[] = [];
@@ -25,26 +26,26 @@ function flatten(tree: EditorElement[]): { id: string; name: string }[] {
   return out;
 }
 
-// Plan 2 supplies page/project variables and flows here.
-const NO_NAMES: string[] = [];
-
 export default function InteractTab() {
   const selected = useSelectedElement();
   const tree = useElements();
   const elements = useMemo(() => flatten(tree), [tree]);
   const names = useMemo(() => new Map(elements.map((e) => [e.id, e.name])), [elements]);
   const map = getInteractions(selected);
+  const logic = useActiveLogic();
+  const variableNames = useMemo(() => Object.keys(logic.variables), [logic.variables]);
+  const flowNames = useMemo(() => Object.keys(logic.flows), [logic.flows]);
 
   const issues = useMemo(
     () => [
       ...validateInteractionMap(map),
       ...referenceWarnings(map, {
         elementIds: new Set(names.keys()),
-        variables: new Set(NO_NAMES),
-        flows: new Set(NO_NAMES),
+        variables: new Set(variableNames),
+        flows: new Set(flowNames),
       }),
     ],
-    [map, names],
+    [map, names, variableNames, flowNames],
   );
 
   if (!selected) return null;
@@ -57,9 +58,9 @@ export default function InteractTab() {
     issues,
     nameOf: (id: string) => names.get(id),
     elements,
-    variables: NO_NAMES,
-    flows: NO_NAMES,
-    verbs: menuVerbs({ variables: NO_NAMES.length, flows: NO_NAMES.length }),
+    variables: variableNames,
+    flows: flowNames,
+    verbs: menuVerbs({ variables: variableNames.length, flows: flowNames.length }),
   };
   const entries = Object.entries(map);
 
