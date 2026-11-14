@@ -5,7 +5,8 @@
  * `bun run interactions:schema`; a unit test fails when it is stale.
  */
 import { z } from "zod";
-import { IX_ID_RE, InteractionHead, VERBS, VERB_SCHEMAS } from "./schema";
+import { IX_ID_RE, NAME_RE, InteractionHead, VERBS, VERB_SCHEMAS } from "./schema";
+import { VariableSchema } from "./logic";
 
 const STEP_REF = { $ref: "#/$defs/step" };
 
@@ -36,6 +37,14 @@ export function buildJsonSchema(): Record<string, unknown> {
       then: { properties: { on: { const: "visible" } } },
     },
   ];
+  const variable = toJson(VariableSchema);
+  variable.allOf = [
+    ["string", "string"], ["number", "number"], ["boolean", "boolean"],
+    ["object", ["object", "null"]], ["list", "array"],
+  ].map(([kind, type]) => ({
+    if: { properties: { type: { const: kind } }, required: ["type"] },
+    then: { properties: { default: { type } } },
+  }));
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "interactions.schema.json",
@@ -50,6 +59,21 @@ export function buildJsonSchema(): Record<string, unknown> {
     type: "object",
     propertyNames: { pattern: IX_ID_RE.source },
     additionalProperties: { $ref: "#/$defs/interaction" },
-    $defs: { step: { oneOf: steps }, interaction },
+    $defs: {
+      step: { oneOf: steps },
+      interaction,
+      variable,
+      logic: {
+        type: "object", additionalProperties: false, required: ["v", "variables", "flows"],
+        properties: {
+          v: { const: 1 },
+          variables: { type: "object", propertyNames: { pattern: NAME_RE.source, not: { enum: ["__proto__", "constructor", "prototype"] } }, additionalProperties: { $ref: "#/$defs/variable" } },
+          flows: { type: "object", propertyNames: { pattern: NAME_RE.source }, additionalProperties: {
+            type: "object", additionalProperties: false, required: ["do"],
+            properties: { do: { type: "array", items: STEP_REF } },
+          } },
+        },
+      },
+    },
   };
 }

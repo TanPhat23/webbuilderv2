@@ -1,0 +1,61 @@
+{
+  "comment": "Shared by webbuilderv2 (tests/fixtures/logic-parity.json) and webbuilder.api.go (internal/realtime/domain/logic/testdata/parity.json); keep both copies identical. accept=true: storable (valid, or only incomplete/warning issues). accept=false: structural or type error.",
+  "cases": [
+    { "name": "empty document", "accept": true, "doc": { "v": 1, "variables": {}, "flows": {} } },
+    { "name": "complete variables and flows", "accept": true, "doc": { "v": 1,
+      "variables": { "count": { "type": "number", "default": 0, "lifetime": "session" }, "name": { "type": "string", "default": "" }, "on": { "type": "boolean", "default": false }, "obj": { "type": "object", "default": null }, "items": { "type": "list", "default": [] } },
+      "flows": { "greet": { "do": [
+        { "id": "first", "toast": "Hi {{ vars.name }}", "kind": "success", "duration": 3000 },
+        { "if": "vars.on", "then": [{ "show": "el_1", "duration": 200 }], "else": [{ "hide": "el_1" }] },
+        { "call": "api", "method": "POST", "url": "/api", "headers": { "X-A": "b" }, "body": "{}", "timeout": 5000 },
+        { "class": "add", "target": "el_1", "name": "text-red-500" },
+        { "set": "count", "to": "{{ vars.count + 1 }}" },
+        { "wait": 500 }, { "scroll": 0, "smooth": true, "offset": -10 }, { "modal": "close" },
+        { "animate": "el_1", "preset": "bounce" }, { "run": "other" }, { "navigate": "/x", "newTab": true }
+      ] }, "other": { "do": [] } } } },
+
+    { "name": "new steps from defaultStep", "accept": true, "doc": { "v": 1, "variables": {}, "flows": { "draft": { "do": [
+      { "navigate": "" }, { "show": "" }, { "hide": "" }, { "toggle": "" }, { "scroll": "" }, { "modal": "open" }, { "toast": "" },
+      { "copy": "" }, { "download": "" }, { "animate": "", "preset": "fadeIn" }, { "class": "toggle", "target": "", "name": "" },
+      { "set": "", "to": "" }, { "call": "api", "method": "GET", "url": "" }, { "submit": "" }, { "reset": "" }, { "wait": 500 },
+      { "if": "", "then": [], "else": [] }, { "run": "" }, { "code": "" } ] } } } },
+    { "name": "unparseable template is incomplete", "accept": true, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "toast": "{{ vars.count + }}" }, { "if": "{{ (", "then": [] }] } } } },
+    { "name": "missing required fields are incomplete", "accept": true, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [
+      { "set": "x" }, { "if": "a" }, { "animate": "el" }, { "class": "add" }, { "call": "api" } ] } } } },
+    { "name": "empty optional values are incomplete", "accept": true, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [
+      { "id": "", "toast": "x", "kind": "" }, { "modal": "", "target": "" }, { "wait": "" }, { "call": "", "method": "", "url": "/", "headers": "" },
+      { "navigate": "/", "newTab": "" }, { "show": "a", "duration": "" } ] } } } },
+
+    { "name": "wrong version", "accept": false, "doc": { "v": 2, "variables": {}, "flows": {} } },
+    { "name": "unknown top-level field", "accept": false, "doc": { "v": 1, "variables": {}, "flows": {}, "extra": 1 } },
+    { "name": "variables not an object", "accept": false, "doc": { "v": 1, "variables": [], "flows": {} } },
+    { "name": "default does not match type", "accept": false, "doc": { "v": 1, "variables": { "n": { "type": "number", "default": "1" } }, "flows": {} } },
+    { "name": "missing default", "accept": false, "doc": { "v": 1, "variables": { "n": { "type": "number" } }, "flows": {} } },
+    { "name": "reserved variable name", "accept": false, "doc": { "v": 1, "variables": { "constructor": { "type": "string", "default": "" } }, "flows": {} } },
+    { "name": "bad lifetime", "accept": false, "doc": { "v": 1, "variables": { "n": { "type": "number", "default": 0, "lifetime": "forever" } }, "flows": {} } },
+    { "name": "bad flow name", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "bad-name": { "do": [] } } } },
+    { "name": "flow without steps", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": {} } } },
+    { "name": "flow steps not a list", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": "" } } } },
+    { "name": "flow with unknown field", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [], "x": 1 } } } },
+    { "name": "two verbs", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "show": "a", "hide": "b" }] } } } },
+    { "name": "no verb", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "id": "x" }] } } } },
+    { "name": "unknown step field", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "show": "a", "foo": 1 }] } } } },
+    { "name": "verb value of wrong type", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "show": 5 }] } } } },
+    { "name": "null verb value", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "show": null }] } } } },
+    { "name": "unknown toast kind", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "toast": "x", "kind": "info(1);alert(2);toast.info" }] } } } },
+    { "name": "negative wait", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "wait": -1 }] } } } },
+    { "name": "wait too long", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "wait": 70000 }] } } } },
+    { "name": "class name with spaces", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "class": "add", "target": "a", "name": "a b" }] } } } },
+    { "name": "bad set name", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "set": "bad name", "to": "1" }] } } } },
+    { "name": "bad run name", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "run": "1bad" }] } } } },
+    { "name": "then not a list", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "if": "x", "then": "" }] } } } },
+    { "name": "invalid nested step", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "if": "x", "then": [{ "bogus": 1 }] }] } } } },
+    { "name": "non-string header", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "call": "api", "method": "GET", "url": "/", "headers": { "a": 1 } }] } } } },
+    { "name": "zero toast duration", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "toast": "x", "duration": 0 }] } } } },
+    { "name": "negative duration", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "show": "a", "duration": -1 }] } } } },
+    { "name": "non-boolean option", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "navigate": "/", "newTab": "yes" }] } } } },
+    { "name": "unknown modal mode", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "modal": "maybe" }] } } } },
+    { "name": "bad step id", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "id": "1x", "show": "a" }] } } } },
+    { "name": "unknown call kind", "accept": false, "doc": { "v": 1, "variables": {}, "flows": { "f": { "do": [{ "call": "rpc", "method": "GET", "url": "/" }] } } } }
+  ]
+}
