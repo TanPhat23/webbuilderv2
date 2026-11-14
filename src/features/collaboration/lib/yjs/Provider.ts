@@ -20,6 +20,7 @@ import type {
   RemotePresence,
   LogicScope,
   LogicChangedPayload,
+  LogicSyncPayload,
   LogicUpdatePayload,
   CustomYjsProviderV2 as ICustomYjsProviderV2,
 } from "@/features/collaboration";
@@ -261,13 +262,14 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   public async updateLogic(
     scope: LogicScope,
     patch: Record<string, unknown>,
+    nullPaths?: string[][],
   ): Promise<LogicChangedPayload> {
     const requestId = this.dispatcher.generateRequestId();
     const envelope = this.dispatcher.createEnvelope<LogicUpdatePayload>(
       "logic:update",
       this.projectId,
       this.pageId,
-      { scope, patch },
+      { scope, patch, ...(nullPaths?.length ? { nullPaths } : {}) },
       { userId: this.userId, requestId },
     );
     this.logicChannel.track(requestId);
@@ -288,6 +290,19 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       { userId: this.userId, requestId: this.dispatcher.generateRequestId() },
     );
     this.connection.send(JSON.stringify(envelope));
+  }
+
+  public async moveLogic(kind: "variable" | "flow", name: string, to: LogicScope): Promise<LogicSyncPayload> {
+    const requestId = this.dispatcher.generateRequestId();
+    const envelope = this.dispatcher.createEnvelope(
+      "logic:move", this.projectId, this.pageId, { kind, name, to }, { userId: this.userId, requestId },
+    );
+    this.logicChannel.track(requestId);
+    try {
+      return await this.sender.sendRequest<LogicSyncPayload>(envelope, requestId);
+    } finally {
+      this.logicChannel.forget(requestId);
+    }
   }
 
   // Presence

@@ -5,7 +5,8 @@ import { test } from "node:test";
 import {
   addInteraction, getInteractions, hasInteractions, newInteractionId, removeInteraction, updateInteraction,
 } from "../src/features/interactions/ops";
-import { commit } from "../src/features/interactions/ops-store";
+import { commit, createOperations } from "../src/features/interactions/ops-store";
+import { emptySnapshot, useLogicStore } from "../src/features/interactions/logic-store";
 import { describe as describePage } from "../src/features/interactions/describe";
 import { buildJsonSchema } from "../src/features/interactions/schema-json";
 import { VERBS } from "../src/features/interactions/schema";
@@ -13,6 +14,33 @@ import { createElementStore } from "../src/features/editor/store/element-store";
 
 const el = (id: string, extra: Record<string, unknown> = {}) =>
   ({ id, type: "Frame", content: "", styles: {}, tailwindStyles: "", elements: [], pageId: "p", ...extra }) as any;
+
+test("shared operations validate, persist in the stores, and describe the active page", () => {
+  const elements = createElementStore();
+  elements.getState().beginPage("project", "p");
+  elements.getState().addElement(el("button"));
+  useLogicStore.getState().unbindRemote();
+  useLogicStore.setState({ ...emptySnapshot(), past: [], future: [], projectId: "project" });
+  const ops = createOperations(elements, useLogicStore);
+  assert.equal(ops.setVariable("project", "bad-name", { type: "number", default: 1 }).ok, false);
+  assert.ok(ops.setVariable("project", "count", { type: "number", default: 1 }).ok);
+  assert.ok(ops.setFlow({ page: "p" }, "hello", [{ toast: "Hi" }]).ok);
+  const added = ops.addInteraction("button", "click", [{ run: "hello" }]);
+  assert.ok(added.ok);
+  const description = ops.describe("p");
+  assert.ok(description.ok);
+  assert.ok(description.description.variables.count);
+  assert.ok(description.description.flows.hello);
+  assert.ok(description.description.elements[0].interactions?.[added.id!]);
+  assert.equal(ops.describe("other").ok, false);
+  useLogicStore.setState({ projectId: "other-project" });
+  assert.equal(ops.describe("p").ok, false, "does not describe another project's logic");
+  useLogicStore.setState({ projectId: "project" });
+  assert.ok(ops.moveLogic("p", "flow", "hello", "project").ok);
+  assert.ok(ops.removeFlow("p", "hello").ok);
+  assert.ok(ops.removeVariable("p", "count").ok);
+  assert.equal(ops.removeVariable("p", "missing").ok, false);
+});
 
 test("ids have the documented shape", () => {
   assert.match(newInteractionId(), /^ix_[a-z0-9]{8}$/);

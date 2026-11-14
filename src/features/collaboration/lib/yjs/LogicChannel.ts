@@ -39,7 +39,7 @@ export class LogicChannel {
       this.options.resolvePendingRequest(id, false, envelope);
       return true;
     }
-    if (envelope.type === "logic:sync") {
+    if (envelope.type === "logic:sync" || envelope.type === "logic:move") {
       const id = envelope.requestId;
       if (id) this.requests.delete(id);
       this.options.onSync(envelope.payload as LogicSyncPayload);

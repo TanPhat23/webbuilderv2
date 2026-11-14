@@ -15,6 +15,10 @@ test('logic deletion warns before removal and supports cancel and undo', async (
     page.on('pageerror', error => errors.push(error.stack || error.message));
     await page.goto(`${server.resolvedUrls!.local[0]}tests/fixtures/logic-panel.html`);
     await page.getByRole('button', { name: 'Delete variable count' }).waitFor({ timeout: 10000 }).catch(async (error) => { throw new Error(`${error.message}\nBrowser errors: ${errors.join('; ')}\nBody: ${await page.locator('body').innerText()}`); });
+    const countRow = page.getByRole('button', { name: 'Delete variable count' }).locator('..').locator('..');
+    await countRow.getByText(/Used by/).click();
+    await countRow.getByRole('button', { name: 'Element: Signup' }).click();
+    assert.equal(await page.locator('body').getAttribute('data-selected-element'), 'signup');
     await page.getByRole('button', { name: 'Delete variable count' }).click();
     const dialog = page.getByRole('alertdialog');
     assert.match(await dialog.innerText(), /Element: Signup/);

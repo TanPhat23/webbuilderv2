@@ -58,6 +58,27 @@ test('counts uses of a variable or flow in element interactions and flows', () =
   assert.equal(countUsages('flow', 'missing', sources), 0);
 });
 
+test('finds bracket and spaced property references without matching longer names', () => {
+  const sources = [{ do: [
+    { toast: '{{ vars["count"] }}' },
+    { toast: "{{ vars [ 'count' ] }}" },
+    { toast: '{{ vars . count }}' },
+    { toast: '{{ vars.counter }}' },
+  ] }];
+  assert.equal(countUsages('variable', 'count', sources), 3);
+  assert.equal(countUsages('variable', 'counter', sources), 1);
+});
+
+test('counts expression references rather than matching literal text', () => {
+  const sources = [{ do: [
+    { toast: 'The text vars.count is documentation' },
+    { toast: '{{ "vars.count" }}' },
+    { toast: '{{ vars["co\\unt"] }}' },
+    { toast: '{{ vars.count + vars.count }}' },
+  ] }];
+  assert.equal(countUsages('variable', 'count', sources), 2);
+});
+
 test('identifies the named locations that use a variable or flow', () => {
   const sources = [
     { label: 'Button: Signup', value: { do: [{ run: 'submit' }, { run: 'submit' }] } },
@@ -66,6 +87,17 @@ test('identifies the named locations that use a variable or flow', () => {
   ];
   assert.deepEqual(findUsageLocations('flow', 'submit', sources), [{ label: 'Button: Signup', count: 2 }]);
   assert.deepEqual(findUsageLocations('variable', 'count', sources), [{ label: 'Project flow: welcome', count: 2 }]);
+});
+
+test('usage locations preserve element ids for navigation', () => {
+  const sources = [
+    { label: 'Element: Signup', elementId: 'signup', value: { do: [{ run: 'submit' }] } },
+    { label: 'Project flow: parent', value: { do: [{ run: 'submit' }] } },
+  ];
+  assert.deepEqual(findUsageLocations('flow', 'submit', sources), [
+    { label: 'Element: Signup', elementId: 'signup', count: 1 },
+    { label: 'Project flow: parent', count: 1 },
+  ]);
 });
 
 test('parses variable defaults typed into the panel', async () => {

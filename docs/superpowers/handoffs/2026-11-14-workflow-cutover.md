@@ -1,0 +1,14 @@
+# Legacy workflow cutover
+
+The user subsequently confirmed that there are no workflows. The frontend legacy editor and linked runtime, realtime workflow write handlers, and REST write routes have been removed. The steps below describe the earlier migration contingency; legacy tables and REST reads remain for the compatibility release.
+
+Legacy workflow execution and editing must stay available until every live link has a verified replacement. The existing per-link `migratedWorkflowLinks` markers suppress legacy execution only for links migrated by the tool; removing the old runtime earlier would silently drop unmigrated behavior. The tool's apply mode currently accepts only local PostgreSQL, so a real deployment needs a separately designed and tested operational path.
+
+1. Inventory all databases and active workflow links, including disabled links and published pages. Run the migration command in dry-run mode against an authorized copy and review unsupported handlers, conflicts, orphaned workflows, and partial markers. Decide how to translate or retire every remaining link; repeat until the inventory reconciles.
+2. Rehearse on a disposable copy with the same schema and representative Redis state. Establish a consistent backup and a tested restore of both database and cache. Stop every editor and realtime writer, verify persistence has drained, and reconcile cached page documents with PostgreSQL before applying. PostgreSQL cannot enforce this cross-service condition.
+3. Apply only in the supported local environment with `--apply --offline`; retain the source records. Verify each source link has the intended interaction or flow and marker, with no duplicate execution and no lost links. Restart against reconciled caches and test published and editor behavior. Document an operational implementation before attempting any real database migration; do not bypass the tool's local-only guard.
+4. Once all environments have migrated and old clients can no longer create or edit legacy workflows, verify the inventory again and exercise rollback. Only then remove legacy authoring, runtime hooks, API/realtime handlers, and eventually storage in separate reviewed changes. Keep source records and the compatibility release available until the rollback window has expired.
+
+Rollback must restore a mutually consistent database and cache snapshot with the matching application version; simply reverting code after migration could execute both the old link and its replacement. Any writes after the backup need explicit reconciliation before restoring it.
+
+The integration script now checks the API's `/ws` with its fixed DEV_MODE identity and runs the multi-client suite against a loopback-only test harness using the same realtime handlers and repositories. The harness provides synthetic identities and does not test Clerk authentication. Both checks use disposable PostgreSQL and Redis containers.

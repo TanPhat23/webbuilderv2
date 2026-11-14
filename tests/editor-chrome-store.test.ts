@@ -83,3 +83,7 @@ test('sanitizeChrome keeps valid fields', () => {
     { activePanel: 'cms', panelOpen: false, inspectorOpen: false },
   );
 });
+
+test('a saved legacy workflows panel falls back to the insert panel', () => {
+  assert.equal(sanitizeChrome({ activePanel: 'workflows' }).activePanel, DEFAULT_CHROME.activePanel);
+});

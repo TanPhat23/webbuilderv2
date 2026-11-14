@@ -7,7 +7,6 @@ export * from './interfaces/validate.interface';
 export * from './store/element-comment-store';
 export * from './store/element-store';
 export * from './store/event-mode-store';
-export * from './store/event-workflow-store';
 export * from './store/image-store';
 export * from './store/mouse-store';
 export * from './store/selection-store';

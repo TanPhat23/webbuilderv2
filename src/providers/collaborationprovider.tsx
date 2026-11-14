@@ -218,7 +218,8 @@ export default function CollaborationProvider({
     useLogicStore.getState().bindRemote({
       pageId,
       isOnline: () => provider.isConnected(),
-      send: (scope, patch) => provider.updateLogic(scope, patch),
+      send: (scope, patch, nullPaths) => provider.updateLogic(scope, patch, nullPaths),
+      move: (kind, name, to) => provider.moveLogic(kind, name, to),
       requestSync: () => provider.requestLogicSync(),
       onRejected: (message) => toast.error(`Change not saved: ${message}`),
     });

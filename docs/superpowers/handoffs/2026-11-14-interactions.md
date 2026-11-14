@@ -1,6 +1,6 @@
 # Handoff: interactions redesign (2026-11-14)
 
-The old event workflows are being replaced by **interactions**, which are stored per element, plus page- and project-level **logic** (variables and flows). Plans 1 and 2 are done and committed. Plan 3 is mostly done; removing the old workflows is still to do.
+The old event workflows have been replaced by **interactions**, which are stored per element, plus page- and project-level **logic** (variables and flows). Legacy tables and REST reads remain for the compatibility release.
 
 - Spec: `docs/superpowers/specs/2026-11-13-interactions-design.md`
 - Plan 1 (core): `docs/superpowers/plans/2026-11-13-interactions-core.md`
@@ -10,7 +10,7 @@ The old event workflows are being replaced by **interactions**, which are stored
 
 | Repo | Branch | Interactions work | Uncommitted changes (all the user's; do not commit) |
 |---|---|---|---|
-| `~/Code/webbuilderv2` (frontend) | `editor-redesign` | `d00bb2e`…`872caad` (Plan 1), `0031852`…`d79cd5a` (Plans 2 and 3) | `eventworkflows/components/WorkflowEditor.tsx`, `eventworkflows/hooks/useWorkflowCanvas.ts` |
+| `~/Code/webbuilderv2` (frontend) | `editor-redesign` | `d00bb2e`…`872caad` (Plan 1), `0031852`…`d79cd5a` (Plans 2 and 3) | Edits to the deleted workflow editor files are preserved in `2026-11-14-preserved-workflow-edits.patch`. |
 | `~/Code/Go/webbuilder.api.go` | current branch, on top of `b94ce0a` | `5e949ed` DB columns, `306d339` realtime at `/ws` + logic sync, `2c568e2` public page fix, `3f1790a` workflow migration tool | GORM generics/UUIDv7 refactor (`internal/handlers`, `internal/repositories`, `internal/services`, `internal/dto`, `pkg/ids`, `benchmarks`, `docs/gorm-generics-migration.md`); slog/requestid (`cmd/main.go`, `pkg/configs`, `pkg/utils/response.go`, three lines in `cmd/api/main.go`); element-ordering (OrderKey) work copied from realtimev2 (the `"OrderKey"` upsert line in `internal/realtime/repository/element_repository.go`, the helper in `internal/realtime/tests/unit/ws_echo_test.go`, two tests in `realtime_schema_integration_test.go`) |
 | `~/Code/Go/webbuilder.realtimev2.go` | — | none; superseded by the API's `internal/realtime` | The user's OrderKey work, plus a dev-only `devUser` edit to `middleware/auth.go` from Plan 1 testing. The early logic files there are obsolete. **Never commit in this repo.** |
 
@@ -66,7 +66,7 @@ env -u DATABASE_URL -u REDIS_ADDR go test -count=1 ./...   # DB-backed tests ski
 - The four smaller bugs in item 4 are fixed and covered by regression tests.
 - `scripts/it-realtime.sh` now smoke-tests the API's `/ws` in DEV_MODE and runs the multi-client integration suite against a loopback-only test harness with synthetic identities. The suite includes real client providers performing concurrent logic edits, syncing literal nulls, moving a variable, and reconnecting. Both use disposable databases; the harness does not test Clerk.
 - The deployment is expected to use a single API instance, so cross-instance broadcasts are not needed for the current deployment.
-- The user confirmed there are no workflows. The legacy frontend editor and linked workflow runtime have been removed, as have legacy WebSocket write handlers and REST write routes. Legacy REST reads and database tables remain for the compatibility release. Uncommitted edits from the removed editor are preserved in `2026-11-14-preserved-workflow-edits.patch`.
+- The user confirmed there are no workflows. The legacy frontend editor and event runtime have been removed, as have legacy WebSocket write handlers and REST write routes. Legacy REST reads and database tables remain for the compatibility release. Uncommitted edits from the removed editor are preserved in `2026-11-14-preserved-workflow-edits.patch`.
 - Variables and flows can now move between the current page and project as a single authorized PostgreSQL transaction. Both revisions and documents are broadcast together; the Logic panel and store support moves, undo, redo, and rejection rollback. Tests exercise the store, message routing, and the real WebSocket handler with disposable PostgreSQL. The UI remains unverified in a live authenticated editor; the user runs Playwright and Clerk sign-in.
 - Literal nulls in object-variable defaults now sync through explicit paths alongside merge patches, including nested values and undo. The API validates these paths and retains the original null-deletes semantics of ordinary merge patches.
 - The Logic panel shows loaded references for variables and flows, with element links that select the referenced canvas element. References on unloaded pages are not included.

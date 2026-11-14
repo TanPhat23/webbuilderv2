@@ -15,50 +15,6 @@ register("data:text/javascript," + encodeURIComponent(loaderCode));
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("eventWorkflowKeys produces correct query key hierarchy", async () => {
-  const { eventWorkflowKeys } = await import(
-    "../src/features/eventworkflows/constants/queryKeys"
-  );
-  assert.deepEqual(eventWorkflowKeys.all, ["eventWorkflows"]);
-  assert.deepEqual(eventWorkflowKeys.lists(), ["eventWorkflows", "list"]);
-  assert.deepEqual(eventWorkflowKeys.list("proj-123"), ["eventWorkflows", "list", "proj-123"]);
-  assert.deepEqual(eventWorkflowKeys.details(), ["eventWorkflows", "detail"]);
-  assert.deepEqual(eventWorkflowKeys.detail("wf-456"), ["eventWorkflows", "detail", "wf-456"]);
-});
-
-test("NODE_META and NODE_TYPES_ORDER define expected canvas node structure and order", async () => {
-  const { NodeType } = await import(
-    "../src/features/eventworkflows/types/workflow.types"
-  );
-  const {
-    NODE_META,
-    NODE_TYPES_ORDER,
-  } = await import("../src/features/eventworkflows/constants/nodeMeta");
-  type CanvasNodeType = import("../src/features/eventworkflows/constants/nodeMeta").CanvasNodeType;
-
-  const expectedOrder: CanvasNodeType[] = [
-    NodeType.TRIGGER,
-    NodeType.ACTION,
-    NodeType.CONDITION,
-    NodeType.OUTPUT,
-  ];
-
-  assert.deepEqual(NODE_TYPES_ORDER, expectedOrder);
-
-  for (const type of expectedOrder) {
-    const meta = NODE_META[type];
-    assert.ok(meta, `NODE_META should exist for ${type}`);
-    assert.equal(typeof meta.label, "string");
-    assert.ok(meta.label.length > 0, `label should not be empty for ${type}`);
-    assert.equal(typeof meta.description, "string");
-    assert.ok(meta.description.length > 0, `description should not be empty for ${type}`);
-    assert.ok(meta.icon, `icon component should exist for ${type}`);
-    assert.ok(meta.colors, `colors configuration should exist for ${type}`);
-    assert.ok(meta.colors.bg && meta.colors.bg.length > 0);
-    assert.ok(meta.colors.border && meta.colors.border.length > 0);
-  }
-});
-
 test("CustomYjsProviderV2 options and element state injection", async () => {
   const { CustomYjsProviderV2 } = await import(
     "../src/features/collaboration/lib/yjs/Provider"

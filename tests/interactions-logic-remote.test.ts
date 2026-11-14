@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { beforeEach, test } from 'node:test';
 import { setFlow, setVariable } from '../src/features/interactions/logic';
-import { applyPatch, diffPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
+import { applyPatch, diffPatch, encodeLogicPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
 
 const num = (n = 0) => ({ type: 'number' as const, default: n });
 const doc = (variables: Record<string, unknown> = {}, flows: Record<string, unknown> = {}) => ({ v: 1, variables, flows });
@@ -25,6 +25,40 @@ function connect(over: Partial<LogicRemote> = {}) {
 }
 const settle = () => new Promise((r) => setTimeout(r, 0));
 
+test('scope move is atomic, reversible, and keeps incomplete flows intact', async () => {
+  const moves: { to: string; ok: () => void }[] = [];
+  connect({ move: (_kind, _name, to) => new Promise<void>((resolve) => moves.push({ to, ok: resolve })) });
+  const store = useLogicStore.getState();
+  const draft = { do: [{ show: '' }] };
+  store.receiveSync({ project: doc({}, { draft }), page: doc(), pageId: 'home', projectRevision: 1, pageRevision: 0 });
+  assert.ok(store.move('home', 'flow', 'draft', 'page').ok);
+  assert.equal(useLogicStore.getState().project.flows.draft, undefined);
+  assert.deepEqual(useLogicStore.getState().pages.home.flows.draft, draft);
+  assert.equal(moves[0].to, 'page');
+  store.receiveSync({ project: doc(), page: doc({}, { draft }), pageId: 'home', projectRevision: 2, pageRevision: 1 });
+  moves[0].ok(); await settle();
+  assert.ok(store.undo()?.ok);
+  assert.equal(moves[1].to, 'project');
+  assert.deepEqual(useLogicStore.getState().project.flows.draft, draft);
+  store.receiveSync({ project: doc({}, { draft }), page: doc(), pageId: 'home', projectRevision: 3, pageRevision: 2 });
+  moves[1].ok(); await settle();
+  assert.ok(store.redo()?.ok);
+  assert.equal(moves[2].to, 'page');
+});
+
+test('a rejected scope move restores both confirmed documents and removes its history entry', async () => {
+  let reject!: (error: Error) => void;
+  const { rejected } = connect({ move: () => new Promise<void>((_resolve, fail) => { reject = fail; }) });
+  const store = useLogicStore.getState();
+  store.receiveSync({ project: doc({ count: num() }), page: doc(), pageId: 'home' });
+  assert.ok(store.move('home', 'variable', 'count', 'page').ok);
+  reject(new Error('conflict')); await settle();
+  assert.ok(useLogicStore.getState().project.variables.count);
+  assert.equal(useLogicStore.getState().pages.home.variables.count, undefined);
+  assert.equal(useLogicStore.getState().past.length, 0);
+  assert.deepEqual(rejected, ['conflict']);
+});
+
 beforeEach(() => {
   useLogicStore.getState().unbindRemote();
   useLogicStore.setState({ ...emptySnapshot(), confirmed: emptySnapshot(), projectId: null, past: [], future: [], pending: 0, remote: null });
@@ -43,6 +77,32 @@ test('diffPatch refuses a null a merge patch could not store', () => {
   assert.throws(() => diffPatch({ variables: {} }, { variables: { o: { type: 'object', default: null } } }), /null/);
   assert.throws(() => diffPatch({ d: { a: 1 } }, { d: { a: null } }), /null/);
   assert.deepEqual(diffPatch({ l: [1] }, { l: [null] }), { l: [null] });
+});
+
+test('logic patch encoding preserves literal nulls without changing deletion semantics', () => {
+  const before = doc({ old: num(), object: { type: 'object', default: { a: 1, gone: true } } });
+  const after = doc({ object: { type: 'object', default: { a: null, inner: { b: null } } }, empty: { type: 'object', default: null } });
+  const encoded = encodeLogicPatch(before, after);
+  assert.deepEqual(encoded.nullPaths, [['variables', 'object', 'default', 'a'], ['variables', 'object', 'default', 'inner', 'b'], ['variables', 'empty', 'default']]);
+  assert.equal((encoded.patch.variables as any).old, null);
+  assert.equal(((encoded.patch.variables as any).object.default).gone, null);
+});
+
+test('remote variable edits and undo transport literal null defaults', async () => {
+  const calls: { patch: Record<string, unknown>; paths?: string[][] }[] = [];
+  connect({ send: (_scope, patch, paths) => { calls.push({ patch, paths }); return Promise.resolve(); } });
+  const store = useLogicStore.getState();
+  store.receiveSync({ project: doc(), page: doc(), pageId: 'home' });
+  assert.ok(store.edit('project', d => setVariable(d, 'profile', { type: 'object', default: null })).ok);
+  assert.deepEqual(calls[0].paths, [['variables', 'profile', 'default']]);
+  store.receiveChange('project', undefined, doc({ profile: { type: 'object', default: null } }));
+  await settle();
+  assert.ok(store.edit('project', d => setVariable(d, 'profile', { type: 'object', default: { name: 'A' } })).ok);
+  store.receiveChange('project', undefined, doc({ profile: { type: 'object', default: { name: 'A' } } }));
+  await settle();
+  assert.ok(store.undo()?.ok);
+  assert.equal(useLogicStore.getState().project.variables.profile.default, null);
+  assert.deepEqual(calls[2].paths, [['variables', 'profile', 'default']]);
 });
 
 test('an edit shows at once and sends only what changed', async () => {
@@ -156,4 +216,27 @@ test('a sync with no page document clears stale page logic', () => {
   useLogicStore.setState({ pages: { home: doc({ stale: num() }) as never }, confirmed: { project: doc() as never, pages: { home: doc({ stale: num() }) as never } } });
   useLogicStore.getState().receiveSync({ project: doc(), pageId: 'home' });
   assert.deepEqual(useLogicStore.getState().pages.home.variables, {});
+});
+
+test('settled requests from an old binding do not change the new pending count or report rejection', async () => {
+  const old = connect();
+  assert.ok(useLogicStore.getState().edit('project', (d) => setVariable(d, 'old', num())).ok);
+  useLogicStore.getState().unbindRemote();
+  const current = connect();
+  assert.ok(useLogicStore.getState().edit('project', (d) => setVariable(d, 'current', num())).ok);
+  old.sent[0].fail('old connection failed');
+  await settle();
+  assert.equal(useLogicStore.getState().pending, 1);
+  assert.deepEqual(old.rejected, []);
+  current.sent[0].ok();
+  await settle();
+  assert.equal(useLogicStore.getState().pending, 0);
+});
+
+test('undo restores a deleted flow with an incomplete step', () => {
+  const incomplete = { v: 1 as const, variables: {}, flows: { draft: { do: [{ toast: '' }] } } };
+  useLogicStore.setState({ project: incomplete, confirmed: { project: incomplete, pages: {} } });
+  assert.ok(useLogicStore.getState().edit('project', (d) => ({ ok: true, logic: { ...d, flows: {} } })).ok);
+  assert.ok(useLogicStore.getState().undo()?.ok);
+  assert.deepEqual(useLogicStore.getState().project.flows, incomplete.flows);
 });

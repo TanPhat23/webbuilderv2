@@ -28,7 +28,6 @@ export interface Element<
   order?: number;
   orderKey?: string;
   events?: ElementEvents;
-  eventWorkflowConnections?: string[];
 }
 
 

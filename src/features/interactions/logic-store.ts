@@ -12,7 +12,8 @@
 import { create } from "zustand";
 import type { Issue, Step } from "./schema";
 import type { VariableDef } from "./runtime/variables";
-import { emptyLogic, validateLogic, validateLogicScopes, type LogicDocument } from "./logic";
+import { emptyLogic, moveLogic, validateLogic, validateLogicScopes, type LogicDocument } from "./logic";
+import { templateErrors, templateRefs } from "./runtime/expression";
 
 export type LogicScope = "project" | { page: string };
 
@@ -122,7 +123,8 @@ export interface LogicRemote {
   /** The page the connection is joined to; `{ page }` scopes for other pages cannot be sent. */
   pageId: string | null;
   isOnline(): boolean;
-  send(scope: RemoteScope, patch: Record<string, unknown>): Promise<unknown>;
+  send(scope: RemoteScope, patch: Record<string, unknown>, nullPaths?: string[][]): Promise<unknown>;
+  move?(kind: "variable" | "flow", name: string, to: RemoteScope): Promise<unknown>;
   requestSync(): void;
   /** Called when the server refuses an edit and the store has rolled it back. */
   onRejected(message: string): void;
@@ -168,6 +170,28 @@ export function diffPatch(before: Record<string, unknown>, after: Record<string,
   return patch;
 }
 
+/** Merge patch plus explicit paths for literal nulls in variable defaults. */
+export function encodeLogicPatch(before: Record<string, unknown>, after: Record<string, unknown>): { patch: Record<string, unknown>; nullPaths: string[][] } {
+  const nullPaths: string[][] = [];
+  const diff = (old: Record<string, unknown>, next: Record<string, unknown>, path: string[]): Record<string, unknown> => {
+    const patch: Record<string, unknown> = {};
+    for (const key of Object.keys(old)) if (!Object.hasOwn(next, key)) Object.defineProperty(patch, key, { value: null, enumerable: true, configurable: true });
+    for (const [key, value] of Object.entries(next)) {
+      if (deepEqual(old[key], value)) continue;
+      const at = [...path, key];
+      if (value === null) {
+        if (at[0] !== "variables" || at.length < 3 || at[2] !== "default") throw new UnsupportedPatch("Only variable defaults can contain literal null values.");
+        nullPaths.push(at);
+      } else {
+        const nextValue = isRecord(value) ? diff(isRecord(old[key]) ? old[key] as Record<string, unknown> : {}, value, at) : value;
+        Object.defineProperty(patch, key, { value: nextValue, enumerable: true, configurable: true });
+      }
+    }
+    return patch;
+  };
+  return { patch: diff(before, after, []), nullPaths };
+}
+
 /** Mirror of the server's merge: objects merge, `null` deletes, everything else replaces. */
 export function applyPatch(base: Record<string, unknown>, patch: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...base };
@@ -179,12 +203,35 @@ export function applyPatch(base: Record<string, unknown>, patch: Record<string, 
   return out;
 }
 
+function applyEncodedPatch(base: Record<string, unknown>, patch: Record<string, unknown>, nullPaths: string[][]): Record<string, unknown> {
+  const result = applyPatch(base, patch);
+  for (const path of nullPaths) {
+    let parent = result;
+    for (const key of path.slice(0, -1)) {
+      const child = isRecord(parent[key]) ? { ...parent[key] as Record<string, unknown> } : {};
+      Object.defineProperty(parent, key, { value: child, enumerable: true, configurable: true, writable: true });
+      parent = child;
+    }
+    Object.defineProperty(parent, path[path.length - 1], { value: null, enumerable: true, configurable: true, writable: true });
+  }
+  return result;
+}
+
 /** One edit, kept as before/after documents so undo can replay it on top of other people's changes. */
-interface HistoryEntry {
+interface EditHistoryEntry {
+  type: "edit";
   scope: LogicScope;
   before: LogicDocument;
   after: LogicDocument;
 }
+interface MoveHistoryEntry {
+  type: "move";
+  pageId: string;
+  kind: "variable" | "flow";
+  name: string;
+  to: RemoteScope;
+}
+type HistoryEntry = EditHistoryEntry | MoveHistoryEntry;
 
 interface LogicState extends LogicSnapshot {
   projectId: string | null;
@@ -202,6 +249,7 @@ interface LogicState extends LogicSnapshot {
   remote: LogicRemote | null;
   load(projectId: string): void;
   edit(scope: LogicScope, change: Parameters<typeof editLogic>[2], opts?: Parameters<typeof editLogic>[3]): EditResult;
+  move(pageId: string, kind: "variable" | "flow", name: string, to: RemoteScope): EditResult;
   undo(): EditResult | undefined;
   redo(): EditResult | undefined;
   bindRemote(remote: LogicRemote): void;
@@ -242,6 +290,7 @@ export function snapshotFromServer(
 }
 
 export const useLogicStore = create<LogicState>((set, get) => {
+  let binding = 0;
   const replaceDocument = (snapshot: LogicSnapshot, scope: LogicScope, doc: LogicDocument): LogicSnapshot =>
     scope === "project"
       ? { ...snapshot, project: doc }
@@ -262,16 +311,19 @@ export const useLogicStore = create<LogicState>((set, get) => {
   };
 
   /** Sends one scope's change; on refusal the visible state returns to the server's. */
-  const send = (scope: LogicScope, patch: Record<string, unknown>, entry?: HistoryEntry) => {
+  const send = (scope: LogicScope, patch: Record<string, unknown>, entry?: HistoryEntry, nullPaths: string[][] = []) => {
     const remote = get().remote!;
+    const sentBinding = binding;
     set({ pending: get().pending + 1 });
     remote
-      .send(scope === "project" ? "project" : "page", patch)
+      .send(scope === "project" ? "project" : "page", patch, nullPaths)
       .catch((error: unknown) => {
+        if (sentBinding !== binding) return;
         if (entry) set({ past: get().past.filter((e) => e !== entry), future: get().future.filter((e) => e !== entry) });
         remote.onRejected(error instanceof Error ? error.message : "The change was not saved.");
       })
       .finally(() => {
+        if (sentBinding !== binding) return;
         set({ pending: get().pending - 1 });
         reconcile();
       });
@@ -287,20 +339,57 @@ export const useLogicStore = create<LogicState>((set, get) => {
   };
 
   /** Applies a prepared patch to the visible state and sends it. */
-  const applyEdit = (scope: LogicScope, entry: HistoryEntry, patch: Record<string, unknown> | null): EditResult => {
+  const applyEdit = (scope: LogicScope, entry: EditHistoryEntry, encoded: { patch: Record<string, unknown>; nullPaths: string[][] } | null): EditResult => {
     const state = get();
     set(replaceDocument(snapshotOf(state), scope, entry.after));
-    if (patch) send(scope, patch, entry);
+    if (encoded) send(scope, encoded.patch, entry, encoded.nullPaths);
     persist();
     return { ok: true, snapshot: snapshotOf(get()) };
   };
 
+  const applyMove = (entry: MoveHistoryEntry, to: RemoteScope): EditResult => {
+    const state = get();
+    const blocked = sendable({ page: entry.pageId });
+    if (blocked) return issue(blocked);
+    if (state.remote && !state.remote.move) return issue("Moving logic is unavailable on this connection.");
+    const page = state.pages[entry.pageId] ?? emptyLogic();
+    const moved = to === "page"
+      ? moveLogic(state.project, page, entry.kind, entry.name)
+      : moveLogic(page, state.project, entry.kind, entry.name);
+    if (!moved.ok) return moved;
+    const snapshot = {
+      project: to === "page" ? moved.from : moved.to,
+      pages: { ...state.pages, [entry.pageId]: to === "page" ? moved.to : moved.from },
+    };
+    const issues = errorsOf(validateLogicScopes(snapshot.project, snapshot.pages));
+    if (issues.length) return { ok: false, issues };
+    set(snapshot);
+    if (state.remote?.move) {
+      const remote = state.remote;
+      const sendMove = remote.move!;
+      const sentBinding = binding;
+      set({ pending: get().pending + 1 });
+      sendMove(entry.kind, entry.name, to).catch((error: unknown) => {
+        if (sentBinding !== binding) return;
+        set({ past: get().past.filter((e) => e !== entry), future: get().future.filter((e) => e !== entry) });
+        remote.onRejected(error instanceof Error ? error.message : "The change was not saved.");
+      }).finally(() => {
+        if (sentBinding !== binding) return;
+        set({ pending: get().pending - 1 });
+        reconcile();
+      });
+    }
+    persist();
+    return { ok: true, snapshot };
+  };
+
   /** Rebuilds an entry's change on today's document (which may include other people's edits). */
   const replay = (from: LogicDocument, to: LogicDocument) => {
-    const patch = diffPatch(from as unknown as Record<string, unknown>, to as unknown as Record<string, unknown>);
+    const { patch, nullPaths } = encodeLogicPatch(from as unknown as Record<string, unknown>, to as unknown as Record<string, unknown>);
     return {
       patch,
-      change: (doc: LogicDocument) => ({ ok: true as const, logic: applyPatch(doc as unknown as Record<string, unknown>, patch) as unknown as LogicDocument }),
+      nullPaths,
+      change: (doc: LogicDocument) => ({ ok: true as const, logic: applyEncodedPatch(doc as unknown as Record<string, unknown>, patch, nullPaths) as unknown as LogicDocument }),
     };
   };
 
@@ -309,6 +398,13 @@ export const useLogicStore = create<LogicState>((set, get) => {
     const stack = direction === "undo" ? state.past : state.future;
     const entry = stack[direction === "undo" ? stack.length - 1 : 0];
     if (!entry) return undefined;
+    if (entry.type === "move") {
+      const to = direction === "redo" ? entry.to : entry.to === "project" ? "page" : "project";
+      const result = applyMove(entry, to);
+      if (!result.ok) return result;
+      set({ past: direction === "undo" ? state.past.slice(0, -1) : [...state.past, entry], future: direction === "undo" ? [entry, ...state.future] : state.future.slice(1) });
+      return result;
+    }
     const blocked = sendable(entry.scope);
     if (blocked) return issue(blocked);
     let plan;
@@ -318,7 +414,7 @@ export const useLogicStore = create<LogicState>((set, get) => {
       if (error instanceof UnsupportedPatch) return issue(error.message);
       throw error;
     }
-    const result = editLogic(snapshotOf(state), entry.scope, plan.change);
+    const result = editLogic(snapshotOf(state), entry.scope, plan.change, { allowIncomplete: true });
     if (!result.ok) return result;
     const next = result.snapshot;
     set({
@@ -326,7 +422,7 @@ export const useLogicStore = create<LogicState>((set, get) => {
       past: direction === "undo" ? state.past.slice(0, -1) : [...state.past, entry],
       future: direction === "undo" ? [entry, ...state.future] : state.future.slice(1),
     });
-    if (state.remote && Object.keys(plan.patch).length) send(entry.scope, plan.patch);
+    if (state.remote && (Object.keys(plan.patch).length || plan.nullPaths.length)) send(entry.scope, plan.patch, undefined, plan.nullPaths);
     persist();
     return result;
   };
@@ -342,6 +438,7 @@ export const useLogicStore = create<LogicState>((set, get) => {
     remote: null,
     load(projectId) {
       if (get().projectId === projectId) return;
+      binding++;
       const stored = readStoredLogic(projectId);
       set({ ...stored, confirmed: stored, projectId, past: [], future: [], pending: 0, revisions: noRevisions() });
     },
@@ -353,19 +450,26 @@ export const useLogicStore = create<LogicState>((set, get) => {
       if (!result.ok) return result;
       const before = documentOf(snapshotOf(state), scope);
       const after = documentOf(result.snapshot, scope);
-      let patch: Record<string, unknown> | null = null;
+      let encoded: { patch: Record<string, unknown>; nullPaths: string[][] } | null = null;
       if (state.remote) {
         try {
-          patch = diffPatch(before as unknown as Record<string, unknown>, after as unknown as Record<string, unknown>);
+          encoded = encodeLogicPatch(before as unknown as Record<string, unknown>, after as unknown as Record<string, unknown>);
         } catch (error) {
           if (error instanceof UnsupportedPatch) return issue(error.message);
           throw error;
         }
-        if (Object.keys(patch).length === 0) patch = null;
+        if (Object.keys(encoded.patch).length === 0 && encoded.nullPaths.length === 0) encoded = null;
       }
-      const entry: HistoryEntry = { scope, before, after };
+      const entry: EditHistoryEntry = { type: "edit", scope, before, after };
       set({ past: [...state.past, entry].slice(-MAX_HISTORY), future: [] });
-      return applyEdit(scope, entry, patch);
+      return applyEdit(scope, entry, encoded);
+    },
+    move(pageId, kind, name, to) {
+      const state = get();
+      const entry: MoveHistoryEntry = { type: "move", pageId, kind, name, to };
+      const result = applyMove(entry, to);
+      if (result.ok) set({ past: [...state.past, entry].slice(-MAX_HISTORY), future: [] });
+      return result;
     },
     undo() {
       return step("undo");
@@ -375,10 +479,12 @@ export const useLogicStore = create<LogicState>((set, get) => {
     },
     bindRemote(remote) {
       // A new connection's first sync is authoritative.
+      binding++;
       set({ remote, pending: 0, revisions: noRevisions() });
       remote.requestSync();
     },
     unbindRemote() {
+      binding++;
       set({ remote: null, pending: 0 });
     },
     receiveSync(payload) {
@@ -426,26 +532,30 @@ export const useLogicStore = create<LogicState>((set, get) => {
 
 /** Counts places that still use a variable or flow, so a delete can warn first. */
 export function countUsages(kind: "variable" | "flow", name: string, sources: unknown[]): number {
-  const mention = new RegExp(`\\bvars\\.${name.replace(/[$]/g, "\\$&")}(?![\\w$])`);
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const mention = new RegExp(`\\bvars\\s*(?:\\.\\s*${escaped}(?![\\w$])|\\[\\s*(['"])${escaped}\\1\\s*\\])`);
   let count = 0;
-  const walk = (node: unknown, depth: number) => {
+  const walk = (node: unknown, depth: number, field?: string) => {
     if (depth > 64 || node === null || typeof node !== "object") {
-      if (typeof node === "string" && kind === "variable" && mention.test(node)) count++;
+      if (typeof node === "string" && kind === "variable" && (
+        templateRefs(node).some(([root, ref]) => root === "vars" && ref === name) ||
+        ((field === "code" || templateErrors(node).length > 0) && mention.test(node))
+      )) count++;
       return;
     }
     if (Array.isArray(node)) return node.forEach((n) => walk(n, depth + 1));
     const record = node as Record<string, unknown>;
     if (kind === "flow" && record.run === name) count++;
     if (kind === "variable" && record.set === name) count++;
-    for (const value of Object.values(record)) walk(value, depth + 1);
+    for (const [key, value] of Object.entries(record)) walk(value, depth + 1, key);
   };
   sources.forEach((s) => walk(s, 0));
   return count;
 }
 
-export function findUsageLocations(kind: "variable" | "flow", name: string, sources: { label: string; value: unknown }[]): { label: string; count: number }[] {
-  return sources.flatMap(({ label, value }) => {
+export function findUsageLocations(kind: "variable" | "flow", name: string, sources: { label: string; value: unknown; elementId?: string }[]): { label: string; count: number; elementId?: string }[] {
+  return sources.flatMap(({ label, value, elementId }) => {
     const count = countUsages(kind, name, [value]);
-    return count ? [{ label, count }] : [];
+    return count ? [{ label, count, ...(elementId ? { elementId } : {}) }] : [];
   });
 }

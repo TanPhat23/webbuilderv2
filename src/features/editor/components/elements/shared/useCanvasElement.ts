@@ -1,10 +1,9 @@
 import type React from "react";
 import { useCallback } from "react";
 import type { EditorElement } from "@/types/global.type";
-import { useIsSelected, useUpdateElement } from "@/features/editor";
+import { useEventModeStore, useIsSelected, useUpdateElement } from "@/features/editor";
 import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { useEditorElement } from "./useEditorElement";
 import { eventsStyle } from "./eventsStyle";
 
 interface UseCanvasElementOptions {
@@ -15,7 +14,7 @@ interface UseCanvasElementOptions {
 /**
  * Root-node props shared by element renderers: data attributes, the
  * element's own classes and styles, drag source and contentEditable state,
- * plus workflow event handlers. Spread `rootProps` onto the element's root
+ * plus element event handlers. Spread `rootProps` onto the element's root
  * node.
  *
  * Hover, selection, drag & drop and the context menu are handled once for
@@ -27,11 +26,9 @@ export function useCanvasElement(
   element: EditorElement,
   { style }: UseCanvasElementOptions = {},
 ) {
-  const { elementRef, eventHandlers, eventsActive } = useEditorElement({
-    elementId: element.id,
-    events: element.events,
-    settings: element.settings,
-  });
+  const eventsActive = useEventModeStore(
+    (state) => state.isEventModeEnabled && !state.disabledElementEvents.has(element.id),
+  );
   const canEdit = useEditorFlagsOptional()?.canEdit ?? false;
   const isSelected = useIsSelected(element.id);
   const updateElement = useUpdateElement();
@@ -51,7 +48,6 @@ export function useCanvasElement(
   );
 
   const rootProps = {
-    ref: elementRef as React.Ref<any>,
     id: element.id,
     "data-element-id": element.id,
     "data-element-type": element.type,
@@ -60,7 +56,6 @@ export function useCanvasElement(
     contentEditable: isEditing || undefined,
     suppressContentEditableWarning: true,
     onBlur,
-    ...eventHandlers,
     style: {
       ...elementHelper.getSafeStyles(element),
       ...style,

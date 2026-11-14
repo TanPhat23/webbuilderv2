@@ -2,8 +2,8 @@
  * Two real client providers against the real Go realtime server.
  *
  * Run with `bun run test:integration` (see scripts/it-realtime.sh): it starts
- * a throwaway Postgres and Redis and the server in dev mode, so no Clerk
- * login is needed. Each client is its own user, with its own element store.
+ * a throwaway Postgres and Redis and a test-only server using the API's
+ * realtime implementation. Each client has its own synthetic identity.
  */
 import { register } from 'node:module';
 import { strict as assert } from 'node:assert';
@@ -26,6 +26,8 @@ interface Client {
   provider: any;
   errors: { code?: string; message?: string }[];
   failures: Error[];
+  logicSyncs: any[];
+  logicChanges: any[];
   readonly tree: any[];
 }
 const clients: Client[] = [];
@@ -70,26 +72,18 @@ async function connect(user: string, pageId: string): Promise<Client> {
   const { sendElementOp } = await import('../../src/features/collaboration/lib/yjs/sendElementOp');
   const { createElementStore } = await import('../../src/features/editor/store/element-store');
 
-  // Dev mode reads the identity from `devUser`; a browser-style WebSocket can't set headers.
-  const Base = globalThis.WebSocket;
-  class UserSocket extends Base {
-    constructor(url: string | URL, protocols?: string | string[]) {
-      super(`${url}&devUser=${user}`, protocols);
-    }
-  }
-  (globalThis as any).WebSocket = UserSocket;
-
   const store = createElementStore();
   const errors: { code?: string; message?: string }[] = [];
+  const logicSyncs: any[] = [];
+  const logicChanges: any[] = [];
   const provider = new CustomYjsProviderV2({
     url: SERVER, projectId: PROJECT, pageId, userId: user,
     getToken: async () => user,
     getElementState: () => store.getState() as any,
     onError: (e: any) => errors.push(e),
+    onLogicSync: (payload: any) => logicSyncs.push(payload),
+    onLogicChanged: (payload: any) => logicChanges.push(payload),
   });
-  await new Promise((r) => setTimeout(r, 0));
-  (globalThis as any).WebSocket = Base;
-
   // The same wiring the editor's collaboration provider uses.
   const pendingMoves = new Set<string>();
   const failures: Error[] = [];
@@ -101,7 +95,7 @@ async function connect(user: string, pageId: string): Promise<Client> {
   }) as any);
 
   await until(() => provider.isSynced, `${user} to sync`);
-  const client = { user, store, provider, errors, failures, get tree() { return store.getState().elements as any[]; } };
+  const client = { user, store, provider, errors, failures, logicSyncs, logicChanges, get tree() { return store.getState().elements as any[]; } };
   clients.push(client);
   return client;
 }
@@ -113,6 +107,26 @@ async function saved(pageId: string) {
 }
 
 after(() => { for (const c of clients) c.provider.destroy(); });
+
+test('real providers synchronize concurrent logic edits, literal nulls and scope moves', async () => {
+  const page = nextPage();
+  const a = await connect('u1', page);
+  const b = await connect('u2', page);
+  await Promise.all([
+    a.provider.updateLogic('project', { variables: { sync_count: { type: 'number', default: 2 } } }),
+    b.provider.updateLogic('page', { variables: { sync_profile: { type: 'object' } } }, [['variables', 'sync_profile', 'default']]),
+  ]);
+  await until(() => b.logicChanges.some((p: any) => p.scope === 'project' && p.logic.variables.sync_count), 'project logic broadcast');
+  await until(() => a.logicChanges.some((p: any) => p.scope === 'page' && p.logic.variables.sync_profile), 'page logic broadcast');
+  const move = await a.provider.moveLogic('variable', 'sync_count', 'page');
+  assert.equal(move.project.variables.sync_count, undefined);
+  assert.deepEqual(move.page.variables.sync_count, { type: 'number', default: 2 });
+  assert.equal(move.page.variables.sync_profile.default, null);
+  await until(() => b.logicSyncs.some((p: any) => p.page?.variables?.sync_count), 'move broadcast');
+  const reconnect = await connect('u1', page);
+  await until(() => reconnect.logicSyncs.some((p: any) => p.page?.variables?.sync_count), 'persisted logic after reconnect');
+  assert.equal(reconnect.logicSyncs.at(-1).page.variables.sync_profile.default, null);
+});
 
 test('a section deleted on the board and undone comes back for everyone', async () => {
   const page = nextPage();

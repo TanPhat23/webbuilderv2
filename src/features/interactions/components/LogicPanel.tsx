@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
-import { useElements } from "@/features/editor";
+import { useElements, useSetSelectedElement } from "@/features/editor";
 import { NAME_RE, validateInteractionMap, type Issue, type Step } from "../schema";
 import { referenceWarnings } from "../references";
 import { getInteractions } from "../ops";
@@ -19,6 +19,9 @@ import { useActiveLogic } from "../logic-hooks";
 import type { LogicDocument } from "../logic";
 import type { VariableDef } from "../runtime/variables";
 import { StepList } from "./StepList";
+import { createOperations } from "../ops-store";
+
+const operations = createOperations();
 
 const FLOW_KEY = "ix_aaaaaaaa";
 const LIFETIMES: Record<string, string> = { page: "Resets on load", session: "This tab", local: "This browser" };
@@ -39,10 +42,11 @@ export default function LogicPanel() {
   const { pageId, projectId } = useActiveLogic();
   const project = useLogicStore((s) => s.project);
   const pages = useLogicStore((s) => s.pages);
-  const { edit, undo, redo } = useLogicStore.getState();
+  const { undo, redo } = useLogicStore.getState();
   const canUndo = useLogicStore((s) => s.past.length > 0);
   const canRedo = useLogicStore((s) => s.future.length > 0);
   const tree = useElements();
+  const selectElement = useSetSelectedElement();
   const elements = useMemo(() => walkElements(tree), [tree]);
   const [pendingRemoval, setPendingRemoval] = useState<{ kind: "variable" | "flow"; entry: Entry<unknown> } | null>(null);
 
@@ -60,14 +64,18 @@ export default function LogicPanel() {
     return r.ok;
   };
   const change = (scope: LogicScope, fn: (d: LogicDocument) => LogicDocument, opts?: { allowIncomplete?: boolean }) =>
-    report(edit(scope, (d) => ({ ok: true, logic: fn(d) }), opts));
+    report(operations.editLogic(scope, (d) => ({ ok: true, logic: fn(d) }), opts));
 
   const usageSources = [
-    ...elements.map((el) => ({ label: `Element: ${el.name || `${el.type} ${el.id.slice(0, 4)}`}`, value: getInteractions(el) })),
+    ...elements.map((el) => ({ label: `Element: ${el.name || `${el.type} ${el.id.slice(0, 4)}`}`, elementId: el.id, value: getInteractions(el) })),
     ...Object.entries(pages).flatMap(([id, p]) => Object.entries(p.flows).filter(([name]) => !(pendingRemoval?.kind === "flow" && pendingRemoval.entry.name === name && typeof pendingRemoval.entry.scope !== "string" && pendingRemoval.entry.scope.page === id)).map(([name, value]) => ({ label: `${id === pageId ? "This page" : `Page ${id}`} flow: ${name}`, value }))),
     ...Object.entries(project.flows).filter(([name]) => !(pendingRemoval?.kind === "flow" && pendingRemoval.entry.name === name && pendingRemoval.entry.scope === "project")).map(([name, value]) => ({ label: `Project flow: ${name}`, value })),
   ];
   const usages = pendingRemoval ? findUsageLocations(pendingRemoval.kind, pendingRemoval.entry.name, usageSources) : [];
+  const selectUsage = (id: string) => {
+    const element = elements.find((item) => item.id === id);
+    if (element) selectElement(element);
+  };
 
   const remove = (kind: "variable" | "flow", entry: Entry<unknown>) => {
     // Steps that still point at it keep their text; they just warn until fixed.
@@ -83,7 +91,7 @@ export default function LogicPanel() {
   return (
     <div className="flex flex-col gap-4 p-3">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] leading-snug text-muted-foreground">Variables hold values; flows are reusable steps. Both work in any interaction.</p>
+        <p className="text-[11px] leading-snug text-muted-foreground">Variables hold values; flows are reusable steps. References include loaded interactions and logic.</p>
         <div className="flex shrink-0">
           <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Undo logic change" disabled={!canUndo} onClick={() => { const r = undo(); if (r) report(r); }}><Undo2 className="h-3 w-3" /></Button>
           <Button variant="ghost" size="icon" className="h-6 w-6" aria-label="Redo logic change" disabled={!canRedo} onClick={() => { const r = redo(); if (r) report(r); }}><Redo2 className="h-3 w-3" /></Button>
@@ -99,6 +107,9 @@ export default function LogicPanel() {
             entry={v}
             onChange={(def) => change(v.scope, (d) => ({ ...d, variables: { ...d.variables, [v.name]: def } }))}
             onRemove={() => setPendingRemoval({ kind: "variable", entry: v })}
+            onMove={pageId ? () => report(operations.moveLogic(pageId, "variable", v.name, v.scope === "project" ? "page" : "project")) : undefined}
+            usages={findUsageLocations("variable", v.name, usageSources)}
+            onSelectUsage={selectUsage}
           />
         ))}
         <AddForm
@@ -121,6 +132,9 @@ export default function LogicPanel() {
             flows={visibleNames.flows}
             onSteps={(steps) => change(f.scope, (d) => ({ ...d, flows: { ...d.flows, [f.name]: { do: steps } } }), { allowIncomplete: true })}
             onRemove={() => setPendingRemoval({ kind: "flow", entry: f })}
+            onMove={pageId ? () => report(operations.moveLogic(pageId, "flow", f.name, f.scope === "project" ? "page" : "project")) : undefined}
+            usages={findUsageLocations("flow", f.name, usageSources)}
+            onSelectUsage={selectUsage}
           />
         ))}
         <AddForm
@@ -138,7 +152,7 @@ export default function LogicPanel() {
               {usages.length ? "These loaded locations still reference it:" : "No references were found in the loaded locations."} Interactions on other pages may contain additional references.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {usages.length > 0 && <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto text-sm">{usages.map((usage, index) => <li key={`${usage.label}-${index}`}>{usage.label} ({usage.count})</li>)}</ul>}
+          {usages.length > 0 && <UsageList usages={usages} defaultOpen onSelect={(id) => { setPendingRemoval(null); selectUsage(id); }} />}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={() => { if (pendingRemoval) remove(pendingRemoval.kind, pendingRemoval.entry); }}>Delete</AlertDialogAction>
@@ -189,7 +203,14 @@ function AddForm({ kind, pageScope, taken, onAdd }: {
   );
 }
 
-function VariableRow({ entry, onChange, onRemove }: { entry: Entry<VariableDef>; onChange(def: VariableDef): boolean; onRemove(): void }) {
+type Usage = { label: string; count: number; elementId?: string };
+
+function UsageList({ usages, onSelect, defaultOpen = false }: { usages: Usage[]; onSelect(id: string): void; defaultOpen?: boolean }) {
+  if (!usages.length) return null;
+  return <details open={defaultOpen || undefined} className="text-[10px] text-muted-foreground"><summary className="cursor-pointer">Used by {usages.length} location{usages.length === 1 ? "" : "s"}</summary><ul className="flex max-h-32 flex-col gap-1 overflow-y-auto">{usages.map((usage, index) => <li key={`${usage.label}-${index}`}>{usage.elementId ? <button type="button" className="text-left underline" onClick={() => onSelect(usage.elementId!)}>{usage.label}</button> : usage.label} ({usage.count})</li>)}</ul></details>;
+}
+
+function VariableRow({ entry, onChange, onRemove, onMove, usages, onSelectUsage }: { entry: Entry<VariableDef>; onChange(def: VariableDef): boolean; onRemove(): void; onMove?: () => void; usages: Usage[]; onSelectUsage(id: string): void }) {
   const { name, value: def } = entry;
   const stored = formatDefault(def.type, def.default);
   const [text, setText] = useState(stored);
@@ -205,6 +226,7 @@ function VariableRow({ entry, onChange, onRemove }: { entry: Entry<VariableDef>;
       <div className="flex items-center gap-1">
         <code className="min-w-0 flex-1 truncate text-[11px] font-medium">{name}</code>
         <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">{entry.label}</span>
+        {onMove && <Button variant="ghost" size="sm" className="h-6 px-1 text-[10px]" onClick={onMove}>Move to {entry.scope === "project" ? "page" : "project"}</Button>}
         <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Delete variable ${name}`} onClick={onRemove}><Trash2 className="h-3 w-3" /></Button>
       </div>
       <div className="flex items-center gap-1">
@@ -230,17 +252,21 @@ function VariableRow({ entry, onChange, onRemove }: { entry: Entry<VariableDef>;
         </Select>
       </div>
       {!parsed.ok && <p role="alert" className="text-[10px] text-destructive">{parsed.message}</p>}
+      <UsageList usages={usages} onSelect={onSelectUsage} />
     </div>
   );
 }
 
-function FlowRow({ entry, elements, variables, flows, onSteps, onRemove }: {
+function FlowRow({ entry, elements, variables, flows, onSteps, onRemove, onMove, usages, onSelectUsage }: {
   entry: Entry<{ do: Step[] }>;
   elements: { id: string; name: string }[];
   variables: string[];
   flows: string[];
   onSteps(steps: Step[]): void;
   onRemove(): void;
+  onMove?: () => void;
+  usages: Usage[];
+  onSelectUsage(id: string): void;
 }) {
   const [open, setOpen] = useState(false);
   const steps = entry.value.do;
@@ -260,8 +286,10 @@ function FlowRow({ entry, elements, variables, flows, onSteps, onRemove }: {
           <span className="text-muted-foreground">{steps.length} step{steps.length === 1 ? "" : "s"}</span>
         </button>
         <span className="rounded bg-muted px-1 text-[10px] text-muted-foreground">{entry.label}</span>
+        {onMove && <Button variant="ghost" size="sm" className="h-6 px-1 text-[10px]" onClick={onMove}>Move to {entry.scope === "project" ? "page" : "project"}</Button>}
         <Button variant="ghost" size="icon" className="h-6 w-6" aria-label={`Delete flow ${entry.name}`} onClick={onRemove}><Trash2 className="h-3 w-3" /></Button>
       </div>
+      {usages.length > 0 && <div className="px-2 pb-1"><UsageList usages={usages} onSelect={onSelectUsage} /></div>}
       {open && (
         <div className="border-t border-border p-2">
           <StepList

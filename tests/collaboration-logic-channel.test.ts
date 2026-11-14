@@ -56,3 +56,13 @@ test('a sync is delivered to the store', () => {
   assert.equal(ch.handle(env('logic:sync', { payload: { project: {}, pageId: 'home' } })), true);
   assert.equal(synced.length, 1);
 });
+
+test('a move applies both documents and settles the request', () => {
+  const { ch, synced, settled, waiting } = channel();
+  waiting.add('move-1');
+  ch.track('move-1');
+  const payload = { project: {}, page: {}, pageId: 'home', projectRevision: 2, pageRevision: 3 };
+  assert.equal(ch.handle(env('logic:move', { requestId: 'move-1', payload })), true);
+  assert.deepEqual(synced, [payload]);
+  assert.equal(settled[0].ok, true);
+});

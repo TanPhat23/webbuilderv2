@@ -7,11 +7,13 @@ import type { EditorElement } from "@/types/global.type";
 import { useElements, useSelectedElement } from "@/features/editor";
 import { validateInteractionMap, type Interaction } from "../schema";
 import { referenceWarnings } from "../references";
-import { addInteraction, getInteractions, removeInteraction, updateInteraction, type OpResult } from "../ops";
-import { commit } from "../ops-store";
+import { getInteractions, type OpResult } from "../ops";
+import { createOperations } from "../ops-store";
 import { menuVerbs } from "../editing/fields";
 import { InteractionCard } from "./InteractionCard";
 import { useActiveLogic } from "../logic-hooks";
+
+const operations = createOperations();
 
 function flatten(tree: EditorElement[]): { id: string; name: string }[] {
   const out: { id: string; name: string }[] = [];
@@ -50,8 +52,7 @@ export default function InteractTab() {
 
   if (!selected) return null;
 
-  const apply = (change: (el: EditorElement) => OpResult) => {
-    const r = commit(selected.id, change);
+  const apply = (r: OpResult) => {
     if (!r.ok) toast.error(r.issues[0]?.message ?? "That change isn't valid");
   };
   const shared = {
@@ -79,16 +80,16 @@ export default function InteractTab() {
           ix={ix}
           shared={shared}
           onChange={(patch: Partial<Interaction>) =>
-            apply((el) => updateInteraction(el, ixId, patch, { allowIncomplete: true }))
+            apply(operations.updateInteraction(selected.id, ixId, patch, { allowIncomplete: true }))
           }
-          onRemove={() => apply((el) => removeInteraction(el, ixId))}
+          onRemove={() => apply(operations.removeInteraction(selected.id, ixId))}
         />
       ))}
       <Button
         variant="outline"
         size="sm"
         className="h-7 w-full gap-1 text-[11px]"
-        onClick={() => apply((el) => addInteraction(el, "click", [], { allowIncomplete: true }))}
+        onClick={() => apply(operations.addInteraction(selected.id, "click", [], { allowIncomplete: true }))}
       >
         <Plus className="h-3 w-3" /> Add interaction
       </Button>

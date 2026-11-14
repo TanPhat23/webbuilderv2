@@ -4,7 +4,6 @@
  * port so the executors can be tested without a browser, and so the editor
  * can swap behaviour (navigation must not leave the editor).
  *
- * Behaviour ported from features/editor/lib/events/eventExecutor.ts.
  */
 import { toast as sonner } from "sonner";
 import { toText } from "./expression";

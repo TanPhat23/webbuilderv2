@@ -17,6 +17,7 @@ export const WS_MESSAGE = {
   ELEMENT_DELETE: "element:delete",
   SYNC_PAGE: "sync:page",
   LOGIC_UPDATE: "logic:update",
+  LOGIC_MOVE: "logic:move",
   LOGIC_SYNC: "logic:sync",
   ERROR: "error",
 } as const;
@@ -97,6 +98,7 @@ export type LogicScope = "project" | "page";
 export interface LogicUpdatePayload {
   scope: LogicScope;
   patch: Record<string, unknown>;
+  nullPaths?: string[][];
 }
 
 /**

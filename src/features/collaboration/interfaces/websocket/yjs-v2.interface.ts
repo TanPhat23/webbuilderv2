@@ -201,7 +201,8 @@ export interface CustomYjsProviderV2 {
   ): void;
 
   /** Sends a logic patch; resolves with the committed document or rejects with the server's reason. */
-  updateLogic(scope: LogicScope, patch: Record<string, unknown>): Promise<LogicChangedPayload>;
+  updateLogic(scope: LogicScope, patch: Record<string, unknown>, nullPaths?: string[][]): Promise<LogicChangedPayload>;
+  moveLogic(kind: "variable" | "flow", name: string, to: LogicScope): Promise<LogicSyncPayload>;
   /** Asks the server for the current logic documents; they arrive through `onLogicSync`. */
   requestLogicSync(): void;
 }
