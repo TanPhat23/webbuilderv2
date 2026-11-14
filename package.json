@@ -12,6 +12,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "test:e2e:collab": "bash scripts/e2e-collab.sh",
     "test:style-controls": "node --import tsx --test tests/style-controls.browser.ts",
     "test:unit": "node --import tsx --test tests/*.test.ts",
     "test:integration": "bash scripts/it-realtime.sh",
@@ -80,6 +81,7 @@
   "devDependencies": {
     "@babel/generator": "^7.29.1",
     "@babel/types": "^7.29.0",
+    "@clerk/testing": "^2.3.0",
     "@tailwindcss/vite": "^4.2.1",
     "@types/babel__generator": "^7.27.0",
     "@types/babel__traverse": "^7.20.6",
