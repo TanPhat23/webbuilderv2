@@ -2,14 +2,15 @@ import type { WSErrorCode } from "../../interfaces/websocket/ws-collab.interface
 
 export type CloseClass =
   | { fatal: false }
-  | { fatal: true; reason: "auth" | "forbidden" | "not_found" | "too_large"; message: string };
+  | { fatal: true; reason: "auth" | "forbidden" | "not_found" | "too_large" | "replaced"; message: string };
 
 /**
  * Decides whether a WebSocket close should be retried. 1000/1001 and the
  * abnormal 1006/1011/1012/1013 closes are transient. Policy and auth
  * closes (1008, 4001/4401 unauthenticated, 4003/4403 forbidden, 4004/4404
  * missing project) will not fix themselves, so retrying only hammers the
- * server.
+ * server. 4409 means a newer tab or window of the same user took over this
+ * project; reconnecting would take it back, and the two would alternate.
  */
 export function classifyClose(code: number): CloseClass {
   switch (code) {
@@ -23,6 +24,12 @@ export function classifyClose(code: number): CloseClass {
     case 4004:
     case 4404:
       return { fatal: true, reason: "not_found", message: "This project or page no longer exists." };
+    case 4409:
+      return {
+        fatal: true,
+        reason: "replaced",
+        message: "This project is open in another tab or window. Reload this page to edit here.",
+      };
     case 1009:
       return { fatal: true, reason: "too_large", message: "That change was too large to send." };
     default:

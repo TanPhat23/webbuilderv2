@@ -38,7 +38,7 @@ SQL
 
 # Select an unused loopback port; the API's PORT accepts a port number only.
 SERVER_PORT="$(node -e 'const n=require("net").createServer();n.listen(0,"127.0.0.1",()=>{console.log(n.address().port);n.close()})')"
-(cd "$WORK" && env -i PATH="$PATH" PORT="$SERVER_PORT" DEV_MODE=true DEV_USER_ID=u1 DATABASE_URL="$WEBBUILDER_TEST_DATABASE_URL" REDIS_URL="redis://$WEBBUILDER_TEST_REDIS_ADDR/0" ./api >"$WORK/api.log" 2>&1) &
+(cd "$WORK" && exec env -i PATH="$PATH" PORT="$SERVER_PORT" DEV_MODE=true DEV_USER_ID=u1 DATABASE_URL="$WEBBUILDER_TEST_DATABASE_URL" REDIS_URL="redis://$WEBBUILDER_TEST_REDIS_ADDR/0" ./api >"$WORK/api.log" 2>&1) &
 SERVER_PID=$!
 for _ in $(seq 1 60); do
   if curl -fsS "http://127.0.0.1:$SERVER_PORT/health" >/dev/null 2>&1; then break; fi
@@ -50,7 +50,7 @@ kill "$SERVER_PID"
 wait "$SERVER_PID" || true
 SERVER_PID=""
 
-(cd "$WORK" && env -i PATH="$PATH" WEBBUILDER_TEST_DATABASE_URL="$WEBBUILDER_TEST_DATABASE_URL" WEBBUILDER_TEST_REDIS_ADDR="$WEBBUILDER_TEST_REDIS_ADDR" WEBBUILDER_TEST_LISTEN_FILE="$WORK/listen" ./harness >"$WORK/harness.log" 2>&1) &
+(cd "$WORK" && exec env -i PATH="$PATH" WEBBUILDER_TEST_DATABASE_URL="$WEBBUILDER_TEST_DATABASE_URL" WEBBUILDER_TEST_REDIS_ADDR="$WEBBUILDER_TEST_REDIS_ADDR" WEBBUILDER_TEST_LISTEN_FILE="$WORK/listen" ./harness >"$WORK/harness.log" 2>&1) &
 SERVER_PID=$!
 for _ in $(seq 1 60); do
   [ -s "$WORK/listen" ] && break

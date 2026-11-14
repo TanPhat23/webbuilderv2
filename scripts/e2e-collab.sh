@@ -61,7 +61,7 @@ PGPASSWORD=test psql -h 127.0.0.1 -p "$PG_PORT" -U postgres wb -q -v ON_ERROR_ST
   -c '\copy "User"("Id","Email","FirstName","LastName","CreatedAt","UpdatedAt") FROM STDIN WITH (FORMAT csv)' < "$WORK/users.csv"
 
 API_PORT="$(node -e 'const n=require("net").createServer();n.listen(0,"127.0.0.1",()=>{console.log(n.address().port);n.close()})')"
-(cd "$WORK" && env -i PATH="$PATH" HOME="$WORK" PORT="$API_PORT" DATABASE_URL="$DB_URL" REDIS_URL="redis://127.0.0.1:$REDIS_PORT/0" \
+(cd "$WORK" && exec env -i PATH="$PATH" HOME="$WORK" PORT="$API_PORT" DATABASE_URL="$DB_URL" REDIS_URL="redis://127.0.0.1:$REDIS_PORT/0" \
   CLERK_SECRET_KEY="$CLERK_SECRET_KEY" ALLOWED_ORIGINS="http://localhost:3000" BASE_URL="http://localhost:3000" \
   ./api >"$WORK/api.log" 2>&1) &
 API_PID=$!

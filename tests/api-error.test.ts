@@ -56,6 +56,8 @@ test('close codes: transient vs fatal', () => {
   assert.deepEqual(classifyClose(1008).fatal && (classifyClose(1008) as { reason: string }).reason, 'forbidden');
   assert.equal((classifyClose(4401) as { reason: string }).reason, 'auth');
   assert.equal((classifyClose(4404) as { reason: string }).reason, 'not_found');
+  // A newer tab of the same user replaced this connection; reconnecting would replace that tab back.
+  assert.equal((classifyClose(4409) as { reason: string }).reason, 'replaced');
 });
 
 test('server error codes map to actions', () => {
