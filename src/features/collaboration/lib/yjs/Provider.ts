@@ -5,6 +5,7 @@ import { AwarenessController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
 import { handleServerError } from "./connectionErrors";
 import { ElementOperations } from "./ElementOperations";
+import { LogicChannel } from "./LogicChannel";
 import type {
   ElementOperationResult,
   YjsProviderV2Options,
@@ -17,6 +18,9 @@ import type {
   WSEnvelope,
   PresenceBroadcastPayload,
   RemotePresence,
+  LogicScope,
+  LogicChangedPayload,
+  LogicUpdatePayload,
   CustomYjsProviderV2 as ICustomYjsProviderV2,
 } from "@/features/collaboration";
 import type { EditorElement } from "@/types/global.type";
@@ -31,6 +35,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private awarenessController: AwarenessController;
   private messageHandler: ElementMessageHandler;
   private elementOps: ElementOperations;
+  private logicChannel: LogicChannel;
 
   private readonly projectId: string;
   private readonly pageId: string;
@@ -134,6 +139,13 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.sender,
     );
 
+    this.logicChannel = new LogicChannel({
+      resolvePendingRequest: (requestId, ok, data) =>
+        this.dispatcher.resolvePendingRequest(requestId, ok, data),
+      onSync: (payload) => options.onLogicSync?.(payload),
+      onChanged: (payload, own) => options.onLogicChanged?.(payload, own),
+    });
+
     this.setupEventForwarding();
     void this.connection.connect();
 
@@ -199,6 +211,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
 
     try {
       const envelope = JSON.parse(data) as WSEnvelope<unknown>;
+      if (this.logicChannel.handle(envelope)) return;
       this.messageHandler.handle(envelope);
     } catch (error) {
       console.error("[CustomYjsProviderV2] Failed to parse message:", error);
@@ -241,6 +254,40 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     newPosition?: number,
   ): Promise<ElementOperationResult> {
     return this.elementOps.moveElement(elementId, newParentId, newPosition);
+  }
+
+  // Logic (variables and flows)
+
+  public async updateLogic(
+    scope: LogicScope,
+    patch: Record<string, unknown>,
+  ): Promise<LogicChangedPayload> {
+    const requestId = this.dispatcher.generateRequestId();
+    const envelope = this.dispatcher.createEnvelope<LogicUpdatePayload>(
+      "logic:update",
+      this.projectId,
+      this.pageId,
+      { scope, patch },
+      { userId: this.userId, requestId },
+    );
+    this.logicChannel.track(requestId);
+    try {
+      return await this.sender.sendRequest<LogicChangedPayload>(envelope, requestId);
+    } finally {
+      this.logicChannel.forget(requestId);
+    }
+  }
+
+  public requestLogicSync(): void {
+    if (!this.connection.connected) return;
+    const envelope = this.dispatcher.createEnvelope(
+      "logic:sync",
+      this.projectId,
+      this.pageId,
+      {},
+      { userId: this.userId, requestId: this.dispatcher.generateRequestId() },
+    );
+    this.connection.send(JSON.stringify(envelope));
   }
 
   // Presence

@@ -56,6 +56,12 @@ export function handleServerError(code: WSErrorCode | string, serverMessage?: st
         };
       }
       return { message: serverMessage || "This page no longer exists.", rejoin: false, blocking: true };
+    case "ACCESS_DENIED":
+      return {
+        message: serverMessage || "You can view this project but not change it.",
+        rejoin: false,
+        blocking: false,
+      };
     case "VALIDATION_ERROR":
       return { message: serverMessage || "That change was rejected by the server.", rejoin: false, blocking: false };
     default:

@@ -5,6 +5,7 @@ export type WSErrorCode =
   | "VALIDATION_ERROR"
   | "NOT_FOUND"
   | "JOIN_REQUIRED"
+  | "ACCESS_DENIED"
   | "PROCESS_ERROR";
 
 export const WS_MESSAGE = {
@@ -15,6 +16,8 @@ export const WS_MESSAGE = {
   ELEMENT_MOVE: "element:move",
   ELEMENT_DELETE: "element:delete",
   SYNC_PAGE: "sync:page",
+  LOGIC_UPDATE: "logic:update",
+  LOGIC_SYNC: "logic:sync",
   ERROR: "error",
 } as const;
 
@@ -87,6 +90,34 @@ export interface ElementDeletePayload {
 }
 
 export type SyncRequestPayload = Record<string, never>;
+
+export type LogicScope = "project" | "page";
+
+/** Sent by a client: a merge patch (null deletes a key) for one scope. */
+export interface LogicUpdatePayload {
+  scope: LogicScope;
+  patch: Record<string, unknown>;
+}
+
+/**
+ * Broadcast after a committed update: the complete resulting document.
+ * `revision` increases with every commit of that document (missing means 0).
+ */
+export interface LogicChangedPayload {
+  scope: LogicScope;
+  pageId?: string;
+  logic: Record<string, unknown>;
+  revision?: number;
+}
+
+/** Sent on join and on request: both documents that apply to the page, with their revisions. */
+export interface LogicSyncPayload {
+  project: Record<string, unknown>;
+  page?: Record<string, unknown>;
+  pageId?: string;
+  projectRevision?: number;
+  pageRevision?: number;
+}
 
 export type User = {
   userId: string;

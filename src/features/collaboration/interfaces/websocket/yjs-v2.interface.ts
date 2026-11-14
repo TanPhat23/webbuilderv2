@@ -21,6 +21,10 @@ import type {
   ElementMovePayload,
   ElementDeletePayload,
   SyncRequestPayload,
+  LogicScope,
+  LogicUpdatePayload,
+  LogicChangedPayload,
+  LogicSyncPayload,
 } from "./ws-collab.interface";
 
 export type {
@@ -43,6 +47,10 @@ export type {
   ElementMovePayload,
   ElementDeletePayload,
   SyncRequestPayload,
+  LogicScope,
+  LogicUpdatePayload,
+  LogicChangedPayload,
+  LogicSyncPayload,
 };
 
 export type MessageType = WSMessageType;
@@ -192,7 +200,10 @@ export interface CustomYjsProviderV2 {
     elementId?: string | null,
   ): void;
 
-
+  /** Sends a logic patch; resolves with the committed document or rejects with the server's reason. */
+  updateLogic(scope: LogicScope, patch: Record<string, unknown>): Promise<LogicChangedPayload>;
+  /** Asks the server for the current logic documents; they arrive through `onLogicSync`. */
+  requestLogicSync(): void;
 }
 
 export interface RemoteElementState {
@@ -216,6 +227,9 @@ export interface YjsProviderV2Options {
   onSyncUsers?: (users: Record<string, UserInfo>) => void;
   onError?: (error: ErrorMessage) => void;
   onPresence?: (data: PresenceBroadcastPayload) => void;
+  onLogicSync?: (payload: LogicSyncPayload) => void;
+  /** `own` is true when this is the acknowledgement of a change this client sent. */
+  onLogicChanged?: (payload: LogicChangedPayload, own: boolean) => void;
 }
 
 export type RoomState = "connecting" | "connected" | "disconnected" | "error";
