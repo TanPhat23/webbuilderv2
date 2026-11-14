@@ -4721,22 +4721,26 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 14: Final verification
 
-- [ ] **Step 1: Full unit suite**
+Verification rerun on 2026-11-14 against the current cutover: 328 unit tests passed, TypeScript reported no errors, schema generation produced no changes, and the integration suite passed (one API smoke test and seven multi-client tests). The authenticated manual checks in Tasks 11 and 12 still need a person. Plans 2 and 3 were subsequently implemented; legacy storage and REST reads remain until after the compatibility release.
+
+With the user's permission, four unauthenticated local browser fixture tests also passed: interaction editing, preview form submission and animation, event dispatch, and canvas picking/cancellation/label. The picking fixture's Vite dependency scan reported missing stub exports and skipped pre-bundling before the test passed. These fixtures do not cover every Task 11 and 12 manual scenario in the signed-in editor.
+
+- [x] **Step 1: Full unit suite**
 
 Run: `bun run test:unit`
 Expected: all tests pass. That is 157 existing tests plus the new interaction tests, with 0 failures.
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `bunx tsc --noEmit -p tsconfig.json 2>&1 | grep -c "error TS"`
 Expected: the same count as on `editor-redesign` before Task 1. Record the baseline before starting Task 1 with the same command. There must be no errors in `src/features/interactions/**`.
 
-- [ ] **Step 3: Schema is current**
+- [x] **Step 3: Schema is current**
 
 Run: `bun run interactions:schema && git status --short public/interactions.schema.json`
 Expected: no output, which means the file is unchanged.
 
-- [ ] **Step 4: Integration suite**
+- [x] **Step 4: Integration suite**
 
 Run: `bun run test:integration`
 Expected: all tests pass.

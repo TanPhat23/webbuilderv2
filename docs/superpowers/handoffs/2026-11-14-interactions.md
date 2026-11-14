@@ -11,8 +11,8 @@ The old event workflows have been replaced by **interactions**, which are stored
 | Repo | Branch | Interactions work | Uncommitted changes (all the user's; do not commit) |
 |---|---|---|---|
 | `~/Code/webbuilderv2` (frontend) | `editor-redesign` | `d00bb2e`…`872caad` (Plan 1), `0031852`…`d79cd5a` (Plans 2 and 3) | Edits to the deleted workflow editor files are preserved in `2026-11-14-preserved-workflow-edits.patch`. |
-| `~/Code/Go/webbuilder.api.go` | current branch, on top of `b94ce0a` | `5e949ed` DB columns, `306d339` realtime at `/ws` + logic sync, `2c568e2` public page fix, `3f1790a` workflow migration tool | GORM generics/UUIDv7 refactor (`internal/handlers`, `internal/repositories`, `internal/services`, `internal/dto`, `pkg/ids`, `benchmarks`, `docs/gorm-generics-migration.md`); slog/requestid (`cmd/main.go`, `pkg/configs`, `pkg/utils/response.go`, three lines in `cmd/api/main.go`); element-ordering (OrderKey) work copied from realtimev2 (the `"OrderKey"` upsert line in `internal/realtime/repository/element_repository.go`, the helper in `internal/realtime/tests/unit/ws_echo_test.go`, two tests in `realtime_schema_integration_test.go`) |
-| `~/Code/Go/webbuilder.realtimev2.go` | — | none; superseded by the API's `internal/realtime` | The user's OrderKey work, plus a dev-only `devUser` edit to `middleware/auth.go` from Plan 1 testing. The early logic files there are obsolete. **Never commit in this repo.** |
+| `~/Code/Go/webbuilder/webbuilder.api.go` | current branch, on top of `b94ce0a` | `5e949ed` DB columns, `306d339` realtime at `/ws` + logic sync, `2c568e2` public page fix, `3f1790a` workflow migration tool | GORM generics/UUIDv7 refactor (`internal/handlers`, `internal/repositories`, `internal/services`, `internal/dto`, `pkg/ids`, `benchmarks`, `docs/gorm-generics-migration.md`); slog/requestid (`cmd/main.go`, `pkg/configs`, `pkg/utils/response.go`, three lines in `cmd/api/main.go`); element-ordering (OrderKey) work copied from realtimev2 (the `"OrderKey"` upsert line in `internal/realtime/repository/element_repository.go`, the helper in `internal/realtime/tests/unit/ws_echo_test.go`, two tests in `realtime_schema_integration_test.go`) |
+| `~/Code/Go/webbuilder/webbuilder.realtimev2.go` | — | none; superseded by the API's `internal/realtime` | The user's OrderKey work, plus a dev-only `devUser` edit to `middleware/auth.go` from Plan 1 testing. The early logic files there are obsolete. **Never commit in this repo.** |
 
 Nothing has been pushed. Push or merge only when the user asks.
 
@@ -32,7 +32,7 @@ npx tsc --noEmit -p .
 npm run -s test:unit                                  # 319 pass
 node --import tsx --test tests/logic-panel.browser.ts # headless, no sign-in
 
-# API (from ~/Code/Go/webbuilder.api.go)
+# API (from ~/Code/Go/webbuilder/webbuilder.api.go)
 go build ./... && go vet ./...
 env -u DATABASE_URL -u REDIS_ADDR go test -count=1 ./...   # DB-backed tests skip without the test env vars
 ```
@@ -47,19 +47,13 @@ env -u DATABASE_URL -u REDIS_ADDR go test -count=1 ./...   # DB-backed tests ski
 - Realtime now runs inside the API process. Goose owns the schema, and nothing runs DDL at startup.
 - In DEV_MODE, the API's realtime uses a fixed identity (`DEV_USER_ID`). There is no `?devUser=` override.
 
-## Open work, in rough priority
+## Remaining work and limits
 
-1. **Apply migrations** `00002`–`00004` to real databases. This is the user's call; never do it yourself.
-2. **Old workflow removal (Plan 3).** The migration tool (`cmd/workflow-migration`) previews by default; its apply mode is local only and needs the editor and realtime offline plus reconciled Redis page caches. The frontend skips migrated links via `migrationCutover.ts`, but the old runtime and editor still exist. Plan the cutover before deleting anything.
-3. **`scripts/it-realtime.sh`** still builds `webbuilder.realtimev2.go` and relies on `?devUser=`. Point it at the API's `/ws` and a DEV_MODE identity.
-4. **Smaller bugs:**
-   - undo can't restore a deleted flow that has an incomplete step (`logic-store.ts`, undo calls `editLogic` without `allowIncomplete`);
-   - soft-deleted pages count in logic name checks (`internal/realtime/repository/logic_repository.go`, no `"DeletedAt" IS NULL`);
-   - `logic:update` trusts the client's `pageId` (`logic_handlers.go`);
-   - `pending` can go negative after a rebind (`logic-store.ts` `bindRemote`/`unbindRemote`).
-5. **Multiple API instances:** `Hub.BroadcastProject` only reaches rooms on the local instance. This only matters if the API runs as more than one instance; ask the user.
-6. **Two-user live editing** is covered by `bun run test:e2e:collab` (see Follow-up progress). The rest of `bun run test:e2e` is still run by the user.
-7. **Deferred events:** timers, paste, contextmenu and resize are not in `ON_EVENTS`.
+- After the compatibility release, remove the legacy `EventWorkflow` and `ElementEventWorkflow` tables and workflow REST read routes in a separate change.
+- Migrations `00002`–`00004` were applied to the production database configured in the API's `.env` on 2026-11-14. The user table and full database were backed up locally beforehand, the user backup was restore-tested, and all 15 backed-up user IDs remained after migration. Other databases, if any, have not been checked.
+- The frontend cutover is committed as `4863425`; the API cutover is committed as `e95f3a6`. The user's separate API refactor and OrderKey changes remain uncommitted.
+- Two-user live editing is covered by `bun run test:e2e:collab` (see Follow-up progress). The rest of `bun run test:e2e` is still run by the user.
+- "Used by" and delete warnings only cover loaded pages. Timer, paste, contextmenu, and resize triggers are unsupported. The in-app assistant and MCP server are later sub-projects.
 
 ## Follow-up progress
 
@@ -81,4 +75,4 @@ env -u DATABASE_URL -u REDIS_ADDR go test -count=1 ./...   # DB-backed tests ski
   - runs Playwright against it, then removes everything.
 
   Port 3000 must be free. Clerk's testing token is set up in `e2e/clerk.global-setup.ts` so that every worker gets it.
-- Getting it to pass fixed `GET /api/v1/projects/:id/pages` in the API. It used to always fail: the service required a published project, then called the repository with an empty user ID. It now passes the user ID through (`project.service.go`, `interface.go`, `project.handler.go`, `test/services/project_test.go`). The fix is uncommitted and sits alongside the user's uncommitted refactor in the same files.
+- Getting it to pass fixed `GET /api/v1/projects/:id/pages` in API commit `8f4eec2`. It used to always fail: the service required a published project, then called the repository with an empty user ID. It now passes the user ID through.

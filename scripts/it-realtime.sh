@@ -3,7 +3,7 @@
 # the loopback-only test harness. Both use disposable Docker services.
 set -euo pipefail
 
-GO_API_DIR="${GO_API_DIR:-$HOME/Code/Go/webbuilder.api.go}"
+GO_API_DIR="${GO_API_DIR:-$HOME/Code/Go/webbuilder/webbuilder.api.go}"
 WORK="$(mktemp -d)"
 PG_CONTAINER=""
 REDIS_CONTAINER=""

@@ -1,0 +1,54 @@
+diff --git a/src/features/eventworkflows/components/WorkflowEditor.tsx b/src/features/eventworkflows/components/WorkflowEditor.tsx
+index 172a315..750f8ab 100644
+--- a/src/features/eventworkflows/components/WorkflowEditor.tsx
++++ b/src/features/eventworkflows/components/WorkflowEditor.tsx
+@@ -70,14 +70,19 @@ export const WorkflowEditor = ({
+   const isSaving = updateMutation.isPending;
+   const [isLoaded, setIsLoaded] = useState(false);
+   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
++  const loadedSnapshot = useRef<string | null>(null);
+ 
+   useEffect(() => {
+     if (initialWorkflow) {
+       loadWorkflow(initialWorkflow);
+-      const t = setTimeout(() => setIsLoaded(true), 200);
++      const t = setTimeout(() => {
++        // Remember what was loaded so autosave only runs after a real edit.
++        loadedSnapshot.current = JSON.stringify(getWorkflow());
++        setIsLoaded(true);
++      }, 200);
+       return () => clearTimeout(t);
+     }
+-  }, [initialWorkflow, loadWorkflow]);
++  }, [initialWorkflow, loadWorkflow, getWorkflow]);
+ 
+   const handleNameChange = (newName: string) => {
+     setName(newName);
+@@ -116,6 +121,7 @@ export const WorkflowEditor = ({
+   // Autosave on workflow change
+   useEffect(() => {
+     if (!isLoaded || readOnly) return;
++    if (JSON.stringify(workflow) === loadedSnapshot.current) return;
+     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+     autosaveTimer.current = setTimeout(() => {
+       triggerSave(getWorkflow());
+diff --git a/src/features/eventworkflows/hooks/useWorkflowCanvas.ts b/src/features/eventworkflows/hooks/useWorkflowCanvas.ts
+index 3465b11..b39fa12 100644
+--- a/src/features/eventworkflows/hooks/useWorkflowCanvas.ts
++++ b/src/features/eventworkflows/hooks/useWorkflowCanvas.ts
+@@ -224,8 +224,14 @@ export const useWorkflowCanvas = create<WorkflowCanvasStore>((set, get) => ({
+   },
+ 
+   loadWorkflow: (workflow: WorkflowData) => {
++    // Stored workflows can lack nodes or connections (empty or older data).
+     set({
+-      workflow,
++      workflow: {
++        ...workflow,
++        nodes: Array.isArray(workflow?.nodes) ? workflow.nodes : [],
++        connections: Array.isArray(workflow?.connections) ? workflow.connections : [],
++        metadata: workflow?.metadata ?? {},
++      },
+       selection: {
+         selectedNodeId: undefined,
+         selectedConnectionId: undefined,

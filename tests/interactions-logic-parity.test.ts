@@ -17,7 +17,11 @@ test('logic parity fixtures: storable means no error-level issues', () => {
 });
 
 test('logic parity fixtures match the API copy', (t) => {
-  const api = process.env.WEBBUILDER_API_DIR ?? join(import.meta.dirname, '..', '..', 'Go', 'webbuilder.api.go');
+  // The API repo is a sibling of this repo in ~/Code/Go/webbuilder, or there from ~/Code.
+  const api = process.env.WEBBUILDER_API_DIR
+    ?? [join(import.meta.dirname, '..', '..', 'webbuilder.api.go'), join(import.meta.dirname, '..', '..', 'Go', 'webbuilder', 'webbuilder.api.go')]
+      .find((dir) => existsSync(dir))
+    ?? join(import.meta.dirname, '..', '..', 'webbuilder.api.go');
   const copy = join(api, 'internal', 'realtime', 'domain', 'logic', 'testdata', 'parity.json');
   if (!existsSync(copy)) return t.skip(`API repo not found at ${api}`);
   assert.deepEqual(JSON.parse(readFileSync(copy, 'utf8')), fixtures);
