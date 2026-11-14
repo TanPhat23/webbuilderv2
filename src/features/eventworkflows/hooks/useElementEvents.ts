@@ -9,6 +9,7 @@ import { useEventModeStore } from "@/features/editor";
 import { useElementConnections } from "@/features/eventworkflows/hooks/useElementEventWorkflows";
 import { useEventWorkflows } from "@/features/eventworkflows/hooks/useEventWorkflows";
 import { transformWorkflowToEventHandlers } from "@/features/eventworkflows/utils/workflowTransformer";
+import { unmigratedConnections } from "@/features/eventworkflows/utils/migrationCutover";
 import { useSearch } from "@tanstack/react-router";
 
 type ElementEventStateValue = unknown;
@@ -16,6 +17,7 @@ type ElementEventState = Record<string, ElementEventStateValue>;
 
 interface UseElementEventsOptions {
   elementId: string;
+  settings?: unknown;
   onStateChange?: (newState: ElementEventState) => void;
   globalState?: ElementEventState;
   enableEventsOverride?: boolean;
@@ -25,6 +27,7 @@ interface UseElementEventsOptions {
 export function useElementEvents(options: UseElementEventsOptions) {
   const {
     elementId,
+    settings,
     onStateChange,
     globalState,
     enableEventsOverride,
@@ -140,7 +143,7 @@ export function useElementEvents(options: UseElementEventsOptions) {
 
     const workflowHandlers: ElementEvents = {};
 
-    for (const conn of connections) {
+    for (const conn of unmigratedConnections(connections, settings)) {
       const workflow = workflows.find((w) => w.id === conn.workflowId);
       if (workflow?.canvasData) {
         const handlers = transformWorkflowToEventHandlers(workflow.canvasData);
@@ -164,6 +167,7 @@ export function useElementEvents(options: UseElementEventsOptions) {
     elementId,
     eventsActive,
     connections,
+    settings,
     workflows,
     registerEvents,
   ]);

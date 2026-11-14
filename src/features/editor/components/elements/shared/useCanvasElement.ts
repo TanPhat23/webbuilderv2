@@ -30,6 +30,7 @@ export function useCanvasElement(
   const { elementRef, eventHandlers, eventsActive } = useEditorElement({
     elementId: element.id,
     events: element.events,
+    settings: element.settings,
   });
   const canEdit = useEditorFlagsOptional()?.canEdit ?? false;
   const isSelected = useIsSelected(element.id);
