@@ -11,6 +11,7 @@ import { loadMonacoTypes } from "@/features/editor/lib/monaco/types";
 import { contentChange } from "@/features/editor/lib/monaco/content-change";
 import { useElements } from "@/features/editor";
 import { elementService } from "@/features/editor";
+import { useActiveLogic } from "@/features/interactions/logic-hooks";
 
 function useDebouncedValue<T>(value: T, delay = 50) {
   const [debounced, setDebounced] = useState<T>(value);
@@ -24,6 +25,8 @@ function useDebouncedValue<T>(value: T, delay = 50) {
 export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
   const monaco = useMonaco();
   const elements = useElements();
+  // Variables and flows in scope on this page, so interactions generate with them.
+  const { variables, flows } = useActiveLogic();
   const [value, setValue] = useState<string>(initialValue);
   const editorRef = useRef<monacoEditor.editor.IStandaloneCodeEditor | null>(
     null,
@@ -66,7 +69,7 @@ export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
       console.error("Failed to load Monaco types", err);
     });
 
-    const cached = queryClient.getQueryData(["generatedCode", elements]) as
+    const cached = queryClient.getQueryData(["generatedCode", elements, variables, flows]) as
       | { code?: string }
       | undefined;
     if (cached?.code) {
@@ -88,10 +91,14 @@ export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
     data: generated,
     isFetching,
     error,
-  } = useQuery<{ code?: string }, unknown, { code?: string }>({
-    queryKey: ["generatedCode", debouncedElements],
+  } = useQuery<
+    { code?: string; interactions?: string | null },
+    unknown,
+    { code?: string; interactions?: string | null }
+  >({
+    queryKey: ["generatedCode", debouncedElements, variables, flows],
     queryFn: async ({ signal }: { signal?: AbortSignal }) =>
-      elementService.generateCode(debouncedElements, { signal }),
+      elementService.generateCode(debouncedElements, { signal }, { variables, flows }),
     refetchOnWindowFocus: false,
     retry: false,
   });

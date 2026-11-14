@@ -1,7 +1,8 @@
 import { EditorElement } from "@/types/global.type";
 import * as t from "@babel/types";
 import { generate } from "@babel/generator";
-import { generateStrategies } from "./generatestrategies";
+import { generateStrategies, generationOptions } from "./generatestrategies";
+import { hasInteractionCode, toCode, type CodegenInput } from "@/features/interactions/codegen/interactions";
 import { generateImports } from "./generateImports";
 
 const options: {
@@ -11,6 +12,12 @@ const options: {
   wrapComponent: true,
   componentName: "Generated",
 };
+
+/** Page and project logic that the generated interactions use. */
+export interface InteractionLogic {
+  variables: CodegenInput["variables"];
+  flows: CodegenInput["flows"];
+}
 
 class CodeGenerator {
   private static instance: CodeGenerator;
@@ -40,17 +47,40 @@ class CodeGenerator {
     }
   }
 
-  public async generateToJSX(elements: EditorElement[]): Promise<string> {
-    const nodes: t.JSXElement[] = elements
-      .map((el) => this.elementToJSX(el))
-      .filter((el): el is t.JSXElement => el !== null);
+  /** Variables and flows in scope for these elements; absent means none. */
+  private interactionInput(elements: EditorElement[], logic?: InteractionLogic): CodegenInput {
+    return {
+      elements: elements as unknown as CodegenInput["elements"],
+      variables: logic?.variables ?? {},
+      flows: logic?.flows ?? {},
+    };
+  }
+
+  /** The `interactions.ts` module for these elements, or null when there is nothing to generate. */
+  public generateInteractions(elements: EditorElement[], logic?: InteractionLogic): string | null {
+    const input = this.interactionInput(elements, logic);
+    return hasInteractionCode(input) ? toCode(input) : null;
+  }
+
+  public async generateToJSX(elements: EditorElement[], logic?: InteractionLogic): Promise<string> {
+    const withInteractions = hasInteractionCode(this.interactionInput(elements, logic));
+    // Elements need `data-element-id` so the interactions module can find them.
+    generationOptions.tagElementIds = withInteractions;
+    let nodes: t.JSXElement[];
+    try {
+      nodes = elements
+        .map((el) => this.elementToJSX(el))
+        .filter((el): el is t.JSXElement => el !== null);
+    } finally {
+      generationOptions.tagElementIds = false;
+    }
 
     const inner =
       nodes.length > 0 ? nodes.map((n) => generate(n).code).join("\n") : "";
 
     let result = inner;
     if (options.wrapComponent) {
-      const imports = generateImports(elements);
+      const imports = generateImports(elements) + (withInteractions ? "\nimport { bindInteractions } from './interactions';" : "");
 
       const indentedInner = inner
         ? inner
@@ -65,7 +95,7 @@ class CodeGenerator {
  */
 ${imports}
 
-const ${options.componentName} = () => {
+const ${options.componentName} = () => {${withInteractions ? "\n  React.useEffect(() => bindInteractions(), []);\n" : ""}
   return (
     <>
 ${indentedInner ? indentedInner + "\n" : ""}

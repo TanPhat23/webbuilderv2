@@ -300,7 +300,7 @@ export function evaluate(src: string, scope: Scope): unknown {
 type TemplateExpression = { start: number; end: number; source: string };
 
 /** Find template expressions in one pass, respecting quoted strings. */
-function scanTemplate(template: string): { expressions: TemplateExpression[]; unclosed: boolean } {
+export function scanTemplate(template: string): { expressions: TemplateExpression[]; unclosed: boolean } {
   const expressions: TemplateExpression[] = [];
   let cursor = 0;
   while (cursor < template.length) {

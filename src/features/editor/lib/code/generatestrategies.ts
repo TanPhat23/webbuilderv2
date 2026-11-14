@@ -52,6 +52,8 @@ const settingsToAttributes = (
 
   for (const [key, value] of Object.entries(settings)) {
     if (value === undefined) continue;
+    // Interactions become handlers in the generated interactions module, not an attribute.
+    if (key === "interactions" || key === "migratedWorkflowLinks") continue;
 
     if (typeof value === "string") {
       attrs.push(t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value)));
@@ -394,7 +396,7 @@ export class CMSContentGridGenerateStrategy implements GenerateStrategy {
   }
 }
 
-export const generateStrategies: Record<string, GenerateStrategy> = {
+const rawStrategies: Record<string, GenerateStrategy> = {
   Section: new SectionGenerateStrategy(),
   Button: new ButtonGenerateStrategy(),
   Text: new TextGenerateStrategy(),
@@ -411,3 +413,26 @@ export const generateStrategies: Record<string, GenerateStrategy> = {
   CMSContentItem: new CMSContentItemGenerateStrategy(),
   CMSContentGrid: new CMSContentGridGenerateStrategy(),
 };
+
+/**
+ * When on, every generated element carries `data-element-id`, which is how the
+ * generated interactions module finds the elements it listens to and acts on.
+ * Set around one synchronous generation run by the code generator.
+ */
+export const generationOptions = { tagElementIds: false };
+
+const withElementId = (strategy: GenerateStrategy): GenerateStrategy => ({
+  generate(element) {
+    const node = strategy.generate(element);
+    if (node && generationOptions.tagElementIds) {
+      node.openingElement.attributes.push(
+        t.jsxAttribute(t.jsxIdentifier("data-element-id"), t.stringLiteral(element.id)),
+      );
+    }
+    return node;
+  },
+});
+
+export const generateStrategies: Record<string, GenerateStrategy> = Object.fromEntries(
+  Object.entries(rawStrategies).map(([type, strategy]) => [type, withElementId(strategy)]),
+);

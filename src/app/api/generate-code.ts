@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { codeGenerator } from "@/features/editor/lib/code/generator";
+import { codeGenerator, type InteractionLogic } from "@/features/editor/lib/code/generator";
+import { codegenRequestErrors } from "@/features/interactions/codegen/validate";
 
 export const Route = createFileRoute("/api/generate-code")({
   server: {
@@ -23,8 +24,24 @@ export const Route = createFileRoute("/api/generate-code")({
             );
           }
 
-          const code = await codeGenerator.generateToJSX(elements);
-          return Response.json({ code }, { status: 200 });
+          // Interactions and the optional logic become source code: refuse
+          // anything malformed. Incomplete (draft) steps are allowed and skipped.
+          const issues = codegenRequestErrors(elements, body?.logic);
+          if (issues.length) {
+            return Response.json(
+              { error: "Invalid interactions or logic.", issues },
+              { status: 400 },
+            );
+          }
+          // Optional: the variables and flows the elements' interactions use.
+          let logic: InteractionLogic | undefined;
+          if (body?.logic !== undefined && body.logic !== null) {
+            logic = { variables: body.logic.variables ?? {}, flows: body.logic.flows ?? {} };
+          }
+
+          const code = await codeGenerator.generateToJSX(elements, logic);
+          const interactions = codeGenerator.generateInteractions(elements, logic);
+          return Response.json({ code, interactions }, { status: 200 });
         } catch (err) {
           console.error("Server code generation failed:", err);
           return Response.json(

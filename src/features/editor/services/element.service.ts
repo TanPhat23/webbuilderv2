@@ -61,10 +61,11 @@ export const elementService = {
   generateCode: async (
     elements: EditorElement[],
     options: RequestInit = {},
-  ): Promise<{ code: string }> => {
-    return apiClient.post<{ code: string }>(
+    logic?: { variables: unknown; flows: unknown },
+  ): Promise<{ code: string; interactions?: string | null }> => {
+    return apiClient.post<{ code: string; interactions?: string | null }>(
       new URLBuilder("next").setPath("/api/generate-code").build(),
-      { elements },
+      { elements, ...(logic ? { logic } : {}) },
       options,
     );
   },
