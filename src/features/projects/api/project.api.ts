@@ -23,14 +23,14 @@ export const getUserProjects = createServerFn({ method: "GET" }).handler(
 );
 
 export const getProjectById = createServerFn({ method: "GET" })
-  .inputValidator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
+  .validator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
   .handler(async ({ data }): Promise<Project> => {
     const { token } = await getAuthToken();
     return projectService.getProjectById(data.projectId, token);
   });
 
 export const createProject = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateProjectInput) => CreateProjectSchema.parse(data))
+  .validator((data: CreateProjectInput) => CreateProjectSchema.parse(data))
   .handler(async ({ data }): Promise<Project> => {
     const { token } = await getAuthToken();
     const created = await projectService.createProjectWithPage(
@@ -45,7 +45,7 @@ export const createProject = createServerFn({ method: "POST" })
   });
 
 export const updateProject = createServerFn({ method: "POST" })
-  .inputValidator((data: UpdateProjectInput) => UpdateProjectSchema.parse(data))
+  .validator((data: UpdateProjectInput) => UpdateProjectSchema.parse(data))
   .handler(async ({ data }): Promise<Project> => {
     const { token } = await getAuthToken();
     const updates: ProjectUpdateFields = data.updates;
@@ -57,7 +57,7 @@ export const updateProject = createServerFn({ method: "POST" })
   });
 
 export const deleteProject = createServerFn({ method: "POST" })
-  .inputValidator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
+  .validator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
   .handler(async ({ data }) => {
     const { token } = await getAuthToken();
     await projectService.deleteProject(data.projectId, token);
@@ -65,7 +65,7 @@ export const deleteProject = createServerFn({ method: "POST" })
   });
 
 export const getProjectPages = createServerFn({ method: "GET" })
-  .inputValidator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
+  .validator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
   .handler(async ({ data }): Promise<Page[]> => {
     const { token } = await getAuthToken();
     return projectService.getProjectPages(data.projectId, token);

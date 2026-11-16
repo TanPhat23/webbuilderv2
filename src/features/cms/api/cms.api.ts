@@ -119,7 +119,7 @@ export const getContentTypes = createServerFn({ method: "GET" }).handler(
 );
 
 export const getContentTypeById = createServerFn({ method: "GET" })
-  .inputValidator((data: ContentTypeRecordIdInput) =>
+  .validator((data: ContentTypeRecordIdInput) =>
     ContentTypeRecordIdSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentType> => {
@@ -128,7 +128,7 @@ export const getContentTypeById = createServerFn({ method: "GET" })
   });
 
 export const createContentType = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateContentTypeRequest) =>
+  .validator((data: CreateContentTypeRequest) =>
     CreateContentTypeRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentType> => {
@@ -137,7 +137,7 @@ export const createContentType = createServerFn({ method: "POST" })
   });
 
 export const updateContentType = createServerFn({ method: "POST" })
-  .inputValidator((data: UpdateContentTypeRequest) =>
+  .validator((data: UpdateContentTypeRequest) =>
     UpdateContentTypeRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentType> => {
@@ -146,7 +146,7 @@ export const updateContentType = createServerFn({ method: "POST" })
   });
 
 export const deleteContentType = createServerFn({ method: "POST" })
-  .inputValidator((data: ContentTypeRecordIdInput) =>
+  .validator((data: ContentTypeRecordIdInput) =>
     ContentTypeRecordIdSchema.parse(data),
   )
   .handler(async ({ data }) => {
@@ -156,14 +156,14 @@ export const deleteContentType = createServerFn({ method: "POST" })
   });
 
 export const getContentFieldsByContentType = createServerFn({ method: "GET" })
-  .inputValidator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
+  .validator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
   .handler(async ({ data }): Promise<ContentField[]> => {
     const { token } = await getAuthToken();
     return cmsService.getContentFieldsByContentType(data.contentTypeId, token);
   });
 
 export const getContentFieldById = createServerFn({ method: "GET" })
-  .inputValidator((data: ContentTypeFieldIdInput) =>
+  .validator((data: ContentTypeFieldIdInput) =>
     ContentTypeFieldIdSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentField> => {
@@ -176,7 +176,7 @@ export const getContentFieldById = createServerFn({ method: "GET" })
   });
 
 export const createContentField = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateContentFieldRequest) =>
+  .validator((data: CreateContentFieldRequest) =>
     CreateContentFieldRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentField> => {
@@ -185,7 +185,7 @@ export const createContentField = createServerFn({ method: "POST" })
   });
 
 export const updateContentField = createServerFn({ method: "POST" })
-  .inputValidator((data: UpdateContentFieldRequest) =>
+  .validator((data: UpdateContentFieldRequest) =>
     UpdateContentFieldRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentField> => {
@@ -199,7 +199,7 @@ export const updateContentField = createServerFn({ method: "POST" })
   });
 
 export const deleteContentField = createServerFn({ method: "POST" })
-  .inputValidator((data: ContentTypeFieldIdInput) =>
+  .validator((data: ContentTypeFieldIdInput) =>
     ContentTypeFieldIdSchema.parse(data),
   )
   .handler(async ({ data }) => {
@@ -213,14 +213,14 @@ export const deleteContentField = createServerFn({ method: "POST" })
   });
 
 export const getContentItemsByContentType = createServerFn({ method: "GET" })
-  .inputValidator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
+  .validator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
   .handler(async ({ data }): Promise<ContentItem[]> => {
     const { token } = await getAuthToken();
     return cmsService.getContentItemsByContentType(data.contentTypeId, token);
   });
 
 export const getContentItemById = createServerFn({ method: "GET" })
-  .inputValidator((data: ContentTypeItemIdInput) =>
+  .validator((data: ContentTypeItemIdInput) =>
     ContentTypeItemIdSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentItem> => {
@@ -233,7 +233,7 @@ export const getContentItemById = createServerFn({ method: "GET" })
   });
 
 export const createContentItem = createServerFn({ method: "POST" })
-  .inputValidator((data: CreateContentItemRequest) =>
+  .validator((data: CreateContentItemRequest) =>
     CreateContentItemRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentItem> => {
@@ -248,7 +248,7 @@ export const createContentItem = createServerFn({ method: "POST" })
   });
 
 export const updateContentItem = createServerFn({ method: "POST" })
-  .inputValidator((data: UpdateContentItemRequest) =>
+  .validator((data: UpdateContentItemRequest) =>
     UpdateContentItemRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentItem> => {
@@ -268,7 +268,7 @@ export const updateContentItem = createServerFn({ method: "POST" })
   });
 
 export const deleteContentItem = createServerFn({ method: "POST" })
-  .inputValidator((data: ContentTypeItemIdInput) =>
+  .validator((data: ContentTypeItemIdInput) =>
     ContentTypeItemIdSchema.parse(data),
   )
   .handler(async ({ data }) => {
@@ -278,7 +278,7 @@ export const deleteContentItem = createServerFn({ method: "POST" })
   });
 
 export const getPublicContent = createServerFn({ method: "GET" })
-  .inputValidator((data: PublicContentQueryInput) =>
+  .validator((data: PublicContentQueryInput) =>
     PublicContentQuerySchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentItem[]> => {
@@ -295,7 +295,7 @@ export const getPublicContent = createServerFn({ method: "GET" })
   });
 
 export const getPublicContentItem = createServerFn({ method: "GET" })
-  .inputValidator((data: PublicContentItemRequest) =>
+  .validator((data: PublicContentItemRequest) =>
     PublicContentItemRequestSchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentItem> => {

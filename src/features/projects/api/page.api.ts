@@ -14,7 +14,7 @@ import {
 } from "@/features/projects/services/project.service";
 
 export const createPage = createServerFn({ method: "POST" })
-  .inputValidator((data: CreatePageInput) => CreatePageSchema.parse(data))
+  .validator((data: CreatePageInput) => CreatePageSchema.parse(data))
   .handler(async ({ data }): Promise<Page> => {
     const { token } = await getAuthToken();
     const created = await projectService.createPage(
@@ -31,7 +31,7 @@ export const createPage = createServerFn({ method: "POST" })
   });
 
 export const deleteProjectPage = createServerFn({ method: "POST" })
-  .inputValidator((data: { projectId: string; pageId: string }) =>
+  .validator((data: { projectId: string; pageId: string }) =>
     deletePageInputSchema.parse(data),
   )
   .handler(async ({ data }) => {

@@ -5,7 +5,7 @@ import { getUserProjectAccess, requirePermission, Permission } from "@/features/
 import EditorProvider from "@/providers/editorprovider";
 
 const checkEditorAccess = createServerFn({ method: "GET" })
-  .inputValidator((projectId: unknown) => projectId as string)
+  .validator((projectId: unknown) => projectId as string)
   .handler(async ({ data: projectId }) => {
     const { userId } = await auth();
 
