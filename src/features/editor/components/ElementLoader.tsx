@@ -1,4 +1,5 @@
 import React from "react";
+import { AgentHost } from "@/features/agent/AgentHost";
 import { useParams } from "@tanstack/react-router";
 import type { EditorElement } from "@/types/global.type";
 import { useElements, useEventModeStore } from "@/features/editor";
@@ -63,6 +64,7 @@ function RootElementLoader({
       canCreate={editable && !!permissions?.canCreateElements}
       iframeRef={iframeRef}
     >
+      {!elements && <AgentHost />}
       <CanvasInteractionLayer>
         <InteractionHost elements={list} enabled={eventsOn} namespace={params.id ?? "editor"} variables={logic.variables} flows={logic.flows} platform={editorPlatform} showLog>
           <ElementList elements={list} data={data} />

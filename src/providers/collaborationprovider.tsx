@@ -16,6 +16,7 @@ import {
   type MoveData,
 } from "@/features/editor";
 import { useMouseStore } from "@/features/editor";
+import { runAgentRequest } from "@/features/agent/runtime";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
 import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
 import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
@@ -173,6 +174,7 @@ export default function CollaborationProvider({
       projectId,
       userId,
       userName: userId,
+      onAgentRequest: (req) => runAgentRequest(req),
       getToken: () => latest.current.getToken(),
       getElementState: () => ElementStore.getState(),
       onPendingChange: (pendingUpdates) => {

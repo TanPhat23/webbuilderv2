@@ -17,6 +17,8 @@ export const WS_MESSAGE = {
   ELEMENT_DELETE: "element:delete",
   SYNC_PAGE: "sync:page",
   LOGIC_UPDATE: "logic:update",
+  AGENT_REQUEST: "agent:request",
+  AGENT_RESPONSE: "agent:response",
   LOGIC_MOVE: "logic:move",
   LOGIC_SYNC: "logic:sync",
   ERROR: "error",

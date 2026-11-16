@@ -217,6 +217,8 @@ export interface RemoteElementState {
 }
 
 export interface YjsProviderV2Options {
+  /** Runs a CLI tool call in this tab (see features/agent). */
+  onAgentRequest?: (req: import("@/features/agent/protocol").AgentRequest) => Promise<import("@/features/agent/protocol").AgentOutcome>;
   url: string;
   pageId: string;
   projectId: string;

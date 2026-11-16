@@ -6,6 +6,8 @@ import { ElementMessageHandler } from "./ElementMessageHandler";
 import { handleServerError } from "./connectionErrors";
 import { ElementOperations } from "./ElementOperations";
 import { LogicChannel } from "./LogicChannel";
+import { AgentChannel } from "./AgentChannel";
+import { WS_MESSAGE } from "@/features/collaboration/interfaces/websocket/ws-collab.interface";
 import type {
   ElementOperationResult,
   YjsProviderV2Options,
@@ -37,6 +39,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private messageHandler: ElementMessageHandler;
   private elementOps: ElementOperations;
   private logicChannel: LogicChannel;
+  private agentChannel?: AgentChannel;
 
   private readonly projectId: string;
   private readonly pageId: string;
@@ -147,6 +150,17 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       onChanged: (payload, own) => options.onLogicChanged?.(payload, own),
     });
 
+    if (options.onAgentRequest) {
+      this.agentChannel = new AgentChannel({
+        onRequest: options.onAgentRequest,
+        send: (requestId, outcome) => {
+          const payload = outcome.ok ? { ok: true, result: outcome.result } : { ok: false, error: outcome.error };
+          const envelope = this.dispatcher.createEnvelope(WS_MESSAGE.AGENT_RESPONSE, this.projectId, this.pageId, payload, { userId: this.userId, requestId });
+          this.connection.send(JSON.stringify(envelope));
+        },
+      });
+    }
+
     this.setupEventForwarding();
     void this.connection.connect();
 
@@ -213,6 +227,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     try {
       const envelope = JSON.parse(data) as WSEnvelope<unknown>;
       if (this.logicChannel.handle(envelope)) return;
+      if (this.agentChannel?.handle(envelope)) return;
       this.messageHandler.handle(envelope);
     } catch (error) {
       console.error("[CustomYjsProviderV2] Failed to parse message:", error);
