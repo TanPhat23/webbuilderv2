@@ -86,6 +86,8 @@ export type ElementStore = {
     targetId: string,
     position: DropPosition,
   ) => ElementStore;
+  /** Replace the whole page tree as one undoable step, syncing what changed. */
+  replaceTree: (next: EditorElement[]) => ElementStore;
   undo: () => ElementStore;
   redo: () => ElementStore;
   setYjsUpdateCallback: (
@@ -386,6 +388,16 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         const added = elementHelper.findById(updatedTree, newEl.id) ?? newEl;
         triggerCollaborativeCallback("create", added.id, added);
       }
+      return get();
+    },
+
+    replaceTree: (next: EditorElement[]) => {
+      const { elements } = get();
+      if (diffTrees(elements, next).length === 0) return get();
+      takeSnapshot();
+      set({ elements: next });
+      triggerYjsCallback();
+      syncTreeChange(elements, next);
       return get();
     },
 

@@ -251,6 +251,8 @@ interface ElementInfo {
   id: string;
   name: string;
   interactions: InteractionMap;
+  /** The form handles its own submit (a form library), so interactions leave it alone. */
+  customSubmit: boolean;
 }
 
 function collectElements(tree: unknown, out: ElementInfo[] = []): ElementInfo[] {
@@ -259,7 +261,12 @@ function collectElements(tree: unknown, out: ElementInfo[] = []): ElementInfo[] 
     const map = isPlainObject(el.settings) ? el.settings.interactions : undefined;
     if (isPlainObject(map) && Object.keys(map).length) {
       const id = String(el.id);
-      out.push({ id, name: typeof el.name === "string" && el.name ? el.name : id, interactions: map as InteractionMap });
+      out.push({
+        id,
+        name: typeof el.name === "string" && el.name ? el.name : id,
+        interactions: map as InteractionMap,
+        customSubmit: isPlainObject(el.settings) && el.settings.customSubmit === true,
+      });
     }
     collectElements(el.elements, out);
   }
@@ -419,9 +426,14 @@ export function toCode(input: CodegenInput): string {
   }
   const bound: Bound[] = [];
   const interactionBlocks: string[] = [];
+  let skippedSubmit = false;
   for (const el of collectElements(input.elements)) {
     for (const [ixId, ix] of Object.entries(el.interactions)) {
       if (!isPlainObject(ix) || ix.enabled === false || !Array.isArray(ix.do) || !isEvent(ix.on)) continue;
+      if (el.customSubmit && ix.on === "submit") {
+        skippedSubmit = true;
+        continue;
+      }
       const fn = uniqueName(`on${pascal(el.name) || pascal(el.id)}${pascal(ix.on)}`, used);
       bound.push({ fn, elementId: el.id, on: ix.on, ix });
       const body = functionBody(ix.do, `${ixId}.do`);
@@ -636,6 +648,7 @@ export function bindInteractions(_root: ParentNode = document): () => void {
     "/**",
     " * Interactions generated from the editor: variables, flows and the handlers",
     " * for each element. Call `bindInteractions()` once the page has rendered.",
+    ...(skippedSubmit ? [" * Submit interactions of forms that handle their own submit are not bound."] : []),
     ...(usesToast ? [' * Toasts use "sonner".'] : []),
     " */",
   ].join("\n");

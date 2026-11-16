@@ -384,6 +384,22 @@ export const FormConfigurationAccordion = () => {
               />
             </ConfigField>
 
+            {/* Custom submit */}
+            <ConfigField
+              label="Handle submit in my code"
+              htmlFor="form-customSubmit"
+              hint="Use this with a form library such as React Hook Form or Formik. The exported code won't bind this form's submit interactions, so your own onSubmit runs unopposed. Adding onSubmit to the form in the Code tab turns this on."
+            >
+              <Switch
+                id="form-customSubmit"
+                checked={!!settings.customSubmit}
+                onCheckedChange={(checked) =>
+                  updateSetting("customSubmit", !!checked)
+                }
+                className="scale-75 origin-right"
+              />
+            </ConfigField>
+
             {/* Accept Charset */}
             <ConfigField
               label="Charset"

@@ -4,6 +4,10 @@ import { generate } from "@babel/generator";
 import { generateStrategies, generationOptions } from "./generatestrategies";
 import { hasInteractionCode, toCode, type CodegenInput } from "@/features/interactions/codegen/interactions";
 import { generateImports } from "./generateImports";
+import { isEmptyPreamble, type Preamble } from "./customCode";
+import { format } from "prettier/standalone";
+import * as babelPlugin from "prettier/plugins/babel";
+import * as estreePlugin from "prettier/plugins/estree";
 
 const options: {
   wrapComponent?: boolean;
@@ -17,6 +21,21 @@ const options: {
 export interface InteractionLogic {
   variables: CodegenInput["variables"];
   flows: CodegenInput["flows"];
+}
+
+/** Formats generated source; if Prettier cannot parse it, the raw source is still usable. */
+async function formatSource(source: string): Promise<string> {
+  try {
+    return await format(source, {
+      parser: "babel-ts",
+      plugins: [babelPlugin, estreePlugin],
+      singleQuote: true,
+      printWidth: 80,
+    });
+  } catch (err) {
+    console.warn("Could not format generated code:", err);
+    return source;
+  }
 }
 
 class CodeGenerator {
@@ -62,10 +81,19 @@ class CodeGenerator {
     return hasInteractionCode(input) ? toCode(input) : null;
   }
 
-  public async generateToJSX(elements: EditorElement[], logic?: InteractionLogic): Promise<string> {
+  /**
+   * `tagIds` adds `data-element-id` to every element, which lets edits to the
+   * code be matched back to the elements they came from. `preamble` is code
+   * the user wrote around the JSX (imports, hooks), kept as they wrote it.
+   */
+  public async generateToJSX(
+    elements: EditorElement[],
+    logic?: InteractionLogic,
+    { tagIds = false, preamble }: { tagIds?: boolean; preamble?: Preamble } = {},
+  ): Promise<string> {
     const withInteractions = hasInteractionCode(this.interactionInput(elements, logic));
     // Elements need `data-element-id` so the interactions module can find them.
-    generationOptions.tagElementIds = withInteractions;
+    generationOptions.tagElementIds = withInteractions || tagIds;
     let nodes: t.JSXElement[];
     try {
       nodes = elements
@@ -80,31 +108,36 @@ class CodeGenerator {
 
     let result = inner;
     if (options.wrapComponent) {
-      const imports = generateImports(elements) + (withInteractions ? "\nimport { bindInteractions } from './interactions';" : "");
+      const custom = preamble && !isEmptyPreamble(preamble) ? preamble : undefined;
+      let imports =
+        generateImports(inner) +
+        (withInteractions ? "\nimport { bindInteractions } from './interactions';" : "");
+      if (custom?.imports.trim()) {
+        // A user's own `import React ...` replaces the generated one.
+        if (/^\s*import\s+React\b/m.test(custom.imports)) imports = imports.replace("import React from 'react';\n", "").replace("import React from 'react';", "");
+        imports += `\n${custom.imports.trim()}`;
+      }
+      const effect = withInteractions ? "React.useEffect(() => bindInteractions(), []);" : "";
+      const bodyStatements = [effect, custom?.body.trim() ?? ""].filter(Boolean).join("\n\n");
 
-      const indentedInner = inner
-        ? inner
-            .split("\n")
-            .map((line) => "      " + line)
-            .join("\n")
-        : "";
-
-      result = `/**
+      // Prettier lays the JSX out; babel's generator prints it on one line.
+      result = await formatSource(`/**
  * Generated component
- * Note: TypeScript errors in Monaco editor are expected - the editor doesn't have full project context
+ * Note: TypeScript errors in Monaco editor are expected - the editor
+ * doesn't have full project context.
  */
 ${imports}
-
-const ${options.componentName} = () => {${withInteractions ? "\n  React.useEffect(() => bindInteractions(), []);\n" : ""}
+${custom?.top.trim() ? `\n${custom.top.trim()}\n` : ""}
+const ${options.componentName} = () => {${bodyStatements ? `\n${bodyStatements}\n` : ""}
   return (
     <>
-${indentedInner ? indentedInner + "\n" : ""}
+      ${inner}
     </>
   );
 };
 
 export default ${options.componentName};
-`;
+`);
     }
 
     return result;

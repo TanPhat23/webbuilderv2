@@ -62,10 +62,11 @@ export const elementService = {
     elements: EditorElement[],
     options: RequestInit = {},
     logic?: { variables: unknown; flows: unknown },
+    preamble?: { imports: string; top: string; body: string },
   ): Promise<{ code: string; interactions?: string | null }> => {
     return apiClient.post<{ code: string; interactions?: string | null }>(
       new URLBuilder("next").setPath("/api/generate-code").build(),
-      { elements, ...(logic ? { logic } : {}) },
+      { elements, ...(logic ? { logic } : {}), ...(preamble ? { preamble } : {}) },
       options,
     );
   },

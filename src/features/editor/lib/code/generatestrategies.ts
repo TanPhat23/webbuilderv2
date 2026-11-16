@@ -1,18 +1,29 @@
 import { ContainerElement, EditorElement } from "@/types/global.type";
 import * as t from "@babel/types";
-import computeTailwindFromStyles from "../../utils/element/computeTailwindFromStyles";
+import { parseExpression } from "@babel/parser";
+import { classNameFor } from "./classNames";
+import { HIDDEN_SETTINGS, MAX_CODE_PROPS, MAX_CODE_PROP_LENGTH } from "./customCode";
 
 interface GenerateStrategy {
   generate(element: EditorElement): t.JSXElement | null;
 }
 
-const handleChildren = (
-  element: EditorElement,
-): Array<t.JSXText | t.JSXElement> => {
-  const children: Array<t.JSXText | t.JSXElement> = [];
+type JSXChild = t.JSXText | t.JSXElement | t.JSXExpressionContainer;
+
+/**
+ * Element text as a JSX child. Text JSX would misread or trim (braces, angle
+ * brackets, ampersands, edge or repeated whitespace) goes in a string literal.
+ */
+const textChild = (content: string): t.JSXText | t.JSXExpressionContainer =>
+  /[{}<>&]|^\s|\s$|\s{2,}|[\n\r\t]/.test(content)
+    ? t.jsxExpressionContainer(t.stringLiteral(content))
+    : t.jsxText(content);
+
+const handleChildren = (element: EditorElement): JSXChild[] => {
+  const children: JSXChild[] = [];
 
   if (element.content) {
-    children.push(t.jsxText(element.content));
+    children.push(textChild(element.content));
   }
 
   const elems = (element as ContainerElement).elements;
@@ -34,7 +45,7 @@ const handleAttributes = (element: EditorElement): t.JSXAttribute[] => {
   attributes.push(
     t.jsxAttribute(
       t.jsxIdentifier("className"),
-      t.stringLiteral(computeTailwindFromStyles(element.styles) || ""),
+      t.stringLiteral(classNameFor(element)),
     ),
   );
   return attributes;
@@ -52,8 +63,8 @@ const settingsToAttributes = (
 
   for (const [key, value] of Object.entries(settings)) {
     if (value === undefined) continue;
-    // Interactions become handlers in the generated interactions module, not an attribute.
-    if (key === "interactions" || key === "migratedWorkflowLinks") continue;
+    // Interactions and the code view's own bookkeeping are not attributes.
+    if (HIDDEN_SETTINGS.includes(key)) continue;
 
     if (typeof value === "string") {
       attrs.push(t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value)));
@@ -92,9 +103,9 @@ export class SectionGenerateStrategy implements GenerateStrategy {
 export class ButtonGenerateStrategy implements GenerateStrategy {
   generate(element: EditorElement): t.JSXElement | null {
     if (element.type !== "Button") return null;
-    const children: (t.JSXText | t.JSXElement)[] = [];
+    const children: JSXChild[] = [];
     if (element.content) {
-      children.push(t.jsxText(element.content));
+      children.push(textChild(element.content));
     }
     const openingElement = t.jsxOpeningElement(
       t.jsxIdentifier("button"),
@@ -109,8 +120,8 @@ export class ButtonGenerateStrategy implements GenerateStrategy {
 export class TextGenerateStrategy implements GenerateStrategy {
   generate(element: EditorElement): t.JSXElement | null {
     if (element.type !== "Text") return null;
-    const children: t.JSXText[] = [];
-    if (element.content) children.push(t.jsxText(element.content));
+    const children: JSXChild[] = [];
+    if (element.content) children.push(textChild(element.content));
     const openingElement = t.jsxOpeningElement(
       t.jsxIdentifier("div"),
       handleAttributes(element),
@@ -151,7 +162,7 @@ export class LinkGenerateStrategy implements GenerateStrategy {
     if (element.type !== "Link") return null;
     const children = handleChildren(element);
     if (children.length === 0 && element.content)
-      children.push(t.jsxText(element.content));
+      children.push(textChild(element.content));
     const attrs = handleAttributes(element);
     if (element.href)
       attrs.push(
@@ -208,7 +219,7 @@ export class SelectGenerateStrategy implements GenerateStrategy {
           t.jsxElement(
             optOpening,
             optClosing,
-            [t.jsxText(value)] as any,
+            (value ? [textChild(value)] : []) as any,
             false,
           ),
         );
@@ -421,9 +432,30 @@ const rawStrategies: Record<string, GenerateStrategy> = {
  */
 export const generationOptions = { tagElementIds: false };
 
+/** Attributes from source text such as `{...register("a")}`; text that does not parse is skipped. */
+function codePropAttributes(props: unknown): Array<t.JSXAttribute | t.JSXSpreadAttribute> {
+  if (!Array.isArray(props)) return [];
+  const out: Array<t.JSXAttribute | t.JSXSpreadAttribute> = [];
+  for (const source of props.slice(0, MAX_CODE_PROPS)) {
+    if (typeof source !== "string" || source.length > MAX_CODE_PROP_LENGTH) continue;
+    try {
+      const tag = parseExpression(`<x ${source} />`, { plugins: ["jsx", "typescript"] });
+      if (!t.isJSXElement(tag)) continue;
+      for (const attr of tag.openingElement.attributes) out.push(t.cloneNode(attr, true, true));
+    } catch {
+      // Not valid attribute source.
+    }
+  }
+  return out;
+}
+
 const withElementId = (strategy: GenerateStrategy): GenerateStrategy => ({
   generate(element) {
     const node = strategy.generate(element);
+    const settings = element.settings as Record<string, unknown> | null | undefined;
+    if (node && settings?.codeProps) {
+      node.openingElement.attributes.push(...codePropAttributes(settings.codeProps));
+    }
     if (node && generationOptions.tagElementIds) {
       node.openingElement.attributes.push(
         t.jsxAttribute(t.jsxIdentifier("data-element-id"), t.stringLiteral(element.id)),

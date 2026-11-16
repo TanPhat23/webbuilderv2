@@ -13,6 +13,7 @@ export default function EditorCodePanel() {
     // isFetching indicates an in-progress generation operation
     isFetching,
     generated,
+    canEdit,
   } = useMonacoEditor();
   const [file, setFile] = useState<"component" | "interactions">("component");
   const interactions = generated?.interactions ?? null;
@@ -78,6 +79,7 @@ export default function EditorCodePanel() {
           beforeMount={handleBeforeMount}
           onMount={handleOnMount}
           options={{
+            readOnly: !canEdit,
             smoothScrolling: true,
             padding: { top: 10 },
             minimap: { enabled: false },

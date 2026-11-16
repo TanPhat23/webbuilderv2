@@ -18,6 +18,9 @@ export const useElements = (): EditorElement[] =>
 /** Select only the updateElement action. */
 export const useUpdateElement = () => useElementStore((s) => s.updateElement);
 
+/** Select only the replaceTree action (one undoable step for a whole-tree edit). */
+export const useReplaceTree = () => useElementStore((s) => s.replaceTree);
+
 /** Select only the addElement action. */
 export const useAddElement = () => useElementStore((s) => s.addElement);
 

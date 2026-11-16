@@ -262,6 +262,10 @@ export interface FormSettings {
   redirectUrl?: string;
   noValidate?: boolean;
   acceptCharset?: string;
+  /** The form handles its own submit (a form library): generated interactions leave it alone. */
+  customSubmit?: boolean;
+  /** Extra props written in the code view, as source text, e.g. `onSubmit={handleSubmit(save)}`. */
+  codeProps?: string[];
 }
 
 export interface FormElement extends Element<"Form", FormSettings> {

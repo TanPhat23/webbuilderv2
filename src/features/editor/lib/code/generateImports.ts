@@ -1,5 +1,3 @@
-import { EditorElement } from "@/types/global.type";
-
 /**
  * Map of component types to their import statements
  * Note: These imports use @/ paths which work in the app but may show errors in Monaco editor
@@ -36,32 +34,26 @@ const COMPONENT_IMPORTS: Record<string, string> = {
 };
 
 /**
- * Recursively finds all component types used in elements
+ * Finds the component tags the generated JSX actually renders. Only these need
+ * imports: element types that compile to plain DOM tags (a `Button` element
+ * becomes `<button>`) must not pull in a component they never use.
  */
-function findUsedComponents(elements: EditorElement[]): Set<string> {
+function findUsedComponents(jsx: string): Set<string> {
   const used = new Set<string>();
-
-  const traverse = (el: EditorElement) => {
-    used.add(el.type);
-    const containerEl = el as any;
-    if (Array.isArray(containerEl.elements)) {
-      containerEl.elements.forEach((child: EditorElement) => traverse(child));
-    }
-  };
-
-  elements.forEach((el) => traverse(el));
+  for (const match of jsx.matchAll(/<([A-Z][A-Za-z0-9]*)(?=[\s/>])/g)) {
+    used.add(match[1]);
+  }
   return used;
 }
 
 /**
- * Generates import statements for components used in the provided elements
+ * Generates import statements for the components used in the generated JSX.
  * Always includes React import
  */
-export function generateImports(elements: EditorElement[]): string {
+export function generateImports(jsx: string): string {
   const imports: string[] = ["import React from 'react';"];
 
-  // Find all used components and add their imports
-  const usedComponents = findUsedComponents(elements);
+  const usedComponents = findUsedComponents(jsx);
   for (const component of usedComponents) {
     if (COMPONENT_IMPORTS[component]) {
       imports.push(COMPONENT_IMPORTS[component]);

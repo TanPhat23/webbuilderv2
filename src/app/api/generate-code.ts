@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { codeGenerator, type InteractionLogic } from "@/features/editor/lib/code/generator";
 import { codegenRequestErrors } from "@/features/interactions/codegen/validate";
+import { toPreamble } from "@/features/editor/lib/code/customCode";
 
 export const Route = createFileRoute("/api/generate-code")({
   server: {
@@ -39,7 +40,16 @@ export const Route = createFileRoute("/api/generate-code")({
             logic = { variables: body.logic.variables ?? {}, flows: body.logic.flows ?? {} };
           }
 
-          const code = await codeGenerator.generateToJSX(elements, logic);
+          // Optional: code the user wrote around the JSX. Only formatted, never run.
+          let preamble;
+          if (body?.preamble !== undefined && body.preamble !== null) {
+            preamble = toPreamble(body.preamble) ?? undefined;
+            if (!preamble) {
+              return Response.json({ error: "Invalid payload: `preamble` is malformed or too large." }, { status: 400 });
+            }
+          }
+
+          const code = await codeGenerator.generateToJSX(elements, logic, { tagIds: true, preamble });
           const interactions = codeGenerator.generateInteractions(elements, logic);
           return Response.json({ code, interactions }, { status: 200 });
         } catch (err) {

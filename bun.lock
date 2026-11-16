@@ -65,6 +65,7 @@
       },
       "devDependencies": {
         "@babel/generator": "^7.29.1",
+        "@babel/parser": "^7.29.0",
         "@babel/types": "^7.29.0",
         "@clerk/testing": "^2.3.0",
         "@tailwindcss/vite": "^4.2.1",
