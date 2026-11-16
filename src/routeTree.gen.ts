@@ -9,119 +9,49 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './app/__root'
-import { Route as HelppageRouteImport } from './app/helppage'
-import { Route as ProtectedRouteImport } from './app/_protected'
 import { Route as IndexRouteImport } from './app/index'
-import { Route as SignUpIndexRouteImport } from './app/sign-up/index'
-import { Route as SignInIndexRouteImport } from './app/sign-in/index'
-import { Route as SignUpSplatRouteImport } from './app/sign-up/$'
-import { Route as SignInSplatRouteImport } from './app/sign-in/$'
-import { Route as PreviewIdRouteImport } from './app/preview/$id'
-import { Route as ApiGettokenRouteImport } from './app/api/gettoken'
-import { Route as ApiGenerateCodeRouteImport } from './app/api/generate-code'
-import { Route as ApiAnalyticsRouteImport } from './app/api/analytics'
-import { Route as ProtectedProfileRouteImport } from './app/_protected/profile'
-import { Route as ProtectedNotificationsRouteImport } from './app/_protected/notifications'
-import { Route as ProtectedMarketplaceRouteImport } from './app/_protected/marketplace'
-import { Route as ProtectedHelpRouteImport } from './app/_protected/help'
-import { Route as ProtectedDashboardRouteImport } from './app/_protected/dashboard'
-import { Route as ProtectedAnalyticsRouteImport } from './app/_protected/analytics'
+import { Route as ProtectedRouteImport } from './app/_protected'
+import { Route as HelppageRouteImport } from './app/helppage'
 import { Route as ProtectedAcceptInvitationRouteImport } from './app/_protected/accept-invitation'
-import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
-import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
-import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protected/notifications/index'
-import { Route as ProtectedMarketplaceIndexRouteImport } from './app/_protected/marketplace/index'
-import { Route as ProtectedDashboardIndexRouteImport } from './app/_protected/dashboard/index'
+import { Route as ProtectedAnalyticsRouteImport } from './app/_protected/analytics'
+import { Route as ProtectedDashboardRouteImport } from './app/_protected/dashboard'
+import { Route as ProtectedHelpRouteImport } from './app/_protected/help'
+import { Route as ProtectedMarketplaceRouteImport } from './app/_protected/marketplace'
+import { Route as ProtectedNotificationsRouteImport } from './app/_protected/notifications'
+import { Route as ProtectedProfileRouteImport } from './app/_protected/profile'
+import { Route as ApiAnalyticsRouteImport } from './app/api/analytics'
+import { Route as ApiGenerateCodeRouteImport } from './app/api/generate-code'
+import { Route as ApiGettokenRouteImport } from './app/api/gettoken'
+import { Route as PreviewIdRouteImport } from './app/preview/$id'
+import { Route as SignInIndexRouteImport } from './app/sign-in/index'
+import { Route as SignInSplatRouteImport } from './app/sign-in/$'
+import { Route as SignUpIndexRouteImport } from './app/sign-up/index'
+import { Route as SignUpSplatRouteImport } from './app/sign-up/$'
 import { Route as ProtectedAnalyticsIndexRouteImport } from './app/_protected/analytics/index'
-import { Route as ApiNotificationsProfileUpdateRouteImport } from './app/api/notifications/profile-update'
-import { Route as ProtectedProjectsettingsIdRouteImport } from './app/_protected/projectsettings.$id'
-import { Route as ProtectedMarketplaceIdRouteImport } from './app/_protected/marketplace/$id'
+import { Route as ProtectedDashboardIndexRouteImport } from './app/_protected/dashboard/index'
 import { Route as ProtectedEditorIdRouteImport } from './app/_protected/editor.$id'
+import { Route as ProtectedMarketplaceIndexRouteImport } from './app/_protected/marketplace/index'
+import { Route as ProtectedMarketplaceIdRouteImport } from './app/_protected/marketplace/$id'
+import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protected/notifications/index'
+import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
+import { Route as ProtectedProjectsettingsIdRouteImport } from './app/_protected/projectsettings.$id'
+import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
+import { Route as ApiNotificationsProfileUpdateRouteImport } from './app/api/notifications/profile-update'
 import { Route as ProtectedEditorIdIndexRouteImport } from './app/_protected/editor.$id/index'
 
-const HelppageRoute = HelppageRouteImport.update({
-  id: '/helppage',
-  path: '/helppage',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtectedRoute = ProtectedRouteImport.update({
   id: '/_protected',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const HelppageRoute = HelppageRouteImport.update({
+  id: '/helppage',
+  path: '/helppage',
   getParentRoute: () => rootRouteImport,
-} as any)
-const SignUpIndexRoute = SignUpIndexRouteImport.update({
-  id: '/sign-up/',
-  path: '/sign-up/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInIndexRoute = SignInIndexRouteImport.update({
-  id: '/sign-in/',
-  path: '/sign-in/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignUpSplatRoute = SignUpSplatRouteImport.update({
-  id: '/sign-up/$',
-  path: '/sign-up/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInSplatRoute = SignInSplatRouteImport.update({
-  id: '/sign-in/$',
-  path: '/sign-in/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewIdRoute = PreviewIdRouteImport.update({
-  id: '/preview/$id',
-  path: '/preview/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGettokenRoute = ApiGettokenRouteImport.update({
-  id: '/api/gettoken',
-  path: '/api/gettoken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGenerateCodeRoute = ApiGenerateCodeRouteImport.update({
-  id: '/api/generate-code',
-  path: '/api/generate-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAnalyticsRoute = ApiAnalyticsRouteImport.update({
-  id: '/api/analytics',
-  path: '/api/analytics',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProtectedProfileRoute = ProtectedProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedMarketplaceRoute = ProtectedMarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedHelpRoute = ProtectedHelpRouteImport.update({
-  id: '/help',
-  path: '/help',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedAnalyticsRoute = ProtectedAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedAcceptInvitationRoute =
   ProtectedAcceptInvitationRouteImport.update({
@@ -129,15 +59,101 @@ const ProtectedAcceptInvitationRoute =
     path: '/accept-invitation',
     getParentRoute: () => ProtectedRoute,
   } as any)
-const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
-  id: '/api/notifications/',
-  path: '/api/notifications/',
+const ProtectedAnalyticsRoute = ProtectedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedHelpRoute = ProtectedHelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedMarketplaceRoute = ProtectedMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedProfileRoute = ProtectedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ApiAnalyticsRoute = ApiAnalyticsRouteImport.update({
+  id: '/api/analytics',
+  path: '/api/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedProfileIndexRoute = ProtectedProfileIndexRouteImport.update({
+const ApiGenerateCodeRoute = ApiGenerateCodeRouteImport.update({
+  id: '/api/generate-code',
+  path: '/api/generate-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGettokenRoute = ApiGettokenRouteImport.update({
+  id: '/api/gettoken',
+  path: '/api/gettoken',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewIdRoute = PreviewIdRouteImport.update({
+  id: '/preview/$id',
+  path: '/preview/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInIndexRoute = SignInIndexRouteImport.update({
+  id: '/sign-in/',
+  path: '/sign-in/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpIndexRoute = SignUpIndexRouteImport.update({
+  id: '/sign-up/',
+  path: '/sign-up/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpSplatRoute = SignUpSplatRouteImport.update({
+  id: '/sign-up/$',
+  path: '/sign-up/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProtectedAnalyticsIndexRoute = ProtectedAnalyticsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ProtectedProfileRoute,
+  getParentRoute: () => ProtectedAnalyticsRoute,
+} as any)
+const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProtectedDashboardRoute,
+} as any)
+const ProtectedEditorIdRoute = ProtectedEditorIdRouteImport.update({
+  id: '/editor/$id',
+  path: '/editor/$id',
+  getParentRoute: () => ProtectedRoute,
+} as any)
+const ProtectedMarketplaceIndexRoute =
+  ProtectedMarketplaceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtectedMarketplaceRoute,
+  } as any)
+const ProtectedMarketplaceIdRoute = ProtectedMarketplaceIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ProtectedMarketplaceRoute,
 } as any)
 const ProtectedNotificationsIndexRoute =
   ProtectedNotificationsIndexRouteImport.update({
@@ -145,21 +161,21 @@ const ProtectedNotificationsIndexRoute =
     path: '/',
     getParentRoute: () => ProtectedNotificationsRoute,
   } as any)
-const ProtectedMarketplaceIndexRoute =
-  ProtectedMarketplaceIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ProtectedMarketplaceRoute,
-  } as any)
-const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
+const ProtectedProfileIndexRoute = ProtectedProfileIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ProtectedDashboardRoute,
+  getParentRoute: () => ProtectedProfileRoute,
 } as any)
-const ProtectedAnalyticsIndexRoute = ProtectedAnalyticsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ProtectedAnalyticsRoute,
+const ProtectedProjectsettingsIdRoute =
+  ProtectedProjectsettingsIdRouteImport.update({
+    id: '/projectsettings/$id',
+    path: '/projectsettings/$id',
+    getParentRoute: () => ProtectedRoute,
+  } as any)
+const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
+  id: '/api/notifications/',
+  path: '/api/notifications/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsProfileUpdateRoute =
   ApiNotificationsProfileUpdateRouteImport.update({
@@ -167,22 +183,6 @@ const ApiNotificationsProfileUpdateRoute =
     path: '/api/notifications/profile-update',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ProtectedProjectsettingsIdRoute =
-  ProtectedProjectsettingsIdRouteImport.update({
-    id: '/projectsettings/$id',
-    path: '/projectsettings/$id',
-    getParentRoute: () => ProtectedRoute,
-  } as any)
-const ProtectedMarketplaceIdRoute = ProtectedMarketplaceIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ProtectedMarketplaceRoute,
-} as any)
-const ProtectedEditorIdRoute = ProtectedEditorIdRouteImport.update({
-  id: '/editor/$id',
-  path: '/editor/$id',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const ProtectedEditorIdIndexRoute = ProtectedEditorIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -381,11 +381,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/helppage': {
-      id: '/helppage'
-      path: '/helppage'
-      fullPath: '/helppage'
-      preLoaderRoute: typeof HelppageRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected': {
@@ -395,102 +395,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/helppage': {
+      id: '/helppage'
+      path: '/helppage'
+      fullPath: '/helppage'
+      preLoaderRoute: typeof HelppageRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sign-up/': {
-      id: '/sign-up/'
-      path: '/sign-up'
-      fullPath: '/sign-up/'
-      preLoaderRoute: typeof SignUpIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in/': {
-      id: '/sign-in/'
-      path: '/sign-in'
-      fullPath: '/sign-in/'
-      preLoaderRoute: typeof SignInIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-up/$': {
-      id: '/sign-up/$'
-      path: '/sign-up/$'
-      fullPath: '/sign-up/$'
-      preLoaderRoute: typeof SignUpSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in/$': {
-      id: '/sign-in/$'
-      path: '/sign-in/$'
-      fullPath: '/sign-in/$'
-      preLoaderRoute: typeof SignInSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/preview/$id': {
-      id: '/preview/$id'
-      path: '/preview/$id'
-      fullPath: '/preview/$id'
-      preLoaderRoute: typeof PreviewIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/gettoken': {
-      id: '/api/gettoken'
-      path: '/api/gettoken'
-      fullPath: '/api/gettoken'
-      preLoaderRoute: typeof ApiGettokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/generate-code': {
-      id: '/api/generate-code'
-      path: '/api/generate-code'
-      fullPath: '/api/generate-code'
-      preLoaderRoute: typeof ApiGenerateCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/analytics': {
-      id: '/api/analytics'
-      path: '/api/analytics'
-      fullPath: '/api/analytics'
-      preLoaderRoute: typeof ApiAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_protected/profile': {
-      id: '/_protected/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProtectedProfileRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/notifications': {
-      id: '/_protected/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof ProtectedNotificationsRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/marketplace': {
-      id: '/_protected/marketplace'
-      path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof ProtectedMarketplaceRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/help': {
-      id: '/_protected/help'
-      path: '/help'
-      fullPath: '/help'
-      preLoaderRoute: typeof ProtectedHelpRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/dashboard': {
-      id: '/_protected/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof ProtectedDashboardRouteImport
+    '/_protected/accept-invitation': {
+      id: '/_protected/accept-invitation'
+      path: '/accept-invitation'
+      fullPath: '/accept-invitation'
+      preLoaderRoute: typeof ProtectedAcceptInvitationRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/analytics': {
@@ -500,11 +416,151 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAnalyticsRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/accept-invitation': {
-      id: '/_protected/accept-invitation'
-      path: '/accept-invitation'
-      fullPath: '/accept-invitation'
-      preLoaderRoute: typeof ProtectedAcceptInvitationRouteImport
+    '/_protected/dashboard': {
+      id: '/_protected/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof ProtectedDashboardRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/help': {
+      id: '/_protected/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof ProtectedHelpRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/marketplace': {
+      id: '/_protected/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof ProtectedMarketplaceRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/notifications': {
+      id: '/_protected/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof ProtectedNotificationsRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/profile': {
+      id: '/_protected/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProtectedProfileRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/api/analytics': {
+      id: '/api/analytics'
+      path: '/api/analytics'
+      fullPath: '/api/analytics'
+      preLoaderRoute: typeof ApiAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/generate-code': {
+      id: '/api/generate-code'
+      path: '/api/generate-code'
+      fullPath: '/api/generate-code'
+      preLoaderRoute: typeof ApiGenerateCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gettoken': {
+      id: '/api/gettoken'
+      path: '/api/gettoken'
+      fullPath: '/api/gettoken'
+      preLoaderRoute: typeof ApiGettokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/$id': {
+      id: '/preview/$id'
+      path: '/preview/$id'
+      fullPath: '/preview/$id'
+      preLoaderRoute: typeof PreviewIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/': {
+      id: '/sign-in/'
+      path: '/sign-in'
+      fullPath: '/sign-in/'
+      preLoaderRoute: typeof SignInIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/': {
+      id: '/sign-up/'
+      path: '/sign-up'
+      fullPath: '/sign-up/'
+      preLoaderRoute: typeof SignUpIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/$': {
+      id: '/sign-up/$'
+      path: '/sign-up/$'
+      fullPath: '/sign-up/$'
+      preLoaderRoute: typeof SignUpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_protected/analytics/': {
+      id: '/_protected/analytics/'
+      path: '/'
+      fullPath: '/analytics/'
+      preLoaderRoute: typeof ProtectedAnalyticsIndexRouteImport
+      parentRoute: typeof ProtectedAnalyticsRoute
+    }
+    '/_protected/dashboard/': {
+      id: '/_protected/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
+      parentRoute: typeof ProtectedDashboardRoute
+    }
+    '/_protected/editor/$id': {
+      id: '/_protected/editor/$id'
+      path: '/editor/$id'
+      fullPath: '/editor/$id'
+      preLoaderRoute: typeof ProtectedEditorIdRouteImport
+      parentRoute: typeof ProtectedRoute
+    }
+    '/_protected/marketplace/': {
+      id: '/_protected/marketplace/'
+      path: '/'
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof ProtectedMarketplaceIndexRouteImport
+      parentRoute: typeof ProtectedMarketplaceRoute
+    }
+    '/_protected/marketplace/$id': {
+      id: '/_protected/marketplace/$id'
+      path: '/$id'
+      fullPath: '/marketplace/$id'
+      preLoaderRoute: typeof ProtectedMarketplaceIdRouteImport
+      parentRoute: typeof ProtectedMarketplaceRoute
+    }
+    '/_protected/notifications/': {
+      id: '/_protected/notifications/'
+      path: '/'
+      fullPath: '/notifications/'
+      preLoaderRoute: typeof ProtectedNotificationsIndexRouteImport
+      parentRoute: typeof ProtectedNotificationsRoute
+    }
+    '/_protected/profile/': {
+      id: '/_protected/profile/'
+      path: '/'
+      fullPath: '/profile/'
+      preLoaderRoute: typeof ProtectedProfileIndexRouteImport
+      parentRoute: typeof ProtectedProfileRoute
+    }
+    '/_protected/projectsettings/$id': {
+      id: '/_protected/projectsettings/$id'
+      path: '/projectsettings/$id'
+      fullPath: '/projectsettings/$id'
+      preLoaderRoute: typeof ProtectedProjectsettingsIdRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/api/notifications/': {
@@ -514,68 +570,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNotificationsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/profile/': {
-      id: '/_protected/profile/'
-      path: '/'
-      fullPath: '/profile/'
-      preLoaderRoute: typeof ProtectedProfileIndexRouteImport
-      parentRoute: typeof ProtectedProfileRoute
-    }
-    '/_protected/notifications/': {
-      id: '/_protected/notifications/'
-      path: '/'
-      fullPath: '/notifications/'
-      preLoaderRoute: typeof ProtectedNotificationsIndexRouteImport
-      parentRoute: typeof ProtectedNotificationsRoute
-    }
-    '/_protected/marketplace/': {
-      id: '/_protected/marketplace/'
-      path: '/'
-      fullPath: '/marketplace/'
-      preLoaderRoute: typeof ProtectedMarketplaceIndexRouteImport
-      parentRoute: typeof ProtectedMarketplaceRoute
-    }
-    '/_protected/dashboard/': {
-      id: '/_protected/dashboard/'
-      path: '/'
-      fullPath: '/dashboard/'
-      preLoaderRoute: typeof ProtectedDashboardIndexRouteImport
-      parentRoute: typeof ProtectedDashboardRoute
-    }
-    '/_protected/analytics/': {
-      id: '/_protected/analytics/'
-      path: '/'
-      fullPath: '/analytics/'
-      preLoaderRoute: typeof ProtectedAnalyticsIndexRouteImport
-      parentRoute: typeof ProtectedAnalyticsRoute
-    }
     '/api/notifications/profile-update': {
       id: '/api/notifications/profile-update'
       path: '/api/notifications/profile-update'
       fullPath: '/api/notifications/profile-update'
       preLoaderRoute: typeof ApiNotificationsProfileUpdateRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_protected/projectsettings/$id': {
-      id: '/_protected/projectsettings/$id'
-      path: '/projectsettings/$id'
-      fullPath: '/projectsettings/$id'
-      preLoaderRoute: typeof ProtectedProjectsettingsIdRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/marketplace/$id': {
-      id: '/_protected/marketplace/$id'
-      path: '/$id'
-      fullPath: '/marketplace/$id'
-      preLoaderRoute: typeof ProtectedMarketplaceIdRouteImport
-      parentRoute: typeof ProtectedMarketplaceRoute
-    }
-    '/_protected/editor/$id': {
-      id: '/_protected/editor/$id'
-      path: '/editor/$id'
-      fullPath: '/editor/$id'
-      preLoaderRoute: typeof ProtectedEditorIdRouteImport
-      parentRoute: typeof ProtectedRoute
     }
     '/_protected/editor/$id/': {
       id: '/_protected/editor/$id/'
