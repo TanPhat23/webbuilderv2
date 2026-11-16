@@ -25,7 +25,10 @@ export function AgentHost() {
       getElements: () => ElementStore.getState().elements,
       getPageId: pageOf,
       canEdit: () => live.current.canEdit,
-      replaceTree: (next) => ElementStore.getState().replaceTree(next),
+      replaceTree: (next) => {
+        useAgentActivity.getState().mark(true);
+        ElementStore.getState().replaceTree(next);
+      },
       getSelectedId: () => useSelectionStore.getState().selectedElementId,
       generateCode: async () => {
         const { variables, flows, pageId } = live.current.logic;

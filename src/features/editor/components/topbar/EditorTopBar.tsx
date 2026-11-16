@@ -14,6 +14,7 @@ import ViewportControls from "../editor/header/ViewportControls";
 import EventModeToggle from "../editor/EventModeToggle";
 import CollaboratorIndicator from "../editor/CollaboratorIndicator";
 import CollaborationButton from "../editor/CollaborationButton";
+import ConnectCliButton from "@/features/agent/components/ConnectCliButton";
 import ModeSwitch from "./ModeSwitch";
 import CommentsToggle from "./CommentsToggle";
 import PublishButton from "./PublishButton";
@@ -80,6 +81,7 @@ export default function EditorTopBar({
 
         <CollaboratorIndicator projectId={projectId} />
         <CollaborationButton projectId={projectId} />
+        <ConnectCliButton />
         <Button
           asChild
           variant="outline"

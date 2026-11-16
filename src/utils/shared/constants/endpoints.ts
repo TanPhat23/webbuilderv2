@@ -1,5 +1,10 @@
 // Backend API endpoints (used with URLBuilder)
 export const API_ENDPOINTS = {
+  AGENT_TOKENS: {
+    LIST: "/api/v1/agent-tokens",
+    CREATE: "/api/v1/agent-tokens",
+    REVOKE: (id: string) => `/api/v1/agent-tokens/${id}`,
+  },
   ELEMENTS: {
     GET: (projectId: string) => `/api/v1/elements/${projectId}`,
     GET_PUBLIC: (projectId: string) => `/api/v1/elements/public/${projectId}`,
