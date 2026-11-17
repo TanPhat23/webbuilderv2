@@ -6,7 +6,10 @@ import {
   CheckboxElement,
   CheckboxSettings,
 } from "@/features/editor";
-import { ConfigField } from "./_shared";
+import {
+  ConfigField,
+  looseSettingUpdater,
+} from "./_shared";
 import { ChoiceConfigurationShell } from "./_shared/ChoiceConfigurationSection";
 import {
   CheckSquare,
@@ -31,11 +34,11 @@ export default function CheckboxConfiguration() {
     });
   };
 
-  const updateSetting = (name: keyof CheckboxSettings, value: unknown) => {
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [name]: value },
-    });
-  };
+  const updateSetting = looseSettingUpdater(
+    updateElement,
+    selectedElement.id,
+    settings,
+  );
 
   return (
     <ChoiceConfigurationShell

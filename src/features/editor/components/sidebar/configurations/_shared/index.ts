@@ -19,6 +19,9 @@ export {
   type ToggleOption,
 } from "./ToggleGroupField";
 export { AccordionSection, SectionDivider } from "./AccordionSection";
+export { ConfigPanel } from "./ConfigPanel";
+export { DimensionFields } from "./DimensionFields";
+export { settingUpdater, looseSettingUpdater } from "./settingUpdater";
 export {
   ChoiceConfigurationShell,
   getChoiceConfigurationDefaults,

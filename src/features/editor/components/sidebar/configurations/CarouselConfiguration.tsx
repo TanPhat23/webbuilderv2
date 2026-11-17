@@ -14,6 +14,7 @@ import {
   ConfigField,
   ConfigSection,
   SectionDivider,
+  settingUpdater,
 } from "./_shared";
 import {
   GalleryHorizontal,
@@ -62,17 +63,7 @@ export default function CarouselConfigurationAccordion() {
 
   const settings = (selectedElement as CarouselElement).settings || {};
 
-  const updateSetting = <K extends keyof CarouselSettings>(
-    name: K,
-    value: CarouselSettings[K],
-  ) => {
-    updateElement(selectedElement.id, {
-      settings: {
-        ...settings,
-        [name]: value,
-      },
-    });
-  };
+  const updateSetting = settingUpdater(updateElement, selectedElement.id, settings);
 
   const handleNumberInput = (
     name: keyof CarouselSettings,

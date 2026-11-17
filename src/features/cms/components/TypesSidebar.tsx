@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus, X, ChevronRight } from "lucide-react";
 import { useCMSContext } from "../provider/CMSProvider";
-import { DeleteDialog } from "./primitives";
+import { DeleteConfirm } from "./table/DeleteConfirm";
 import { cn } from "@/lib/utils";
 
 export function TypesSidebar() {
@@ -146,7 +146,7 @@ export function TypesSidebar() {
               </div>
 
               <span onClick={(e) => e.stopPropagation()}>
-                <DeleteDialog
+                <DeleteConfirm
                   label="Content Type"
                   description={`Delete "${type.name}"? All associated fields and content items will also be removed.`}
                   onConfirm={() => handleDeleteType(type.id)}

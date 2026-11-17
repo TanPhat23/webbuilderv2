@@ -1,22 +1,19 @@
 import React, { ChangeEvent, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Accordion } from "@/components/ui/accordion";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { IconElement, IconSettings } from "@/features/editor";
 import {
   AccordionSection,
+  ColorPickerField,
   ConfigField,
+  ConfigPanel,
   ConfigSection,
   SectionDivider,
+  settingUpdater,
   SliderField,
-  ColorPickerField,
 } from "./_shared";
 import { cn } from "@/lib/utils";
 import {
@@ -237,14 +234,7 @@ export default function IconConfiguration() {
   const settings: IconSettings =
     (selectedElement as IconElement).settings ?? {};
 
-  const updateSetting = <K extends keyof IconSettings>(
-    key: K,
-    value: IconSettings[K],
-  ) => {
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [key]: value },
-    });
-  };
+  const updateSetting = settingUpdater(updateElement, selectedElement.id, settings);
 
   const handleIconNameChange = (iconName: string) => {
     updateSetting("iconName", iconName || undefined);
@@ -270,403 +260,387 @@ export default function IconConfiguration() {
     iconName.length > 0 && ALL_ICON_NAMES.includes(iconName as IconName);
 
   return (
-    <AccordionItem value="icon-settings" className="border-border/40">
-      <AccordionTrigger
-        className={cn(
-          "group/trigger gap-2 py-2 hover:no-underline",
-          "transition-colors duration-150",
-          "hover:bg-muted/30 rounded-md px-1.5 -mx-1.5",
-          "text-xs font-semibold text-foreground/90",
-        )}
-      >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="shrink-0 text-muted-foreground/60 group-hover/trigger:text-muted-foreground transition-colors duration-150">
-            {isValidIcon ? (
-              <DynamicIcon
-                name={iconName as IconName}
-                size={14}
-                strokeWidth={2}
-              />
-            ) : (
-              <Smile className="h-3.5 w-3.5" />
+    <ConfigPanel
+      value="icon-settings"
+      icon={
+        isValidIcon ? (
+          <DynamicIcon name={iconName as IconName} size={14} strokeWidth={2} />
+        ) : (
+          <Smile className="h-3.5 w-3.5" />
+        )
+      }
+      title="Icon Settings"
+      trailing={
+        iconName && (
+          <span
+            className={cn(
+              "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-mono",
+              isValidIcon
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400",
             )}
+          >
+            {iconName}
           </span>
-          <span className="truncate">Icon Settings</span>
-          {iconName && (
-            <span className="ml-auto mr-1 shrink-0">
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-mono",
-                  isValidIcon
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                )}
-              >
-                {iconName}
-              </span>
-            </span>
-          )}
-        </div>
-      </AccordionTrigger>
-
-      <AccordionContent className="pb-3 pt-1 px-0.5">
-        <Accordion
-          type="multiple"
-          defaultValue={["icon-select", "sizing", "colors"]}
-          className="w-full"
+        )
+      }
+    >
+      <Accordion
+        type="multiple"
+        defaultValue={["icon-select", "sizing", "colors"]}
+        className="w-full"
+      >
+        <AccordionSection
+          value="icon-select"
+          title="Icon"
+          icon={<Smile />}
+          nested
         >
-          <AccordionSection
-            value="icon-select"
-            title="Icon"
-            icon={<Smile />}
-            nested
+          <IconPicker value={iconName} onChange={handleIconNameChange} />
+        </AccordionSection>
+
+        <AccordionSection
+          value="sizing"
+          title="Sizing"
+          icon={<Ruler />}
+          nested
+        >
+          <ConfigField
+            label="Size"
+            htmlFor="icon-size"
+            hint="The width and height of the icon in pixels. The icon scales proportionally."
           >
-            <IconPicker value={iconName} onChange={handleIconNameChange} />
-          </AccordionSection>
-
-          <AccordionSection
-            value="sizing"
-            title="Sizing"
-            icon={<Ruler />}
-            nested
-          >
-            <ConfigField
-              label="Size"
-              htmlFor="icon-size"
-              hint="The width and height of the icon in pixels. The icon scales proportionally."
-            >
-              <div className="flex items-center gap-1">
-                <Input
-                  id="icon-size"
-                  type="number"
-                  value={size}
-                  onChange={(e) => handleNumberInput("size", e)}
-                  placeholder="24"
-                  min={8}
-                  max={512}
-                  step={1}
-                  className="h-7 w-[64px] px-1.5 text-[11px] font-mono tabular-nums text-center rounded-md"
-                />
-                <span className="text-[10px] text-muted-foreground/60 font-medium select-none">
-                  px
-                </span>
-              </div>
-            </ConfigField>
-
-            {/* Quick size presets */}
-            <div className="flex items-center gap-1 pl-0.5">
-              {[16, 20, 24, 32, 40, 48, 64].map((presetSize) => (
-                <button
-                  key={presetSize}
-                  type="button"
-                  onClick={() => updateSetting("size", presetSize)}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all",
-                    size === presetSize
-                      ? "bg-primary text-primary-foreground font-medium"
-                      : "bg-muted/40 text-muted-foreground/60 hover:bg-muted/80 hover:text-muted-foreground",
-                  )}
-                >
-                  {presetSize}
-                </button>
-              ))}
-            </div>
-
-            <SectionDivider />
-
-            <ConfigField
-              label="Stroke width"
-              htmlFor="icon-strokeWidth"
-              hint="The thickness of the icon's lines. Default is 2. Lower values create thinner icons, higher values create bolder icons."
-            >
-              <div className="flex items-center gap-1">
-                <Input
-                  id="icon-strokeWidth"
-                  type="number"
-                  value={strokeWidth}
-                  onChange={(e) => handleNumberInput("strokeWidth", e)}
-                  placeholder="2"
-                  min={0.5}
-                  max={4}
-                  step={0.25}
-                  className="h-7 w-[64px] px-1.5 text-[11px] font-mono tabular-nums text-center rounded-md"
-                />
-                <span className="text-[10px] text-muted-foreground/60 font-medium select-none">
-                  px
-                </span>
-              </div>
-            </ConfigField>
-
-            {/* Quick stroke presets */}
-            <div className="flex items-center gap-1 pl-0.5">
-              {[0.5, 1, 1.5, 2, 2.5, 3].map((presetStroke) => (
-                <button
-                  key={presetStroke}
-                  type="button"
-                  onClick={() => updateSetting("strokeWidth", presetStroke)}
-                  className={cn(
-                    "px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all",
-                    strokeWidth === presetStroke
-                      ? "bg-primary text-primary-foreground font-medium"
-                      : "bg-muted/40 text-muted-foreground/60 hover:bg-muted/80 hover:text-muted-foreground",
-                  )}
-                >
-                  {presetStroke}
-                </button>
-              ))}
-            </div>
-
-            <SectionDivider />
-
-            <ConfigField
-              label="Absolute stroke"
-              htmlFor="icon-absoluteStrokeWidth"
-              hint="When enabled, the stroke width stays constant regardless of the icon size. When disabled (default), the stroke scales proportionally with the icon."
-            >
-              <Switch
-                id="icon-absoluteStrokeWidth"
-                checked={absoluteStrokeWidth}
-                onCheckedChange={(checked) =>
-                  updateSetting("absoluteStrokeWidth", !!checked)
-                }
-                className="scale-75 origin-right"
+            <div className="flex items-center gap-1">
+              <Input
+                id="icon-size"
+                type="number"
+                value={size}
+                onChange={(e) => handleNumberInput("size", e)}
+                placeholder="24"
+                min={8}
+                max={512}
+                step={1}
+                className="h-7 w-[64px] px-1.5 text-[11px] font-mono tabular-nums text-center rounded-md"
               />
-            </ConfigField>
-
-            {/* Stroke behavior info */}
-            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-              <PenTool className="h-3 w-3 text-muted-foreground/40" />
-              <span className="text-[10px] text-muted-foreground/50 leading-tight">
-                {absoluteStrokeWidth
-                  ? `Fixed ${strokeWidth}px stroke — consistent at any size`
-                  : `Proportional stroke — scales with ${size}px icon`}
+              <span className="text-[10px] text-muted-foreground/60 font-medium select-none">
+                px
               </span>
             </div>
+          </ConfigField>
 
-            {/* Size preview */}
-            <SectionDivider />
-            <div className="flex items-center justify-center py-2 animate-in fade-in-0 duration-150">
-              <div className="flex items-center justify-center rounded-lg border border-border/40 bg-muted/10 p-3">
-                {isValidIcon ? (
-                  <DynamicIcon
-                    name={iconName as IconName}
-                    size={Math.min(size, 64)}
-                    strokeWidth={strokeWidth}
-                    absoluteStrokeWidth={absoluteStrokeWidth}
-                    color={color}
-                    fill={fill}
-                  />
-                ) : (
-                  <Smile
-                    size={Math.min(size, 64)}
-                    strokeWidth={strokeWidth}
-                    className="text-muted-foreground/30"
-                  />
+          {/* Quick size presets */}
+          <div className="flex items-center gap-1 pl-0.5">
+            {[16, 20, 24, 32, 40, 48, 64].map((presetSize) => (
+              <button
+                key={presetSize}
+                type="button"
+                onClick={() => updateSetting("size", presetSize)}
+                className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all",
+                  size === presetSize
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "bg-muted/40 text-muted-foreground/60 hover:bg-muted/80 hover:text-muted-foreground",
                 )}
-              </div>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 animate-in fade-in-0 duration-150">
-              <Ruler className="h-3 w-3 text-muted-foreground/40" />
-              <span className="text-[10px] text-muted-foreground/50 font-mono tabular-nums">
-                {size}px &middot; stroke {strokeWidth}
+              >
+                {presetSize}
+              </button>
+            ))}
+          </div>
+
+          <SectionDivider />
+
+          <ConfigField
+            label="Stroke width"
+            htmlFor="icon-strokeWidth"
+            hint="The thickness of the icon's lines. Default is 2. Lower values create thinner icons, higher values create bolder icons."
+          >
+            <div className="flex items-center gap-1">
+              <Input
+                id="icon-strokeWidth"
+                type="number"
+                value={strokeWidth}
+                onChange={(e) => handleNumberInput("strokeWidth", e)}
+                placeholder="2"
+                min={0.5}
+                max={4}
+                step={0.25}
+                className="h-7 w-[64px] px-1.5 text-[11px] font-mono tabular-nums text-center rounded-md"
+              />
+              <span className="text-[10px] text-muted-foreground/60 font-medium select-none">
+                px
               </span>
             </div>
-          </AccordionSection>
+          </ConfigField>
 
-          <AccordionSection
-            value="colors"
-            title="Colors"
-            icon={<Palette />}
-            nested
+          {/* Quick stroke presets */}
+          <div className="flex items-center gap-1 pl-0.5">
+            {[0.5, 1, 1.5, 2, 2.5, 3].map((presetStroke) => (
+              <button
+                key={presetStroke}
+                type="button"
+                onClick={() => updateSetting("strokeWidth", presetStroke)}
+                className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] font-mono tabular-nums transition-all",
+                  strokeWidth === presetStroke
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "bg-muted/40 text-muted-foreground/60 hover:bg-muted/80 hover:text-muted-foreground",
+                )}
+              >
+                {presetStroke}
+              </button>
+            ))}
+          </div>
+
+          <SectionDivider />
+
+          <ConfigField
+            label="Absolute stroke"
+            htmlFor="icon-absoluteStrokeWidth"
+            hint="When enabled, the stroke width stays constant regardless of the icon size. When disabled (default), the stroke scales proportionally with the icon."
           >
-            <ConfigSection
-              title="Stroke Color"
-              icon={<Paintbrush className="h-3 w-3" />}
+            <Switch
+              id="icon-absoluteStrokeWidth"
+              checked={absoluteStrokeWidth}
+              onCheckedChange={(checked) =>
+                updateSetting("absoluteStrokeWidth", !!checked)
+              }
+              className="scale-75 origin-right"
+            />
+          </ConfigField>
+
+          {/* Stroke behavior info */}
+          <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
+            <PenTool className="h-3 w-3 text-muted-foreground/40" />
+            <span className="text-[10px] text-muted-foreground/50 leading-tight">
+              {absoluteStrokeWidth
+                ? `Fixed ${strokeWidth}px stroke — consistent at any size`
+                : `Proportional stroke — scales with ${size}px icon`}
+            </span>
+          </div>
+
+          {/* Size preview */}
+          <SectionDivider />
+          <div className="flex items-center justify-center py-2 animate-in fade-in-0 duration-150">
+            <div className="flex items-center justify-center rounded-lg border border-border/40 bg-muted/10 p-3">
+              {isValidIcon ? (
+                <DynamicIcon
+                  name={iconName as IconName}
+                  size={Math.min(size, 64)}
+                  strokeWidth={strokeWidth}
+                  absoluteStrokeWidth={absoluteStrokeWidth}
+                  color={color}
+                  fill={fill}
+                />
+              ) : (
+                <Smile
+                  size={Math.min(size, 64)}
+                  strokeWidth={strokeWidth}
+                  className="text-muted-foreground/30"
+                />
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-1.5 animate-in fade-in-0 duration-150">
+            <Ruler className="h-3 w-3 text-muted-foreground/40" />
+            <span className="text-[10px] text-muted-foreground/50 font-mono tabular-nums">
+              {size}px &middot; stroke {strokeWidth}
+            </span>
+          </div>
+        </AccordionSection>
+
+        <AccordionSection
+          value="colors"
+          title="Colors"
+          icon={<Palette />}
+          nested
+        >
+          <ConfigSection
+            title="Stroke Color"
+            icon={<Paintbrush className="h-3 w-3" />}
+          >
+            <ConfigField
+              label="Color"
+              htmlFor="icon-color"
+              hint="The stroke (outline) color of the icon. Use 'currentColor' to inherit the text color from the parent element."
             >
-              <ConfigField
-                label="Color"
-                htmlFor="icon-color"
-                hint="The stroke (outline) color of the icon. Use 'currentColor' to inherit the text color from the parent element."
-              >
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className="w-6 h-6 rounded border border-border/60 shrink-0"
-                    style={{
-                      backgroundColor:
-                        color === "currentColor" ? "#6b7280" : color,
-                    }}
-                  />
-                  <Input
-                    id="icon-color"
-                    type="text"
-                    value={color}
-                    onChange={(e) =>
-                      updateSetting("color", e.target.value || DEFAULT_COLOR)
-                    }
-                    placeholder="currentColor"
-                    className="h-7 w-[110px] px-2 text-[11px] font-mono rounded-md"
-                    autoComplete="off"
-                  />
-                </div>
-              </ConfigField>
-
-              {/* Color presets */}
-              <div className="flex items-center gap-1 flex-wrap pl-0.5">
-                {ICON_COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset.color}
-                    type="button"
-                    onClick={() => updateSetting("color", preset.color)}
-                    title={preset.label}
-                    className={cn(
-                      "w-5 h-5 rounded-full border transition-all",
-                      color === preset.color
-                        ? "ring-2 ring-primary ring-offset-1 ring-offset-background border-primary"
-                        : "border-border/50 hover:border-border hover:scale-110",
-                      preset.color === "currentColor" &&
-                        "bg-gradient-to-br from-gray-400 to-gray-600",
-                    )}
-                    style={
-                      preset.color !== "currentColor"
-                        ? { backgroundColor: preset.color }
-                        : undefined
-                    }
-                  />
-                ))}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="w-6 h-6 rounded border border-border/60 shrink-0"
+                  style={{
+                    backgroundColor:
+                      color === "currentColor" ? "#6b7280" : color,
+                  }}
+                />
+                <Input
+                  id="icon-color"
+                  type="text"
+                  value={color}
+                  onChange={(e) =>
+                    updateSetting("color", e.target.value || DEFAULT_COLOR)
+                  }
+                  placeholder="currentColor"
+                  className="h-7 w-[110px] px-2 text-[11px] font-mono rounded-md"
+                  autoComplete="off"
+                />
               </div>
+            </ConfigField>
 
-              {/* Color info */}
-              <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-                <Paintbrush className="h-3 w-3 text-muted-foreground/40" />
-                <span className="text-[10px] text-muted-foreground/50">
-                  {color === "currentColor"
-                    ? "Inheriting color from parent text color"
-                    : `Stroke: ${color}`}
-                </span>
-              </div>
-            </ConfigSection>
+            {/* Color presets */}
+            <div className="flex items-center gap-1 flex-wrap pl-0.5">
+              {ICON_COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.color}
+                  type="button"
+                  onClick={() => updateSetting("color", preset.color)}
+                  title={preset.label}
+                  className={cn(
+                    "w-5 h-5 rounded-full border transition-all",
+                    color === preset.color
+                      ? "ring-2 ring-primary ring-offset-1 ring-offset-background border-primary"
+                      : "border-border/50 hover:border-border hover:scale-110",
+                    preset.color === "currentColor" &&
+                      "bg-gradient-to-br from-gray-400 to-gray-600",
+                  )}
+                  style={
+                    preset.color !== "currentColor"
+                      ? { backgroundColor: preset.color }
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
 
-            <SectionDivider />
+            {/* Color info */}
+            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
+              <Paintbrush className="h-3 w-3 text-muted-foreground/40" />
+              <span className="text-[10px] text-muted-foreground/50">
+                {color === "currentColor"
+                  ? "Inheriting color from parent text color"
+                  : `Stroke: ${color}`}
+              </span>
+            </div>
+          </ConfigSection>
 
-            <ConfigSection
-              title="Fill Color"
-              icon={<Droplets className="h-3 w-3" />}
+          <SectionDivider />
+
+          <ConfigSection
+            title="Fill Color"
+            icon={<Droplets className="h-3 w-3" />}
+          >
+            <ConfigField
+              label="Fill"
+              htmlFor="icon-fill"
+              hint="The fill color for the icon interior. Use 'none' for outlined icons (default). Use 'currentColor' to fill with the inherited text color."
             >
-              <ConfigField
-                label="Fill"
-                htmlFor="icon-fill"
-                hint="The fill color for the icon interior. Use 'none' for outlined icons (default). Use 'currentColor' to fill with the inherited text color."
-              >
-                <div className="flex items-center gap-1.5">
-                  <div
-                    className={cn(
-                      "w-6 h-6 rounded border border-border/60 shrink-0",
-                      fill === "none" &&
-                        "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] bg-[length:8px_8px]",
-                    )}
-                    style={
-                      fill !== "none"
-                        ? {
-                            backgroundColor:
-                              fill === "currentColor" ? "#6b7280" : fill,
-                          }
-                        : undefined
-                    }
-                  />
-                  <Input
-                    id="icon-fill"
-                    type="text"
-                    value={fill}
-                    onChange={(e) =>
-                      updateSetting("fill", e.target.value || DEFAULT_FILL)
-                    }
-                    placeholder="none"
-                    className="h-7 w-[110px] px-2 text-[11px] font-mono rounded-md"
-                    autoComplete="off"
-                  />
-                </div>
-              </ConfigField>
-
-              {/* Fill presets */}
-              <div className="flex items-center gap-1 flex-wrap pl-0.5">
-                {FILL_COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset.color}
-                    type="button"
-                    onClick={() => updateSetting("fill", preset.color)}
-                    title={preset.label}
-                    className={cn(
-                      "w-5 h-5 rounded-full border transition-all",
-                      fill === preset.color
-                        ? "ring-2 ring-primary ring-offset-1 ring-offset-background border-primary"
-                        : "border-border/50 hover:border-border hover:scale-110",
-                      preset.color === "none" &&
-                        "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] bg-[length:6px_6px]",
-                      preset.color === "currentColor" &&
-                        "bg-gradient-to-br from-gray-400 to-gray-600",
-                    )}
-                    style={
-                      preset.color !== "none" && preset.color !== "currentColor"
-                        ? { backgroundColor: preset.color }
-                        : undefined
-                    }
-                  />
-                ))}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={cn(
+                    "w-6 h-6 rounded border border-border/60 shrink-0",
+                    fill === "none" &&
+                      "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] bg-[length:8px_8px]",
+                  )}
+                  style={
+                    fill !== "none"
+                      ? {
+                          backgroundColor:
+                            fill === "currentColor" ? "#6b7280" : fill,
+                        }
+                      : undefined
+                  }
+                />
+                <Input
+                  id="icon-fill"
+                  type="text"
+                  value={fill}
+                  onChange={(e) =>
+                    updateSetting("fill", e.target.value || DEFAULT_FILL)
+                  }
+                  placeholder="none"
+                  className="h-7 w-[110px] px-2 text-[11px] font-mono rounded-md"
+                  autoComplete="off"
+                />
               </div>
+            </ConfigField>
 
-              {/* Fill info */}
-              <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-                <Droplets className="h-3 w-3 text-muted-foreground/40" />
-                <span className="text-[10px] text-muted-foreground/50">
-                  {fill === "none"
-                    ? "No fill — outlined icon"
-                    : fill === "currentColor"
-                      ? "Fill inheriting parent text color"
-                      : `Fill: ${fill}`}
-                </span>
-              </div>
-            </ConfigSection>
-          </AccordionSection>
-        </Accordion>
+            {/* Fill presets */}
+            <div className="flex items-center gap-1 flex-wrap pl-0.5">
+              {FILL_COLOR_PRESETS.map((preset) => (
+                <button
+                  key={preset.color}
+                  type="button"
+                  onClick={() => updateSetting("fill", preset.color)}
+                  title={preset.label}
+                  className={cn(
+                    "w-5 h-5 rounded-full border transition-all",
+                    fill === preset.color
+                      ? "ring-2 ring-primary ring-offset-1 ring-offset-background border-primary"
+                      : "border-border/50 hover:border-border hover:scale-110",
+                    preset.color === "none" &&
+                      "bg-[repeating-conic-gradient(#e5e7eb_0%_25%,transparent_0%_50%)] bg-[length:6px_6px]",
+                    preset.color === "currentColor" &&
+                      "bg-gradient-to-br from-gray-400 to-gray-600",
+                  )}
+                  style={
+                    preset.color !== "none" && preset.color !== "currentColor"
+                      ? { backgroundColor: preset.color }
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
 
-        <SectionDivider className="mt-2" />
-        <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
-          {isValidIcon ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-              <DynamicIcon
-                name={iconName as IconName}
-                size={10}
-                strokeWidth={2}
-              />
-              {iconName}
-            </span>
-          ) : iconName ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-mono text-amber-600 dark:text-amber-400">
-              <Smile className="h-2.5 w-2.5" />
-              unknown
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-              <Smile className="h-2.5 w-2.5" />
-              no icon
-            </span>
-          )}
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-            <Ruler className="h-2.5 w-2.5" />
-            {size}px
+            {/* Fill info */}
+            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
+              <Droplets className="h-3 w-3 text-muted-foreground/40" />
+              <span className="text-[10px] text-muted-foreground/50">
+                {fill === "none"
+                  ? "No fill — outlined icon"
+                  : fill === "currentColor"
+                    ? "Fill inheriting parent text color"
+                    : `Fill: ${fill}`}
+              </span>
+            </div>
+          </ConfigSection>
+        </AccordionSection>
+      </Accordion>
+
+      <SectionDivider className="mt-2" />
+      <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
+        {isValidIcon ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+            <DynamicIcon
+              name={iconName as IconName}
+              size={10}
+              strokeWidth={2}
+            />
+            {iconName}
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-            <PenTool className="h-2.5 w-2.5" />
-            {strokeWidth}
+        ) : iconName ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-mono text-amber-600 dark:text-amber-400">
+            <Smile className="h-2.5 w-2.5" />
+            unknown
           </span>
-          {fill !== "none" && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-              <Droplets className="h-2.5 w-2.5" />
-              filled
-            </span>
-          )}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <Smile className="h-2.5 w-2.5" />
+            no icon
+          </span>
+        )}
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+          <Ruler className="h-2.5 w-2.5" />
+          {size}px
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+          <PenTool className="h-2.5 w-2.5" />
+          {strokeWidth}
+        </span>
+        {fill !== "none" && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <Droplets className="h-2.5 w-2.5" />
+            filled
+          </span>
+        )}
+      </div>
+    </ConfigPanel>
   );
 }

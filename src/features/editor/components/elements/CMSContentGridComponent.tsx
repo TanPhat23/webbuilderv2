@@ -5,8 +5,8 @@ import { CMSContentGridElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import { LayoutGroup } from "framer-motion";
 import ElementLoader from "../ElementLoader";
-import { getFieldValue, useCMSContent } from "@/features/cms/hooks/useCMSContent";
-import { useCanvasElement, CMSEmptyState } from "./shared";
+import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
+import { useCanvasElement, CMSEmptyState, useCMSItems } from "./shared";
 
 const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentGridElement;
@@ -21,21 +21,13 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
     fieldsToShow = ["title", "content"],
   } = settings;
 
-  const { contentItems } = useCMSContent({
+  const limitedItems = useCMSItems({
+    data,
     contentTypeId,
     limit,
     sortBy,
     sortOrder,
-    enabled: !!contentTypeId,
   });
-
-  const itemsToRender: ContentItem[] = Array.isArray(data)
-    ? (data as ContentItem[])
-    : contentItems?.length
-      ? contentItems
-      : [];
-
-  const limitedItems = itemsToRender.slice(0, limit);
 
   if (!contentTypeId) {
     return (

@@ -1,17 +1,17 @@
 
 import React from "react";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import {
   HeadingElement,
   HeadingSettings,
 } from "@/features/editor";
-import { ConfigField, ConfigSection, SectionDivider } from "./_shared";
+import {
+  ConfigField,
+  ConfigPanel,
+  ConfigSection,
+  SectionDivider,
+} from "./_shared";
 import { cn } from "@/lib/utils";
 import { Heading, Type } from "lucide-react";
 
@@ -91,92 +91,78 @@ export default function HeadingConfiguration() {
   };
 
   return (
-    <AccordionItem value="heading-settings" className="border-border/40">
-      <AccordionTrigger
-        className={cn(
-          "group/trigger gap-2 py-2 hover:no-underline",
-          "transition-colors duration-150",
-          "hover:bg-muted/30 rounded-md px-1.5 -mx-1.5",
-          "text-xs font-semibold text-foreground/90",
-        )}
-      >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="shrink-0 text-muted-foreground/60 group-hover/trigger:text-muted-foreground transition-colors duration-150">
-            <Heading className="h-3.5 w-3.5" />
-          </span>
-          <span className="truncate">Heading Settings</span>
-          <span className="ml-auto mr-1 shrink-0">
-            <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground uppercase">
-              {currentOption.tag}
-            </span>
-          </span>
-        </div>
-      </AccordionTrigger>
-
-      <AccordionContent className="pb-3 pt-1 px-0.5">
-        <div className="flex flex-col gap-3">
-          <ConfigSection
-            title="Level"
-            icon={<Type className="h-3 w-3" />}
+    <ConfigPanel
+      value="heading-settings"
+      icon={<Heading className="h-3.5 w-3.5" />}
+      title="Heading Settings"
+      trailing={
+        <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground uppercase">
+          {currentOption.tag}
+        </span>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <ConfigSection
+          title="Level"
+          icon={<Type className="h-3 w-3" />}
+        >
+          <ConfigField
+            label="Heading level"
+            hint="Sets the semantic heading tag (h1–h6). Use h1 for page titles and progressively smaller levels for sub-sections. Proper heading hierarchy improves accessibility and SEO."
+            vertical
           >
-            <ConfigField
-              label="Heading level"
-              hint="Sets the semantic heading tag (h1–h6). Use h1 for page titles and progressively smaller levels for sub-sections. Proper heading hierarchy improves accessibility and SEO."
-              vertical
+            <div className="grid grid-cols-6 gap-1 w-full">
+              {HEADING_LEVEL_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleLevelChange(opt.value)}
+                  className={cn(
+                    "flex items-center justify-center rounded-md py-1.5 text-[11px] font-mono font-semibold transition-all duration-150",
+                    "border border-border/50 hover:border-border",
+                    currentLevel === opt.value
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-background hover:bg-muted/50 text-muted-foreground hover:text-foreground",
+                  )}
+                  title={opt.description}
+                >
+                  H{opt.value}
+                </button>
+              ))}
+            </div>
+          </ConfigField>
+
+          <SectionDivider />
+
+          {/* Level info */}
+          <div className="flex items-center gap-2 pl-0.5 animate-in fade-in-0 duration-150">
+            <span
+              className="font-bold text-foreground/70 leading-none"
+              style={{ fontSize: currentOption.fontSize }}
             >
-              <div className="grid grid-cols-6 gap-1 w-full">
-                {HEADING_LEVEL_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleLevelChange(opt.value)}
-                    className={cn(
-                      "flex items-center justify-center rounded-md py-1.5 text-[11px] font-mono font-semibold transition-all duration-150",
-                      "border border-border/50 hover:border-border",
-                      currentLevel === opt.value
-                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                        : "bg-background hover:bg-muted/50 text-muted-foreground hover:text-foreground",
-                    )}
-                    title={opt.description}
-                  >
-                    H{opt.value}
-                  </button>
-                ))}
-              </div>
-            </ConfigField>
-
-            <SectionDivider />
-
-            {/* Level info */}
-            <div className="flex items-center gap-2 pl-0.5 animate-in fade-in-0 duration-150">
-              <span
-                className="font-bold text-foreground/70 leading-none"
-                style={{ fontSize: currentOption.fontSize }}
-              >
-                Aa
+              Aa
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium text-muted-foreground/70">
+                {currentOption.label}
               </span>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-[10px] font-medium text-muted-foreground/70">
-                  {currentOption.label}
-                </span>
-                <span className="text-[10px] text-muted-foreground/50">
-                  {currentOption.description}
-                </span>
-              </div>
-            </div>
-
-            {/* SEO / a11y hint */}
-            <div className="flex items-center gap-1.5 pl-0.5 pt-1 animate-in fade-in-0 duration-150">
-              <Heading className="h-3 w-3 text-muted-foreground/40" />
-              <span className="text-[10px] text-muted-foreground/50 leading-tight">
-                {currentLevel === 1
-                  ? "Use only one h1 per page for best SEO"
-                  : `Renders as <${currentOption.tag}> in the document`}
+              <span className="text-[10px] text-muted-foreground/50">
+                {currentOption.description}
               </span>
             </div>
-          </ConfigSection>
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+          </div>
+
+          {/* SEO / a11y hint */}
+          <div className="flex items-center gap-1.5 pl-0.5 pt-1 animate-in fade-in-0 duration-150">
+            <Heading className="h-3 w-3 text-muted-foreground/40" />
+            <span className="text-[10px] text-muted-foreground/50 leading-tight">
+              {currentLevel === 1
+                ? "Use only one h1 per page for best SEO"
+                : `Renders as <${currentOption.tag}> in the document`}
+            </span>
+          </div>
+        </ConfigSection>
+      </div>
+    </ConfigPanel>
   );
 }

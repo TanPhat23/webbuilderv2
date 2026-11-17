@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { CMSContentGridElement } from "@/features/editor";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
 import PreviewElementLoader from "./PreviewElementLoader";
+import { PreviewCMSFeedback } from "./PreviewCMSFeedback";
+import { useCMSItemList } from "../hooks/useCMSFetch";
 
 interface PreviewCMSContentGridComponentProps {
   element: CMSContentGridElement;
@@ -12,10 +14,6 @@ const PreviewCMSContentGridComponent = ({
   element,
   data,
 }: PreviewCMSContentGridComponentProps) => {
-  const [contentItems, setContentItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
   const safeStyles = elementHelper.getSafeStyles(element);
   const settings = element.settings || {};
   const {
@@ -25,66 +23,20 @@ const PreviewCMSContentGridComponent = ({
     sortOrder = "desc",
   } = settings;
 
-  useEffect(() => {
-    if (!contentTypeId) return;
+  const {
+    data: contentItems,
+    loading,
+    error,
+  } = useCMSItemList({ contentTypeId, limit, sortBy, sortOrder });
 
-    const fetchContent = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // This would need to be implemented based on your CMS API
-        const response = await fetch(
-          `/api/cms/${contentTypeId}?limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`,
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        setContentItems(Array.isArray(result) ? result : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchContent();
-  }, [contentTypeId, limit, sortBy, sortOrder]);
-
-  if (loading) {
+  if (PreviewCMSFeedback.isActive(loading, error)) {
     return (
-      <div
-        id={element.id} data-element-id={element.id}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        Loading content...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        id={element.id} data-element-id={element.id}
-        style={{
-          ...safeStyles,
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "red",
-        }}
-      >
-        Error: {error}
-      </div>
+      <PreviewCMSFeedback
+        elementId={element.id}
+        styles={safeStyles}
+        loading={loading}
+        error={error}
+      />
     );
   }
 

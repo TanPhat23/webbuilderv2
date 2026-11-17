@@ -6,6 +6,7 @@ import {
   RadioSettings,
 } from "@/features/editor";
 import { ChoiceConfigurationShell } from "./_shared/ChoiceConfigurationSection";
+import { looseSettingUpdater } from "./_shared";
 import {
   Circle,
   CircleDot,
@@ -29,11 +30,11 @@ export default function RadioConfiguration() {
     });
   };
 
-  const updateSetting = (name: keyof RadioSettings, value: unknown) => {
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [name]: value },
-    });
-  };
+  const updateSetting = looseSettingUpdater(
+    updateElement,
+    selectedElement.id,
+    settings,
+  );
 
   return (
     <ChoiceConfigurationShell

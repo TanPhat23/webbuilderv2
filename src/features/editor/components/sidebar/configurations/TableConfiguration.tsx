@@ -11,11 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import {
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import {
@@ -25,10 +20,12 @@ import {
 } from "@/features/editor";
 import {
   AccordionSection,
-  ConfigField,
-  ConfigSection,
   ConfigEmpty,
+  ConfigField,
+  ConfigPanel,
+  ConfigSection,
   SectionDivider,
+  settingUpdater,
 } from "./_shared";
 import { cn } from "@/lib/utils";
 import {
@@ -296,14 +293,7 @@ export default function TableConfiguration() {
   const settings: TableSettings = element.settings ?? {};
   const columns = settings.columns ?? [];
 
-  const updateSetting = <K extends keyof TableSettings>(
-    key: K,
-    value: TableSettings[K],
-  ) => {
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [key]: value },
-    });
-  };
+  const updateSetting = settingUpdater(updateElement, selectedElement.id, settings);
 
   const handleCaptionChange = (e: ChangeEvent<HTMLInputElement>) => {
     updateSetting("caption", e.target.value || undefined);
@@ -352,279 +342,265 @@ export default function TableConfiguration() {
   const sortableCount = columns.filter((c) => c.sortable).length;
 
   return (
-    <AccordionItem value="table-settings" className="border-border/40">
-      <AccordionTrigger
-        className={cn(
-          "group/trigger gap-2 py-2 hover:no-underline",
-          "transition-colors duration-150",
-          "hover:bg-muted/30 rounded-md px-1.5 -mx-1.5",
-          "text-xs font-semibold text-foreground/90",
-        )}
-      >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="shrink-0 text-muted-foreground/60 group-hover/trigger:text-muted-foreground transition-colors duration-150">
-            <Table className="h-3.5 w-3.5" />
-          </span>
-          <span className="truncate">Table Settings</span>
-          {columns.length > 0 && (
-            <span className="ml-auto mr-1 shrink-0">
-              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground tabular-nums">
-                {columns.length} col{columns.length !== 1 ? "s" : ""}
-              </span>
-            </span>
-          )}
-        </div>
-      </AccordionTrigger>
-
-      <AccordionContent className="pb-3 pt-1 px-0.5">
-        <Accordion
-          type="multiple"
-          defaultValue={["general", "columns", "appearance"]}
-          className="w-full"
-        >
-          <AccordionSection
-            value="general"
-            title="General"
-            icon={<Settings2 />}
-            nested
-          >
-            <ConfigField
-              label="Caption"
-              htmlFor="table-caption"
-              hint="An accessible caption for the table. Rendered as a <caption> element above the table. Important for screen readers to understand the table's purpose."
-              vertical
-            >
-              <Input
-                id="table-caption"
-                type="text"
-                value={settings.caption ?? ""}
-                onChange={handleCaptionChange}
-                placeholder="Table description..."
-                className="h-7 w-full px-2 text-[11px] rounded-md"
-                autoComplete="off"
-              />
-            </ConfigField>
-
-            {/* Caption indicator */}
-            {hasCaption ? (
-              <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-                <FileText className="h-3 w-3 text-emerald-500/60" />
-                <span className="text-[10px] text-emerald-600/60 dark:text-emerald-400/60">
-                  Caption set — accessible to screen readers
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
-                <FileText className="h-3 w-3 text-amber-500/60" />
-                <span className="text-[10px] text-amber-600/60 dark:text-amber-400/60 leading-tight">
-                  Add a caption for better accessibility
-                </span>
-              </div>
-            )}
-          </AccordionSection>
-
-          <AccordionSection
-            value="columns"
-            title="Columns"
-            icon={<Columns3 />}
-            badge={
-              columns.length > 0 ? (
-                <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground tabular-nums">
-                  {columns.length}
-                </span>
-              ) : undefined
-            }
-            nested
-          >
-            {columns.length > 0 ? (
-              <div className="flex flex-col gap-1.5">
-                {columns.map((col, index) => (
-                  <ColumnEditor
-                    key={col.id}
-                    column={col}
-                    index={index}
-                    isExpanded={expandedColumnId === col.id}
-                    onToggleExpand={() =>
-                      setExpandedColumnId(
-                        expandedColumnId === col.id ? null : col.id,
-                      )
-                    }
-                    onChange={(updated) => updateColumn(index, updated)}
-                    onRemove={() => removeColumn(index)}
-                    onMoveUp={() => moveColumn(index, "up")}
-                    onMoveDown={() => moveColumn(index, "down")}
-                    isFirst={index === 0}
-                    isLast={index === columns.length - 1}
-                  />
-                ))}
-              </div>
-            ) : (
-              <ConfigEmpty
-                icon={<Columns3 className="h-5 w-5" />}
-                message="No columns defined. Add columns to configure the table structure."
-              />
-            )}
-
-            <SectionDivider />
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addColumn}
-              className="w-full h-7 text-[11px] gap-1.5"
-            >
-              <Plus className="h-3 w-3" />
-              Add Column
-            </Button>
-
-            {columns.length > 0 && (
-              <>
-                <SectionDivider />
-                <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                    <Columns3 className="h-2.5 w-2.5" />
-                    {columns.length} column{columns.length !== 1 ? "s" : ""}
-                  </span>
-                  {sortableCount > 0 && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                      <ArrowUpDown className="h-2.5 w-2.5" />
-                      {sortableCount} sortable
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-          </AccordionSection>
-
-          <AccordionSection
-            value="appearance"
-            title="Appearance"
-            icon={<Paintbrush />}
-            nested
-          >
-            <ConfigField
-              label="Bordered"
-              htmlFor="table-bordered"
-              hint="Add visible borders around each cell in the table."
-            >
-              <Switch
-                id="table-bordered"
-                checked={!!settings.bordered}
-                onCheckedChange={(checked) =>
-                  updateSetting("bordered", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            <ConfigField
-              label="Striped rows"
-              htmlFor="table-striped"
-              hint="Alternate row background colors for improved readability."
-            >
-              <Switch
-                id="table-striped"
-                checked={!!settings.striped}
-                onCheckedChange={(checked) =>
-                  updateSetting("striped", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            <ConfigField
-              label="Hover highlight"
-              htmlFor="table-hoverable"
-              hint="Highlight rows when the user hovers over them."
-            >
-              <Switch
-                id="table-hoverable"
-                checked={!!settings.hoverable}
-                onCheckedChange={(checked) =>
-                  updateSetting("hoverable", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            <ConfigField
-              label="Compact"
-              htmlFor="table-compact"
-              hint="Reduce cell padding for a more dense, compact table layout."
-            >
-              <Switch
-                id="table-compact"
-                checked={!!settings.compact}
-                onCheckedChange={(checked) =>
-                  updateSetting("compact", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
-
-            {/* Appearance summary */}
-            <SectionDivider />
-            <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
-              {settings.bordered && (
-                <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  bordered
-                </span>
-              )}
-              {settings.striped && (
-                <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  striped
-                </span>
-              )}
-              {settings.hoverable && (
-                <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  hoverable
-                </span>
-              )}
-              {settings.compact && (
-                <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-                  compact
-                </span>
-              )}
-              {!settings.bordered &&
-                !settings.striped &&
-                !settings.hoverable &&
-                !settings.compact && (
-                  <div className="flex items-center gap-1.5">
-                    <Paintbrush className="h-3 w-3 text-muted-foreground/40" />
-                    <span className="text-[10px] text-muted-foreground/50">
-                      Default appearance — no special styles
-                    </span>
-                  </div>
-                )}
-            </div>
-          </AccordionSection>
-        </Accordion>
-
-        <SectionDivider className="mt-2" />
-        <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-            <Table className="h-2.5 w-2.5" />
-            &lt;table&gt;
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground tabular-nums">
-            <Columns3 className="h-2.5 w-2.5" />
+    <ConfigPanel
+      value="table-settings"
+      icon={<Table className="h-3.5 w-3.5" />}
+      title="Table Settings"
+      trailing={
+        columns.length > 0 && (
+          <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground tabular-nums">
             {columns.length} col{columns.length !== 1 ? "s" : ""}
           </span>
-          {hasCaption && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
-              <Type className="h-2.5 w-2.5" />
-              captioned
-            </span>
+        )
+      }
+    >
+      <Accordion
+        type="multiple"
+        defaultValue={["general", "columns", "appearance"]}
+        className="w-full"
+      >
+        <AccordionSection
+          value="general"
+          title="General"
+          icon={<Settings2 />}
+          nested
+        >
+          <ConfigField
+            label="Caption"
+            htmlFor="table-caption"
+            hint="An accessible caption for the table. Rendered as a <caption> element above the table. Important for screen readers to understand the table's purpose."
+            vertical
+          >
+            <Input
+              id="table-caption"
+              type="text"
+              value={settings.caption ?? ""}
+              onChange={handleCaptionChange}
+              placeholder="Table description..."
+              className="h-7 w-full px-2 text-[11px] rounded-md"
+              autoComplete="off"
+            />
+          </ConfigField>
+
+          {/* Caption indicator */}
+          {hasCaption ? (
+            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
+              <FileText className="h-3 w-3 text-emerald-500/60" />
+              <span className="text-[10px] text-emerald-600/60 dark:text-emerald-400/60">
+                Caption set — accessible to screen readers
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
+              <FileText className="h-3 w-3 text-amber-500/60" />
+              <span className="text-[10px] text-amber-600/60 dark:text-amber-400/60 leading-tight">
+                Add a caption for better accessibility
+              </span>
+            </div>
           )}
-          {sortableCount > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground tabular-nums">
-              <ArrowUpDown className="h-2.5 w-2.5" />
-              {sortableCount} sortable
-            </span>
+        </AccordionSection>
+
+        <AccordionSection
+          value="columns"
+          title="Columns"
+          icon={<Columns3 />}
+          badge={
+            columns.length > 0 ? (
+              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[9px] font-mono text-muted-foreground tabular-nums">
+                {columns.length}
+              </span>
+            ) : undefined
+          }
+          nested
+        >
+          {columns.length > 0 ? (
+            <div className="flex flex-col gap-1.5">
+              {columns.map((col, index) => (
+                <ColumnEditor
+                  key={col.id}
+                  column={col}
+                  index={index}
+                  isExpanded={expandedColumnId === col.id}
+                  onToggleExpand={() =>
+                    setExpandedColumnId(
+                      expandedColumnId === col.id ? null : col.id,
+                    )
+                  }
+                  onChange={(updated) => updateColumn(index, updated)}
+                  onRemove={() => removeColumn(index)}
+                  onMoveUp={() => moveColumn(index, "up")}
+                  onMoveDown={() => moveColumn(index, "down")}
+                  isFirst={index === 0}
+                  isLast={index === columns.length - 1}
+                />
+              ))}
+            </div>
+          ) : (
+            <ConfigEmpty
+              icon={<Columns3 className="h-5 w-5" />}
+              message="No columns defined. Add columns to configure the table structure."
+            />
           )}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+
+          <SectionDivider />
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addColumn}
+            className="w-full h-7 text-[11px] gap-1.5"
+          >
+            <Plus className="h-3 w-3" />
+            Add Column
+          </Button>
+
+          {columns.length > 0 && (
+            <>
+              <SectionDivider />
+              <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                  <Columns3 className="h-2.5 w-2.5" />
+                  {columns.length} column{columns.length !== 1 ? "s" : ""}
+                </span>
+                {sortableCount > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                    <ArrowUpDown className="h-2.5 w-2.5" />
+                    {sortableCount} sortable
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+        </AccordionSection>
+
+        <AccordionSection
+          value="appearance"
+          title="Appearance"
+          icon={<Paintbrush />}
+          nested
+        >
+          <ConfigField
+            label="Bordered"
+            htmlFor="table-bordered"
+            hint="Add visible borders around each cell in the table."
+          >
+            <Switch
+              id="table-bordered"
+              checked={!!settings.bordered}
+              onCheckedChange={(checked) =>
+                updateSetting("bordered", !!checked)
+              }
+              className="scale-75 origin-right"
+            />
+          </ConfigField>
+
+          <ConfigField
+            label="Striped rows"
+            htmlFor="table-striped"
+            hint="Alternate row background colors for improved readability."
+          >
+            <Switch
+              id="table-striped"
+              checked={!!settings.striped}
+              onCheckedChange={(checked) =>
+                updateSetting("striped", !!checked)
+              }
+              className="scale-75 origin-right"
+            />
+          </ConfigField>
+
+          <ConfigField
+            label="Hover highlight"
+            htmlFor="table-hoverable"
+            hint="Highlight rows when the user hovers over them."
+          >
+            <Switch
+              id="table-hoverable"
+              checked={!!settings.hoverable}
+              onCheckedChange={(checked) =>
+                updateSetting("hoverable", !!checked)
+              }
+              className="scale-75 origin-right"
+            />
+          </ConfigField>
+
+          <ConfigField
+            label="Compact"
+            htmlFor="table-compact"
+            hint="Reduce cell padding for a more dense, compact table layout."
+          >
+            <Switch
+              id="table-compact"
+              checked={!!settings.compact}
+              onCheckedChange={(checked) =>
+                updateSetting("compact", !!checked)
+              }
+              className="scale-75 origin-right"
+            />
+          </ConfigField>
+
+          {/* Appearance summary */}
+          <SectionDivider />
+          <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
+            {settings.bordered && (
+              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                bordered
+              </span>
+            )}
+            {settings.striped && (
+              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                striped
+              </span>
+            )}
+            {settings.hoverable && (
+              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                hoverable
+              </span>
+            )}
+            {settings.compact && (
+              <span className="inline-flex items-center rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+                compact
+              </span>
+            )}
+            {!settings.bordered &&
+              !settings.striped &&
+              !settings.hoverable &&
+              !settings.compact && (
+                <div className="flex items-center gap-1.5">
+                  <Paintbrush className="h-3 w-3 text-muted-foreground/40" />
+                  <span className="text-[10px] text-muted-foreground/50">
+                    Default appearance — no special styles
+                  </span>
+                </div>
+              )}
+          </div>
+        </AccordionSection>
+      </Accordion>
+
+      <SectionDivider className="mt-2" />
+      <div className="flex items-center gap-1.5 flex-wrap pt-2 pl-0.5 animate-in fade-in-0 duration-150">
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+          <Table className="h-2.5 w-2.5" />
+          &lt;table&gt;
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground tabular-nums">
+          <Columns3 className="h-2.5 w-2.5" />
+          {columns.length} col{columns.length !== 1 ? "s" : ""}
+        </span>
+        {hasCaption && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">
+            <Type className="h-2.5 w-2.5" />
+            captioned
+          </span>
+        )}
+        {sortableCount > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground tabular-nums">
+            <ArrowUpDown className="h-2.5 w-2.5" />
+            {sortableCount} sortable
+          </span>
+        )}
+      </div>
+    </ConfigPanel>
   );
 }
