@@ -126,7 +126,7 @@ class ApiClient {
   }
 
   getPublic<TResponse>(url: string, options?: RequestInit): Promise<TResponse> {
-    return this.execute<TResponse>("GET", url, undefined, options);
+    return this.execute<TResponse>("GET", url, undefined, options, "");
   }
 }
 

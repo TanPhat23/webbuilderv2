@@ -17,6 +17,7 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { useAiChat } from "@/providers/aiprovider";
 import { useSelectedElementWithSetter } from "@/features/editor";
+import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
 
 interface UseAutoResizeTextareaProps {
   minHeight: number;
@@ -138,13 +139,11 @@ export default function AnimatedAIChat({
   const [activeSuggestion, setActiveSuggestion] = useState<number>(-1);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [recentCommand, setRecentCommand] = useState<string | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { textareaRef, adjustHeight } = useAutoResizeTextarea({
     minHeight: 60,
     maxHeight: 200,
   });
   const { closeChat } = useAiChat();
-  const [inputFocused, setInputFocused] = useState(false);
   const commandPaletteRef = useRef<HTMLDivElement>(null);
   const { selectedElement, setSelectedElement } =
     useSelectedElementWithSetter();
@@ -187,17 +186,6 @@ export default function AnimatedAIChat({
       setShowCommandPalette(false);
     }
   }, [value]);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -290,7 +278,7 @@ export default function AnimatedAIChat({
         variant="ghost"
         size="icon"
         aria-label="Close AI assistant"
-        className="absolute right-2 top-2 z-50 h-7 w-7"
+        className="text-muted-foreground hover:text-foreground absolute right-2 top-2 z-50 h-7 w-7"
         onClick={() => {
           closeChat();
           onClose?.();
@@ -298,305 +286,255 @@ export default function AnimatedAIChat({
       >
         <XIcon className="h-4 w-4" />
       </Button>
-      <div className="text-foreground relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-transparent p-6">
-        <div className="absolute inset-0 h-full w-full overflow-hidden">
-          <div className="bg-primary/10 absolute top-0 left-1/4 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter" />
-          <div className="bg-secondary/10 absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full mix-blend-normal blur-[128px] filter delay-700" />
-          <div className="bg-primary/10 absolute top-1/4 right-1/3 h-64 w-64 animate-pulse rounded-full mix-blend-normal blur-[96px] filter delay-1000" />
+
+      <div className="text-foreground relative flex min-h-full w-full flex-col items-center justify-center overflow-hidden bg-transparent px-5 py-10">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="bg-primary/10 absolute -top-24 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full blur-[96px]" />
         </div>
-        <div className="relative mx-auto w-full max-w-2xl">
+
+        <div className="relative mx-auto w-full max-w-md">
           <motion.div
-            className="relative z-10 space-y-12"
-            initial={{ opacity: 0, y: 20 }}
+            className="relative z-10 space-y-6"
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
-            <div className="space-y-3 text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="inline-block"
-              >
-                <h1 className="pb-1 text-3xl font-medium tracking-tight">
+            {/* Header */}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="bg-primary/10 text-primary ring-primary/20 flex h-10 w-10 items-center justify-center rounded-xl ring-1">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-xl font-semibold tracking-tight">
                   How can I help today?
                 </h1>
-                <motion.div
-                  className="via-primary/50 h-px bg-gradient-to-r from-transparent to-transparent"
-                  initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: "100%", opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.8 }}
-                />
-              </motion.div>
-              <motion.p
-                className="text-muted-foreground text-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                Type a command or ask a question
-              </motion.p>
+                <p className="text-muted-foreground text-sm">
+                  Describe what you want to build, or start from a template.
+                </p>
+              </div>
             </div>
+
             {/* Selected element */}
             {selectedElement && (
               <motion.div
                 className="bg-primary/5 text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs"
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
               >
-                <span className="font-medium">Selected Element:</span>
-                <span className="bg-primary/10 text-primary px-2 py-0.5 rounded">
+                <span className="font-medium">Selected element</span>
+                <span className="bg-primary/10 text-primary rounded px-2 py-0.5">
                   {selectedElement.name || selectedElement.type}
                 </span>
                 <button
+                  type="button"
+                  aria-label="Clear selected element"
                   onClick={() => setSelectedElement(undefined)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-muted-foreground hover:text-foreground ml-auto transition-colors"
                 >
-                  ✕
+                  <XIcon className="h-3 w-3" />
                 </button>
               </motion.div>
             )}
-            <motion.div
-              className="border-border bg-card/80 relative rounded-2xl border shadow-2xl backdrop-blur-2xl"
-              initial={{ scale: 0.98 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <AnimatePresence>
-                {showCommandPalette && (
-                  <motion.div
-                    ref={commandPaletteRef}
-                    className="border-border bg-background/90 absolute right-4 bottom-full left-4 z-50 mb-2 overflow-hidden rounded-lg border shadow-lg backdrop-blur-xl"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <div className="bg-background py-1">
+
+            {/* Composer */}
+            <div className="space-y-2">
+              <div className="border-border bg-card/80 focus-within:border-primary/40 focus-within:ring-primary/15 relative rounded-xl border shadow-lg ring-2 ring-transparent backdrop-blur-xl transition-[border-color,box-shadow] duration-200">
+                <AnimatePresence>
+                  {showCommandPalette && (
+                    <motion.div
+                      ref={commandPaletteRef}
+                      className="border-border bg-popover absolute right-0 bottom-full left-0 z-50 mb-2 overflow-hidden rounded-lg border p-1 shadow-lg"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 4 }}
+                      transition={{ duration: 0.15 }}
+                    >
                       {commandSuggestions.map((suggestion, index) => (
-                        <motion.div
+                        <div
                           key={suggestion.prefix}
+                          role="option"
+                          aria-selected={activeSuggestion === index}
                           className={cn(
-                            "flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors",
+                            "flex cursor-pointer items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
                             activeSuggestion === index
-                              ? "bg-primary/20 text-foreground"
-                              : "text-muted-foreground hover:bg-primary/10",
+                              ? "bg-primary/15 text-foreground"
+                              : "text-muted-foreground hover:bg-muted",
                           )}
                           onClick={() => selectCommandSuggestion(index)}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{
-                            delay: index * 0.03,
-                          }}
                         >
-                          <div className="text-primary flex h-5 w-5 items-center justify-center">
+                          <span className="text-primary flex h-5 w-5 items-center justify-center">
                             {suggestion.icon}
-                          </div>
-                          <div className="font-medium">{suggestion.label}</div>
-                          <div className="text-muted-foreground ml-1 text-xs">
+                          </span>
+                          <span className="text-foreground font-medium">
+                            {suggestion.label}
+                          </span>
+                          <code className="text-muted-foreground/70 ml-auto font-mono text-xs">
                             {suggestion.prefix}
-                          </div>
-                        </motion.div>
+                          </code>
+                        </div>
                       ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="p-4">
-                <Textarea
-                  ref={textareaRef}
-                  value={value}
-                  onChange={(e) => {
-                    setValue(e.target.value);
-                    adjustHeight();
-                  }}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => setInputFocused(true)}
-                  onBlur={() => setInputFocused(false)}
-                  placeholder="Ask mvp.ai a question..."
-                  containerClassName="w-full"
-                  className={cn(
-                    "w-full px-4 py-3",
-                    "resize-none",
-                    "bg-transparent",
-                    "border-none",
-                    "text-foreground text-sm",
-                    "focus:outline-none",
-                    "placeholder:text-muted-foreground",
-                    "min-h-[60px]",
+                    </motion.div>
                   )}
-                  style={{
-                    overflow: "hidden",
-                  }}
-                  showRing={false}
-                />
-              </div>
+                </AnimatePresence>
 
-              <AnimatePresence>
-                {attachments.length > 0 && (
-                  <motion.div
-                    className="flex flex-wrap gap-2 px-4 pb-3"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    {attachments.map((file, index) => (
-                      <motion.div
-                        key={index}
-                        className="bg-primary/5 text-muted-foreground flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs"
-                        initial={{
-                          opacity: 0,
-                          scale: 0.9,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          scale: 1,
-                        }}
-                        exit={{
-                          opacity: 0,
-                          scale: 0.9,
-                        }}
-                      >
-                        <span>{file}</span>
-                        <button
-                          onClick={() => removeAttachment(index)}
-                          className="text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <XIcon className="h-3 w-3" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="border-border flex items-center justify-between gap-4 border-t p-4">
-                <div className="flex items-center gap-3">
-                  <motion.button
-                    type="button"
-                    onClick={handleAttachFile}
-                    whileTap={{ scale: 0.94 }}
-                    className="group text-muted-foreground hover:text-foreground relative rounded-lg p-2 transition-colors"
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    <motion.span
-                      className="bg-primary/10 absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                      layoutId="button-highlight"
-                    />
-                  </motion.button>
-                  <motion.button
-                    type="button"
-                    data-command-button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowCommandPalette((prev) => !prev);
+                <div className="px-3 pt-3">
+                  <Textarea
+                    ref={textareaRef}
+                    value={value}
+                    onChange={(e) => {
+                      setValue(e.target.value);
+                      adjustHeight();
                     }}
-                    whileTap={{ scale: 0.94 }}
-                    className={cn(
-                      "group text-muted-foreground hover:text-foreground relative rounded-lg p-2 transition-colors",
-                      showCommandPalette && "bg-primary/20 text-foreground",
-                    )}
-                  >
-                    <Command className="h-4 w-4" />
-                    <motion.span
-                      className="bg-primary/10 absolute inset-0 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                      layoutId="button-highlight"
-                    />
-                  </motion.button>
+                    onKeyDown={handleKeyDown}
+                    placeholder="Describe a page, paste a prompt, or type / for commands…"
+                    aria-label="Message"
+                    containerClassName="w-full"
+                    className="min-h-[60px] w-full resize-none border-none bg-transparent px-1 py-1 text-sm focus:outline-none"
+                    style={{ overflow: "hidden" }}
+                    showRing={false}
+                  />
                 </div>
 
-                <motion.button
-                  type="button"
-                  onClick={handleSendMessage}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  disabled={isTyping || !value.trim()}
-                  className={cn(
-                    "rounded-lg px-4 py-2 text-sm font-medium transition-all",
-                    "flex items-center gap-2",
-                    value.trim()
-                      ? "bg-primary text-primary-foreground shadow-primary/10 shadow-lg"
-                      : "bg-muted/50 text-muted-foreground",
+                <AnimatePresence>
+                  {attachments.length > 0 && (
+                    <motion.div
+                      className="flex flex-wrap gap-2 px-3 pt-2"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      {attachments.map((file, index) => (
+                        <motion.div
+                          key={`${file}-${index}`}
+                          className="bg-muted text-muted-foreground flex items-center gap-2 rounded-md px-2.5 py-1 text-xs"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                        >
+                          <span>{file}</span>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${file}`}
+                            onClick={() => removeAttachment(index)}
+                            className="hover:text-foreground transition-colors"
+                          >
+                            <XIcon className="h-3 w-3" />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </motion.div>
                   )}
-                >
-                  {isTyping ? (
-                    <LoaderIcon className="h-4 w-4 animate-[spin_2s_linear_infinite]" />
-                  ) : (
-                    <SendIcon className="h-4 w-4" />
-                  )}
-                  <span>Send</span>
-                </motion.button>
-              </div>
-            </motion.div>
+                </AnimatePresence>
 
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {commandSuggestions.map((suggestion, index) => (
-                <motion.button
-                  key={suggestion.prefix}
-                  onClick={() => selectCommandSuggestion(index)}
-                  className="group bg-primary/5 text-muted-foreground hover:bg-primary/10 hover:text-foreground relative flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-all"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  {suggestion.icon}
-                  <span>{suggestion.label}</span>
-                  <motion.div
-                    className="border-border/50 absolute inset-0 rounded-lg border"
-                    initial={false}
-                    animate={{
-                      opacity: [0, 1],
-                      scale: [0.98, 1],
-                    }}
-                    transition={{
-                      duration: 0.3,
-                      ease: "easeOut",
-                    }}
-                  />
-                </motion.button>
-              ))}
+                <div className="flex items-center justify-between gap-2 px-2 pt-1 pb-2">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="Attach file"
+                      onClick={handleAttachFile}
+                      className="text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+                    >
+                      <Paperclip className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Show commands"
+                      data-command-button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowCommandPalette((prev) => !prev);
+                      }}
+                      className={cn(
+                        "text-muted-foreground hover:bg-muted hover:text-foreground flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                        showCommandPalette && "bg-muted text-foreground",
+                      )}
+                    >
+                      <Command className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <motion.button
+                    type="button"
+                    aria-label="Send message"
+                    onClick={handleSendMessage}
+                    whileTap={{ scale: 0.95 }}
+                    disabled={isTyping || !value.trim()}
+                    className={cn(
+                      "flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                      "disabled:cursor-not-allowed",
+                      value.trim()
+                        ? "bg-primary text-primary-foreground shadow-primary/20 shadow-md"
+                        : "bg-muted text-muted-foreground/60",
+                    )}
+                  >
+                    {isTyping ? (
+                      <LoaderIcon className="h-4 w-4 animate-[spin_2s_linear_infinite]" />
+                    ) : (
+                      <SendIcon className="h-4 w-4" />
+                    )}
+                  </motion.button>
+                </div>
+              </div>
+
+              <div className="text-muted-foreground/70 flex h-5 items-center justify-center text-xs">
+                {isTyping ? (
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    Thinking
+                    <TypingDots />
+                  </span>
+                ) : (
+                  <span>
+                    <kbd className="font-sans">Enter</kbd> to send ·{" "}
+                    <kbd className="font-sans">Shift + Enter</kbd> for new line
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Suggestions */}
+            <div className="space-y-2">
+              <p className="text-muted-foreground px-1 text-xs font-medium tracking-wider uppercase">
+                Quick start
+              </p>
+              <div className="flex flex-col gap-2">
+                {commandSuggestions.map((suggestion, index) => (
+                  <motion.button
+                    key={suggestion.prefix}
+                    type="button"
+                    onClick={() => selectCommandSuggestion(index)}
+                    className="group border-border/60 bg-card/40 hover:border-primary/30 hover:bg-muted/60 flex w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 + index * 0.06 }}
+                  >
+                    <span className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+                      {suggestion.icon}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-foreground block text-sm font-medium">
+                        {suggestion.label}
+                      </span>
+                      <span className="text-muted-foreground block truncate text-xs">
+                        {suggestion.description}
+                      </span>
+                    </span>
+                    <code className="text-muted-foreground/60 group-hover:text-muted-foreground font-mono text-xs transition-colors">
+                      {suggestion.prefix}
+                    </code>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* CLI */}
+            <div className="space-y-2">
+              <p className="text-muted-foreground px-1 text-xs font-medium tracking-wider uppercase">
+                Use your own agent
+              </p>
+              <ConnectCliPanel />
             </div>
           </motion.div>
         </div>
-
-        <AnimatePresence>
-          {isTyping && (
-            <motion.div
-              className="border-border bg-background/80 fixed bottom-8 mx-auto -translate-x-1/2 transform rounded-full border px-4 py-2 shadow-lg backdrop-blur-2xl"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 flex h-7 w-8 items-center justify-center rounded-full text-center">
-                  <Sparkles className="text-primary h-4 w-4" />
-                </div>
-                <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                  <span>Thinking</span>
-                  <TypingDots />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {inputFocused && (
-          <motion.div
-            className="from-primary via-primary/80 to-secondary pointer-events-none fixed z-0 h-[50rem] w-[50rem] rounded-full bg-gradient-to-r opacity-[0.02] blur-[96px]"
-            animate={{
-              x: mousePosition.x - 400,
-              y: mousePosition.y - 400,
-            }}
-            transition={{
-              type: "spring",
-              damping: 25,
-              stiffness: 150,
-              mass: 0.5,
-            }}
-          />
-        )}
       </div>
     </div>
   );

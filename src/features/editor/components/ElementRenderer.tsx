@@ -1,52 +1,52 @@
-import React, { Suspense } from "react";
-import type { EditorElement, ElementType } from "@/types/global.type";
-import { EditorComponentProps, getComponentFactory } from "@/features/editor";
+import React from "react";
+import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
+import { componentSetting } from "@/features/projects/lib/components";
+import { ComponentInstanceCanvas } from "./ComponentInstanceCanvas";
+import AudioComponent from "./elements/AudioComponent";
+import ButtonComponent from "./elements/ButtonComponent";
+import CanvasView from "./elements/CanvasView";
+import CMSContentGridComponent from "./elements/CMSContentGridComponent";
+import CMSContentItemComponent from "./elements/CMSContentItemComponent";
+import CMSContentListComponent from "./elements/CMSContentListComponent";
+import FormComponent from "./elements/FormComponent";
+import IFrameComponent from "./elements/IFrameComponent";
+import IconComponent from "./elements/IconComponent";
+import ImageComponent from "./elements/ImageComponent";
+import LinkComponent from "./elements/LinkComponent";
+import ListComponent from "./elements/ListComponent";
+import SectionComponent from "./elements/SectionComponent";
+import SelectComponent from "./elements/SelectComponent";
+import TableComponent from "./elements/TableComponent";
+import TextareaComponent from "./elements/TextareaComponent";
+import VideoComponent from "./elements/VideoComponent";
+import { ChoiceInputComponent } from "./elements/shared/ChoiceInputComponent";
 
-interface ElementRendererProps {
-  element: EditorElement;
-  data?: Record<string, unknown>;
-}
+function ElementRenderer({ element, data }: EditorComponentProps) {
+  const props = { element, data };
+  if (componentSetting(element)) return <ComponentInstanceCanvas {...props} />;
 
-type LazyElementComponent = React.LazyExoticComponent<
-  React.ComponentType<EditorComponentProps>
->;
-
-const NullComponent: React.FC<EditorComponentProps> = () => null;
-
-// One lazy component per element type, shared by every instance, so each
-// type's chunk is requested once and later renders are synchronous.
-const lazyComponents = new Map<ElementType, LazyElementComponent | null>();
-
-function getLazyComponent(type: ElementType): LazyElementComponent | null {
-  if (!lazyComponents.has(type)) {
-    const factory = getComponentFactory(type);
-    lazyComponents.set(
-      type,
-      factory
-        ? React.lazy(() =>
-            factory()
-              .then((component) => ({ default: component }))
-              .catch((err) => {
-                console.error(`Failed to load component for type "${type}":`, err);
-                return { default: NullComponent };
-              }),
-          )
-        : null,
-    );
+  switch (element.type) {
+    case "Audio": return <AudioComponent {...props} />;
+    case "Button": return <ButtonComponent {...props} />;
+    case "CMSContentGrid": return <CMSContentGridComponent {...props} />;
+    case "CMSContentItem": return <CMSContentItemComponent {...props} />;
+    case "CMSContentList": return <CMSContentListComponent {...props} />;
+    case "Checkbox":
+    case "Radio": return <ChoiceInputComponent {...props} />;
+    case "Form": return <FormComponent {...props} />;
+    case "IFrame": return <IFrameComponent {...props} />;
+    case "Icon": return <IconComponent {...props} />;
+    case "Image": return <ImageComponent {...props} />;
+    case "Link": return <LinkComponent {...props} />;
+    case "List": return <ListComponent {...props} />;
+    case "Section": return <SectionComponent {...props} />;
+    case "Select": return <SelectComponent {...props} />;
+    case "Table": return <TableComponent {...props} />;
+    case "Textarea": return <TextareaComponent {...props} />;
+    case "Video": return <VideoComponent {...props} />;
+    default: return <CanvasView {...props} />;
   }
-  return lazyComponents.get(type) ?? null;
 }
-
-const ElementRenderer: React.FC<ElementRendererProps> = ({ element, data }) => {
-  const Component = getLazyComponent(element.type);
-  if (!Component) return null;
-
-  return (
-    <Suspense fallback={null}>
-      <Component element={element} data={data} />
-    </Suspense>
-  );
-};
 
 export default React.memo(
   ElementRenderer,

@@ -1,3 +1,4 @@
+import { PageTypeSchema } from "@/features/projects/schema/page";
 import React, { useState } from "react";
 import {
   Command,
@@ -20,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { newEntityId } from "@/lib/entity-id";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectKeys, useProjectPages } from "@/features/projects/hooks/useProjects";
+import { projectKeys, useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { deleteProjectPage } from "@/features/projects/api/page.api";
 import { deletePageFromCache } from "@/features/editor/store/delete-page";
 import { showErrorToast } from "@/utils/errors/errorToast";
@@ -49,7 +50,7 @@ import { createPage } from "@/features/projects/api/page.api";
 
 const createPageSchema = z.object({
   name: z.string().min(1, "Page name is required"),
-  type: z.enum(["sp", "dp"]),
+  type: PageTypeSchema.exclude(["cp"]),
 });
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
@@ -176,35 +177,44 @@ type DeletePageDialogProps = {
   page: Page;
   onDelete: (id: string) => void;
   trigger?: React.ReactNode;
+  usage?: number;
+  initiallyOpen?: boolean;
+  onClose?: () => void;
 };
 
 // DeletePageDialog component
-export function DeletePageDialog({ page, onDelete, trigger }: DeletePageDialogProps) {
-  const [open, setOpen] = useState(false);
+export function DeletePageDialog({ page, onDelete, trigger, usage, initiallyOpen = false, onClose }: DeletePageDialogProps) {
+  const [open, setOpen] = useState(initiallyOpen);
+  const changeOpen = (next: boolean) => {
+    setOpen(next);
+    if (!next) onClose?.();
+  };
   const handleDelete = () => {
     onDelete(page.Id);
-    setOpen(false);
+    changeOpen(false);
   };
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+    <Dialog open={open} onOpenChange={changeOpen}>
+      {!initiallyOpen && <DialogTrigger asChild>
         {trigger ?? (
           <Button variant="ghost" className="text-xs h-6 px-2">
             Delete
           </Button>
         )}
-      </DialogTrigger>
+      </DialogTrigger>}
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Delete Page</DialogTitle>
+          <DialogTitle>{usage === undefined ? "Delete Page" : "Delete component"}</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the page named `
-            <span className="font-semibold">{page.Name}</span>`? This action
-            cannot be undone.
+            {usage === undefined ? (
+              <>Delete <span className="font-semibold">{page.Name}</span>? This action cannot be undone.</>
+            ) : (
+              <>Delete <span className="font-semibold">{page.Name}</span>? {usage === 1 ? "1 linked instance will" : `${usage} linked instances will`} show “Missing component”.</>
+            )}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={() => setOpen(false)} variant="secondary">
+          <Button onClick={() => changeOpen(false)} variant="secondary">
             Cancel
           </Button>
           <Button onClick={handleDelete} variant="destructive">
@@ -231,7 +241,8 @@ export function useDeletePage(id: string | undefined, pages: Page[]) {
       );
       const routePage = new URLSearchParams(window.location.search).get("page");
       if (wasCurrent && (!routePage || routePage === pageId)) {
-        navigate({ to: remaining[0] ? `/editor/${id}?page=${remaining[0].Id}` : `/editor/${id}` });
+        const next = remaining.find((page) => page.Type !== "cp" && !page.DeletedAt);
+        navigate({ to: "/editor/$id", params: { id }, search: { page: next?.Id } });
       }
     } catch {
       showErrorToast("Failed to delete page");
@@ -244,7 +255,7 @@ export function useDeletePage(id: string | undefined, pages: Page[]) {
 // Main component using the dialogs
 export function ProjectPageCommand() {
   const { id } = useParams({ strict: false });
-  const { data: pages = [] } = useProjectPages(id ?? null);
+  const { data: pages = [] } = useProjectRoutePages(id ?? null);
   const deleteAndNavigate = useDeletePage(id, pages);
 
   return (

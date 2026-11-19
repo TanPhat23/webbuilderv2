@@ -6,6 +6,7 @@ import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
 import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCursorsOverlay";
 import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
 import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStarter";
+import { useElementStore } from "@/features/editor/store/element-store";
 import { useElements } from "@/features/editor";
 import { useEditorContext } from "@/providers/editorprovider";
 import { useForwardChromeShortcuts } from "@/features/editor/components/layout/useForwardChromeShortcuts";
@@ -42,6 +43,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const collab = useCollaborationOptional();
   const { editor } = useEditorContext();
   const elements = useElements();
+  const isMaster = useElementStore((state) => state.isComponentPage);
   // Elements arrive over the collab socket after the REST queries finish, so
   // the page is only known to be empty once it has synced.
   const isSynced = collab ? collab.isSynced : true;
@@ -118,7 +120,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         )}
       </div>
 
-      {!selectedElement && !isEmpty && showAddSectionButton && (
+      {!selectedElement && !isEmpty && !isMaster && showAddSectionButton && (
         <AddSectionDivider
           onAddSection={addNewSection}
           disabled={isReadOnly || isLocked}

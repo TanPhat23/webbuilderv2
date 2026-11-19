@@ -3,6 +3,7 @@ import React from "react";
 interface PreviewCMSFeedbackProps {
   elementId: string;
   styles: React.CSSProperties;
+  draggable?: React.HTMLAttributes<HTMLElement>["draggable"];
   loading: boolean;
   error: string | null;
 }
@@ -15,6 +16,7 @@ interface PreviewCMSFeedbackProps {
 export function PreviewCMSFeedback({
   elementId,
   styles,
+  draggable,
   loading,
   error,
 }: PreviewCMSFeedbackProps) {
@@ -22,6 +24,7 @@ export function PreviewCMSFeedback({
     <div
       id={elementId}
       data-element-id={elementId}
+      draggable={draggable}
       style={{
         ...styles,
         width: "100%",

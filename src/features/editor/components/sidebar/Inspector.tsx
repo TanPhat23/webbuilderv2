@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useSelectedElement } from "@/features/editor";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
+import { componentSetting } from "@/features/projects/lib/components";
+import { ComponentConfiguration } from "./configurations/ComponentConfiguration";
 import PageProperties from "./PageProperties";
 
 import { BreakpointButtons } from "./style/BreakpointButtons";
@@ -56,7 +58,15 @@ export default function Inspector() {
       aria-label="Inspector"
       className="flex h-full w-[280px] shrink-0 flex-col border-l border-border bg-card"
     >
-      {selected ? (
+      {selected && componentSetting(selected) ? (
+        <>
+          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border pl-3 pr-1.5">
+            <span className="text-xs font-semibold">Component</span>
+            <CollapseButton />
+          </div>
+          <ComponentConfiguration key={selected.id} element={selected} />
+        </>
+      ) : selected ? (
         <Tabs
           value={tab}
           onValueChange={setTab}

@@ -1,13 +1,14 @@
 import type {
   CreatePageInput as SchemaCreatePageInput,
   JsonRecord,
+  PageType,
   JsonValue as PageStyleValue,
 } from "@/features/projects/schema/page";
 
 export interface Page {
   Id: string;
   Name: string;
-  Type: string;
+  Type: PageType;
   Styles: JsonRecord | null;
   ProjectId: string;
   CreatedAt: Date;

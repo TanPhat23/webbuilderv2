@@ -1,21 +1,17 @@
 import { strict as assert } from "node:assert";
-import { readdirSync, readFileSync } from "node:fs";
 import { test } from "node:test";
+import { createElement } from "react";
+import { prerenderToNodeStream } from "react-dom/static";
+import { ALL_ELEMENT_TYPES } from "../src/features/editor/constants/elements";
+import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
+import type { EditorElement } from "../src/types/global.type";
 
-const dir = "src/features/preview/components";
-
-test("every preview component puts the element id on its root", () => {
-  const files = readdirSync(dir).filter((f) =>
-    /^Preview.*Component\.tsx$/.test(f),
-  );
-  assert.ok(files.length >= 13);
-  for (const f of files) {
-    const src = readFileSync(`${dir}/${f}`, "utf8");
-    assert.match(src, /id=\{element\.id\}/, `${f} sets id`);
-    assert.match(
-      src,
-      /data-element-id=\{element\.id\}/,
-      `${f} sets data-element-id`,
-    );
+test("the preview loader puts interaction ids on rendered element roots", async () => {
+  for (const type of ALL_ELEMENT_TYPES) {
+    const element = { id: "instance~child", pageId: "page", type, content: "Example", elements: [] } as EditorElement;
+    const { prelude } = await prerenderToNodeStream(createElement(PreviewElementLoader, { elements: [element] }));
+    let markup = "";
+    for await (const chunk of prelude) markup += chunk;
+    assert.match(markup.replace(/^<!--\$-->/, ""), /^<[^<>]+\sid="instance~child"(?=[\s/>])[^<>]*\sdata-element-id="instance~child"(?=[\s/>])/, type);
   }
 });

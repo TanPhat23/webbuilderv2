@@ -11,7 +11,9 @@ export const DRAG_KEYS = {
 export type DropPayload =
   | { kind: "move"; elementId: string }
   | { kind: "create"; elementType: ElementType }
-  | { kind: "template"; index: number };
+  | { kind: "template"; index: number }
+  | { kind: "component"; id: string }
+  | { kind: "snapshot"; id: string };
 
 export function setElementTypeDrag(dt: DataTransfer, type: ElementType) {
   dt.setData(DRAG_KEYS.elementType, type);
@@ -19,6 +21,11 @@ export function setElementTypeDrag(dt: DataTransfer, type: ElementType) {
 
 export function setTemplateDrag(dt: DataTransfer, index: number) {
   dt.setData(DRAG_KEYS.template, index.toString());
+}
+
+export function setComponentDrag(dt: DataTransfer, kind: "component" | "snapshot", id: string) {
+  dt.setData(DRAG_KEYS.template, `${kind}:${id}`);
+  dt.effectAllowed = "copy";
 }
 
 export function setMoveDrag(dt: DataTransfer, elementId: string) {
@@ -38,7 +45,11 @@ export function readDropPayload(dt: DataTransfer): DropPayload | null {
   if (elementType) return { kind: "create", elementType: elementType as ElementType };
 
   const template = dt.getData(DRAG_KEYS.template);
-  if (template) return { kind: "template", index: parseInt(template, 10) };
+  if (template) {
+    const tagged = /^(component|snapshot):([A-Za-z0-9_-]{1,255})$/.exec(template);
+    if (tagged) return { kind: tagged[1] === "component" ? "component" : "snapshot", id: tagged[2] };
+    if (/^\d+$/.test(template)) return { kind: "template", index: Number(template) };
+  }
 
   return null;
 }

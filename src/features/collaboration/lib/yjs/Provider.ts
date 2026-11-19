@@ -74,6 +74,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       projectId: options.projectId,
       pageId: options.pageId,
       getToken: options.getToken,
+      writer: options.writer,
     });
     this.dispatcher = new MessageDispatcher(() => {
       if (this.overflowReported) return;

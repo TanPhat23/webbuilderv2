@@ -1,13 +1,17 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { readDropPayload } from "@/features/editor/utils/element/dragPayload";
+import { componentFromDrop } from "@/features/editor/utils/element/componentDrop";
+import { toast } from "sonner";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useAddElement } from "@/features/editor";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectedElement } from "@/features/editor";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
-import { EditorElement, ElementType } from "@/types/global.type";
+import { EditorElement } from "@/types/global.type";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
@@ -49,6 +53,7 @@ export const useEditor = (
   const [currentView, setCurrentView] = useState<Viewport>("desktop");
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { userId } = useAuth();
   const effectiveUserId = userId ?? undefined;
 
@@ -59,11 +64,12 @@ export const useEditor = (
 
   const addElement = useAddElement();
   const beginPage = useElementStore((state) => state.beginPage);
-  useLayoutEffect(() => { beginPage(id, pageId); }, [beginPage, id, pageId]);
   const selectedElement = useSelectedElement();
 
   const { data: projectPages, isLoading: isLoadingPages } = useProjectPages(id);
   const { data: project, isLoading: isLoadingProject } = useProject(id);
+  const isComponentPage = projectPages?.some((page) => page.Id === pageId && page.Type === "cp") ?? false;
+  useLayoutEffect(() => { beginPage(id, pageId, isComponentPage); }, [beginPage, id, pageId, isComponentPage]);
 
   // Helper: check if a DOM event target is within an existing canvas element
   const isEventOverElement = useCallback((target: HTMLElement | null) => {
@@ -79,7 +85,7 @@ export const useEditor = (
     (pagesList: Page[] | undefined) => {
       if (!pagesList || pagesList.length === 0) return;
       if (pageId) {
-        const found = pagesList.find((p) => p.Id === pageId);
+        const found = pagesList.find((p) => p.Id === pageId && !p.DeletedAt);
         if (found) {
           return;
         }
@@ -87,7 +93,9 @@ export const useEditor = (
 
       // The collaboration socket only connects once `?page=` is set, so always
       // resolve a page: the unnamed default page, else the first one.
-      const defaultPage = pagesList.find((p) => p.Name === "") ?? pagesList[0];
+      const routes = pagesList.filter((p) => p.Type !== "cp" && !p.DeletedAt);
+      const defaultPage = routes.find((p) => p.Name === "") ?? routes[0];
+      if (!defaultPage) return;
       navigate({ to: `/editor/${id}?page=${defaultPage.Id}`, replace: true });
     },
     [pageId, navigate, id],
@@ -130,30 +138,27 @@ export const useEditor = (
       e.stopPropagation();
       setIsDraggingOver(false);
 
-      const elementType = e.dataTransfer.getData("elementType");
-      const customElement = e.dataTransfer.getData("customComponentName");
-
-      let newElement: EditorElement | undefined;
-
-      if (elementType) {
-        newElement = ElementFactory.getInstance().createElement({
-          type: elementType as ElementType,
-          pageId,
-        });
-      } else if (customElement) {
-        const customComp = customComps[parseInt(customElement, 10)];
-        if (customComp) {
-          newElement = ElementFactory.getInstance().createElementFromTemplate({
-            element: customComp,
-            pageId,
-          });
-        }
+      const payload = readDropPayload(e.dataTransfer);
+      if (!payload || payload.kind === "move") return;
+      let newElement: EditorElement | undefined | null;
+      if (payload.kind === "create") {
+        newElement = ElementFactory.getInstance().createElement({ type: payload.elementType, pageId });
+      } else if (payload.kind === "template") {
+        const template = customComps[payload.index];
+        if (template) newElement = ElementFactory.getInstance().createElementFromTemplate({ element: template, pageId });
+      } else {
+        newElement = componentFromDrop(payload, queryClient, id, pageId, userId ?? null);
+        if (!newElement) toast.error("This component cannot be inserted here.");
       }
 
       if (!newElement) return;
+      if (isComponentPage && useElementStore.getState().elements.length) {
+        toast.error("Drop the element inside the master’s root.");
+        return;
+      }
       addElement(newElement);
     },
-    [isEventOverElement, canCreate, pageId, addElement, showReadOnlyError],
+    [isEventOverElement, canCreate, pageId, addElement, showReadOnlyError, queryClient, id, userId, isComponentPage],
   );
 
   const handleDragOver = useCallback(

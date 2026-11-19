@@ -1,3 +1,4 @@
+import SectionView from "@/features/elements/views/SectionView";
 import React from "react";
 import { EditorComponentProps, SectionElement } from "@/features/editor";
 import ElementLoader from "../ElementLoader";
@@ -11,10 +12,10 @@ const SectionComponent = ({ element, data }: EditorComponentProps) => {
   });
 
   return (
-    <div {...rootProps}>
+    <SectionView element={sectionElement} rootProps={rootProps} mode="edit">
       <ElementLoader elements={sectionElement.elements} data={data} />
       <SectionActions element={sectionElement} />
-    </div>
+    </SectionView>
   );
 };
 

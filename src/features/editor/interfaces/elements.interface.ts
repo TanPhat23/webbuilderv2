@@ -1,3 +1,4 @@
+import type { ComponentSetting } from "@/features/projects/lib/components";
 import { ElementType } from "@/types/global.type";
 import { CSSProperties } from "react";
 import type { EmblaOptionsType } from "embla-carousel";
@@ -24,7 +25,7 @@ export interface Element<
   src?: string;
   parentId?: string;
   readonly pageId: string;
-  settings?: Settings | null;
+  settings?: (Settings & { component?: ComponentSetting }) | null;
   order?: number;
   orderKey?: string;
   events?: ElementEvents;

@@ -1,4 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
+import { Component } from "lucide-react";
+import { ResolvedInstancesContext } from "../ComponentInstanceCanvas";
+import { componentSetting, isMissingComponent } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
 import {
   useHoveredElementId,
@@ -62,6 +65,7 @@ function SelectionBox({
   root: HTMLElement;
   element: EditorElement;
 }) {
+  const linked = !!componentSetting(element);
   const { node, rect } = useElementRect(root, element.id);
   const { canEdit, iframeRef } = useEditorFlags();
   const updateElement = useUpdateElement();
@@ -74,7 +78,7 @@ function SelectionBox({
   const [manualSpacingMode, setManualSpacingMode] = useState(false);
   const showCommentButtons = useElementCommentStore((s) => s.showCommentButtons);
   const altKeyPressed = useAltKey(iframeRef);
-  const showSpacing = manualSpacingMode || altKeyPressed;
+  const showSpacing = !linked && (manualSpacingMode || altKeyPressed);
 
   if (!rect) return null;
 
@@ -101,11 +105,11 @@ function SelectionBox({
   return (
     <ResizeContext value={{ pendingStylesRef }}>
       <div className="group" style={boxStyle(rect)}>
-        <ElementLabel
+        {!linked && <ElementLabel
           element={element}
           showSpacingInfo={showSpacing}
           onToggleSpacing={() => setManualSpacingMode((prev) => !prev)}
-        />
+        />}
         {showCommentButtons && (
           <div
             className="pointer-events-auto"
@@ -124,7 +128,7 @@ function SelectionBox({
             <ElementCommentButton element={element} />
           </div>
         )}
-        <SpacingOverlay element={element} show={showSpacing} />
+        {!linked && <SpacingOverlay element={element} show={showSpacing} />}
         {handles.map((dir) => (
           <div key={dir} className="pointer-events-auto">
             <ResizeHandle
@@ -197,6 +201,17 @@ function DropIndicator({
   );
 }
 
+function ComponentBadge({ root, id }: { root: HTMLElement; id: string }) {
+  const { rect } = useElementRect(root, id);
+  if (!rect) return null;
+  return (
+    <div className="absolute rounded-sm border border-border/70 bg-background/90 p-0.5 text-muted-foreground shadow-sm"
+      style={{ left: rect.left + 3, top: rect.top + 3 }}>
+      <Component className="size-3" />
+    </div>
+  );
+}
+
 /**
  * Editor chrome for the whole canvas: hover outline, selection box with
  * resize/spacing handles, and the drop indicator. Drawn in one layer over
@@ -211,6 +226,7 @@ export function CanvasOverlay({
   drop: DropIndicatorState | null;
   isDragging: boolean;
 }) {
+  const instances = useContext(ResolvedInstancesContext);
   const selectedElement = useSelectedElement();
   const hoveredId = useHoveredElementId();
   if (!root) return null;
@@ -226,11 +242,12 @@ export function CanvasOverlay({
       )}
       {selectedElement && (
         <SelectionBox
-          key={selectedElement.id}
+          key={`${selectedElement.id}:${instances.get(selectedElement.id)?.type ?? ""}:${isMissingComponent(instances.get(selectedElement.id) ?? selectedElement)}`}
           root={root}
           element={selectedElement}
         />
       )}
+      {Array.from(instances, ([id, element]) => !isMissingComponent(element) && <ComponentBadge key={id} root={root} id={id} />)}
       {drop && <DropIndicator root={root} drop={drop} />}
     </div>
   );

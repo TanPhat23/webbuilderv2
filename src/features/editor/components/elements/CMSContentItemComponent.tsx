@@ -1,3 +1,4 @@
+import FrameView from "@/features/elements/views/FrameView";
 
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
@@ -43,7 +44,7 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   }
 
   return (
-    <div {...rootProps}>
+    <FrameView element={cmsElement} rootProps={rootProps} mode="edit">
       {cmsElement.elements?.length ? (
         <ElementLoader
           elements={cmsElement.elements}
@@ -94,7 +95,7 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
           Item not found
         </div>
       )}
-    </div>
+    </FrameView>
   );
 };
 

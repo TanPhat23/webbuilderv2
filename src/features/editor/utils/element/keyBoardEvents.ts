@@ -1,6 +1,6 @@
 import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
-import { ContainerElement, EditorElement } from "@/types/global.type";
-import { newEntityId } from "@/lib/entity-id";
+import { EditorElement } from "@/types/global.type";
+import { cloneComponentTree, componentSetting, visitComponentTree } from "@/features/projects/lib/components";
 import { elementHelper } from "./elementhelper";
 import { ElementStore } from "@/features/editor";
 import { SelectionStore } from "@/features/editor";
@@ -23,6 +23,7 @@ export class ElementKeyboardActions {
       getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
+    sessionStorage.setItem("copiedElementProject", ElementStore.getState().activePage?.projectId ?? "");
   };
 
   public cutElement = () => {
@@ -38,6 +39,7 @@ export class ElementKeyboardActions {
       getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
+    sessionStorage.setItem("copiedElementProject", ElementStore.getState().activePage?.projectId ?? "");
     ElementStore.getState().deleteElement(selectedElement.id);
     SelectionStore.getState().setSelectedElement(undefined);
   };
@@ -55,27 +57,16 @@ export class ElementKeyboardActions {
     if (!copiedElement) return;
 
     const elementData = JSON.parse(copiedElement) as EditorElement;
-    let newElement = { ...elementData, id: newEntityId() };
-
-    if (elementHelper.isContainerElement(newElement)) {
-      const updateIdsRecursively = (
-        element: ContainerElement,
-      ): ContainerElement => {
-        const updatedElements = element.elements.map((child) => {
-          const newChild = { ...child, id: newEntityId() };
-          if (elementHelper.isContainerElement(newChild)) {
-            return updateIdsRecursively(newChild);
-          }
-          return newChild;
-        });
-        return { ...element, elements: updatedElements };
-      };
-      newElement = updateIdsRecursively(newElement as ContainerElement);
+    const state = ElementStore.getState();
+    const { activePage } = state;
+    if (!activePage) return;
+    let linked = false;
+    visitComponentTree([elementData], (element) => { if (componentSetting(element)) linked = true; });
+    if (linked && (state.isComponentPage || sessionStorage.getItem("copiedElementProject") !== activePage.projectId)) {
+      toast.error("Use the Components panel to add linked components to a master, or detach them to copy across projects.");
+      return;
     }
-
-    const elementState = ElementStore.getState();
-
-    elementState.addElement(newElement);
+    state.addElement(cloneComponentTree(elementData, activePage.pageId));
   };
 
   public bringToFront = () => {

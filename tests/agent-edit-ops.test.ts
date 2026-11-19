@@ -128,3 +128,46 @@ test("size limits and malformed input", () => {
   assert.equal(applyEdits(tree(), [{ op: "update", id: "title", set: { content: "x".repeat(20_001) } }], PAGE).ok, false);
   assert.equal(applyEdits(tree(), [{ op: "create", element: { type: "Text" }, parentId: 7 }], PAGE).ok, false);
 });
+
+test("scroll reveal settings are accepted when valid and rejected with a path when not", () => {
+  const tree = [{ id: "s", type: "Section", pageId: "p", content: "", styles: {}, settings: null, elements: [] }] as never;
+  const ok = applyEdits(tree, [{ op: "update", id: "s", set: { settings: { reveal: "fade-up", revealDelay: 200 } } }], "p");
+  assert.ok(ok.ok);
+  const badEffect = applyEdits(tree, [{ op: "update", id: "s", set: { settings: { reveal: "explode" } } }], "p");
+  assert.ok(!badEffect.ok && badEffect.issues[0].path === "operations[0].set.settings.reveal");
+  const badDelay = applyEdits(tree, [{ op: "create", element: { type: "Frame", settings: { reveal: "fade", revealDelay: 99999 } } }], "p");
+  assert.ok(!badDelay.ok && badDelay.issues[0].path === "operations[0].element.settings.revealDelay");
+});
+
+const componentRoot = el("master-root", "Text", { pageId: "master", content: "Master" });
+const componentProject = { elements: [componentRoot], pageIds: new Set(["master"]) };
+
+test("create component instances from the master type and reject children", () => {
+  const operation = { op: "create", ref: "linked", element: { component: { id: "master", overrides: { "master-root": { text: "Here" } } } } };
+  const created = applyEdits([], [operation], PAGE, componentProject);
+  assert.ok(created.ok);
+  assert.equal(created.elements[0].type, "Text");
+  assert.deepEqual(created.elements[0].settings?.component, { pageId: "master", rootId: "master-root", overrides: { "master-root": { text: "Here" } } });
+  assert.equal("elements" in created.elements[0], false);
+  const nested = applyEdits([], [operation, { op: "create", parentId: "linked", element: { type: "Text" } }], PAGE, componentProject);
+  assert.ok(!nested.ok);
+});
+
+test("reject non-component pages, cycles, and unsupported or oversized overrides", () => {
+  for (const component of [
+    { id: "not-a-master" },
+    { id: "master", overrides: { "master-root": { color: "red" } } },
+    { id: "master", overrides: { "master-root": { text: "y".repeat(20_001) } } },
+  ]) {
+    assert.equal(applyEdits([], [{ op: "create", element: { component } }], PAGE, componentProject).ok, false);
+  }
+  assert.equal(applyEdits([], [{ op: "create", element: { component: { id: "master" } } }], "master", componentProject).ok, false);
+});
+
+test("update can clear component overrides without changing the link", () => {
+  const before = [el("instance", "Text", { settings: { component: { pageId: "master", rootId: "master-root", overrides: { "master-root": { text: "Old" } } } } })];
+  const result = applyEdits(before, [{ op: "update", id: "instance", set: { settings: { component: { overrides: null } } } }], PAGE);
+  assert.ok(result.ok);
+  assert.deepEqual(result.elements[0].settings?.component, { pageId: "master", rootId: "master-root" });
+  assert.equal(applyEdits(before, [{ op: "update", id: "instance", set: { settings: { component: { pageId: "other" } } } }], PAGE).ok, false);
+});

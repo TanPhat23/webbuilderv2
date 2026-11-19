@@ -24,34 +24,34 @@ interface UseMediaDropOptions {
 }
 
 /** Media library drags carry JSON; canvas element drags do not. */
-const isMediaDrag = (e: React.DragEvent) =>
+const isMediaDrag = (e: React.DragEvent<HTMLElement>) =>
   Array.from(e.dataTransfer.types).includes("application/json");
 
 export function useMediaDrop({ element, mediaType }: UseMediaDropOptions) {
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragTarget, setDragTarget] = useState<HTMLElement | null>(null);
   const updateElement = useUpdateElement();
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLElement>) => {
     // Element moves and palette drags belong to the canvas, not this media slot.
     if (!isMediaDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(true);
+    setDragTarget(e.currentTarget);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLElement>) => {
     if (!isMediaDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
+    setDragTarget(null);
   }, []);
 
   const handleDrop = useCallback(
-    (e: React.DragEvent) => {
+    (e: React.DragEvent<HTMLElement>) => {
       if (!isMediaDrag(e)) return;
       e.preventDefault();
       e.stopPropagation();
-      setIsDragOver(false);
+      setDragTarget(null);
 
       try {
         const raw = e.dataTransfer.getData("application/json");
@@ -81,5 +81,5 @@ export function useMediaDrop({ element, mediaType }: UseMediaDropOptions) {
     [element, mediaType, updateElement],
   );
 
-  return { isDragOver, handleDragOver, handleDragLeave, handleDrop };
+  return { isDragOver: dragTarget !== null, dragTarget, handleDragOver, handleDragLeave, handleDrop };
 }

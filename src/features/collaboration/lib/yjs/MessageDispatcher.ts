@@ -16,6 +16,9 @@ import type {
  *
  * @see WebSocket API Reference — Section 2: Message Envelope
  */
+/** The server rejected this operation, as opposed to losing its acknowledgement. */
+export class RealtimeRequestRejected extends Error {}
+
 export class MessageDispatcher extends EventEmitter {
   private readonly pendingRequests = new Map<string, PendingRequest>();
   private messageQueue: WSEnvelope[] = [];
@@ -171,7 +174,7 @@ export class MessageDispatcher extends EventEmitter {
         errData?.payload?.code ||
         errData?.code ||
         "Unknown error";
-      pending.reject(new Error(errorMsg));
+      pending.reject(new RealtimeRequestRejected(errorMsg));
     }
 
     return true;

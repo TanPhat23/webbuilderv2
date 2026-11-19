@@ -5,20 +5,20 @@ import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import { Snapshot } from "@/features/editor";
 
 export const elementService = {
-  getElements: async (projectId: string): Promise<EditorElement[]> => {
+  getElements: async (projectId: string, token?: string): Promise<EditorElement[]> => {
     return apiClient.get<EditorElement[]>(
       new URLBuilder("api")
         .setPath(API_ENDPOINTS.ELEMENTS.GET(projectId))
         .build(),
+      undefined,
+      token,
     );
   },
 
-  getElementsPublic: async (projectId: string): Promise<EditorElement[]> => {
-    return apiClient.getPublic<EditorElement[]>(
-      new URLBuilder("api")
-        .setPath(API_ENDPOINTS.ELEMENTS.GET_PUBLIC(projectId))
-        .build(),
-    );
+  getElementsPublic: async (projectId: string, { previewCache = false } = {}): Promise<EditorElement[]> => {
+    const url = new URLBuilder("api").setPath(API_ENDPOINTS.ELEMENTS.GET_PUBLIC(projectId));
+    if (previewCache) url.addQueryParam("previewCache", "1");
+    return apiClient.getPublic<EditorElement[]>(url.build());
   },
 
   saveSnapshot: async (

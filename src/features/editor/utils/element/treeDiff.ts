@@ -7,6 +7,7 @@
  *
  * Pure: no React, no store.
  */
+import { componentSetting } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
 
 type Json = Record<string, unknown>;
@@ -138,6 +139,17 @@ export function diffTrees(
     detach(id);
   }
 
+  // Clearing a component link turns the root back into a normal container.
+  // Send that update before creating the detached children.
+  const detached = new Set<string>();
+  for (const [id, next] of a.byId) {
+    const prev = b.byId.get(id);
+    if (!prev || !componentSetting(prev) || componentSetting(next)) continue;
+    const patch = elementPatch(prev, next);
+    if (patch) ops.push({ type: "update", id, patch });
+    detached.add(id);
+  }
+
   // Creates: the top of each added subtree, lowest position first so each
   // insert lands where the final order expects it.
   const added = [...a.byId.keys()]
@@ -199,7 +211,7 @@ export function diffTrees(
   // already carry their final fields.
   for (const [id, next] of a.byId) {
     const prev = b.byId.get(id);
-    if (!prev) continue;
+    if (!prev || detached.has(id)) continue;
     const patch = elementPatch(prev, next);
     if (patch) ops.push({ type: "update", id, patch });
   }

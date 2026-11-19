@@ -75,6 +75,7 @@ const IconConfiguration = React.lazy(() => import("./IconConfiguration"));
 const TableConfiguration = React.lazy(() => import("./TableConfiguration"));
 
 const ButtonConfiguration = React.lazy(() => import("./ButtonConfiguration"));
+const SharedSectionConfiguration = React.lazy(() => import("./SharedSectionConfiguration"));
 
 /**
  * Lightweight loading placeholder shown while a configuration panel chunk
@@ -97,6 +98,11 @@ export default function Settings() {
     }
 
     switch (type) {
+      case "Section":
+      case "Header":
+      case "Footer":
+      case "Nav":
+        return <SharedSectionConfiguration />;
       // Interactive
       case "Link":
         return <LinkConfigurationAccordion />;

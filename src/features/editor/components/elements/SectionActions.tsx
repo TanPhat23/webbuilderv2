@@ -16,7 +16,7 @@ export function SectionActions({ element }: SectionActionsProps) {
   const currentPage = useCurrentPage();
 
   if (!selectedElement || selectedElement.id !== element.id) return null;
-  if (!insertElement || !currentPage?.Id) return null;
+  if (!insertElement || !currentPage?.Id || (currentPage.Type === "cp" && !element.parentId)) return null;
 
   const handleCreateSection = () => {
     const newElement = ElementFactory.getInstance().createElement({

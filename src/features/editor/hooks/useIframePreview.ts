@@ -107,6 +107,31 @@ export function useIframeMountNode(
   return mountNode;
 }
 
+const GENERATED_STYLE_ID = "wb-generated-tailwind";
+
+/**
+ * Keeps one <style> in the iframe holding the Tailwind CSS generated for the
+ * project's classes. Updating its text does not reload the iframe, unlike
+ * changing the srcDoc.
+ */
+export function useIframeGeneratedCss(
+  iframeRef: React.RefObject<HTMLIFrameElement | null>,
+  css: string,
+  mountNode: HTMLElement | null,
+): void {
+  useEffect(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc || !mountNode) return;
+    let style = doc.getElementById(GENERATED_STYLE_ID) as HTMLStyleElement | null;
+    if (!style) {
+      style = doc.createElement("style");
+      style.id = GENERATED_STYLE_ID;
+      doc.head.appendChild(style);
+    }
+    style.textContent = css;
+  }, [css, mountNode, iframeRef]);
+}
+
 export function useIframeStyleInjection(
   iframeRef: React.RefObject<HTMLIFrameElement | null>,
   projectHead: string,

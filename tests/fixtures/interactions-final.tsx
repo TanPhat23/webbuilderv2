@@ -1,9 +1,12 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { InteractionHost } from '../../src/features/interactions/components/InteractionHost';
-import PreviewInputComponent from '../../src/features/preview/components/PreviewInputComponent';
 import PreviewElementLoader from '../../src/features/preview/components/PreviewElementLoader';
 import { browserPlatform, createExecutors } from '../../src/features/interactions/runtime/executors';
+import { ComponentInstanceCanvas, ResolvedInstancesContext } from '../../src/features/editor/components/ComponentInstanceCanvas';
+import { EditorFlagsProvider } from '../../src/features/editor/components/context/EditorFlagsContext';
+import type { EditorElement } from '../../src/types/global.type';
+import { useScrollReveal } from '../../src/features/preview/hooks/useScrollReveal';
 import '../../src/features/interactions/runtime/animations.css';
 
 const input = { id: 'email', type: 'Input', content: '', settings: { name: 'email', type: 'email' }, styles: {}, elements: [] } as any;
@@ -17,9 +20,22 @@ const platform = (doc: Document, host: Element, allowed: (id: string) => boolean
     return { ok: true, status: 200, text: async () => '' };
   },
 });
+const lateElement = { id: 'late', pageId: 'test', type: 'Code', content: 'Lazy content' } as const;
+const resolvedInstances = new Map<string, EditorElement>([[lateElement.id, lateElement]]);
 function App() {
+  const [showLate, setShowLate] = React.useState(false);
+  useScrollReveal([{ id: 'late', effect: 'fade', delay: 0 }], true);
   return <InteractionHost elements={elements} enabled namespace="final-test" platform={platform}>
-    <form id="form" data-element-id="form"><PreviewInputComponent element={input} /><PreviewElementLoader elements={[textarea, select]} /><button id="submit">Submit</button></form>
+    <form id="form" data-element-id="form"><PreviewElementLoader elements={[input, textarea, select]} /><button id="submit">Submit</button></form>
+    <button id="mount-lazy" onClick={() => setShowLate(true)}>Mount code</button>
+    {showLate && (
+      <EditorFlagsProvider isReadOnly={false} isLocked={false} permissionsRole={null} canEdit canCreate>
+        <ResolvedInstancesContext.Provider value={resolvedInstances}>
+          <ComponentInstanceCanvas element={lateElement} />
+          <ComponentInstanceCanvas element={{ ...lateElement, id: 'missing' }} />
+        </ResolvedInstancesContext.Provider>
+      </EditorFlagsProvider>
+    )}
     <div id="box" data-element-id="box">Box</div>
   </InteractionHost>;
 }

@@ -17,8 +17,11 @@ export const API_ENDPOINTS = {
     CREATE: "/api/v1/projects",
     UPDATE: (id: string) => `/api/v1/projects/${id}`,
     DELETE: (id: string) => `/api/v1/projects/${id}`,
+    // The API serves page writes at /pages/:projectId/:pageId (pages.routes.go).
+    UPDATE_PAGE: (projectId: string, pageId: string) =>
+      `/api/v1/pages/${projectId}/${pageId}`,
     DELETE_PAGE: (projectId: string, pageId: string) =>
-      `/api/v1/projects/${projectId}/pages/${pageId}`,
+      `/api/v1/pages/${projectId}/${pageId}`,
     GET_PUBLIC_BY_ID: (id: string) => `/api/v1/projects/public/${id}`,
     ACCESS: (id: string) => `/api/v1/projects/${id}/access`,
   },
@@ -153,13 +156,13 @@ export const API_ENDPOINTS = {
       `/api/v1/collaborators/project/${projectId}/leave`,
   },
   CUSTOM_ELEMENTS: {
-    CREATE: "/api/v1/customelements",
-    GET_ALL: "/api/v1/customelements",
-    GET_PUBLIC: "/api/v1/customelements/public",
-    GET_BY_ID: (id: string) => `/api/v1/customelements/${id}`,
-    UPDATE: (id: string) => `/api/v1/customelements/${id}`,
-    DELETE: (id: string) => `/api/v1/customelements/${id}`,
-    DUPLICATE: (id: string) => `/api/v1/customelements/${id}/duplicate`,
+    CREATE: "/api/v1/custom-elements",
+    GET_ALL: "/api/v1/custom-elements",
+    GET_PUBLIC: "/api/v1/custom-elements/public",
+    GET_BY_ID: (id: string) => `/api/v1/custom-elements/${id}`,
+    UPDATE: (id: string) => `/api/v1/custom-elements/${id}`,
+    DELETE: (id: string) => `/api/v1/custom-elements/${id}`,
+    DUPLICATE: (id: string) => `/api/v1/custom-elements/${id}/duplicate`,
   },
   USERS: {
     SEARCH: "/api/v1/users/search",
@@ -206,6 +209,8 @@ export const NEXT_API_ENDPOINTS = {
   PROJECTS: {
     DELETE: (id: string) => `/api/projects/${id}`,
     UPDATE: (id: string) => `/api/projects/${id}`,
+    UPDATE_PAGE: (projectId: string, pageId: string) =>
+      `/api/v1/projects/${projectId}/pages/${pageId}`,
     DELETE_PAGE: (projectId: string, pageId: string) =>
       `/api/projects/${projectId}/pages/${pageId}`,
   },

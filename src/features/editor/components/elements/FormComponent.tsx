@@ -3,13 +3,13 @@ import React from "react";
 import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
 import { useAddElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
-import { FormElement, FormSettings } from "@/features/editor";
+import { FormElement } from "@/features/editor";
+import FormView from "@/features/elements/views/FormView";
 import { EditorComponentProps } from "@/features/editor";
 import ElementLoader from "../ElementLoader";
 import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCanvasElement } from "./shared";
 
 export default function FormComponent({ element, data }: EditorComponentProps) {
@@ -20,14 +20,6 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
   const selectedElement = useSelectedElement();
 
   const isSelected = selectedElement?.id === formElement.id;
-  const settings = (formElement.settings as FormSettings) ?? {
-    method: "post",
-    action: "",
-    target: "_self",
-    autoComplete: "on",
-  };
-
-
   const handleAddField = () => {
     const newField = ElementFactory.getInstance().createElement({
       type: "Input",
@@ -37,20 +29,9 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
     if (newField) addElement(newField);
   };
 
+  const { autoComplete, noValidate } = formElement.settings ?? { autoComplete: "on" };
   return (
-    <form
-      {...rootProps}
-      className={cn(
-        "flex flex-col gap-4 p-6 border rounded-xl transition-all duration-200",
-        "bg-card text-card-foreground border-border shadow-sm",
-        formElement.tailwindStyles,
-      )}
-      action={settings.action}
-      method={settings.method}
-      target={settings.target}
-      autoComplete={settings.autoComplete}
-      noValidate={settings.noValidate}
-    >
+    <FormView element={formElement} rootProps={{ ...rootProps, autoComplete, noValidate }} mode="edit">
       <ElementLoader elements={formElement.elements} data={data} />
 
       {isSelected && (
@@ -63,6 +44,6 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
           <Plus className="mr-2 h-4 w-4" /> Add Form Field
         </Button>
       )}
-    </form>
+    </FormView>
   );
 }

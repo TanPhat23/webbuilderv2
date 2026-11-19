@@ -1,7 +1,9 @@
+import MediaView from "@/features/elements/views/MediaView";
+import { MediaDropOverlay } from "./shared/MediaDropOverlay";
 
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { AudioElement, AudioSettings } from "@/features/editor";
+import { AudioElement } from "@/features/editor";
 import {
   Empty,
   EmptyHeader,
@@ -20,18 +22,11 @@ import {
 const AudioComponent = ({ element }: EditorComponentProps) => {
   const audioElement = element as AudioElement;
   const { rootProps } = useCanvasElement(audioElement);
-  const { isDragOver, handleDragOver, handleDragLeave, handleDrop } =
+  const { isDragOver, dragTarget, handleDragOver, handleDragLeave, handleDrop } =
     useMediaDrop({
       element,
       mediaType: "audio",
     });
-
-  const settings = (audioElement.settings ?? {}) as AudioSettings;
-  const controls = settings.controls ?? true;
-  const autoplay = settings.autoplay ?? false;
-  const loop = settings.loop ?? false;
-  const muted = settings.muted ?? false;
-  const preload = settings.preload ?? "metadata";
 
   const dragHandlers = {
     onDragOver: handleDragOver,
@@ -43,25 +38,13 @@ const AudioComponent = ({ element }: EditorComponentProps) => {
 
   if (audioElement.src) {
     return (
-      <div
-        {...wrapperProps}
-        className={cn(
-          rootProps.className,
-          "relative",
-          isDragOver && "ring-2 ring-primary ring-offset-2",
-        )}
-      >
-        <audio
-          src={audioElement.src}
-          controls={controls}
-          autoPlay={autoplay}
-          loop={loop}
-          muted={muted}
-          preload={preload}
-          style={{ width: "100%" }}
-        />
-        {isDragOver && <DropOverlay label="Drop to replace audio" />}
-      </div>
+      <>
+        <MediaView element={audioElement} mode="edit" rootProps={{
+          ...wrapperProps,
+          className: cn(rootProps.className, isDragOver && "ring-2 ring-primary ring-offset-2"),
+        }} />
+        {dragTarget && <MediaDropOverlay target={dragTarget} label="Drop to replace audio" />}
+      </>
     );
   }
 

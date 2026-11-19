@@ -1,3 +1,4 @@
+import { PageLinkField } from "./_shared/PageLinkField";
 import { isExternalLink } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
@@ -117,6 +118,11 @@ export default function ButtonConfiguration() {
           icon={<Link2 className="h-3 w-3" />}
         >
           {/* Href */}
+          <PageLinkField
+            id="button-project-page"
+            href={href}
+            onChange={(href) => updateElement(selectedElement.id, { href })}
+          />
           <ConfigField
             label="URL"
             htmlFor="button-href"

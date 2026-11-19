@@ -4,6 +4,7 @@ import {
   Plus,
   Layers,
   FileText,
+  Component,
   ImageIcon,
   Database,
   History,
@@ -22,6 +23,7 @@ import LayersPanel from "./LayersPanel";
 const SectionsLibrary = React.lazy(() => import("../wireframe/SectionsLibrary"));
 const AIChat = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
 const LogicPanel = React.lazy(() => import("@/features/interactions/components/LogicPanel"));
+const ComponentsPanel = React.lazy(() => import("./ComponentsPanel"));
 const CmsPanel = React.lazy(() => import("./CmsPanel"));
 const SnapshotManager = React.lazy(() => import("../sidebar/SnapshotManager"));
 const ImageSelector = React.lazy(() =>
@@ -59,6 +61,7 @@ export const RAIL_ITEMS: RailItem[] = [
   { id: "insert", label: "Insert", icon: Plus, group: "main", selfScroll: true, render: () => <InsertPanel /> },
   { id: "layers", label: "Layers", icon: Layers, group: "main", render: () => <LayersPanel /> },
   { id: "pages", label: "Pages", icon: FileText, group: "main", render: () => <PagesPanel /> },
+  { id: "components", label: "Components", icon: Component, group: "main", width: 260, render: () => <ComponentsPanel /> },
   { id: "assets", label: "Assets", icon: ImageIcon, group: "main", render: () => <ImageSelector /> },
   { id: "cms", label: "CMS", icon: Database, group: "main", render: () => <CmsPanel /> },
   { id: "logic", label: "Logic", icon: Braces, group: "tools", width: 280, render: () => <LogicPanel /> },

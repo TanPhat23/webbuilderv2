@@ -1,31 +1,18 @@
 import React from "react";
-import { EditorComponentProps } from "@/features/editor";
-import { ListElement } from "@/features/editor";
 import { LayoutGroup } from "framer-motion";
+import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
+import ListView from "@/features/elements/views/ListView";
 import ElementLoader from "../ElementLoader";
-import { useCanvasElement } from "./shared";
+import { useCanvasElement } from "./shared/useCanvasElement";
 
-const ListComponent = ({ element, data }: EditorComponentProps) => {
-  const listElement = element as ListElement;
-
-  const { rootProps } = useCanvasElement(listElement);
-  const itemsToRender = Array.isArray(data) ? data : listElement.elements || [];
-
-  return (
-    <ul {...rootProps}>
-      <LayoutGroup>
-        {itemsToRender.map((item, index) => (
-          <li key={index} className="list-item">
-            {Array.isArray(data) ? (
-              <ElementLoader elements={listElement.elements} data={item} />
-            ) : (
-              <ElementLoader elements={[item]} />
-            )}
-          </li>
-        ))}
-      </LayoutGroup>
-    </ul>
-  );
-};
-
-export default ListComponent;
+export default function ListComponent({ element, data }: EditorComponentProps) {
+  const { rootProps } = useCanvasElement(element);
+  if (element.type !== "List") return null;
+  return <LayoutGroup>
+    <ListView element={element} rootProps={rootProps} data={data} mode="edit">
+      {Array.isArray(data) ? data.map((item, index) => (
+        <ElementLoader key={index} elements={element.elements} data={item} />
+      )) : <ElementLoader elements={element.elements} data={data} />}
+    </ListView>
+  </LayoutGroup>;
+}

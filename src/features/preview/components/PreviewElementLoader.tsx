@@ -1,22 +1,69 @@
-import { EditorElement } from "@/types/global.type";
-import React from "react";
-import { getPreviewComponentMap } from "@/features/preview/constants/previewComponents";
+import type { EditorElement } from "@/types/global.type";
+import React, { createContext, useContext } from "react";
+import { getView } from "@/features/elements/registry";
+import { getViewChildren } from "@/features/elements/element-children";
+import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { isMissingComponent } from "@/features/projects/lib/components";
+import { PreviewCMSCollection, PreviewCMSItem } from "./PreviewCMSContent";
+
+const MissingComponentContext = createContext(false);
 
 interface PreviewElementLoaderProps {
   elements?: EditorElement[];
+  showMissing?: boolean;
+  /** Used by the canvas to drag an instance by its rendered roots. */
+  draggableRoot?: boolean;
   data?: Record<string, unknown>;
 }
 
-export default function PreviewElementLoader({
-  elements,
-  data,
-}: PreviewElementLoaderProps = {}) {
-  const renderElement = (element: EditorElement) => {
-    const Component = getPreviewComponentMap(element.type);
-    return Component ? (
-      <Component key={element.id} element={element} data={data} />
-    ) : null;
-  };
+function PreviewElement({ element, data, draggableRoot }: {
+  element: EditorElement;
+  data?: Record<string, unknown>;
+  draggableRoot?: boolean;
+}) {
+  const showMissing = useContext(MissingComponentContext);
+  if (isMissingComponent(element)) {
+    return showMissing ? <div data-element-id={element.id} draggable={draggableRoot} className="min-h-10 rounded border border-dashed border-border bg-muted px-2 py-1.5 text-xs text-muted-foreground">Missing component</div> : null;
+  }
 
-  return <>{elements?.map((element) => renderElement(element))}</>;
+  const View = getView(element.type);
+  if (!View) return null;
+  const rootProps = {
+    id: element.id,
+    "data-element-id": element.id,
+    className: element.tailwindStyles,
+    style: elementHelper.getSafeStyles(element),
+    draggable: draggableRoot,
+  };
+  const props = { rootProps, mode: "preview" as const };
+
+  if (element.type === "CMSContentList" || element.type === "CMSContentGrid") {
+    return <PreviewCMSCollection {...props} element={element} />;
+  }
+  if (element.type === "CMSContentItem") {
+    return <PreviewCMSItem {...props} element={element} />;
+  }
+
+  const elements = getViewChildren(element);
+  let children: React.ReactNode;
+  if (element.type === "Carousel") {
+    children = elements?.map((slide, index) => (
+      <PreviewElementLoader key={slide.id || index} elements={[slide]} data={data} />
+    ));
+  } else if (element.type === "List" && Array.isArray(data)) {
+    children = data.map((item, index) => (
+      <PreviewElementLoader key={index} elements={elements} data={item} />
+    ));
+  } else if (elements?.length) {
+    children = <PreviewElementLoader elements={elements} data={data} />;
+  }
+
+  return <View {...props} element={element} data={data}>{children}</View>;
+}
+
+export default function PreviewElementLoader({ elements, data, showMissing, draggableRoot }: PreviewElementLoaderProps) {
+  const content = elements?.map((element) => <PreviewElement key={element.id} element={element} data={data} draggableRoot={draggableRoot} />);
+  return showMissing === undefined ? <>{content}</> : (
+    <MissingComponentContext.Provider value={showMissing}>{content}</MissingComponentContext.Provider>
+  );
 }

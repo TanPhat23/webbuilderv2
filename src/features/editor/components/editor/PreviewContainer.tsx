@@ -10,7 +10,11 @@ import {
   useIframeSrcDoc,
   useIframeMountNode,
   useIframeStyleInjection,
+  useIframeGeneratedCss,
 } from "@/features/editor/hooks/useIframePreview";
+import { useProjectTailwindCss } from "@/features/projects/hooks/useProjectTailwindCss";
+import { useResolvedElements } from "@/features/editor/hooks/useResolvedElements";
+import { ElementStore } from "@/features/editor/store/element-store";
 
 type PreviewContainerProps = {
   currentView: Viewport;
@@ -30,6 +34,10 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
   const srcDoc = useIframeSrcDoc(projectHead, currentView);
   const mountNode = useIframeMountNode(iframeRef, srcDoc, currentView);
   useIframeStyleInjection(iframeRef, projectHead, mountNode);
+  const elements = ElementStore((s) => s.elements);
+  const components = useResolvedElements(elements);
+  const generatedCss = useProjectTailwindCss(components);
+  useIframeGeneratedCss(iframeRef, generatedCss, mountNode);
 
   const isDesktop = currentView === "desktop";
 

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { elementService, useElements } from "@/features/editor";
-import { useProjectPages } from "@/features/projects/hooks/useProjects";
+import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 import { useEditorContext } from "@/providers/editorprovider";
 import type { EditorElement } from "@/types/global.type";
@@ -10,7 +10,7 @@ import { groupByPage, type PageItem } from "./sketchModel";
 /** Pages of the project with their top-level sections: live for the open page, saved state for the rest. */
 export function useBoardPages() {
   const { projectId, pageId: activePageId } = useEditorContext();
-  const { data: pages = [], isLoading: pagesLoading } = useProjectPages(projectId);
+  const { data: pages = [], isLoading: pagesLoading } = useProjectRoutePages(projectId);
   const live = useElements();
   const collab = useCollaborationOptional();
 

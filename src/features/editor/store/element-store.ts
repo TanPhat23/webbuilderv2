@@ -47,7 +47,8 @@ export type CollaborativeData =
 export type ElementStore = {
   elements: EditorElement[];
   activePage: { projectId: string; pageId: string } | null;
-  beginPage: (projectId: string, pageId: string) => void;
+  beginPage: (projectId: string, pageId: string, isComponentPage?: boolean) => void;
+  isComponentPage: boolean;
   past: EditorElement[][];
   future: EditorElement[][];
   yjsUpdateCallback: ((elements: EditorElement[]) => void) | null;
@@ -88,6 +89,7 @@ export type ElementStore = {
   ) => ElementStore;
   /** Replace the whole page tree as one undoable step, syncing what changed. */
   replaceTree: (next: EditorElement[]) => ElementStore;
+  rememberTree: (previous: EditorElement[]) => void;
   undo: () => ElementStore;
   redo: () => ElementStore;
   setYjsUpdateCallback: (
@@ -134,8 +136,8 @@ function fitToParent(
 const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   const MAX_HISTORY = 50;
 
-  const takeSnapshot = () => {
-    const { elements, past } = get();
+  const takeSnapshot = (elements = get().elements) => {
+    const { past } = get();
     const next = [...past, cloneDeep(elements)];
     set({
       past:
@@ -145,6 +147,9 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       future: [],
     });
   };
+
+  const allowsRootCount = (next: EditorElement[]): boolean =>
+    !get().isComponentPage || next.length <= Math.max(1, get().elements.length);
 
   const triggerYjsCallback = () => {
     const { elements, yjsUpdateCallback } = get();
@@ -183,10 +188,14 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   return {
     elements: [],
     activePage: null,
-    beginPage: (projectId, pageId) => {
+    isComponentPage: false,
+    beginPage: (projectId, pageId, isComponentPage = false) => {
       const active = get().activePage;
-      if (active?.projectId === projectId && active.pageId === pageId) return;
-      set({ activePage: { projectId, pageId }, elements: [], past: [], future: [] });
+      if (active?.projectId === projectId && active.pageId === pageId) {
+        if (get().isComponentPage !== isComponentPage) set({ isComponentPage });
+        return;
+      }
+      set({ activePage: { projectId, pageId }, isComponentPage, elements: [], past: [], future: [] });
       SelectionStore.getState().clearSelection();
     },
     past: [],
@@ -300,7 +309,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       parentElement: EditorElement,
       elementToBeInserted: EditorElement,
     ) => {
-      takeSnapshot();
       const { elements } = get();
       const updated = fitToParent(
         elementHelper.mapInsertAfterId(
@@ -311,6 +319,8 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         elementToBeInserted.id,
       ).tree;
 
+      if (updated === elements || !allowsRootCount(updated)) return get();
+      takeSnapshot();
       set({ elements: updated });
       triggerYjsCallback();
       // Send the inserted copy: it carries the corrected parentId.
@@ -329,7 +339,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         targetId,
         position,
       );
-      if (placed === elements) return get();
+      if (placed === elements || !allowsRootCount(placed)) return get();
       const updated = fitToParent(placed, element.id).tree;
       takeSnapshot();
       set({ elements: updated });
@@ -347,7 +357,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         targetId,
         position,
       );
-      if (moved === elements) return get();
+      if (moved === elements || !allowsRootCount(moved)) return get();
       const { tree: updated, stylesPatch } = fitToParent(moved, id);
       takeSnapshot();
       set({ elements: updated });
@@ -369,7 +379,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     },
 
     addElement: (...newElements: EditorElement[]) => {
-      takeSnapshot();
       const { elements } = get();
       const updatedTree = newElements.reduce<EditorElement[]>(
         (acc, newEl) =>
@@ -380,26 +389,28 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         elements as EditorElement[],
       ) as EditorElement[];
 
-      set({
-        elements: updatedTree,
-      });
+      const added = newElements.flatMap(({ id }) => elementHelper.findById(updatedTree, id) ?? []);
+      if (!added.length || !allowsRootCount(updatedTree)) return get();
+      takeSnapshot();
+      set({ elements: updatedTree });
       triggerYjsCallback();
-      for (const newEl of newElements) {
-        const added = elementHelper.findById(updatedTree, newEl.id) ?? newEl;
-        triggerCollaborativeCallback("create", added.id, added);
+      for (const element of added) {
+        triggerCollaborativeCallback("create", element.id, element);
       }
       return get();
     },
 
     replaceTree: (next: EditorElement[]) => {
       const { elements } = get();
-      if (diffTrees(elements, next).length === 0) return get();
+      if (!allowsRootCount(next) || diffTrees(elements, next).length === 0) return get();
       takeSnapshot();
       set({ elements: next });
       triggerYjsCallback();
       syncTreeChange(elements, next);
       return get();
     },
+
+    rememberTree: (previous) => takeSnapshot(previous),
 
     undo: () => {
       const { past, elements, future } = get();

@@ -4,16 +4,29 @@ import * as ContextMenuPrimitive from "@radix-ui/react-context-menu";
 import {
   ContextMenu,
   ContextMenuTrigger,
-  ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuPortal,
+  ContextMenuShortcut,
 } from "@/components/ui/context-menu";
-import { Copy, Trash2, Layers, ArrowUp, ArrowDown, Save } from "lucide-react";
+import {
+  BringToFront,
+  ClipboardPaste,
+  Copy,
+  Component,
+  Save,
+  Scissors,
+  SendToBack,
+  Trash2,
+} from "lucide-react";
 import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
 
+import { useComponentActions } from "@/features/editor/hooks/useComponentActions";
+import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
+import type { EditorElement } from "@/types/global.type";
+import { ComponentNameDialog } from "./ComponentNameDialog";
 import { SaveElementDialog } from "./SaveElementDialog";
-import { toast } from "sonner";
+import { SharedSectionMenu } from "./SharedSectionMenu";
 
 interface EditorContextMenuProps {
   children: React.ReactNode;
@@ -23,90 +36,86 @@ interface EditorContextMenuProps {
 
 const keyboardEventHandler = new ElementKeyboardActions();
 
+/** Shortcut modifier label for the user's platform (⌘ on Apple, Ctrl elsewhere). */
+const MOD =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
+    ? "⌘"
+    : "Ctrl+";
+
 /**
- * One context menu for the whole canvas. Menu actions apply to the selected
- * element; the canvas selects the element under the cursor on right-click
- * and calls `preventDefault` when there is none, which keeps the menu closed.
+ * The canvas and Layers panel select the right-clicked element before
+ * opening this menu. The portal follows the document containing the trigger.
  */
 export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   children,
   isReadOnly = false,
   isLocked = false,
 }) => {
-  const [showSaveDialog, setShowSaveDialog] = React.useState(false);
-  // Determine if operations are allowed
+  const [saveElement, setSaveElement] = React.useState<EditorElement>();
+  const [source, setSource] = React.useState<EditorElement>();
+  const { createComponent, canReplace } = useComponentActions();
+  // Every action that changes the page is disabled (not hidden) when read-only.
   const canEdit = !isReadOnly && !isLocked;
-  const canDelete = !isReadOnly && !isLocked;
-  const canReorder = !isReadOnly && !isLocked;
 
-  const onCopy = () => {
-    keyboardEventHandler.copyElement();
-  };
-
-  const onCut = () => {
-    if (!canDelete) {
-      toast.error("Cannot cut elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    keyboardEventHandler.cutElement();
-  };
-
-  const onPaste = () => {
-    if (!canEdit) {
-      toast.error("Cannot paste elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    keyboardEventHandler.pasteElement();
-  };
-
-  const onBringToFront = () => {
-    if (!canReorder) {
-      toast.error("Cannot reorder elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    keyboardEventHandler.bringToFront();
-  };
-
-  const onSendToBack = () => {
-    if (!canReorder) {
-      toast.error("Cannot reorder elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    keyboardEventHandler.sendToBack();
-  };
-
-  const onDelete = () => {
-    if (!canDelete) {
-      toast.error("Cannot delete elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    keyboardEventHandler.deleteElement();
-  };
-
-  const onSave = () => {
-    if (!canEdit) {
-      toast.error("Cannot save elements - editor is in read-only mode", {
-        duration: 2000,
-      });
-      return;
-    }
-    setShowSaveDialog(true);
-  };
+  const onCopy = () => keyboardEventHandler.copyElement();
+  const onCut = () => keyboardEventHandler.cutElement();
+  const onPaste = () => keyboardEventHandler.pasteElement();
+  const onBringToFront = () => keyboardEventHandler.bringToFront();
+  const onSendToBack = () => keyboardEventHandler.sendToBack();
+  const onDelete = () => keyboardEventHandler.deleteElement();
+  const onSave = () => setSaveElement(getSelectedOrHoveredElement());
 
   const triggerRef = React.useRef<HTMLDivElement | null>(null);
 
   const [portalContainer, setPortalContainer] =
     React.useState<HTMLElement | null>(null);
+
+  // Radix only listens for outside clicks / Esc on the document that holds the
+  // menu. The canvas lives in an iframe, so a click in the editor chrome (or
+  // Esc while focus is outside the iframe) never reached it and the menu stayed
+  // open. Watch every document we can reach and close through Radix's own Esc.
+  React.useEffect(() => {
+    if (!portalContainer) return;
+    const menuDoc = portalContainer.ownerDocument;
+    const docs = new Set<Document>([document]);
+    const frameDoc = triggerRef.current?.ownerDocument;
+    if (frameDoc) docs.add(frameDoc);
+    docs.add(menuDoc);
+
+    const close = () => {
+      const view = menuDoc.defaultView;
+      if (!view) return;
+      menuDoc.dispatchEvent(
+        new view.KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    };
+    const onPointerDown = (e: Event) => {
+      const target = e.target as Element | null;
+      // Inside the menu or its "Shared section" submenu (portalled separately).
+      if (
+        target?.closest?.(
+          '[data-slot="context-menu-content"], [data-slot="context-menu-sub-content"]',
+        )
+      )
+        return;
+      close();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Our own synthetic Escape is handled by Radix; ignore it here.
+      if (e.key === "Escape" && e.isTrusted) close();
+    };
+
+    const cleanups: Array<() => void> = [];
+    for (const doc of docs) {
+      doc.addEventListener("pointerdown", onPointerDown, true);
+      doc.addEventListener("keydown", onKeyDown, true);
+      cleanups.push(() => {
+        doc.removeEventListener("pointerdown", onPointerDown, true);
+        doc.removeEventListener("keydown", onKeyDown, true);
+      });
+    }
+    return () => cleanups.forEach((fn) => fn());
+  }, [portalContainer]);
 
   return (
     <>
@@ -127,198 +136,77 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
         <ContextMenuTrigger asChild>
           <div ref={triggerRef}>{children}</div>
         </ContextMenuTrigger>
-        {portalContainer &&
-          portalContainer !==
-            (typeof document !== "undefined" ? document.body : null) && (
-            <ContextMenuPortal container={portalContainer}>
-              <ContextMenuPrimitive.Content
-                data-slot="context-menu-content"
-                className={
-                  "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out " +
-                  "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 " +
-                  "data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 " +
-                  "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-context-menu-content-available-height) " +
-                  "min-w-32 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md w-48"
-                }
+        {portalContainer && (
+          <ContextMenuPortal container={portalContainer}>
+            <ContextMenuPrimitive.Content
+              data-slot="context-menu-content"
+              className={
+                "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out " +
+                "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 " +
+                "data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 " +
+                "data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-h-(--radix-context-menu-content-available-height) " +
+                "min-w-52 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md"
+              }
+            >
+              <ContextMenuItem onSelect={onCopy}>
+                <Copy />
+                Copy
+                <ContextMenuShortcut>{MOD}C</ContextMenuShortcut>
+              </ContextMenuItem>
+              <ContextMenuItem disabled={!canEdit} onSelect={onCut}>
+                <Scissors />
+                Cut
+                <ContextMenuShortcut>{MOD}X</ContextMenuShortcut>
+              </ContextMenuItem>
+              <ContextMenuItem disabled={!canEdit} onSelect={onPaste}>
+                <ClipboardPaste />
+                Paste
+                <ContextMenuShortcut>{MOD}V</ContextMenuShortcut>
+              </ContextMenuItem>
+
+              <ContextMenuSeparator />
+
+              <ContextMenuItem disabled={!canEdit} onSelect={onBringToFront}>
+                <BringToFront />
+                Bring to front
+              </ContextMenuItem>
+              <ContextMenuItem disabled={!canEdit} onSelect={onSendToBack}>
+                <SendToBack />
+                Send to back
+              </ContextMenuItem>
+
+              <ContextMenuSeparator />
+
+              <ContextMenuItem disabled={!canReplace || !canEdit} onSelect={() => setSource(getSelectedOrHoveredElement())}>
+                <Component />
+                Create component…
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={onSave}>
+                <Save />
+                Save to my library…
+              </ContextMenuItem>
+
+              <ContextMenuSeparator />
+
+              <SharedSectionMenu container={portalContainer} editable={canEdit} />
+
+              <ContextMenuItem
+                variant="destructive"
+                disabled={!canEdit}
+                onSelect={onDelete}
               >
-                <ContextMenuItem asChild>
-                  <div
-                    onClick={onCopy}
-                    className="flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
-                  >
-                    <div className="flex">
-                      <Copy className="mr-2 h-4 w-4" />
-                      Copy
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘C
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canDelete}
-                  onClick={(e) => {
-                    if (!canDelete) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onCut}
-                    className={`flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canDelete ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <Layers className="mr-2 h-4 w-4" />
-                      Cut
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘X
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canEdit}
-                  onClick={(e) => {
-                    if (!canEdit) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onPaste}
-                    className={`flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canEdit ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <Layers className="mr-2 h-4 w-4" />
-                      Paste
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘V
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuSeparator className="bg-border -mx-1 my-1 h-px" />
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canReorder}
-                  onClick={(e) => {
-                    if (!canReorder) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onBringToFront}
-                    className={`flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canReorder ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <ArrowUp className="mr-2 h-4 w-4" />
-                      Bring to Front
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘↑
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canReorder}
-                  onClick={(e) => {
-                    if (!canReorder) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onSendToBack}
-                    className={`flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canReorder ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <ArrowDown className="mr-2 h-4 w-4" />
-                      Send to Back
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘↓
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuSeparator className="bg-border -mx-1 my-1 h-px" />
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canEdit}
-                  onClick={(e) => {
-                    if (!canEdit) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onSave}
-                    className={`flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canEdit ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Element
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘S
-                    </span>
-                  </div>
-                </ContextMenuItem>
-
-                <ContextMenuSeparator className="bg-border -mx-1 my-1 h-px" />
-
-                <ContextMenuItem
-                  asChild
-                  disabled={!canDelete}
-                  onClick={(e) => {
-                    if (!canDelete) {
-                      e.preventDefault();
-                    }
-                  }}
-                >
-                  <div
-                    onClick={onDelete}
-                    className={`text-destructive flex justify-between cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm ${
-                      !canDelete ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    <div className="flex">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-left mr-1">
-                      ⌘⌫
-                    </span>
-                  </div>
-                </ContextMenuItem>
-              </ContextMenuPrimitive.Content>
-            </ContextMenuPortal>
-          )}
+                <Trash2 />
+                Delete
+                <ContextMenuShortcut>Del</ContextMenuShortcut>
+              </ContextMenuItem>
+            </ContextMenuPrimitive.Content>
+          </ContextMenuPortal>
+        )}
       </ContextMenu>
-      <SaveElementDialog
-        open={showSaveDialog}
-        onOpenChange={setShowSaveDialog}
-      />
+      {source && <ComponentNameDialog title="Create component" confirmLabel="Create"
+        initialName={source.name} onClose={() => setSource(undefined)}
+        onSubmit={(name) => createComponent(name, { fromElementId: source.id })} />}
+      {saveElement && <SaveElementDialog element={saveElement} onClose={() => setSaveElement(undefined)} />}
     </>
   );
 };

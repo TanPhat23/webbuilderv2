@@ -8,7 +8,7 @@
  */
 
 /** Settings that are never written out as attributes of the generated tag. */
-export const HIDDEN_SETTINGS = ["interactions", "migratedWorkflowLinks", "customSubmit", "codeProps"];
+export const HIDDEN_SETTINGS = ["interactions", "migratedWorkflowLinks", "customSubmit", "codeProps", "component"];
 
 /** Code around the JSX, as source text. */
 export interface Preamble {

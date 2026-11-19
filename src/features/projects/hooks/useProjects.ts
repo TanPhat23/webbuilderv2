@@ -50,12 +50,24 @@ export function useCurrentProject() {
   return useProject(id ?? null);
 }
 
-export function useProjectPages(projectId: string | null) {
-  return useQuery({
+function projectPagesOptions(projectId: string | null) {
+  return {
     queryKey: projectKeys.pages(projectId || ""),
     queryFn: () => getProjectPages({ data: { projectId: projectId! } }),
     enabled: !!projectId,
     ...QUERY_CONFIG.DEFAULT,
+  };
+}
+
+export function useProjectPages(projectId: string | null, refetchInterval: number | false = false) {
+  return useQuery({ ...projectPagesOptions(projectId), refetchInterval });
+}
+
+/** Site pages shown in navigation and route pickers. */
+export function useProjectRoutePages(projectId: string | null) {
+  return useQuery({
+    ...projectPagesOptions(projectId),
+    select: (pages) => pages.filter((page) => page.Type !== "cp" && !page.DeletedAt),
   });
 }
 

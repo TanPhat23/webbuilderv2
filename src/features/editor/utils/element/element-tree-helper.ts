@@ -1,3 +1,4 @@
+import { componentSetting } from "@/features/projects/lib/components";
 import type {
   ContainerElement,
   ContainerElementType,
@@ -30,7 +31,7 @@ const mapChildArrays = (
 const isContainerElement = (
   element: EditorElement,
 ): element is ContainerElement =>
-  CONTAINER_ELEMENT_TYPES.includes(element.type as ContainerElementType);
+  !componentSetting(element) && CONTAINER_ELEMENT_TYPES.includes(element.type as ContainerElementType);
 
 const isEditableElement = (element: EditorElement): boolean =>
   EDITABLE_ELEMENT_TYPES.includes(element.type as EditableElementType);
@@ -115,7 +116,7 @@ const mapInsertAt = (
   };
   if (!parentId) return insertInto(elements);
   return mapUpdateById(elements, parentId, (parent) =>
-    hasChildren(parent)
+    hasChildren(parent) || isContainerElement(parent) || parent.type === "Select"
       ? ({ ...parent, elements: insertInto(children(parent)) } as EditorElement)
       : parent,
   );
@@ -226,7 +227,7 @@ const mapAddChildById = (
     if (!isContainerElement(parent)) return parent;
     return {
       ...parent,
-      elements: [...parent.elements, childToAdd],
+      elements: [...children(parent), childToAdd],
     } as EditorElement;
   });
 };

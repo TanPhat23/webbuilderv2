@@ -1,7 +1,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { ImageSettings } from "@/features/editor";
+import { MediaDropOverlay } from "./shared/MediaDropOverlay";
+import ImageView from "@/features/elements/views/ImageView";
 import {
   Empty,
   EmptyHeader,
@@ -46,18 +47,11 @@ function useRoomForDetails(enabled: boolean) {
 const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
   const { rootProps } = useCanvasElement(element);
   const { ref: placeholderRef, hasRoom } = useRoomForDetails(!element.src);
-  const { isDragOver, handleDragOver, handleDragLeave, handleDrop } =
+  const { isDragOver, dragTarget, handleDragOver, handleDragLeave, handleDrop } =
     useMediaDrop({
       element,
       mediaType: "image",
     });
-
-  const imageSettings = (
-    element.type === "Image" ? element.settings : null
-  ) as ImageSettings | null;
-  const objectFit = imageSettings?.objectFit ?? "cover";
-  const loading = imageSettings?.loading ?? "lazy";
-  const decoding = imageSettings?.decoding ?? "async";
 
   const dragHandlers = {
     onDragOver: handleDragOver,
@@ -67,27 +61,16 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
 
   const wrapperProps = { ...rootProps, ...dragHandlers };
 
+  if (element.type !== "Image") return null;
   if (element.src) {
     return (
-      <div
-        {...wrapperProps}
-        className={cn(
-          rootProps.className,
-          "relative",
-          isDragOver && "ring-2 ring-primary ring-offset-2",
-        )}
-      >
-        <img
-          src={element.src}
-          alt={element.name || "Image"}
-          style={{ objectFit: objectFit as React.CSSProperties["objectFit"] }}
-          loading={loading}
-          decoding={decoding}
-          role="img"
-          className="w-full h-full"
-        />
-        {isDragOver && <DropOverlay label="Drop to replace image" />}
-      </div>
+      <>
+        <ImageView element={element} mode="edit" rootProps={{
+          ...wrapperProps,
+          className: cn(rootProps.className, isDragOver && "ring-2 ring-primary ring-offset-2"),
+        }} />
+        {dragTarget && <MediaDropOverlay target={dragTarget} label="Drop to replace image" />}
+      </>
     );
   }
 

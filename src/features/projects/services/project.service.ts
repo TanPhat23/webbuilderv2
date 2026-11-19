@@ -17,7 +17,7 @@ export interface ApiPage {
   id: string;
   projectId: string;
   name: string;
-  type: string;
+  type: Page["Type"];
   styles?: Page["Styles"];
   /** Interaction logic (variables and flows); absent until the page has some. */
   logic?: unknown;
@@ -58,12 +58,14 @@ export const projectService = {
   },
 
   getProjectPages: (id: string, token: string): Promise<Page[]> => {
+    return projectService.getProjectPagesWithLogic(id, token).then((pages) => pages.map(toPage));
+  },
+
+  getProjectPagesWithLogic: (id: string, token: string): Promise<ApiPage[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id))
       .build();
-    return apiClient
-      .get<ApiPage[]>(url, undefined, token)
-      .then((pages) => pages.map(toPage));
+    return apiClient.get<ApiPage[]>(url, undefined, token);
   },
 
   getProjectPublic: (id: string): Promise<Project> => {
@@ -74,11 +76,11 @@ export const projectService = {
   },
 
   /** Pages of a published project, with their logic, for the preview. */
-  getPagesPublic: (id: string): Promise<ApiPage[]> => {
+  getPagesPublic: (id: string, { previewCache = false } = {}): Promise<ApiPage[]> => {
     const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.PAGES.GET_PUBLIC(id))
-      .build();
-    return apiClient.getPublic<ApiPage[]>(url);
+      .setPath(API_ENDPOINTS.PAGES.GET_PUBLIC(id));
+    if (previewCache) url.addQueryParam("previewCache", "1");
+    return apiClient.getPublic<ApiPage[]>(url.build());
   },
 
   getProjects: (): Promise<Project[]> => {
@@ -155,13 +157,20 @@ export const projectService = {
   /** Create a page; the API requires owner or editor role on the project. */
   createPage: (
     projectId: string,
-    page: { id?: string; name: string; type: string; styles?: unknown },
+    page: { id?: string; name: string; type: Page["Type"]; styles?: unknown },
     token: string,
   ): Promise<ApiPage> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PAGES.CREATE(projectId))
       .build();
     return apiClient.post<ApiPage>(url, page, undefined, token);
+  },
+
+  renamePage: async (projectId: string, pageId: string, name: string, token: string): Promise<void> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.UPDATE_PAGE(projectId, pageId))
+      .build();
+    await apiClient.patch(url, { name }, undefined, token);
   },
 
   deleteProjectPage: (

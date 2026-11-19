@@ -144,10 +144,12 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
    */
   private buildUrl(token: string): string {
     const projectId = encodeURIComponent(this.options.projectId);
-    return new URLBuilder(this.options.url)
+    const url = new URLBuilder(this.options.url)
       .setPath(`/ws/${projectId}`)
-      .addQueryParam("token", token)
-      .build();
+      .addQueryParam("token", token);
+    // A helper socket must not replace the editor's own connection.
+    if (this.options.writer) url.addQueryParam("conn", "writer");
+    return url.build();
   }
 
   // Internal — WebSocket event handlers

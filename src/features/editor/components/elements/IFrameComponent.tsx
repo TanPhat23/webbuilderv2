@@ -1,7 +1,8 @@
 
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { IFrameElement, IFrameSettings } from "@/features/editor";
+import { IFrameElement } from "@/features/editor";
+import IFrameView from "@/features/elements/views/IFrameView";
 import {
   Empty,
   EmptyHeader,
@@ -10,7 +11,6 @@ import {
   EmptyDescription,
 } from "@/components/ui/empty";
 import { Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useCanvasElement } from "./shared";
 
 const IFrameComponent = ({ element }: EditorComponentProps) => {
@@ -19,37 +19,9 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
     style: { position: "relative" },
   });
 
-  const settings = (iframeElement.settings ?? {}) as IFrameSettings;
-  const sandbox = settings.sandbox ?? "allow-scripts allow-same-origin";
-  const allow = settings.allow;
-  const loading = settings.loading ?? "lazy";
-  const referrerPolicy = settings.referrerPolicy;
-  const iframeWidth = settings.width ?? "100%";
-  const iframeHeight = settings.height ?? 400;
-
-
   if (iframeElement.src) {
     return (
-      <div {...rootProps}>
-        <iframe
-          src={iframeElement.src}
-          title={iframeElement.name || "Embedded content"}
-          sandbox={sandbox}
-          allow={allow}
-          loading={loading}
-          referrerPolicy={referrerPolicy}
-          style={{
-            width:
-              typeof iframeWidth === "number"
-                ? `${iframeWidth}px`
-                : iframeWidth,
-            height:
-              typeof iframeHeight === "number"
-                ? `${iframeHeight}px`
-                : iframeHeight,
-            border: "none",
-          }}
-        />
+      <IFrameView element={iframeElement} rootProps={rootProps} mode="edit">
         <div
           className="absolute inset-0"
           style={{
@@ -57,7 +29,7 @@ const IFrameComponent = ({ element }: EditorComponentProps) => {
             background: "transparent",
           }}
         />
-      </div>
+      </IFrameView>
     );
   }
 

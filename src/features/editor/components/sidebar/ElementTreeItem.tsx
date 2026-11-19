@@ -1,10 +1,12 @@
 import React from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Component } from "lucide-react";
 import { useIsSelected, useSetSelectedElement } from "@/features/editor";
 import elementHolders from "@/features/editor/constants/elements";
 import { IconRenderer, type IconName } from "@/features/editor/utils/icons/iconMap";
 import { cn } from "@/lib/utils";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
+
+import { componentSetting } from "@/features/projects/lib/components";
 
 const ICON_BY_TYPE = new Map<string, IconName>(
   elementHolders.map((h) => [h.type, h.icon]),
@@ -29,7 +31,8 @@ export default function ElementTreeItem({
   const setSelectedElement = useSetSelectedElement();
   const [isOpen, setIsOpen] = React.useState(level < 2);
 
-  const children = childrenOf(element);
+  const linked = componentSetting(element);
+  const children = linked ? [] : childrenOf(element);
   const hasChildren = children.length > 0;
   const name = element.name || element.type;
   const icon = ICON_BY_TYPE.get(element.type);
@@ -37,6 +40,8 @@ export default function ElementTreeItem({
   return (
     <div role="treeitem" aria-expanded={hasChildren ? isOpen : undefined} aria-selected={isSelected}>
       <div
+        data-layer-row
+        onContextMenu={() => setSelectedElement(element)}
         onClick={(e) => {
           e.stopPropagation();
           setSelectedElement(isSelected ? undefined : element);
@@ -64,7 +69,7 @@ export default function ElementTreeItem({
         ) : (
           <span className="w-4 shrink-0" />
         )}
-        {icon ? (
+        {linked ? <Component aria-label="Component instance" className="h-3.5 w-3.5 shrink-0" /> : icon ? (
           <IconRenderer name={icon} className="h-3.5 w-3.5 shrink-0" />
         ) : (
           <span className="h-3.5 w-3.5 shrink-0 rounded-sm border border-current opacity-50" />

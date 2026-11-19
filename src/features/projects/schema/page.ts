@@ -9,10 +9,13 @@ const flatJsonValueSchema = z.union([
 
 const flatJsonRecordSchema = z.record(z.string(), flatJsonValueSchema);
 
+export const PageTypeSchema = z.enum(["sp", "dp", "cp"]);
+export type PageType = z.infer<typeof PageTypeSchema>;
+
 const pageShape = {
   Id: z.string().optional(),
   Name: z.string(),
-  Type: z.string(),
+  Type: PageTypeSchema,
   Styles: flatJsonRecordSchema.nullable(),
   ProjectId: z.string(),
   CreatedAt: z.date().optional(),
@@ -23,7 +26,7 @@ const pageShape = {
 const createPageShape = {
   Id: z.string().optional(),
   Name: z.string().min(1),
-  Type: z.string().default("page"),
+  Type: PageTypeSchema.default("sp"),
   Styles: flatJsonRecordSchema.nullable().default(null),
   ProjectId: z.string(),
 } satisfies z.ZodRawShape;

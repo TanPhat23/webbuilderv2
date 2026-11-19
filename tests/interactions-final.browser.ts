@@ -4,7 +4,7 @@ import { createServer } from 'vite';
 import { chromium } from '@playwright/test';
 import { resolve } from 'node:path';
 
-test('configured preview input is submitted and all animation presets run for the requested duration', async () => {
+test('preview inputs submit, lazy canvas instances reveal and remain draggable, and animation durations are honored', async () => {
   const server = await createServer({ configFile: false, esbuild: { jsx: 'automatic' }, resolve: { alias: { '@': resolve('src') } }, server: { port: 0 } });
   await server.listen();
   const browser = await chromium.launch({ headless: true });
@@ -15,6 +15,11 @@ test('configured preview input is submitted and all animation presets run for th
     await page.locator('#submit').click();
     await page.waitForFunction(() => (window as any).requestBody !== undefined);
     assert.deepEqual(await page.evaluate(() => (window as any).requestBody), { email: 'ada@example.com', message: 'Hello', topic: 'billing' });
+    await page.locator('#mount-lazy').click();
+    const lazyRoot = page.locator('#late.wb-in[draggable=true]');
+    await lazyRoot.waitFor({ timeout: 5000 });
+    assert.equal(await lazyRoot.textContent(), 'Lazy content');
+    assert.equal(await page.locator('[data-element-id="missing"][draggable=true]').textContent(), 'Missing component');
     for (const preset of ['fadeIn', 'slideIn', 'bounce', 'pulse', 'shake', 'spin']) {
       const animation = await page.evaluate((name) => (window as any).runAnimation(name), preset);
       assert.notEqual(animation.name, 'none', `${preset} has animation`);

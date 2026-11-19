@@ -19,6 +19,7 @@ import { BorderSection } from "./BorderSection";
 import { ShadowSection } from "./ShadowSection";
 import { EffectsSection } from "./EffectsSection";
 import { AdvancedSection } from "./AdvancedSection";
+import { RevealSection } from "./RevealSection";
 
 export default function StyleTab({ breakpoint }: { breakpoint: Breakpoint }) {
   const sp = useStyleProps(breakpoint);
@@ -86,6 +87,7 @@ export default function StyleTab({ breakpoint }: { breakpoint: Breakpoint }) {
       <BorderSection sp={sp} />
       <ShadowSection sp={sp} />
       <EffectsSection sp={sp} />
+      <RevealSection disabled={sp.disabled} />
       <AdvancedSection disabled={sp.disabled} />
     </fieldset>
   );

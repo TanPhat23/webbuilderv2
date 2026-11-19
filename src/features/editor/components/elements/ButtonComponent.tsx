@@ -1,20 +1,14 @@
 import React from "react";
-import DOMPurify from "isomorphic-dompurify";
-import { EditorComponentProps } from "@/features/editor";
-import { useCanvasElement } from "./shared";
+import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
+import ButtonView from "@/features/elements/views/ButtonView";
+import { useCanvasElement } from "./shared/useCanvasElement";
 
-const ButtonComponent = ({ element }: EditorComponentProps) => {
+export default function ButtonComponent({ element }: EditorComponentProps) {
   const { rootProps } = useCanvasElement(element);
-
-  return (
-    <button
-      {...rootProps}
-      type="button"
-      dangerouslySetInnerHTML={{
-        __html: DOMPurify.sanitize(element.content || ""),
-      }}
-    />
-  );
-};
-
-export default ButtonComponent;
+  if (element.type !== "Button") return null;
+  const preventNavigation = (event: React.MouseEvent<HTMLElement>) => {
+    if (event.currentTarget.tagName === "A") event.preventDefault();
+  };
+  return <ButtonView element={element}
+    rootProps={{ ...rootProps, onClick: preventNavigation, onAuxClick: preventNavigation }} mode="edit" />;
+}

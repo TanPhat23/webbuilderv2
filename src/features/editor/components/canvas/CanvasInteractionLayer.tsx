@@ -1,4 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { componentFromDrop } from "@/features/editor/utils/element/componentDrop";
+import { useEditorContext } from "@/providers/editorprovider";
 import type { EditorElement } from "@/types/global.type";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElementStore } from "@/features/editor/store/element-store";
@@ -24,6 +28,7 @@ import { usePickStore } from "@/features/interactions/editing/pick-store";
 
 const CANVAS_CSS = `
 [data-canvas-root] [draggable="true"] { cursor: grab; }
+[data-canvas-root] [data-component-instance] iframe { pointer-events: none; }
 [data-canvas-root] [data-dragging="true"] { opacity: 0.5; }
 [data-canvas-root][data-picking] *, [data-canvas-root][data-picking] { cursor: crosshair !important; }
 `;
@@ -33,7 +38,11 @@ function elementNodeFrom(
   root: HTMLElement | null,
   target: EventTarget | null,
 ): HTMLElement | null {
-  const closest = (target as Element | null)?.closest?.("[data-element-id]");
+  const element = target as Element | null;
+  const boundary = element?.closest?.<HTMLElement>("[data-component-instance]");
+  const closest = boundary
+    ? findElementNode(boundary, boundary.dataset.componentInstance)
+    : element?.closest?.("[data-element-id]");
   return closest && root?.contains(closest) ? (closest as HTMLElement) : null;
 }
 
@@ -77,6 +86,8 @@ export function CanvasInteractionLayer({
 }) {
   const { canEdit, canCreate, isReadOnly, isLocked, permissionsRole } =
     useEditorFlags();
+  const queryClient = useQueryClient();
+  const { projectId, userId } = useEditorContext();
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const [drop, setDrop] = useState<DropIndicatorState | null>(null);
   const dropRef = useRef<DropIndicatorState | null>(null);
@@ -179,7 +190,8 @@ export function CanvasInteractionLayer({
   };
 
   const onContextMenu = (e: React.MouseEvent) => {
-    const id = elementNodeFrom(root, e.target)?.dataset.elementId;
+    const shared = (e.target as Element | null)?.closest<HTMLElement>("[data-shared-section-id]");
+    const id = shared?.dataset.sharedSectionId ?? elementNodeFrom(root, e.target)?.dataset.elementId;
     // No element under the cursor: keep the editor menu closed.
     if (!id) {
       e.preventDefault();
@@ -225,15 +237,16 @@ export function CanvasInteractionLayer({
     }
 
     const view = node.ownerDocument.defaultView ?? window;
-    const parentStyle = node.parentElement
-      ? view.getComputedStyle(node.parentElement)
+    const parent = (node.closest("[data-component-instance]") ?? node).parentElement;
+    const parentStyle = parent
+      ? view.getComputedStyle(parent)
       : null;
     const horizontal = parentStyle ? isHorizontalFlow(parentStyle) : false;
     const position = computeDropPosition(
       node.getBoundingClientRect(),
       { x: e.clientX, y: e.clientY },
       {
-        isContainer: elementHelper.isContainerElement({
+        isContainer: !node.closest("[data-component-instance]") && elementHelper.isContainerElement({
           type: node.dataset.elementType,
         } as EditorElement),
         horizontal,
@@ -280,17 +293,18 @@ export function CanvasInteractionLayer({
       let newElement: EditorElement | undefined | null;
       if (payload.kind === "create") {
         newElement = factory.createElement({ type: payload.elementType, pageId });
-      } else {
+      } else if (payload.kind === "template") {
         const template = customComps[payload.index];
         newElement = template
           ? factory.createElementFromTemplate({ element: template, pageId })
           : undefined;
+      } else if (projectId) {
+        newElement = componentFromDrop(payload, queryClient, projectId, pageId, userId);
+        if (!newElement) toast.error("This component cannot be inserted here.");
       }
       if (!newElement) return;
       store.insertElementRelative(newElement, target.targetId, target.position);
-      if (payload.kind === "create") {
-        setSelection({ selectedElementId: newElement.id });
-      }
+      if (payload.kind !== "template" && findElement(newElement.id)) setSelection({ selectedElementId: newElement.id });
     } catch (error) {
       console.warn("Failed to handle canvas drop", error);
     } finally {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { HelpCircle, Play } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -14,9 +15,9 @@ import ViewportControls from "../editor/header/ViewportControls";
 import EventModeToggle from "../editor/EventModeToggle";
 import CollaboratorIndicator from "../editor/CollaboratorIndicator";
 import CollaborationButton from "../editor/CollaborationButton";
-import ConnectCliButton from "@/features/agent/components/ConnectCliButton";
 import ModeSwitch from "./ModeSwitch";
 import CommentsToggle from "./CommentsToggle";
+import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import PublishButton from "./PublishButton";
 
 interface EditorTopBarProps {
@@ -28,7 +29,8 @@ export default function EditorTopBar({
   projectId,
   onShowShortcuts,
 }: EditorTopBarProps) {
-  const { editor } = useEditorContext();
+  const { editor, pageId } = useEditorContext();
+  const isMaster = useCurrentPage()?.Type === "cp";
   const [navOpen, setNavOpen] = useState(false);
 
   // Cmd/Ctrl+K opens page navigation.
@@ -81,18 +83,17 @@ export default function EditorTopBar({
 
         <CollaboratorIndicator projectId={projectId} />
         <CollaborationButton projectId={projectId} />
-        <ConnectCliButton />
-        <Button
+        {!isMaster && <Button
           asChild
           variant="outline"
           size="sm"
           className="h-7 gap-1.5 px-2.5 text-xs font-medium"
         >
-          <a href={`/preview/${projectId}`} target="_blank" rel="noreferrer">
+          <Link to="/preview/$id" params={{ id: projectId }} search={{ page: pageId || undefined }} target="_blank" rel="noreferrer">
             <Play className="h-3 w-3" />
             Preview
-          </a>
-        </Button>
+          </Link>
+        </Button>}
         <PublishButton projectId={projectId} />
       </div>
 

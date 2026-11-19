@@ -14,6 +14,7 @@ import { generate } from "@babel/generator";
 import * as t from "@babel/types";
 import { isEqual } from "lodash-es";
 import type { EditorElement } from "@/types/global.type";
+import { componentSetting } from "@/features/projects/lib/components";
 import { newEntityId } from "@/lib/entity-id";
 import { generateStrategies } from "./generatestrategies";
 import { splitClasses, styleClasses } from "./classNames";
@@ -224,7 +225,7 @@ function settingsFromAttributes(
     if (before && key in before) next[key] = before[key];
   }
   for (const [name, attr] of attrs) {
-    if (name === "className" || name === "data-element-id") continue;
+    if (name === "className" || name === "data-element-id" || name === "component") continue;
     const v = attributeValue(attr);
     if (v.ok && v.value !== undefined) next[name] = v.value;
   }
@@ -255,6 +256,11 @@ function convertElement(node: t.JSXElement, parentId: string | undefined, ctx: C
   if (existing) ctx.claimed.add(existing.id);
 
   const { text, elements: childNodes } = splitChildren(node);
+  if (existing && componentSetting(existing)) {
+    if (childNodes.length) throw new CodeError("Edit the component master to change its children.", childNodes[0].loc ?? node.loc);
+    const { elements: _children, ...instance } = existing as EditorElement & { elements?: EditorElement[] };
+    return { ...instance, parentId } as EditorElement;
+  }
 
   let type: string = existing?.type ?? (tag === "div" && !childNodes.length && text ? "Text" : candidates[0]);
   // A text box that now contains elements is a frame.

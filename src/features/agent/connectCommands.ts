@@ -17,10 +17,6 @@ export function claudeCodeCommand(mcpUrl: string, token: string): string {
   return `claude mcp add --transport http webbuilder ${checkUrl(mcpUrl)} --header "Authorization: Bearer ${checkToken(token)}"`;
 }
 
-export function codexCommands(mcpUrl: string): { export: (token: string) => string; add: string } {
-  const url = checkUrl(mcpUrl);
-  return {
-    export: (token) => `export WEBBUILDER_TOKEN=${checkToken(token)}`,
-    add: `codex mcp add webbuilder --url ${url} --bearer-token-env-var WEBBUILDER_TOKEN`,
-  };
+export function codexCommand(mcpUrl: string, token: string): string {
+  return `export WEBBUILDER_TOKEN=${checkToken(token)} && codex mcp add webbuilder --url ${checkUrl(mcpUrl)} --bearer-token-env-var WEBBUILDER_TOKEN`;
 }

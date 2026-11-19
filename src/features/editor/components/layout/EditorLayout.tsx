@@ -3,6 +3,7 @@ import { PanelRightOpen } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { useEditorContext } from "@/providers/editorprovider";
+import { AgentHost } from "@/features/agent/AgentHost";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { ElementCommentsPanel } from "../comments/ElementCommentsPanel";
 import Inspector from "../sidebar/Inspector";
@@ -71,6 +72,7 @@ export default function EditorLayout({
         </div>
       </div>
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <AgentHost />
     </TooltipProvider>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { FileText, Database, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProjectPages } from "@/features/projects/hooks/useProjects";
+import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import { cn } from "@/lib/utils";
 import { useEditorContext } from "@/providers/editorprovider";
@@ -15,7 +15,7 @@ import PanelIntro from "./PanelIntro";
 
 export default function PagesPanel() {
   const { projectId, pageId } = useEditorContext();
-  const { data: pages = [], isLoading } = useProjectPages(projectId);
+  const { data: pages = [], isLoading } = useProjectRoutePages(projectId);
   const permissions = useEditorPermissions(projectId);
   const deletePage = useDeletePage(projectId ?? undefined, pages);
   const navigate = useNavigate();

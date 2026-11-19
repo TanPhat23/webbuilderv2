@@ -1,35 +1,13 @@
 import React from "react";
-import DOMPurify from "isomorphic-dompurify";
-import { EditorElement } from "@/types/global.type";
+import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
+import TextView, { sanitizeTextContent } from "@/features/elements/views/TextView";
 import { useCanvasElement } from "./useCanvasElement";
-import { resolveContent } from "@/features/editor/utils/element/resolveContent";
 
-export function sanitizeTextContent(content: string): string {
-  return DOMPurify.sanitize(content);
-}
+export { sanitizeTextContent };
 
-export interface TextElementShellProps {
-  element: EditorElement;
-  data?: Record<string, unknown>;
-  as?: React.ElementType;
-  elementProps?: React.HTMLAttributes<HTMLElement> & Record<string, unknown>;
-}
-
-export const TextElementShell = ({
-  element,
-  data,
-  as: Component = "div",
-  elementProps,
-}: TextElementShellProps) => {
+export function TextElementShell({ element, data }: EditorComponentProps) {
   const { rootProps, isEditing } = useCanvasElement(element);
-  const displayContent = resolveContent(element, data, isEditing);
-
-  return React.createElement(Component, {
-    ...elementProps,
-    ...rootProps,
-    style: { ...rootProps.style, ...elementProps?.style },
-    dangerouslySetInnerHTML: {
-      __html: sanitizeTextContent(displayContent),
-    },
-  });
-};
+  if (element.type !== "Text" && element.type !== "Span" && element.type !== "Label" &&
+      element.type !== "Heading" && element.type !== "Blockquote") return null;
+  return <TextView element={element} rootProps={rootProps} data={isEditing ? undefined : data} mode="edit" />;
+}

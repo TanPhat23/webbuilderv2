@@ -1,3 +1,4 @@
+import CMSCollectionView from "@/features/elements/views/CMSCollectionView";
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentListElement } from "@/features/editor";
@@ -15,7 +16,6 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
     limit = 10,
     sortBy = "createdAt",
     sortOrder = "desc",
-    displayMode = "list",
   } = settings;
 
   const limitedItems = useCMSItems({
@@ -37,20 +37,10 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
   }
 
   return (
-    <div
-      {...rootProps}
-      className={
-        displayMode === "grid"
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-          : ""
-      }
-    >
-      <LayoutGroup>
+    <LayoutGroup>
+      <CMSCollectionView element={cmsElement} rootProps={rootProps} mode="edit">
         {limitedItems.map((item, index) => (
-          <div
-            key={item.id || index}
-            className={displayMode === "list" ? "mb-4" : ""}
-          >
+          <React.Fragment key={item.id || index}>
             {cmsElement.elements?.length ? (
               <ElementLoader
                 elements={cmsElement.elements}
@@ -73,10 +63,10 @@ const CMSContentListComponent = ({ element, data }: EditorComponentProps) => {
                 </div>
               </div>
             )}
-          </div>
+          </React.Fragment>
         ))}
-      </LayoutGroup>
-    </div>
+      </CMSCollectionView>
+    </LayoutGroup>
   );
 };
 

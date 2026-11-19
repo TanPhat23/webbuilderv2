@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   isCreateDrag,
   readDropPayload,
+  setComponentDrag,
   setElementTypeDrag,
   setMoveDrag,
   setTemplateDrag,
@@ -52,4 +53,14 @@ test('image drags count as create drags but have no canvas drop payload', () => 
 
 test('empty drags have no payload', () => {
   assert.equal(readDropPayload(fakeDataTransfer()), null);
+});
+
+test('component and snapshot drags carry only their library IDs', () => {
+  for (const kind of ['component', 'snapshot'] as const) {
+    const dt = fakeDataTransfer();
+    setComponentDrag(dt, kind, 'saved-id');
+    assert.deepEqual(readDropPayload(dt), { kind, id: 'saved-id' });
+    assert.equal(isCreateDrag(dt), true);
+    assert.equal(dt.effectAllowed, 'copy');
+  }
 });

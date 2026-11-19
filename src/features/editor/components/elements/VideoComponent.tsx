@@ -1,7 +1,9 @@
+import MediaView from "@/features/elements/views/MediaView";
+import { MediaDropOverlay } from "./shared/MediaDropOverlay";
 
 import React from "react";
 import { EditorComponentProps } from "@/features/editor";
-import { VideoElement, VideoSettings } from "@/features/editor";
+import { VideoElement } from "@/features/editor";
 import {
   Empty,
   EmptyHeader,
@@ -20,21 +22,11 @@ import {
 const VideoComponent = ({ element }: EditorComponentProps) => {
   const videoElement = element as VideoElement;
   const { rootProps } = useCanvasElement(videoElement);
-  const { isDragOver, handleDragOver, handleDragLeave, handleDrop } =
+  const { isDragOver, dragTarget, handleDragOver, handleDragLeave, handleDrop } =
     useMediaDrop({
       element,
       mediaType: "video",
     });
-
-  const settings = (videoElement.settings ?? {}) as VideoSettings;
-  const controls = settings.controls ?? true;
-  const autoplay = settings.autoplay ?? false;
-  const loop = settings.loop ?? false;
-  const muted = settings.muted ?? false;
-  const poster = settings.poster;
-  const preload = settings.preload ?? "metadata";
-  const playsInline = settings.playsInline ?? true;
-  const objectFit = settings.objectFit ?? "contain";
 
   const dragHandlers = {
     onDragOver: handleDragOver,
@@ -46,31 +38,13 @@ const VideoComponent = ({ element }: EditorComponentProps) => {
 
   if (videoElement.src) {
     return (
-      <div
-        {...wrapperProps}
-        className={cn(
-          rootProps.className,
-          "relative",
-          isDragOver && "ring-2 ring-primary ring-offset-2",
-        )}
-      >
-        <video
-          src={videoElement.src}
-          controls={controls}
-          autoPlay={autoplay}
-          loop={loop}
-          muted={muted}
-          poster={poster}
-          preload={preload}
-          playsInline={playsInline}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: objectFit as React.CSSProperties["objectFit"],
-          }}
-        />
-        {isDragOver && <DropOverlay label="Drop to replace video" />}
-      </div>
+      <>
+        <MediaView element={videoElement} mode="edit" rootProps={{
+          ...wrapperProps,
+          className: cn(rootProps.className, isDragOver && "ring-2 ring-primary ring-offset-2"),
+        }} />
+        {dragTarget && <MediaDropOverlay target={dragTarget} label="Drop to replace video" />}
+      </>
     );
   }
 

@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { createServerFn } from "@tanstack/react-start";
 import type { Page } from "@/features/pages";
 import {
@@ -37,4 +38,16 @@ export const deleteProjectPage = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { token } = await getAuthToken();
     await projectService.deleteProjectPage(data.projectId, data.pageId, token);
+  });
+
+const componentNameSchema = z.string().trim().min(1).max(255);
+
+export const renameComponentPage = createServerFn({ method: "POST" })
+  .validator((data: { projectId: string; pageId: string; name: string }) => ({
+    ...deletePageInputSchema.parse(data),
+    name: componentNameSchema.parse(data.name),
+  }))
+  .handler(async ({ data }): Promise<void> => {
+    const { token } = await getAuthToken();
+    await projectService.renamePage(data.projectId, data.pageId, data.name, token);
   });

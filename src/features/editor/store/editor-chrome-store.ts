@@ -6,6 +6,7 @@ export const RAIL_IDS = [
   "insert",
   "layers",
   "pages",
+  "components",
   "assets",
   "cms",
   "logic",

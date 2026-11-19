@@ -1,3 +1,4 @@
+import { PageLinkField } from "./_shared/PageLinkField";
 import { isExternalLink } from "./_shared/externalUrl";
 
 import React, { ChangeEvent } from "react";
@@ -93,6 +94,11 @@ export const LinkConfigurationAccordion = () => {
       }
     >
       <div className="flex flex-col gap-3">
+        <PageLinkField
+          id="link-project-page"
+          href={href}
+          onChange={(href) => updateElement(selectedElement.id, { href })}
+        />
         {/* ── URL ── */}
         <ConfigSection>
           <ConfigField
