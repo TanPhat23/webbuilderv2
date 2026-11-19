@@ -1,33 +1,19 @@
 
-import { useState } from "react";
 import { useNavigate } from '@tanstack/react-router';
 import {
   MoreHorizontal,
   Eye,
   Calendar,
-  BarChart3,
   Trash2,
   Edit,
   Settings,
   Globe,
   EyeOff,
-  Upload,
-  Crown,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,9 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreateMarketplaceItemDialog } from "@/features/marketplace";
-import { useDeleteMarketplaceItem, useMarketplaceItems } from "@/features/marketplace/hooks/useMarketplace";
-import { useUserPlan } from "@/features/subscription";
 import type { Project } from "@/features/projects";
 
 interface ProjectCardProps {
@@ -52,19 +35,6 @@ export function ProjectCard({
   onPublish,
 }: ProjectCardProps) {
   const navigate = useNavigate();
-  const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
-  const deleteItem = useDeleteMarketplaceItem();
-  const { data: userPlan } = useUserPlan();
-  const { data: marketplaceItems } = useMarketplaceItems();
-
-  const marketplaceItem = marketplaceItems?.find(
-    (item) => item.projectId === project.id,
-  );
-
-  const canPublish = userPlan?.canPublishToMarketplace ?? false;
-
   const handleNavigate = (path: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate({ to: path });
@@ -78,17 +48,6 @@ export function ProjectCard({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onDelete(project.id ?? "");
-  };
-
-  const handleMarketplaceDelete = async () => {
-    if (!marketplaceItem?.id) return;
-
-    try {
-      await deleteItem.mutateAsync(marketplaceItem.id);
-      setShowDeleteDialog(false);
-    } catch (error) {
-      console.error("Failed to delete marketplace item:", error);
-    }
   };
 
   const formattedDate = project.updatedAt
@@ -142,48 +101,11 @@ export function ProjectCard({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={handleNavigate(`/editor/${project.id}`)}
-                >
-                  <BarChart3 className="mr-2 h-4 w-4" />
-                  View Analytics
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
                   onClick={handleNavigate(`/projectsettings/${project.id}`)}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Project Settings
                 </DropdownMenuItem>
-
-                {marketplaceItem ? (
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    disabled={deleteItem.isPending}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDeleteDialog(true);
-                    }}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete from Marketplace
-                  </DropdownMenuItem>
-                ) : project.published ? (
-                  <DropdownMenuItem
-                    disabled={!canPublish}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (canPublish) {
-                        setShowUploadDialog(true);
-                      }
-                    }}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload to Marketplace
-                    {!canPublish && (
-                      <Crown className="ml-auto h-4 w-4 text-yellow-500" />
-                    )}
-                  </DropdownMenuItem>
-                ) : null}
 
                 <DropdownMenuSeparator />
 
@@ -228,35 +150,6 @@ export function ProjectCard({
           </div>
         </CardContent>
       </Card>
-
-      <CreateMarketplaceItemDialog
-        open={showUploadDialog}
-        onOpenChange={setShowUploadDialog}
-        defaultProjectId={project.id}
-        itemId={marketplaceItem?.id}
-      />
-
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete from Marketplace</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this item from the marketplace?
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteItem.isPending}
-              onClick={handleMarketplaceDelete}
-            >
-              {deleteItem.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

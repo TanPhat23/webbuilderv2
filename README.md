@@ -39,7 +39,6 @@ webbuilder/
 │   │   ├── help/
 │   │   ├── images/
 │   │   ├── landing/
-│   │   ├── marketplace/
 │   │   ├── notifications/
 │   │   ├── pages/
 │   │   ├── preview/
@@ -244,7 +243,7 @@ bun lint         # Run ESLint
 
 ### Code Organization
 
-- **Feature-Based Architecture**: Code is organized by feature domains (e.g., `editor`, `dashboard`, `marketplace`) under `src/features/`. Each feature encapsulates its own components, hooks, services, stores, schemas, and interfaces.
+- **Feature-Based Architecture**: Code is organized by feature domains (e.g., `editor`, `dashboard`, `projects`) under `src/features/`. Each feature encapsulates its own components, hooks, services, stores, schemas, and interfaces.
 - **Thin Routing Layer**: The `src/app/` directory is strictly for routing, layouts, and API endpoints.
 - **Shared Resources**: Global utilities, UI primitives (shadcn), providers, and types are kept at the root of `src/`.
 - **Type Safety**: Comprehensive TypeScript coverage with Zod schemas for validation.
@@ -253,7 +252,6 @@ bun lint         # Run ESLint
 
 - Database integration with Prisma
 - Real-time collaboration
-- Template marketplace
 - Advanced styling options
 - Mobile editor support
 

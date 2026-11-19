@@ -18,7 +18,7 @@ import { ElementStore } from "../store/element-store";
 import { useSelectionStore } from "../store/selection-store";
 import { elementHelper } from "../utils/element/elementhelper";
 import { useEditorPermissions } from "./useEditorPermissions";
-import { projectComponentElementsKey, rememberPendingMaster } from "./useProjectComponents";
+import { projectComponentElementsKey, projectElementsKey, rememberPendingMaster } from "./useProjectComponents";
 
 export function useComponentActions() {
   const { projectId, pageId, editor, editingMode } = useEditorContext();
@@ -54,7 +54,7 @@ export function useComponentActions() {
           const pages = queryClient.getQueryData<Page[]>(projectKeys.pages(projectId));
           const routes = new Set(pages?.filter((page) => page.Type !== "cp" && !page.DeletedAt).map(({ Id }) => Id));
           const saved = await queryClient.fetchQuery({
-            queryKey: projectComponentElementsKey(projectId), queryFn: () => elementService.getElements(projectId),
+            queryKey: projectElementsKey(projectId), queryFn: () => elementService.getElements(projectId),
           });
           [source] = resolveSharedSections([source], saved, routes);
         }

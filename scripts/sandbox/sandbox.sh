@@ -9,6 +9,8 @@
 #   scripts/sandbox/sandbox.sh tools     list MCP tools
 #   scripts/sandbox/sandbox.sh shot [name]   screenshot the editor tab -> .sandbox/shots/<name>.png
 #   scripts/sandbox/sandbox.sh bot PATH      send the bot to a path (e.g. /editor/<id>?page=<id>), or `reload`
+#   scripts/sandbox/sandbox.sh peek PATH [name] [anon]   open a path in a throwaway tab (e.g. /preview/<id>), return visible text + screenshot; anon = signed out
+#   scripts/sandbox/sandbox.sh api PATH   GET an API path as the sandbox user (status, ms, bytes)
 #   scripts/sandbox/sandbox.sh canvas    rendered text of the editor canvas + count of "Missing component" boxes
 #   scripts/sandbox/sandbox.sh console [clear]   recent browser console messages (clear empties the buffer)
 #   scripts/sandbox/sandbox.sh logs api|mcp|vite|bot
@@ -147,6 +149,8 @@ case "${1:-}" in
   tools) (cd "$ROOT" && SANDBOX_DIR="$S" node scripts/sandbox/mcp-call.mjs --list) ;;
   shot) botcall "/shot?name=${2:-editor}"; echo ;;
   bot) if [ "${2:-}" = reload ]; then botcall "/reload"; else botcall "/goto?path=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "${2:?path}")"; fi; echo ;;
+  peek) botcall "/peek?path=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "${2:?path}")&name=${3:-peek}${4:+&anon=1}"; echo ;;
+  api) botcall "/api?path=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "${2:?/api/... path}")"; echo ;;
   canvas) botcall "/canvas"; echo ;;
   console) botcall "/console?clear=${2:+1}"; echo ;;
   logs) tail -n "${3:-60}" "$S/${2:?api|mcp|vite|bot}.log" ;;

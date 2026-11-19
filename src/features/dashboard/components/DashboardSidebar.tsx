@@ -10,7 +10,6 @@ import {
   HelpCircle,
   LogOut,
   ChevronUp,
-  Store,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { SignOutButton, useUser } from "@clerk/tanstack-react-start";
@@ -67,19 +66,9 @@ const navigationItems: NavigationItem[] = [
     icon: FolderOpen,
   },
   {
-    title: "Analytics",
-    url: "/analytics",
-    icon: BarChart3,
-  },
-  {
     title: "Notifications",
     url: "/notifications",
     icon: Bell,
-  },
-  {
-    title: "Market place",
-    url: "/marketplace",
-    icon: Store,
   },
 ];
 

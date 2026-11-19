@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { getPlanLimits } from "../constants/pricing";
 import { subscriptionService } from "@/features/subscription";
 import type { PlanId } from "@/features/subscription";
 
@@ -13,7 +12,6 @@ export interface UserPlan {
   hasActiveSubscription: boolean;
   subscriptionEndDate?: string;
   daysUntilExpiry?: number;
-  canPublishToMarketplace: boolean;
 }
 
 export function useUserPlan() {
@@ -24,29 +22,23 @@ export function useUserPlan() {
         const data = await subscriptionService.getSubscriptionStatus();
 
         if (!data.hasActiveSubscription || !data.subscription) {
-          const limits = getPlanLimits("hobby");
           return {
             plan: "hobby" as PlanId,
             hasActiveSubscription: false,
-            ...limits,
           };
         }
 
         const planId = data.subscription.planId as PlanId;
-        const limits = getPlanLimits(planId);
         return {
           plan: planId,
           hasActiveSubscription: true,
           subscriptionEndDate: data.subscription.endDate,
           daysUntilExpiry: data.subscription.daysUntilExpiry,
-          ...limits,
         };
       } catch {
-        const limits = getPlanLimits("hobby");
         return {
           plan: "hobby" as PlanId,
           hasActiveSubscription: false,
-          ...limits,
         };
       }
     },

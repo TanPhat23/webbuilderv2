@@ -1,6 +1,6 @@
 
 import { motion } from "framer-motion";
-import { Activity, Edit2, FileText, Award, Heart, Upload } from "lucide-react";
+import { Activity, Edit2, FileText, Award, Heart } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
 import { ActivityItem, RecentActivitiesCardProps } from "@/features/profile";
 
-export default function RecentActivitiesCard({ projects = [], templates = [] }: RecentActivitiesCardProps) {
+export default function RecentActivitiesCard({ projects = [] }: RecentActivitiesCardProps) {
   const recentActivities: ActivityItem[] = useMemo(() => {
     const activities: ActivityItem[] = [];
     
@@ -43,38 +43,8 @@ export default function RecentActivitiesCard({ projects = [], templates = [] }: 
       });
     });
     
-    // Add recent template uploads
-    const recentTemplates = [...templates]
-      .sort((a, b) => {
-        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return dateB - dateA;
-      })
-      .slice(0, 2);
-    
-    recentTemplates.forEach(template => {
-      const timeDiff = Date.now() - (template.createdAt ? new Date(template.createdAt).getTime() : Date.now());
-      const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-      
-      let timeStr = "";
-      if (days > 0) {
-        timeStr = `${days} day${days > 1 ? 's' : ''} ago`;
-      } else if (hours > 0) {
-        timeStr = `${hours} hour${hours > 1 ? 's' : ''} ago`;
-      } else {
-        timeStr = "Just now";
-      }
-      
-      activities.push({
-        action: `Published template "${template.title}"`,
-        time: timeStr,
-        icon: Upload
-      });
-    });
-    
     return activities.slice(0, 4);
-  }, [projects, templates]);
+  }, [projects]);
 
   return (
     <motion.div

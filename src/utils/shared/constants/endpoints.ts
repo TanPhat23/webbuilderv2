@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
   ELEMENTS: {
     GET: (projectId: string) => `/api/v1/elements/${projectId}`,
     GET_PUBLIC: (projectId: string) => `/api/v1/elements/public/${projectId}`,
+    GET_BY_PAGES: "/api/v1/elements/by-pages",
   },
   PROJECTS: {
     GET_PUBLIC: "/api/v1/projects/public",
@@ -34,9 +35,6 @@ export const API_ENDPOINTS = {
     SET_READ: (id: string) => `/api/v1/notifications/${id}`,
     READ_ALL: "/api/v1/notifications/read-all",
     PROFILE_UPDATE: "/api/v1/notifications/profile-update",
-  },
-  ANALYTICS: {
-    MARKETPLACE: "/api/v1/analytics/marketplace",
   },
   SNAPSHOTS: {
     SAVE: (projectId: string) => `/api/v1/snapshots/${projectId}/save`,
@@ -92,49 +90,6 @@ export const API_ENDPOINTS = {
     GET_USER: "/api/v1/images",
     UPDATE: (id: string) => `/api/v1/images/${id}`,
     DELETE: (id: string) => `/api/v1/images/${id}`,
-  },
-  MARKETPLACE: {
-    ITEMS: {
-      CREATE: "/api/v1/marketplace/items",
-      GET_ALL: "/api/v1/marketplace/items",
-      GET_BY_ID: (id: string) => `/api/v1/marketplace/items/${id}`,
-      UPDATE: (id: string) => `/api/v1/marketplace/items/${id}`,
-      DELETE: (id: string) => `/api/v1/marketplace/items/${id}`,
-      DOWNLOAD: (id: string) => `/api/v1/marketplace/items/${id}/download`,
-      INCREMENT_DOWNLOADS: (id: string) =>
-        `/api/v1/marketplace/items/${id}/increment-download`,
-      INCREMENT_LIKES: (id: string) => `/api/v1/marketplace/items/${id}/like`,
-    },
-    CATEGORIES: {
-      CREATE: "/api/v1/marketplace/categories",
-      GET_ALL: "/api/v1/marketplace/categories",
-      DELETE: (id: string) => `/api/v1/marketplace/categories/${id}`,
-    },
-    TAGS: {
-      CREATE: "/api/v1/marketplace/tags",
-      GET_ALL: "/api/v1/marketplace/tags",
-      DELETE: (id: string) => `/api/v1/marketplace/tags/${id}`,
-    },
-    COMMENTS: {
-      CREATE: "/api/v1/comments",
-      GET_ALL: "/api/v1/comments",
-      GET_BY_ID: (commentId: string) => `/api/v1/comments/${commentId}`,
-      GET_BY_ITEM: (itemId: string) =>
-        `/api/v1/marketplace/items/${itemId}/comments`,
-      UPDATE: (commentId: string) => `/api/v1/comments/${commentId}`,
-      DELETE: (commentId: string) => `/api/v1/comments/${commentId}`,
-      MODERATE: (commentId: string) => `/api/v1/comments/${commentId}/moderate`,
-      GET_COUNT: (itemId: string) =>
-        `/api/v1/marketplace/items/${itemId}/comments/count`,
-      CREATE_REACTION: (commentId: string) =>
-        `/api/v1/comments/${commentId}/reactions`,
-      DELETE_REACTION: (commentId: string) =>
-        `/api/v1/comments/${commentId}/reactions`,
-      GET_REACTIONS: (commentId: string) =>
-        `/api/v1/comments/${commentId}/reactions`,
-      GET_REACTION_SUMMARY: (commentId: string) =>
-        `/api/v1/comments/${commentId}/reactions/summary`,
-    },
   },
   INVITATIONS: {
     CREATE: "/api/v1/invitations",

@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
-const ROW_A = ["Layout", "Components", "Realtime", "Comments", "Workflows", "Marketplace", "Export"];
+const ROW_A = ["Layout", "Components", "Realtime", "Comments", "Workflows", "Export"];
 const ROW_B = ["Responsive", "Tailwind", "shadcn/ui", "React", "CMS", "Templates", "Preview"];
 
 function Row({ words, filled, x }: { words: string[]; filled: boolean; x: ReturnType<typeof useTransform<number, string>> }) {

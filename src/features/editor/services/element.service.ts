@@ -4,6 +4,9 @@ import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import { Snapshot } from "@/features/editor";
 
+/** Mirrors maxPageIDsPerRequest in the API element handler. */
+const MAX_PAGE_IDS = 100;
+
 export const elementService = {
   getElements: async (projectId: string, token?: string): Promise<EditorElement[]> => {
     return apiClient.get<EditorElement[]>(
@@ -13,6 +16,28 @@ export const elementService = {
       undefined,
       token,
     );
+  },
+
+  /**
+   * Elements of some pages of one project. Much cheaper than getElements when
+   * only a few pages matter (e.g. the component masters). The API takes at most
+   * MAX_PAGE_IDS ids per request, so longer lists are split and fetched together.
+   */
+  getElementsByPages: async (projectId: string, pageIds: string[], token?: string): Promise<EditorElement[]> => {
+    const chunks: string[][] = [];
+    for (let i = 0; i < pageIds.length; i += MAX_PAGE_IDS) chunks.push(pageIds.slice(i, i + MAX_PAGE_IDS));
+    const results = await Promise.all(chunks.map((chunk) =>
+      apiClient.get<EditorElement[]>(
+        new URLBuilder("api")
+          .setPath(API_ENDPOINTS.ELEMENTS.GET_BY_PAGES)
+          .addQueryParam("projectId", projectId)
+          .addQueryParam("pageIds", chunk.join(","))
+          .build(),
+        undefined,
+        token,
+      ),
+    ));
+    return results.flat();
   },
 
   getElementsPublic: async (projectId: string, { previewCache = false } = {}): Promise<EditorElement[]> => {

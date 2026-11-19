@@ -13,13 +13,10 @@ import { Route as IndexRouteImport } from './app/index'
 import { Route as ProtectedRouteImport } from './app/_protected'
 import { Route as HelppageRouteImport } from './app/helppage'
 import { Route as ProtectedAcceptInvitationRouteImport } from './app/_protected/accept-invitation'
-import { Route as ProtectedAnalyticsRouteImport } from './app/_protected/analytics'
 import { Route as ProtectedDashboardRouteImport } from './app/_protected/dashboard'
 import { Route as ProtectedHelpRouteImport } from './app/_protected/help'
-import { Route as ProtectedMarketplaceRouteImport } from './app/_protected/marketplace'
 import { Route as ProtectedNotificationsRouteImport } from './app/_protected/notifications'
 import { Route as ProtectedProfileRouteImport } from './app/_protected/profile'
-import { Route as ApiAnalyticsRouteImport } from './app/api/analytics'
 import { Route as ApiGenerateCodeRouteImport } from './app/api/generate-code'
 import { Route as ApiGettokenRouteImport } from './app/api/gettoken'
 import { Route as PreviewIdRouteImport } from './app/preview/$id'
@@ -27,11 +24,8 @@ import { Route as SignInIndexRouteImport } from './app/sign-in/index'
 import { Route as SignInSplatRouteImport } from './app/sign-in/$'
 import { Route as SignUpIndexRouteImport } from './app/sign-up/index'
 import { Route as SignUpSplatRouteImport } from './app/sign-up/$'
-import { Route as ProtectedAnalyticsIndexRouteImport } from './app/_protected/analytics/index'
 import { Route as ProtectedDashboardIndexRouteImport } from './app/_protected/dashboard/index'
 import { Route as ProtectedEditorIdRouteImport } from './app/_protected/editor.$id'
-import { Route as ProtectedMarketplaceIndexRouteImport } from './app/_protected/marketplace/index'
-import { Route as ProtectedMarketplaceIdRouteImport } from './app/_protected/marketplace/$id'
 import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protected/notifications/index'
 import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
 import { Route as ProtectedProjectsettingsIdRouteImport } from './app/_protected/projectsettings.$id'
@@ -59,11 +53,6 @@ const ProtectedAcceptInvitationRoute =
     path: '/accept-invitation',
     getParentRoute: () => ProtectedRoute,
   } as any)
-const ProtectedAnalyticsRoute = ProtectedAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => ProtectedRoute,
-} as any)
 const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -72,11 +61,6 @@ const ProtectedDashboardRoute = ProtectedDashboardRouteImport.update({
 const ProtectedHelpRoute = ProtectedHelpRouteImport.update({
   id: '/help',
   path: '/help',
-  getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedMarketplaceRoute = ProtectedMarketplaceRouteImport.update({
-  id: '/marketplace',
-  path: '/marketplace',
   getParentRoute: () => ProtectedRoute,
 } as any)
 const ProtectedNotificationsRoute = ProtectedNotificationsRouteImport.update({
@@ -88,11 +72,6 @@ const ProtectedProfileRoute = ProtectedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
   getParentRoute: () => ProtectedRoute,
-} as any)
-const ApiAnalyticsRoute = ApiAnalyticsRouteImport.update({
-  id: '/api/analytics',
-  path: '/api/analytics',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGenerateCodeRoute = ApiGenerateCodeRouteImport.update({
   id: '/api/generate-code',
@@ -129,11 +108,6 @@ const SignUpSplatRoute = SignUpSplatRouteImport.update({
   path: '/sign-up/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProtectedAnalyticsIndexRoute = ProtectedAnalyticsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ProtectedAnalyticsRoute,
-} as any)
 const ProtectedDashboardIndexRoute = ProtectedDashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -143,17 +117,6 @@ const ProtectedEditorIdRoute = ProtectedEditorIdRouteImport.update({
   id: '/editor/$id',
   path: '/editor/$id',
   getParentRoute: () => ProtectedRoute,
-} as any)
-const ProtectedMarketplaceIndexRoute =
-  ProtectedMarketplaceIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => ProtectedMarketplaceRoute,
-  } as any)
-const ProtectedMarketplaceIdRoute = ProtectedMarketplaceIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ProtectedMarketplaceRoute,
 } as any)
 const ProtectedNotificationsIndexRoute =
   ProtectedNotificationsIndexRouteImport.update({
@@ -193,13 +156,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/helppage': typeof HelppageRoute
   '/accept-invitation': typeof ProtectedAcceptInvitationRoute
-  '/analytics': typeof ProtectedAnalyticsRouteWithChildren
   '/dashboard': typeof ProtectedDashboardRouteWithChildren
   '/help': typeof ProtectedHelpRoute
-  '/marketplace': typeof ProtectedMarketplaceRouteWithChildren
   '/notifications': typeof ProtectedNotificationsRouteWithChildren
   '/profile': typeof ProtectedProfileRouteWithChildren
-  '/api/analytics': typeof ApiAnalyticsRoute
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
@@ -208,12 +168,9 @@ export interface FileRoutesByFullPath {
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/editor/$id': typeof ProtectedEditorIdRouteWithChildren
-  '/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/analytics/': typeof ProtectedAnalyticsIndexRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
-  '/marketplace/': typeof ProtectedMarketplaceIndexRoute
   '/notifications/': typeof ProtectedNotificationsIndexRoute
   '/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -224,7 +181,6 @@ export interface FileRoutesByTo {
   '/helppage': typeof HelppageRoute
   '/accept-invitation': typeof ProtectedAcceptInvitationRoute
   '/help': typeof ProtectedHelpRoute
-  '/api/analytics': typeof ApiAnalyticsRoute
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
@@ -232,12 +188,9 @@ export interface FileRoutesByTo {
   '/sign-up/$': typeof SignUpSplatRoute
   '/sign-in': typeof SignInIndexRoute
   '/sign-up': typeof SignUpIndexRoute
-  '/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/analytics': typeof ProtectedAnalyticsIndexRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
-  '/marketplace': typeof ProtectedMarketplaceIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
   '/profile': typeof ProtectedProfileIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
@@ -249,13 +202,10 @@ export interface FileRoutesById {
   '/_protected': typeof ProtectedRouteWithChildren
   '/helppage': typeof HelppageRoute
   '/_protected/accept-invitation': typeof ProtectedAcceptInvitationRoute
-  '/_protected/analytics': typeof ProtectedAnalyticsRouteWithChildren
   '/_protected/dashboard': typeof ProtectedDashboardRouteWithChildren
   '/_protected/help': typeof ProtectedHelpRoute
-  '/_protected/marketplace': typeof ProtectedMarketplaceRouteWithChildren
   '/_protected/notifications': typeof ProtectedNotificationsRouteWithChildren
   '/_protected/profile': typeof ProtectedProfileRouteWithChildren
-  '/api/analytics': typeof ApiAnalyticsRoute
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
   '/preview/$id': typeof PreviewIdRoute
@@ -264,12 +214,9 @@ export interface FileRoutesById {
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/_protected/editor/$id': typeof ProtectedEditorIdRouteWithChildren
-  '/_protected/marketplace/$id': typeof ProtectedMarketplaceIdRoute
   '/_protected/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/_protected/analytics/': typeof ProtectedAnalyticsIndexRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
-  '/_protected/marketplace/': typeof ProtectedMarketplaceIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
   '/_protected/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
@@ -281,13 +228,10 @@ export interface FileRouteTypes {
     | '/'
     | '/helppage'
     | '/accept-invitation'
-    | '/analytics'
     | '/dashboard'
     | '/help'
-    | '/marketplace'
     | '/notifications'
     | '/profile'
-    | '/api/analytics'
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
@@ -296,12 +240,9 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/editor/$id'
-    | '/marketplace/$id'
     | '/projectsettings/$id'
     | '/api/notifications/profile-update'
-    | '/analytics/'
     | '/dashboard/'
-    | '/marketplace/'
     | '/notifications/'
     | '/profile/'
     | '/api/notifications/'
@@ -312,7 +253,6 @@ export interface FileRouteTypes {
     | '/helppage'
     | '/accept-invitation'
     | '/help'
-    | '/api/analytics'
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
@@ -320,12 +260,9 @@ export interface FileRouteTypes {
     | '/sign-up/$'
     | '/sign-in'
     | '/sign-up'
-    | '/marketplace/$id'
     | '/projectsettings/$id'
     | '/api/notifications/profile-update'
-    | '/analytics'
     | '/dashboard'
-    | '/marketplace'
     | '/notifications'
     | '/profile'
     | '/api/notifications'
@@ -336,13 +273,10 @@ export interface FileRouteTypes {
     | '/_protected'
     | '/helppage'
     | '/_protected/accept-invitation'
-    | '/_protected/analytics'
     | '/_protected/dashboard'
     | '/_protected/help'
-    | '/_protected/marketplace'
     | '/_protected/notifications'
     | '/_protected/profile'
-    | '/api/analytics'
     | '/api/generate-code'
     | '/api/gettoken'
     | '/preview/$id'
@@ -351,12 +285,9 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/_protected/editor/$id'
-    | '/_protected/marketplace/$id'
     | '/_protected/projectsettings/$id'
     | '/api/notifications/profile-update'
-    | '/_protected/analytics/'
     | '/_protected/dashboard/'
-    | '/_protected/marketplace/'
     | '/_protected/notifications/'
     | '/_protected/profile/'
     | '/api/notifications/'
@@ -367,7 +298,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProtectedRoute: typeof ProtectedRouteWithChildren
   HelppageRoute: typeof HelppageRoute
-  ApiAnalyticsRoute: typeof ApiAnalyticsRoute
   ApiGenerateCodeRoute: typeof ApiGenerateCodeRoute
   ApiGettokenRoute: typeof ApiGettokenRoute
   PreviewIdRoute: typeof PreviewIdRoute
@@ -409,13 +339,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedAcceptInvitationRouteImport
       parentRoute: typeof ProtectedRoute
     }
-    '/_protected/analytics': {
-      id: '/_protected/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof ProtectedAnalyticsRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/_protected/dashboard': {
       id: '/_protected/dashboard'
       path: '/dashboard'
@@ -428,13 +351,6 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/help'
       preLoaderRoute: typeof ProtectedHelpRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/marketplace': {
-      id: '/_protected/marketplace'
-      path: '/marketplace'
-      fullPath: '/marketplace'
-      preLoaderRoute: typeof ProtectedMarketplaceRouteImport
       parentRoute: typeof ProtectedRoute
     }
     '/_protected/notifications': {
@@ -450,13 +366,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/profile'
       preLoaderRoute: typeof ProtectedProfileRouteImport
       parentRoute: typeof ProtectedRoute
-    }
-    '/api/analytics': {
-      id: '/api/analytics'
-      path: '/api/analytics'
-      fullPath: '/api/analytics'
-      preLoaderRoute: typeof ApiAnalyticsRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/api/generate-code': {
       id: '/api/generate-code'
@@ -507,13 +416,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_protected/analytics/': {
-      id: '/_protected/analytics/'
-      path: '/'
-      fullPath: '/analytics/'
-      preLoaderRoute: typeof ProtectedAnalyticsIndexRouteImport
-      parentRoute: typeof ProtectedAnalyticsRoute
-    }
     '/_protected/dashboard/': {
       id: '/_protected/dashboard/'
       path: '/'
@@ -527,20 +429,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/editor/$id'
       preLoaderRoute: typeof ProtectedEditorIdRouteImport
       parentRoute: typeof ProtectedRoute
-    }
-    '/_protected/marketplace/': {
-      id: '/_protected/marketplace/'
-      path: '/'
-      fullPath: '/marketplace/'
-      preLoaderRoute: typeof ProtectedMarketplaceIndexRouteImport
-      parentRoute: typeof ProtectedMarketplaceRoute
-    }
-    '/_protected/marketplace/$id': {
-      id: '/_protected/marketplace/$id'
-      path: '/$id'
-      fullPath: '/marketplace/$id'
-      preLoaderRoute: typeof ProtectedMarketplaceIdRouteImport
-      parentRoute: typeof ProtectedMarketplaceRoute
     }
     '/_protected/notifications/': {
       id: '/_protected/notifications/'
@@ -587,17 +475,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface ProtectedAnalyticsRouteChildren {
-  ProtectedAnalyticsIndexRoute: typeof ProtectedAnalyticsIndexRoute
-}
-
-const ProtectedAnalyticsRouteChildren: ProtectedAnalyticsRouteChildren = {
-  ProtectedAnalyticsIndexRoute: ProtectedAnalyticsIndexRoute,
-}
-
-const ProtectedAnalyticsRouteWithChildren =
-  ProtectedAnalyticsRoute._addFileChildren(ProtectedAnalyticsRouteChildren)
-
 interface ProtectedDashboardRouteChildren {
   ProtectedDashboardIndexRoute: typeof ProtectedDashboardIndexRoute
 }
@@ -608,19 +485,6 @@ const ProtectedDashboardRouteChildren: ProtectedDashboardRouteChildren = {
 
 const ProtectedDashboardRouteWithChildren =
   ProtectedDashboardRoute._addFileChildren(ProtectedDashboardRouteChildren)
-
-interface ProtectedMarketplaceRouteChildren {
-  ProtectedMarketplaceIdRoute: typeof ProtectedMarketplaceIdRoute
-  ProtectedMarketplaceIndexRoute: typeof ProtectedMarketplaceIndexRoute
-}
-
-const ProtectedMarketplaceRouteChildren: ProtectedMarketplaceRouteChildren = {
-  ProtectedMarketplaceIdRoute: ProtectedMarketplaceIdRoute,
-  ProtectedMarketplaceIndexRoute: ProtectedMarketplaceIndexRoute,
-}
-
-const ProtectedMarketplaceRouteWithChildren =
-  ProtectedMarketplaceRoute._addFileChildren(ProtectedMarketplaceRouteChildren)
 
 interface ProtectedNotificationsRouteChildren {
   ProtectedNotificationsIndexRoute: typeof ProtectedNotificationsIndexRoute
@@ -660,10 +524,8 @@ const ProtectedEditorIdRouteWithChildren =
 
 interface ProtectedRouteChildren {
   ProtectedAcceptInvitationRoute: typeof ProtectedAcceptInvitationRoute
-  ProtectedAnalyticsRoute: typeof ProtectedAnalyticsRouteWithChildren
   ProtectedDashboardRoute: typeof ProtectedDashboardRouteWithChildren
   ProtectedHelpRoute: typeof ProtectedHelpRoute
-  ProtectedMarketplaceRoute: typeof ProtectedMarketplaceRouteWithChildren
   ProtectedNotificationsRoute: typeof ProtectedNotificationsRouteWithChildren
   ProtectedProfileRoute: typeof ProtectedProfileRouteWithChildren
   ProtectedEditorIdRoute: typeof ProtectedEditorIdRouteWithChildren
@@ -672,10 +534,8 @@ interface ProtectedRouteChildren {
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedAcceptInvitationRoute: ProtectedAcceptInvitationRoute,
-  ProtectedAnalyticsRoute: ProtectedAnalyticsRouteWithChildren,
   ProtectedDashboardRoute: ProtectedDashboardRouteWithChildren,
   ProtectedHelpRoute: ProtectedHelpRoute,
-  ProtectedMarketplaceRoute: ProtectedMarketplaceRouteWithChildren,
   ProtectedNotificationsRoute: ProtectedNotificationsRouteWithChildren,
   ProtectedProfileRoute: ProtectedProfileRouteWithChildren,
   ProtectedEditorIdRoute: ProtectedEditorIdRouteWithChildren,
@@ -690,7 +550,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProtectedRoute: ProtectedRouteWithChildren,
   HelppageRoute: HelppageRoute,
-  ApiAnalyticsRoute: ApiAnalyticsRoute,
   ApiGenerateCodeRoute: ApiGenerateCodeRoute,
   ApiGettokenRoute: ApiGettokenRoute,
   PreviewIdRoute: PreviewIdRoute,

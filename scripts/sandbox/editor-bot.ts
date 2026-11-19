@@ -103,6 +103,33 @@ createServer(async (req, res) => {
       }
       return send(200, { url: page.url(), missing: 0, text: '', canvas: false });
     }
+    if (url.pathname === '/peek') {
+      // Open a path in a throwaway tab (e.g. /preview/<id>), return what a visitor sees, close it.
+      // ?anon=1 uses a fresh, signed-out context (the public view).
+      const target = url.searchParams.get('path') ?? '';
+      if (!target.startsWith('/')) return send(400, { error: 'path must start with /' });
+      const ctx = url.searchParams.get('anon') === '1' ? await browser.newContext({ baseURL: web, viewport: { width: 1440, height: 900 } }) : context;
+      const tab = await ctx.newPage();
+      try {
+        const response = await tab.goto(target, { waitUntil: 'networkidle', timeout: 45_000 }).catch(() => null);
+        await tab.waitForTimeout(1500);
+        const text = await tab.locator('body').innerText();
+        const name = (url.searchParams.get('name') ?? 'peek').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60) || 'peek';
+        const file = path.join(dir, 'shots', `${name}.png`);
+        await tab.screenshot({ path: file, fullPage: true });
+        return send(200, { status: response?.status() ?? null, url: tab.url(), missing: (text.match(/Missing component/g) ?? []).length, file, text });
+      } finally { await tab.close(); if (ctx !== context) await ctx.close(); }
+    }
+    if (url.pathname === '/api') {
+      // GET an API path as the signed-in sandbox user; reports status, time and size (not the body).
+      const target = url.searchParams.get('path') ?? '';
+      if (!target.startsWith('/api/')) return send(400, { error: 'path must start with /api/' });
+      const token = await page.evaluate(() => (window as any).Clerk.session.getToken());
+      const started = performance.now();
+      const res = await fetch(`${api}${target}`, { headers: { authorization: `Bearer ${token}` } });
+      const bytes = (await res.arrayBuffer()).byteLength;
+      return send(200, { status: res.status, ms: Math.round(performance.now() - started), bytes });
+    }
     if (url.pathname === '/console') {
       const messages = consoleLog.slice(-100);
       if (url.searchParams.get('clear') === '1') consoleLog.length = 0;

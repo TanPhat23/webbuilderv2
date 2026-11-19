@@ -13,7 +13,6 @@ import {
   MoreHorizontal,
   Eye,
   Calendar,
-  BarChart3,
   Trash2,
   Edit,
   Settings,
@@ -93,15 +92,6 @@ export function ProjectListItem({
               <DropdownMenuItem onClick={handleEditClick}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Project
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate({ to: `/analytics/${project.id}` });
-                }}
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                View Analytics
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {

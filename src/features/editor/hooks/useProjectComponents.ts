@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type QueryClient } from "@tanstack/react-query";
 import { useProjectPages } from "@/features/projects/hooks/useProjects";
 import { componentRoots } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
@@ -45,7 +45,23 @@ function withPendingMasters(projectId: string | null, saved: EditorElement[]): E
   return extra.length ? [...saved, ...extra] : saved;
 }
 
+/** Prefix of every component-elements query of a project (the full key also names the page ids). */
 export const projectComponentElementsKey = (projectId: string | null) => ["component-elements", projectId] as const;
+
+/** The whole project's elements, for callers that need pages other than the component masters. */
+export const projectElementsKey = (projectId: string | null) => ["project-elements", projectId] as const;
+
+/** The most recently fetched component master elements of a project, if any. */
+export function getCachedComponentElements(queryClient: QueryClient, projectId: string): EditorElement[] {
+  const latest = queryClient
+    .getQueryCache()
+    .findAll({ queryKey: projectComponentElementsKey(projectId) })
+    .reduce<{ at: number; data: EditorElement[] } | undefined>((best, query) => {
+      const data = query.state.data as EditorElement[] | undefined;
+      return data && (!best || query.state.dataUpdatedAt > best.at) ? { at: query.state.dataUpdatedAt, data } : best;
+    }, undefined);
+  return latest?.data ?? NO_ELEMENTS;
+}
 
 export function useProjectComponents(enabled = true) {
   const { projectId, pageId, editor } = useEditorContext();
@@ -53,15 +69,19 @@ export function useProjectComponents(enabled = true) {
   const collaboration = useCollaborationOptional();
   const ready = !editor.isLoading && (collaboration?.isSynced ?? true);
   const projectPages = useProjectPages(projectId, enabled ? 15_000 : false);
-  const query = useQuery({
-    queryKey: projectComponentElementsKey(projectId),
-    queryFn: () => elementService.getElements(projectId!),
-    enabled: enabled && !!projectId,
-    refetchInterval: enabled ? 5_000 : false,
-  });
-
   const pages = useMemo(() => (projectPages.data ?? []).filter((page) => page.Type === "cp" && !page.DeletedAt), [projectPages.data]);
   const pageIds = useMemo(() => new Set(pages.map((page) => page.Id)), [pages]);
+  // Only the component masters' pages are read. Fetching the whole project here
+  // every few seconds made the server load every element of every page.
+  const masterPageIds = useMemo(() => pages.map((page) => page.Id).sort(), [pages]);
+  const query = useQuery({
+    queryKey: [...projectComponentElementsKey(projectId), masterPageIds.join(",")],
+    queryFn: () => elementService.getElementsByPages(projectId!, masterPageIds),
+    enabled: enabled && !!projectId && masterPageIds.length > 0,
+    refetchInterval: enabled ? 5_000 : false,
+    // A new component page changes the key; keep showing the old masters meanwhile.
+    placeholderData: keepPreviousData,
+  });
   const routePageIds = useMemo(
     () => new Set((projectPages.data ?? []).filter((page) => page.Type !== "cp" && !page.DeletedAt).map((page) => page.Id)),
     [projectPages.data],
@@ -76,5 +96,5 @@ export function useProjectComponents(enabled = true) {
     [saved, live, pageId, ready],
   );
   const roots = useMemo(() => componentRoots({ elements, pageIds }), [elements, pageIds]);
-  return { elements, pageIds, routePageIds, pages, roots, isLoading: projectPages.isLoading || query.isLoading, isError: projectPages.isError || query.isError };
+  return { elements, pageIds, routePageIds, pages, roots, isLoading: projectPages.isLoading || (masterPageIds.length > 0 && query.isLoading), isError: projectPages.isError || query.isError };
 }

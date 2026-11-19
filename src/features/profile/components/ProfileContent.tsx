@@ -6,12 +6,10 @@ import { Link } from '@tanstack/react-router';
 import {
   Download,
   FileText,
-  Heart,
-  Star,
+  Globe,
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { useMarketplaceItems } from "@/features/marketplace";
 import ProfileHero from "./ProfileHero";
 import PersonalInfoCard from "./PersonalInfoCard";
 import RecentActivitiesCard from "./RecentActivitiesCard";
@@ -26,12 +24,6 @@ export function ProfileContent() {
   
   const { data: projects = [], isLoading: projectsLoading } = useUserProjects();
   
-  const { data: allMarketplaceItems = [], isLoading: templatesLoading } = useMarketplaceItems();
-  const userTemplates = useMemo(() => {
-    if (!user?.id) return [];
-    return allMarketplaceItems.filter(item => item.authorId === user.id);
-  }, [allMarketplaceItems, user?.id]);
-
   const profile = useMemo(() => {
     if (!user) return null;
 
@@ -74,18 +66,11 @@ export function ProfileContent() {
         bgColor: "bg-blue-500/10",
       },
       {
-        label: "Templates",
-        value: templatesLoading ? "..." : userTemplates.length.toString(),
-        icon: Heart,
+        label: "Published",
+        value: projectsLoading ? "..." : projects.filter((project) => project.published).length.toString(),
+        icon: Globe,
         color: "text-pink-500",
         bgColor: "bg-pink-500/10",
-      },
-      {
-        label: "Shared",
-        value: templatesLoading ? "..." : userTemplates.filter(t => t.featured).length.toString(),
-        icon: Star,
-        color: "text-yellow-500",
-        bgColor: "bg-yellow-500/10",
       },
       {
         label: "Activity",
@@ -95,7 +80,7 @@ export function ProfileContent() {
         bgColor: "bg-green-500/10",
       },
     ],
-    [projects.length, projectsLoading, userTemplates, templatesLoading]
+    [projects, projectsLoading]
   );
 
   const handleDownload = () => {
@@ -195,7 +180,7 @@ export function ProfileContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <PersonalInfoCard profile={profile} />
           <SubscriptionCard />
-          <RecentActivitiesCard projects={projects} templates={userTemplates} />
+          <RecentActivitiesCard projects={projects} />
         </div>
 
         <div className="flex justify-end pt-4">

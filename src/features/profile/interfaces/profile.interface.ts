@@ -11,18 +11,8 @@ export interface Project {
   createdAt: string;
 }
 
-export interface Template {
-  id: string;
-  title: string;
-  updatedAt?: Date | string;
-  createdAt?: Date | string;
-  featured?: boolean;
-  authorId?: string;
-}
-
 export interface RecentActivitiesCardProps {
   projects?: Project[];
-  templates?: Template[];
 }
 
 export interface UserProfile {
