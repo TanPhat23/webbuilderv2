@@ -65,3 +65,6 @@ yarn-error.log*
 
 #Ignore vscode AI rules
 .github/instructions/codacy.instructions.md
+
+# agent/e2e sandbox (scripts/sandbox)
+.sandbox/

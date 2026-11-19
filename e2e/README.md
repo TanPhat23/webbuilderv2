@@ -25,3 +25,22 @@ E2E_COLLAB=1 bunx playwright test e2e/collaboration.spec.ts
 ```
 
 The test creates a uniquely named temporary project and adds the second user as an editor, checks a live logic edit and reload, then removes the collaborator and soft-deletes the project. It never deletes either test user. The current collaborator API requires the test project to be published, so use only an isolated local backend and database. If interrupted, remove any leftover `e2e_…` projects from the test database. This test is skipped in ordinary suite runs unless `E2E_COLLAB=1` is set; when enabled, missing or unsafe configuration fails rather than silently skipping. The runner starts its own Vite server to ensure its API and WebSocket URLs point at the configured local API.
+
+## Agent sandbox (`scripts/sandbox`)
+
+A disposable copy of the whole stack for testing MCP tools and the editor together, without a human editor tab or any real data. `scripts/sandbox/sandbox.sh up` starts Postgres and Redis (docker, ports 55432/56379), applies the API migrations, copies the Clerk test user into the database, builds and starts the API (18080) and MCP server (18090) from your working trees, starts Vite on 3100, and launches a headless, signed-in Chrome that creates a "Sandbox project" and keeps its editor tab open. It uses the same Clerk development keys and `E2E_EMAIL` as the e2e suite, never reads the API's or MCP's `.env`, and binds only to loopback.
+
+```bash
+scripts/sandbox/sandbox.sh up                       # idempotent; prints project id, URLs, MCP token
+scripts/sandbox/sandbox.sh tools                    # list MCP tools
+scripts/sandbox/sandbox.sh call get_project         # projectId is filled in for you
+scripts/sandbox/sandbox.sh call apply_edits '{"pageId":"…","operations":[…]}'
+scripts/sandbox/sandbox.sh shot name                # screenshot of the editor -> .sandbox/shots/name.png
+scripts/sandbox/sandbox.sh canvas                   # rendered canvas text + number of "Missing component" boxes
+scripts/sandbox/sandbox.sh console [clear]          # browser console of the editor tab
+scripts/sandbox/sandbox.sh restart api mcp          # rebuild + restart Go services (web hot-reloads)
+scripts/sandbox/sandbox.sh down                     # stop and delete everything
+node scripts/sandbox/smoke-components.mjs           # end-to-end check of reusable components
+```
+
+State lives in the git-ignored `.sandbox/`. Vite hot updates can leave the editor tab in a broken context after a provider file changes; run `sandbox.sh bot /editor/<projectId>` to reopen it. `SANDBOX_BROWSER=firefox` uses Playwright's Firefox instead of installed Chrome.
