@@ -1,22 +1,15 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { readDropPayload } from "@/features/editor/utils/element/dragPayload";
-import { componentFromDrop } from "@/features/editor/lib/componentDrop";
-import { toast } from "sonner";
 import { useAuth } from "@clerk/tanstack-react-start";
-import { useAddElement } from "@/features/editor";
-import { useElementStore } from "@/features/editor/store/element-store";
-import { useSelectedElement } from "@/features/editor";
-import { ElementFactory } from "@/features/editor/lib/ElementFactory";
-import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
-import { EditorElement } from "@/types/global.type";
-import { useEditorPermissions } from "./useEditorPermissions";
 import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
-import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
-import { Page } from "@/features/pages";
-
 import type { Viewport, UseEditorReturn } from "../context/EditorContext";
+import { resolveFallbackPage } from "../lib/editorPage";
+import { useElementStore } from "../store/element-store";
+import { useAddElement } from "../store/selectors/element-selectors";
+import { useSelectedElement } from "../store/selectors/selection-selectors";
+import { useCanvasRootDrop } from "./useCanvasRootDrop";
+import { useEditorPermissions } from "./useEditorPermissions";
 
 export type { Viewport, UseEditorReturn };
 
@@ -31,14 +24,12 @@ export const useEditor = (
   options?: UseEditorOptions,
 ): UseEditorReturn => {
   const [currentView, setCurrentView] = useState<Viewport>("desktop");
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { userId } = useAuth();
   const effectiveUserId = userId ?? undefined;
 
   const permissions = useEditorPermissions(id);
-
   const isReadOnly = options?.isReadOnly ?? !permissions.canEditElements;
   const isLocked = options?.isLocked ?? false;
 
@@ -48,129 +39,42 @@ export const useEditor = (
 
   const { data: projectPages, isLoading: isLoadingPages } = useProjectPages(id);
   const { data: project, isLoading: isLoadingProject } = useProject(id);
-  const isComponentPage = projectPages?.some((page) => page.Id === pageId && page.Type === "cp") ?? false;
-  useLayoutEffect(() => { beginPage(id, pageId, isComponentPage); }, [beginPage, id, pageId, isComponentPage]);
+  const isComponentPage =
+    projectPages?.some((page) => page.Id === pageId && page.Type === "cp") ?? false;
 
-  // Helper: check if a DOM event target is within an existing canvas element
-  const isEventOverElement = useCallback((target: HTMLElement | null) => {
-    return !!(
-      target &&
-      typeof target.closest === "function" &&
-      target.closest("[data-element-id]")
-    );
-  }, []);
-
-  // Navigate to a default page within a project or choose provided page
-  const redirectToDefaultOrRequestedPage = useCallback(
-    (pagesList: Page[] | undefined) => {
-      if (!pagesList || pagesList.length === 0) return;
-      if (pageId) {
-        const found = pagesList.find((p) => p.Id === pageId && !p.DeletedAt);
-        if (found) {
-          return;
-        }
-      }
-
-      // The collaboration socket only connects once `?page=` is set, so always
-      // resolve a page: the unnamed default page, else the first one.
-      const routes = pagesList.filter((p) => p.Type !== "cp" && !p.DeletedAt);
-      const defaultPage = routes.find((p) => p.Name === "") ?? routes[0];
-      if (!defaultPage) return;
-      navigate({ to: `/editor/${id}?page=${defaultPage.Id}`, replace: true });
-    },
-    [pageId, navigate, id],
-  );
+  useLayoutEffect(() => {
+    beginPage(id, pageId, isComponentPage);
+  }, [beginPage, id, pageId, isComponentPage]);
 
   useEffect(() => {
-    const pages = projectPages as Page[] | undefined;
-    if (!pages || pages.length === 0) return;
-    redirectToDefaultOrRequestedPage(pages);
+    const fallback = resolveFallbackPage(projectPages, pageId);
+    if (fallback) {
+      navigate({ to: `/editor/${id}?page=${fallback.Id}`, replace: true });
+    }
   }, [projectPages, pageId, navigate, id]);
 
   useEffect(() => {
-    if (!project) return;
-    if (project.deletedAt) {
+    if (project?.deletedAt) {
       navigate({ to: "/dashboard" });
-      return;
     }
   }, [project, navigate]);
 
-  const showReadOnlyError = useCallback(() => {
-    showErrorToast(PERMISSION_ERRORS.cannotAdd);
-  }, []);
-
   const canCreate = !isReadOnly && !isLocked && permissions.canCreateElements;
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement | null;
-      if (isEventOverElement(target)) return;
-
-      if (!canCreate) {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(false);
-        showReadOnlyError();
-        return;
-      }
-
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDraggingOver(false);
-
-      const payload = readDropPayload(e.dataTransfer);
-      if (!payload || payload.kind === "move") return;
-      let newElement: EditorElement | undefined | null;
-      if (payload.kind === "create") {
-        newElement = ElementFactory.getInstance().createElement({ type: payload.elementType, pageId });
-      } else if (payload.kind === "template") {
-        const template = customComps[payload.index];
-        if (template) newElement = ElementFactory.getInstance().createElementFromTemplate({ element: template, pageId });
-      } else {
-        newElement = componentFromDrop(payload, queryClient, id, pageId, userId ?? null);
-        if (!newElement) toast.error("This component cannot be inserted here.");
-      }
-
-      if (!newElement) return;
-      if (isComponentPage && useElementStore.getState().elements.length) {
-        toast.error("Drop the element inside the master’s root.");
-        return;
-      }
-      addElement(newElement);
-    },
-    [isEventOverElement, canCreate, pageId, addElement, showReadOnlyError, queryClient, id, userId, isComponentPage],
-  );
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      const target = e.target as HTMLElement | null;
-      if (isEventOverElement(target)) return;
-
-      if (!canCreate) return;
-
-      e.preventDefault();
-      setIsDraggingOver(true);
-    },
-    [isEventOverElement, canCreate],
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDraggingOver(false);
-  }, []);
-
-  const addNewSection = useCallback(() => {
-    if (!canCreate) {
-      showReadOnlyError();
-      return;
-    }
-
-    const newElement = ElementFactory.getInstance().createElement({
-      type: "Section",
-      pageId,
-    });
-    if (newElement) addElement(newElement);
-  }, [canCreate, showReadOnlyError, pageId, addElement]);
+  const {
+    isDraggingOver,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    addNewSection,
+  } = useCanvasRootDrop({
+    projectId: id,
+    pageId,
+    userId: userId ?? null,
+    canCreate,
+    isComponentPage,
+    queryClient,
+    addElement,
+  });
 
   const isLoading = isLoadingPages || isLoadingProject;
 
@@ -207,7 +111,6 @@ export const useEditor = (
     }),
     [
       currentView,
-      setCurrentView,
       isDraggingOver,
       isLoading,
       selectedElement,

@@ -1,17 +1,13 @@
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import type { EditorElement } from "@/types/global.type";
 import { CONTAINER_ELEMENT_TYPES } from "@/types/elements";
-import { componentFromDrop } from "@/features/editor/lib/componentDrop";
-import { ElementFactory } from "@/features/editor/lib/ElementFactory";
-import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
+import { resolveInsertedElement } from "@/features/editor/lib/dropElement";
 import { useElementStore } from "@/features/editor/store/element-store";
 import {
   readDropPayload,
   setMoveDrag,
-  type DropPayload,
 } from "@/features/editor/utils/element/dragPayload";
 import {
   computeDropPosition,
@@ -35,29 +31,6 @@ interface UseCanvasDragDropOptions {
   queryClient: QueryClient;
   projectId: string | null;
   userId: string | null;
-}
-
-function resolveInsertedElement(
-  payload: Exclude<DropPayload, { kind: "move" }>,
-  pageId: string,
-  queryClient: QueryClient,
-  projectId: string | null,
-  userId: string | null,
-): EditorElement | undefined {
-  const factory = ElementFactory.getInstance();
-  if (payload.kind === "create") {
-    return factory.createElement({ type: payload.elementType, pageId });
-  }
-  if (payload.kind === "template") {
-    const template = customComps[payload.index];
-    return template
-      ? factory.createElementFromTemplate({ element: template, pageId })
-      : undefined;
-  }
-  if (!projectId) return undefined;
-  const instance = componentFromDrop(payload, queryClient, projectId, pageId, userId);
-  if (!instance) toast.error("This component cannot be inserted here.");
-  return instance;
 }
 
 const CONTAINER_TYPE_SET: ReadonlySet<string> = new Set(CONTAINER_ELEMENT_TYPES);
