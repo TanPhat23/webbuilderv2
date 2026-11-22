@@ -368,12 +368,7 @@ export interface CarouselElement extends Element<"Carousel", CarouselSettings> {
 
 export type EditorElement = ElementTypeMap[ElementType];
 
-/**
- * Mapping of element type names to their respective interface types.
- * Used for type-safe element creation and manipulation.
- */
 export type ElementTypeMap = {
-  // Inline / Leaf
   Text: TextElement;
   Span: SpanElement;
   Heading: HeadingElement;
@@ -382,15 +377,12 @@ export type ElementTypeMap = {
   Code: CodeElement;
   Separator: SeparatorElement;
   Icon: IconElement;
-  // Media
   Image: ImageElement;
   Video: VideoElement;
   Audio: AudioElement;
   IFrame: IFrameElement;
-  // Interactive
   Button: ButtonElement;
   Link: LinkElement;
-  // Form
   Input: InputElement;
   Textarea: TextareaElement;
   Checkbox: CheckboxElement;
@@ -399,9 +391,7 @@ export type ElementTypeMap = {
   List: ListElement;
   Select: SelectElement;
   Form: FormElement;
-  // Table
   Table: TableElement;
-  // Container / Layout
   Frame: FrameElement;
   Section: SectionElement;
   Nav: NavElement;
@@ -409,10 +399,8 @@ export type ElementTypeMap = {
   Footer: FooterElement;
   Article: ArticleElement;
   Aside: AsideElement;
-  // CMS
   CMSContentList: CMSContentListElement;
   CMSContentItem: CMSContentItemElement;
   CMSContentGrid: CMSContentGridElement;
-  // Carousel
   Carousel: CarouselElement;
 };

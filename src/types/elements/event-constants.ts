@@ -1,8 +1,3 @@
-/**
- * Event System Constants and Types
- * Centralized constants and type definitions for all event-related types
- */
-
 export const EVENT_TYPES = {
   CLICK: "onClick",
   DOUBLE_CLICK: "onDoubleClick",

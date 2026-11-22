@@ -20,7 +20,6 @@ export const replacePlaceholders = (text: string, data: unknown): string => {
       try {
         value = new Date(String(value)).toLocaleDateString();
       } catch {
-        // keep original value if date parsing fails
       }
     }
 

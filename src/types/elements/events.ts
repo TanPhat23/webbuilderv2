@@ -1,8 +1,3 @@
-/**
- * Event System for Web Builder
- * Handles element interactions like click, hover, etc.
- */
-
 import type React from "react";
 import type { EventTypeEvent, ActionTypeEvent } from "./event-constants";
 
