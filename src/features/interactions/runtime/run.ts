@@ -28,6 +28,7 @@ export interface RunLogEntry {
   at: number;
   elementId: string;
   ixId: string;
+  event?: string;
   path: string;
   verb: Verb | "interaction";
   status: "ok" | "skipped" | "error";

@@ -71,7 +71,7 @@ export default function RunLogPanel() {
               {entry.status}
             </span>
             <span>
-              {(entry as typeof entry & { event?: string }).event} ·{" "}
+              {entry.event} ·{" "}
               {entry.verb}
             </span>
             <span className="ml-1.5 text-muted-foreground">{entry.path}</span>
