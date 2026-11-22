@@ -1,7 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { beforeEach, test } from 'node:test';
 import { setFlow, setVariable } from '../src/features/interactions/logic';
-import { applyPatch, diffPatch, encodeLogicPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
+import { diffPatch } from '../src/features/interactions/logicPatch';
+import { applyPatch, encodeLogicPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
 
 const num = (n = 0) => ({ type: 'number' as const, default: n });
 const doc = (variables: Record<string, unknown> = {}, flows: Record<string, unknown> = {}) => ({ v: 1, variables, flows });
@@ -239,4 +240,47 @@ test('undo restores a deleted flow with an incomplete step', () => {
   assert.ok(useLogicStore.getState().edit('project', (d) => ({ ok: true, logic: { ...d, flows: {} } })).ok);
   assert.ok(useLogicStore.getState().undo()?.ok);
   assert.deepEqual(useLogicStore.getState().project.flows, incomplete.flows);
+});
+
+test('onRejected observes rolled-back state and rejected undo restores stacks cleanly', async () => {
+  const observedPending: number[] = [];
+  const observedVars: string[][] = [];
+  const { sent } = connect({
+    onRejected: () => {
+      observedPending.push(useLogicStore.getState().pending);
+      observedVars.push(Object.keys(useLogicStore.getState().project.variables));
+    },
+  });
+  const store = useLogicStore.getState();
+  store.receiveSync({ project: doc({ base: num() }), page: doc(), pageId: 'home' });
+  assert.ok(store.edit('project', (d) => setVariable(d, 'mine', num())).ok);
+  sent[0].ok();
+  await settle();
+  store.receiveSync({ project: doc({ base: num(), mine: num() }), page: doc(), pageId: 'home' });
+  assert.equal(useLogicStore.getState().past.length, 1);
+
+  assert.ok(store.undo()?.ok);
+  assert.equal(useLogicStore.getState().past.length, 0);
+  assert.equal(useLogicStore.getState().future.length, 1);
+  sent[1].fail('rejected undo');
+  await settle();
+
+  assert.deepEqual(observedPending, [0]);
+  assert.deepEqual(observedVars, [['base', 'mine']]);
+  assert.equal(useLogicStore.getState().past.length, 1);
+  assert.equal(useLogicStore.getState().future.length, 0);
+});
+
+test('receiveSync applies page logic without project and no-op edits leave history unchanged', () => {
+  connect();
+  const store = useLogicStore.getState();
+  store.receiveSync({ page: doc({ p: num() }), pageId: 'home' });
+  assert.deepEqual(Object.keys(useLogicStore.getState().pages.home.variables), ['p']);
+
+  assert.ok(store.edit('project', (d) => setVariable(d, 'x', num())).ok);
+  assert.ok(store.undo()?.ok);
+  assert.equal(useLogicStore.getState().future.length, 1);
+  assert.ok(store.edit('project', (d) => ({ ok: true, logic: { ...d } })).ok);
+  assert.equal(useLogicStore.getState().past.length, 0);
+  assert.equal(useLogicStore.getState().future.length, 1);
 });

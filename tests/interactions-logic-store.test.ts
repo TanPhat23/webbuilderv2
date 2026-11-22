@@ -56,6 +56,14 @@ test('counts uses of a variable or flow in element interactions and flows', () =
   assert.equal(countUsages('variable', 'counter', sources), 1);
   assert.equal(countUsages('flow', 'celebrate', sources), 1);
   assert.equal(countUsages('flow', 'missing', sources), 0);
+  assert.equal(
+    countUsages('variable', 'count', [{ do: [{ call: 'api', headers: { set: 'count' } }] }]),
+    0,
+  );
+  assert.equal(
+    countUsages('flow', 'runMe', [{ do: [{ call: 'api', headers: { run: 'runMe' } }] }]),
+    0,
+  );
 });
 
 test('finds bracket and spaced property references without matching longer names', () => {
