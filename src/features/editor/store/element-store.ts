@@ -127,9 +127,174 @@ function toElementUpdateWirePatch(
   return wire;
 }
 
-const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
-  const MAX_HISTORY = 50;
+const MAX_HISTORY = 50;
+type StoreSet = Parameters<StateCreator<ElementStore>>[0];
+type StoreGet = Parameters<StateCreator<ElementStore>>[1];
 
+interface LocalEdits {
+  get: StoreGet;
+  allowsRootCount: (tree: EditorElement[]) => boolean;
+  commitLocalTree: (tree: EditorElement[]) => void;
+  emit: NonNullable<ElementStore["collaborativeCallback"]>;
+}
+
+function createHistoryActions(
+  { get, allowsRootCount, commitLocalTree, emit }: LocalEdits,
+  set: StoreSet,
+  notify: () => void,
+  takeSnapshot: (elements?: EditorElement[]) => void,
+): Pick<ElementStore, "replaceTree" | "rememberTree" | "undo" | "redo"> {
+  const syncTreeChange = (from: EditorElement[], to: EditorElement[]) => {
+    for (const op of diffTrees(from, to)) {
+      if (op.type === "delete") emit("delete", op.id);
+      else if (op.type === "create")
+        emit("create", op.element.id, op.element);
+      else if (op.type === "move")
+        emit("move", op.id, {
+          elementId: op.id,
+          newParentId: op.newParentId,
+          newPosition: op.newPosition,
+        });
+      else emit("update", op.id, op.patch);
+    }
+  };
+
+  return {
+    replaceTree: (next: EditorElement[]) => {
+      const { elements } = get();
+      if (!allowsRootCount(next) || diffTrees(elements, next).length === 0) return get();
+      commitLocalTree(next);
+      syncTreeChange(elements, next);
+      return get();
+    },
+
+    rememberTree: (previous) => takeSnapshot(previous),
+
+    undo: () => {
+      const { past, elements, future } = get();
+      if (past.length === 0) return get();
+      const previous = past[past.length - 1];
+      const newPast = past.slice(0, -1);
+      set({
+        past: newPast,
+        elements: previous,
+        future: [elements, ...future],
+      });
+      notify();
+      syncTreeChange(elements, previous);
+      return get();
+    },
+
+    redo: () => {
+      const { future, elements, past } = get();
+      if (future.length === 0) return get();
+      const next = future[0];
+      const newFuture = future.slice(1);
+      set({
+        past: [...past, elements],
+        elements: next,
+        future: newFuture,
+      });
+      notify();
+      syncTreeChange(elements, next);
+      return get();
+    },
+  };
+}
+
+function createPlacementActions(
+  { get, allowsRootCount, commitLocalTree, emit }: LocalEdits,
+): Pick<ElementStore, "insertElement" | "insertElementRelative" | "moveElement" | "addElement"> {
+  return {
+    insertElement: (
+      parentElement: EditorElement,
+      elementToBeInserted: EditorElement,
+    ) => {
+      const { elements } = get();
+      const updated = fitToParent(
+        elementHelper.mapInsertAfterId(
+          elements as EditorElement[],
+          parentElement.id,
+          elementToBeInserted,
+        ) as EditorElement[],
+        elementToBeInserted.id,
+      ).tree;
+
+      if (updated === elements || !allowsRootCount(updated)) return get();
+      commitLocalTree(updated);
+      const inserted =
+        elementHelper.findById(updated, elementToBeInserted.id) ??
+        elementToBeInserted;
+      emit("create", inserted.id, inserted);
+      return get();
+    },
+
+    insertElementRelative: (element, targetId, position) => {
+      const { elements } = get();
+      const placed = elementHelper.mapInsertRelative(
+        elements,
+        element,
+        targetId,
+        position,
+      );
+      if (placed === elements || !allowsRootCount(placed)) return get();
+      const updated = fitToParent(placed, element.id).tree;
+      commitLocalTree(updated);
+      const inserted = elementHelper.findById(updated, element.id) ?? element;
+      emit("create", inserted.id, inserted);
+      return get();
+    },
+
+    moveElement: (id, targetId, position) => {
+      const { elements } = get();
+      const moved = elementHelper.mapMoveRelative(
+        elements,
+        id,
+        targetId,
+        position,
+      );
+      if (moved === elements || !allowsRootCount(moved)) return get();
+      const { tree: updated, stylesPatch } = fitToParent(moved, id);
+      commitLocalTree(updated);
+      const location = elementHelper.findLocation(updated, id);
+      if (location) {
+        emit("move", id, {
+          elementId: id,
+          newParentId: location.parentId,
+          newPosition: location.index,
+        });
+      }
+      if (stylesPatch) {
+        emit("update", id, {
+          styles: stylesPatch,
+        });
+      }
+      return get();
+    },
+
+    addElement: (...newElements: EditorElement[]) => {
+      const { elements } = get();
+      const updatedTree = newElements.reduce<EditorElement[]>(
+        (acc, newEl) =>
+          fitToParent(
+            elementHelper.mapAddChildById(acc, newEl.parentId, newEl),
+            newEl.id,
+          ).tree,
+        elements as EditorElement[],
+      ) as EditorElement[];
+
+      const added = newElements.flatMap(({ id }) => elementHelper.findById(updatedTree, id) ?? []);
+      if (!added.length || !allowsRootCount(updatedTree)) return get();
+      commitLocalTree(updatedTree);
+      for (const element of added) {
+        emit("create", element.id, element);
+      }
+      return get();
+    },
+  };
+}
+
+const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   const takeSnapshot = (elements = get().elements) => {
     const { past } = get();
     const next = [...past, cloneDeep(elements)];
@@ -163,19 +328,15 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     }
   };
 
-  const syncTreeChange = (from: EditorElement[], to: EditorElement[]) => {
-    for (const op of diffTrees(from, to)) {
-      if (op.type === "delete") triggerCollaborativeCallback("delete", op.id);
-      else if (op.type === "create")
-        triggerCollaborativeCallback("create", op.element.id, op.element);
-      else if (op.type === "move")
-        triggerCollaborativeCallback("move", op.id, {
-          elementId: op.id,
-          newParentId: op.newParentId,
-          newPosition: op.newPosition,
-        });
-      else triggerCollaborativeCallback("update", op.id, op.patch);
-    }
+  const localEdits: LocalEdits = {
+    get,
+    allowsRootCount,
+    emit: triggerCollaborativeCallback,
+    commitLocalTree: (elements) => {
+      takeSnapshot();
+      set({ elements });
+      notifyElementsChange();
+    },
   };
 
   return {
@@ -285,141 +446,8 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       return get();
     },
 
-    insertElement: (
-      parentElement: EditorElement,
-      elementToBeInserted: EditorElement,
-    ) => {
-      const { elements } = get();
-      const updated = fitToParent(
-        elementHelper.mapInsertAfterId(
-          elements as EditorElement[],
-          parentElement.id,
-          elementToBeInserted,
-        ) as EditorElement[],
-        elementToBeInserted.id,
-      ).tree;
-
-      if (updated === elements || !allowsRootCount(updated)) return get();
-      takeSnapshot();
-      set({ elements: updated });
-      notifyElementsChange();
-      const inserted =
-        elementHelper.findById(updated, elementToBeInserted.id) ??
-        elementToBeInserted;
-      triggerCollaborativeCallback("create", inserted.id, inserted);
-      return get();
-    },
-
-    insertElementRelative: (element, targetId, position) => {
-      const { elements } = get();
-      const placed = elementHelper.mapInsertRelative(
-        elements,
-        element,
-        targetId,
-        position,
-      );
-      if (placed === elements || !allowsRootCount(placed)) return get();
-      const updated = fitToParent(placed, element.id).tree;
-      takeSnapshot();
-      set({ elements: updated });
-      notifyElementsChange();
-      const inserted = elementHelper.findById(updated, element.id) ?? element;
-      triggerCollaborativeCallback("create", inserted.id, inserted);
-      return get();
-    },
-
-    moveElement: (id, targetId, position) => {
-      const { elements } = get();
-      const moved = elementHelper.mapMoveRelative(
-        elements,
-        id,
-        targetId,
-        position,
-      );
-      if (moved === elements || !allowsRootCount(moved)) return get();
-      const { tree: updated, stylesPatch } = fitToParent(moved, id);
-      takeSnapshot();
-      set({ elements: updated });
-      notifyElementsChange();
-      const location = elementHelper.findLocation(updated, id);
-      if (location) {
-        triggerCollaborativeCallback("move", id, {
-          elementId: id,
-          newParentId: location.parentId,
-          newPosition: location.index,
-        });
-      }
-      if (stylesPatch) {
-        triggerCollaborativeCallback("update", id, {
-          styles: stylesPatch,
-        });
-      }
-      return get();
-    },
-
-    addElement: (...newElements: EditorElement[]) => {
-      const { elements } = get();
-      const updatedTree = newElements.reduce<EditorElement[]>(
-        (acc, newEl) =>
-          fitToParent(
-            elementHelper.mapAddChildById(acc, newEl.parentId, newEl),
-            newEl.id,
-          ).tree,
-        elements as EditorElement[],
-      ) as EditorElement[];
-
-      const added = newElements.flatMap(({ id }) => elementHelper.findById(updatedTree, id) ?? []);
-      if (!added.length || !allowsRootCount(updatedTree)) return get();
-      takeSnapshot();
-      set({ elements: updatedTree });
-      notifyElementsChange();
-      for (const element of added) {
-        triggerCollaborativeCallback("create", element.id, element);
-      }
-      return get();
-    },
-
-    replaceTree: (next: EditorElement[]) => {
-      const { elements } = get();
-      if (!allowsRootCount(next) || diffTrees(elements, next).length === 0) return get();
-      takeSnapshot();
-      set({ elements: next });
-      notifyElementsChange();
-      syncTreeChange(elements, next);
-      return get();
-    },
-
-    rememberTree: (previous) => takeSnapshot(previous),
-
-    undo: () => {
-      const { past, elements, future } = get();
-      if (past.length === 0) return get();
-      const previous = past[past.length - 1];
-      const newPast = past.slice(0, -1);
-      set({
-        past: newPast,
-        elements: previous,
-        future: [elements, ...future],
-      });
-      notifyElementsChange();
-      syncTreeChange(elements, previous);
-      return get();
-    },
-
-    redo: () => {
-      const { future, elements, past } = get();
-      if (future.length === 0) return get();
-      const next = future[0];
-      const newFuture = future.slice(1);
-      set({
-        past: [...past, elements],
-        elements: next,
-        future: newFuture,
-      });
-      notifyElementsChange();
-      syncTreeChange(elements, next);
-      return get();
-    },
+    ...createPlacementActions(localEdits),
+    ...createHistoryActions(localEdits, set, notifyElementsChange, takeSnapshot),
 
     setElementsChangeCallback: (
       callback: ((elements: EditorElement[]) => void) | null,
