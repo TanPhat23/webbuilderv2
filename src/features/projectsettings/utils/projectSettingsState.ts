@@ -101,9 +101,10 @@ export function buildProjectUpdatePayload<
   state: ProjectSettingsState;
 }): ProjectUpdateFields & {
   id: string;
-  header: THeader & { cssStyles: string };
+  header: Partial<THeader> & { cssStyles: string };
   styles: JsonRecord;
 } {
+  const baseHeader: Partial<THeader> = existingHeader ?? {};
   return {
     id: projectId,
     name: state.projectName,
@@ -111,7 +112,7 @@ export function buildProjectUpdatePayload<
     published: state.isPublished,
     subdomain: state.subdomain || null,
     header: {
-      ...(existingHeader ?? ({} as THeader)),
+      ...baseHeader,
       cssStyles: sanitizeProjectCss(state.customCSS),
     },
     styles: {

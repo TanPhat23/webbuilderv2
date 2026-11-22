@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { EditorElement } from "@/types/global.type";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { CONTAINER_ELEMENT_TYPES } from "@/types/elements";
 import { componentFromDrop } from "@/features/editor/lib/componentDrop";
 import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
@@ -60,6 +60,8 @@ function resolveInsertedElement(
   return instance;
 }
 
+const CONTAINER_TYPE_SET: ReadonlySet<string> = new Set(CONTAINER_ELEMENT_TYPES);
+
 function computeIndicatorForNode(
   node: HTMLElement,
   clientX: number,
@@ -69,11 +71,11 @@ function computeIndicatorForNode(
   const parent = (node.closest("[data-component-instance]") ?? node).parentElement;
   const parentStyle = parent ? view.getComputedStyle(parent) : null;
   const horizontal = parentStyle ? isHorizontalFlow(parentStyle) : false;
+  const elementType = node.dataset.elementType;
   const isContainer =
     !node.closest("[data-component-instance]") &&
-    elementHelper.isContainerElement({
-      type: node.dataset.elementType,
-    } as EditorElement);
+    elementType !== undefined &&
+    CONTAINER_TYPE_SET.has(elementType);
   const position = computeDropPosition(
     node.getBoundingClientRect(),
     { x: clientX, y: clientY },

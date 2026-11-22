@@ -52,7 +52,7 @@ export function ProjectSettings() {
   const params = useParams({ strict: false });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const projectId = params.id as string;
+  const projectId = typeof params.id === "string" ? params.id : "";
 
   const [state, setState] = useState<ProjectSettingsState>(
     INITIAL_PROJECT_SETTINGS_STATE,
@@ -94,6 +94,7 @@ export function ProjectSettings() {
   };
 
   const handleSave = (): void => {
+    if (!projectId) return;
     const payload = buildProjectUpdatePayload({
       projectId,
       existingHeader: project?.header,
