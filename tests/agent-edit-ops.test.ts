@@ -210,3 +210,28 @@ test("update can clear component overrides without changing the link", () => {
   assert.deepEqual(result.elements[0].settings?.component, { pageId: "master", rootId: "master-root" });
   assert.equal(applyEdits(before, [{ op: "update", id: "instance", set: { settings: { component: { pageId: "other" } } } }], PAGE).ok, false);
 });
+
+test("containers from CONTAINER_ELEMENT_TYPES accept children and root parentId stays undefined", () => {
+  const base = [el("hdr", "Header", { elements: [] }), el("child", "Text", { parentId: "hdr" })];
+  const created = applyEdits(base, [
+    { op: "create", parentId: "hdr", element: { type: "Link", content: "Home" } },
+    { op: "create", parentId: null, element: { type: "Section" } },
+  ], PAGE);
+  assert.ok(created.ok);
+  assert.equal(kids(created.elements, "hdr").length, 1);
+  assert.equal(created.elements[2].parentId, undefined);
+});
+
+test("linked component instances preserve master name, merge settings, and clone inputs", () => {
+  const namedMaster = el("master-root", "Text", { pageId: "master", name: "CardTitle", content: "Master" });
+  const project = { elements: [namedMaster], pageIds: new Set(["master"]) };
+  const inputSettings = { reveal: "fade" };
+  const created = applyEdits([], [
+    { op: "create", element: { component: { id: "master" }, settings: inputSettings } },
+  ], PAGE, project);
+  assert.ok(created.ok);
+  inputSettings.reveal = "mutated";
+  assert.equal(created.elements[0].name, "CardTitle");
+  assert.equal(Reflect.get(created.elements[0].settings ?? {}, "reveal"), "fade");
+  assert.deepEqual(created.elements[0].settings?.component, { pageId: "master", rootId: "master-root" });
+});
