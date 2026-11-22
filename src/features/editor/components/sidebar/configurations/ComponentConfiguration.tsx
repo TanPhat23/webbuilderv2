@@ -9,8 +9,8 @@ import {
   type ComponentOverride,
 } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
-import { useEditorContext } from "@/providers/editorprovider";
-import { useCollaborationOptional } from "@/providers/collaborationprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
+import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
 import { useProjectComponents } from "../../../hooks/useProjectComponents";
 import { useEditorPermissions } from "../../../hooks/useEditorPermissions";
 import { useSelectionStore } from "../../../store/selection-store";

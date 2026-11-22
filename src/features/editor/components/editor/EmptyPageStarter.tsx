@@ -1,6 +1,6 @@
 import { LayoutTemplate, Plus, Sparkles } from "lucide-react";
 import { useAddElement } from "@/features/editor";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";

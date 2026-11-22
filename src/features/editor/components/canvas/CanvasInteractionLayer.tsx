@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { componentFromDrop } from "@/features/editor/lib/componentDrop";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import type { EditorElement } from "@/types/global.type";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElementStore } from "@/features/editor/store/element-store";

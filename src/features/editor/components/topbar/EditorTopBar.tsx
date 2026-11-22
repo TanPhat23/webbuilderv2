@@ -8,7 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { PageNavigationCommand } from "../editor/PageNavigationCommand";
 import ProjectBreadcrumb from "../editor/header/ProjectBreadcrumb";
 import ViewportControls from "../editor/header/ViewportControls";

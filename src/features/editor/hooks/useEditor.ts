@@ -1,5 +1,4 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import type { Dispatch, SetStateAction } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { readDropPayload } from "@/features/editor/utils/element/dragPayload";
@@ -17,32 +16,13 @@ import { useProject, useProjectPages } from "@/features/projects/hooks/useProjec
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { Page } from "@/features/pages";
 
-export type Viewport = "mobile" | "tablet" | "desktop";
+import type { Viewport, UseEditorReturn } from "../context/EditorContext";
+
+export type { Viewport, UseEditorReturn };
 
 export interface UseEditorOptions {
   isReadOnly?: boolean;
   isLocked?: boolean;
-}
-
-export interface UseEditorReturn {
-  currentView: Viewport;
-  setCurrentView: Dispatch<SetStateAction<Viewport>>;
-  isDraggingOver: boolean;
-  isLoading: boolean;
-  selectedElement: EditorElement | undefined;
-  handleDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-  handleDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-  handleDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
-  addNewSection: () => void;
-  isReadOnly: boolean;
-  isLocked: boolean;
-  permissions: {
-    canCreateElements: boolean;
-    canEditElements: boolean;
-    canDeleteElements: boolean;
-    canReorderElements: boolean;
-  };
-  userId?: string;
 }
 
 export const useEditor = (

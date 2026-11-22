@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { sectionTemplateGroups } from "@/features/editor/lib/customcomponents/customComponents";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { Sketch } from "./Sketch";
 import { setTemplateDragData } from "./dragTypes";
 import { toSketch, type SketchSource } from "./sketchModel";

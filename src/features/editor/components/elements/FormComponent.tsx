@@ -6,7 +6,7 @@ import { useSelectedElement } from "@/features/editor";
 import { FormElement } from "@/features/editor";
 import FormView from "@/features/elements/views/FormView";
 import { EditorComponentProps } from "@/features/editor";
-import ElementLoader from "../ElementLoader";
+import { ChildElements } from "../context/ChildElementLoaderContext";
 import { useCurrentPage } from "@/features/projects/hooks/useProjects";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -32,7 +32,7 @@ export default function FormComponent({ element, data }: EditorComponentProps) {
   const { autoComplete, noValidate } = formElement.settings ?? { autoComplete: "on" };
   return (
     <FormView element={formElement} rootProps={{ ...rootProps, autoComplete, noValidate }} mode="edit">
-      <ElementLoader elements={formElement.elements} data={data} />
+      <ChildElements elements={formElement.elements} data={data} />
 
       {isSelected && (
         <Button

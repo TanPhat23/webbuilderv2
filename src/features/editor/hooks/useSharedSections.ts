@@ -4,7 +4,7 @@ import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import {
   sharedSectionSources,
 } from "@/features/projects/lib/shared-sections";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import type { EditorElement } from "@/types/global.type";
 import { elementService } from "@/features/elements/services/element.service";
 

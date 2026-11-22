@@ -6,7 +6,7 @@ import { useCMSContentItem } from "@/features/cms/hooks/useCMSContent";
 import { EditorComponentProps } from "@/features/editor";
 import { CMSContentItemElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
-import ElementLoader from "../ElementLoader";
+import { ChildElements } from "../context/ChildElementLoaderContext";
 import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
 import { useCanvasElement, CMSEmptyState } from "./shared";
 
@@ -46,7 +46,7 @@ const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   return (
     <FrameView element={cmsElement} rootProps={rootProps} mode="edit">
       {cmsElement.elements?.length ? (
-        <ElementLoader
+        <ChildElements
           elements={cmsElement.elements}
           data={itemToRender as unknown as Record<string, unknown>}
         />

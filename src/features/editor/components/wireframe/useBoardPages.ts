@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { elementService, useElements } from "@/features/editor";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
-import { useCollaborationOptional } from "@/providers/collaborationprovider";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import type { EditorElement } from "@/types/global.type";
 import { groupByPage, type PageItem } from "./sketchModel";
 

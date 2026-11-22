@@ -1,20 +1,7 @@
 import React from "react";
-interface AiContextType {
-  chatOpen: boolean;
-  openChat: () => void;
-  closeChat: () => void;
-  toggleChat: () => void;
-}
+import { AIChatContext, useAiChat } from "@/features/ai/context/AiChatContext";
 
-const AIChatContext = React.createContext<AiContextType | undefined>(undefined);
-
-export function useAiChat() {
-  const context = React.useContext(AIChatContext);
-  if (!context) {
-    throw new Error("useAiContext must be used within an AiProvider");
-  }
-  return context;
-}
+export { useAiChat };
 
 export default function AIChatProvider({
   children,

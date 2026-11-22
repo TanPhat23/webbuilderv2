@@ -2,7 +2,7 @@ import React from "react";
 import type { EditorComponentProps } from "@/features/editor/interfaces/editor.interface";
 import LinkView from "@/features/elements/views/LinkView";
 import { getViewChildren } from "@/features/elements/element-children";
-import ElementLoader from "../ElementLoader";
+import { ChildElements } from "../context/ChildElementLoaderContext";
 import { useCanvasElement } from "./shared/useCanvasElement";
 
 export default function LinkComponent({ element, data }: EditorComponentProps) {
@@ -23,7 +23,7 @@ export default function LinkComponent({ element, data }: EditorComponentProps) {
         ...(editLabel && { onBlur: undefined, contentEditable: undefined }),
       }}
       labelProps={editLabel ? { onBlur, contentEditable, suppressContentEditableWarning: true } : undefined}>
-      {elements?.length ? <ElementLoader elements={elements} data={data} /> : undefined}
+      {elements?.length ? <ChildElements elements={elements} data={data} /> : undefined}
     </LinkView>
   );
 }

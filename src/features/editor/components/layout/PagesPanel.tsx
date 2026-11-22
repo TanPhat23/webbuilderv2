@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import { cn } from "@/lib/utils";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import {
   CreatePageDialog,
   DeletePageDialog,

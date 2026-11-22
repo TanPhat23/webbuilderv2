@@ -15,7 +15,7 @@ import {
   useEditorChromeStore,
   type RailId,
 } from "@/features/editor/store/editor-chrome-store";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { ElementSelector } from "../sidebar/ElementSelector";
 import PagesPanel from "./PagesPanel";
 import LayersPanel from "./LayersPanel";

@@ -2,7 +2,7 @@ import {
   Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { ConfigField } from "./ConfigField";
 
 export function PageLinkField({

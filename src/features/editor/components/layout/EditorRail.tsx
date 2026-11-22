@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { RAIL_ITEMS, type RailItem } from "./railItems";
 

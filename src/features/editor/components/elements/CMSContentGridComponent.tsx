@@ -5,7 +5,7 @@ import { EditorComponentProps } from "@/features/editor";
 import { CMSContentGridElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import { LayoutGroup } from "framer-motion";
-import ElementLoader from "../ElementLoader";
+import { ChildElements } from "../context/ChildElementLoaderContext";
 import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
 import { useCanvasElement, CMSEmptyState, useCMSItems } from "./shared";
 
@@ -46,7 +46,7 @@ const CMSContentGridComponent = ({ element, data }: EditorComponentProps) => {
         {limitedItems.map((item, index) => (
           <React.Fragment key={item.id || index}>
             {cmsElement.elements?.length ? (
-              <ElementLoader
+              <ChildElements
                 elements={cmsElement.elements}
                 data={item as unknown as Record<string, unknown>}
               />

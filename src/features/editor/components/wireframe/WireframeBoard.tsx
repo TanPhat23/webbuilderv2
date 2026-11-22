@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useSetSelectedElement } from "@/features/editor";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import type { EditorElement } from "@/types/global.type";
 import { CreatePageDialog } from "../ProjectPageCommand";
 import { PageColumn, type ColumnState } from "./PageColumn";

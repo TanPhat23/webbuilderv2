@@ -3,8 +3,8 @@ import { keepPreviousData, useQuery, type QueryClient } from "@tanstack/react-qu
 import { useProjectPages } from "@/features/projects/hooks/useProjects";
 import { componentRoots } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
-import { useCollaborationOptional } from "@/providers/collaborationprovider";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useElements } from "../store/selectors/element-selectors";
 import { elementService } from "@/features/elements/services/element.service";
 

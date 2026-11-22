@@ -7,7 +7,7 @@ import {
   sharedSectionSetting,
   type SharedSectionSetting,
 } from "@/features/projects/lib/shared-sections";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 
 export function useSharedSectionControls() {
   const section = useSelectedElement();

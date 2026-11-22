@@ -17,7 +17,7 @@ import { renameComponentPage } from "@/features/projects/api/page.api";
 import { projectKeys } from "@/features/projects/hooks/useProjects";
 import { usageCount } from "@/features/projects/lib/components";
 import { plainComponentSnapshot } from "@/features/projects/lib/resolve-elements";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { errorMessage } from "@/utils/errors/api-error";
 import { useEditorPermissions } from "../../hooks/useEditorPermissions";
 import { useProjectComponents } from "../../hooks/useProjectComponents";

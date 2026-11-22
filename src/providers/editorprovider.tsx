@@ -1,11 +1,10 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { useState, useMemo } from "react";
 import { useEditor } from "@/features/editor/hooks/useEditor";
+import {
+  EditorContext,
+  useEditorContext,
+  type EditorContextType,
+} from "@/features/editor/context/EditorContext";
 import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorLayout from "@/features/editor/components/layout/EditorLayout";
@@ -24,29 +23,7 @@ interface EditorProviderProps {
   userId?: string;
 }
 
-type EditorHookReturnType = ReturnType<typeof useEditor>;
-
-interface EditorContextType {
-  projectId: string | null;
-  userId: string | null;
-  editor: EditorHookReturnType;
-  mode: "editor" | "wireframe";
-  setMode: (mode: "editor" | "wireframe") => void;
-  editingMode: "visual" | "code";
-  setEditingMode: (mode: "visual" | "code") => void;
-  pageId: string;
-  renderAiPanel?: (onClose: () => void) => React.ReactNode;
-}
-
-const EditorContext = createContext<EditorContextType | undefined>(undefined);
-
-export function useEditorContext() {
-  const context = useContext(EditorContext);
-  if (!context) {
-    throw new Error("useEditorContext must be used within EditorProvider");
-  }
-  return context;
-}
+export { useEditorContext };
 
 export default function EditorProvider({
   children,

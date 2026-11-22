@@ -15,7 +15,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { useAiChat } from "@/providers/aiprovider";
+import { useAiChat } from "@/features/ai/context/AiChatContext";
 import { useSelectedElementWithSetter } from "@/features/editor";
 import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
 

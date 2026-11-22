@@ -1,4 +1,4 @@
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import {
   fromSurface,
   toSurface,

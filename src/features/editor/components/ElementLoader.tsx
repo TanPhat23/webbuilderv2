@@ -16,6 +16,7 @@ import {
   EditorFlagsProvider,
   useEditorFlagsOptional,
 } from "./context/EditorFlagsContext";
+import { ChildElementLoaderProvider } from "./context/ChildElementLoaderContext";
 import { CanvasInteractionLayer } from "./canvas/CanvasInteractionLayer";
 
 interface ElementLoaderProps {
@@ -67,6 +68,13 @@ function RootElementLoader({
   }, [list, resolved]);
   const logic = useActiveLogic();
 
+  const renderChildElements = React.useCallback(
+    (nestedElements: EditorElement[], nestedData?: Record<string, unknown>) => (
+      <ElementList elements={nestedElements} data={nestedData} />
+    ),
+    [],
+  );
+
   return (
     <EditorFlagsProvider
       isReadOnly={isReadOnly}
@@ -76,35 +84,37 @@ function RootElementLoader({
       canCreate={editable && !!permissions?.canCreateElements}
       iframeRef={iframeRef}
     >
-      <ResolvedInstancesContext.Provider value={instances}>
-        <CanvasInteractionLayer>
-          <InteractionHost elements={resolved} enabled={eventsOn} namespace={params.id ?? "editor"} variables={logic.variables} flows={logic.flows} platform={editorPlatform} showLog>
-            {list.map((element, index) => {
-              const setting = sharedSectionSetting(element);
-              const rendered = resolved[index];
-              const renderedSetting = rendered && sharedSectionSetting(rendered);
-              if (params.id && renderedSetting && !("sourceId" in renderedSetting) && setting && "sourceId" in setting) {
-                return (
-                  <div key={element.id} data-shared-section-id={element.id} className="relative">
-                    <div inert>
-                      <PreviewElementLoader elements={[rendered]} data={data} showMissing />
+      <ChildElementLoaderProvider renderElements={renderChildElements}>
+        <ResolvedInstancesContext.Provider value={instances}>
+          <CanvasInteractionLayer>
+            <InteractionHost elements={resolved} enabled={eventsOn} namespace={params.id ?? "editor"} variables={logic.variables} flows={logic.flows} platform={editorPlatform} showLog>
+              {list.map((element, index) => {
+                const setting = sharedSectionSetting(element);
+                const rendered = resolved[index];
+                const renderedSetting = rendered && sharedSectionSetting(rendered);
+                if (params.id && renderedSetting && !("sourceId" in renderedSetting) && setting && "sourceId" in setting) {
+                  return (
+                    <div key={element.id} data-shared-section-id={element.id} className="relative">
+                      <div inert>
+                        <PreviewElementLoader elements={[rendered]} data={data} showMissing />
+                      </div>
+                      <Link
+                        to="/editor/$id"
+                        params={{ id: params.id }}
+                        search={{ page: setting.sourcePageId }}
+                        className="absolute right-2 top-2 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground shadow-sm hover:bg-accent"
+                      >
+                        Edit shared {setting.slot}
+                      </Link>
                     </div>
-                    <Link
-                      to="/editor/$id"
-                      params={{ id: params.id }}
-                      search={{ page: setting.sourcePageId }}
-                      className="absolute right-2 top-2 rounded-md border border-border bg-background px-2 py-1 text-xs text-foreground shadow-sm hover:bg-accent"
-                    >
-                      Edit shared {setting.slot}
-                    </Link>
-                  </div>
-                );
-              }
-              return <ElementRenderer key={element.id} element={element} data={data} />;
-            })}
-          </InteractionHost>
-        </CanvasInteractionLayer>
-      </ResolvedInstancesContext.Provider>
+                  );
+                }
+                return <ElementRenderer key={element.id} element={element} data={data} />;
+              })}
+            </InteractionHost>
+          </CanvasInteractionLayer>
+        </ResolvedInstancesContext.Provider>
+      </ChildElementLoaderProvider>
     </EditorFlagsProvider>
   );
 }

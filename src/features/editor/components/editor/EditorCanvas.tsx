@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useState, memo } from "react";
 import { EditorElement } from "@/types/global.type";
 import ElementLoader from "@/features/editor/components/ElementLoader";
-import { useCollaborationOptional } from "@/providers/collaborationprovider";
+import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
 import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
 import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCursorsOverlay";
 import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
 import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStarter";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useElements } from "@/features/editor";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useForwardChromeShortcuts } from "@/features/editor/components/layout/useForwardChromeShortcuts";
 
 type EditorCanvasProps = {

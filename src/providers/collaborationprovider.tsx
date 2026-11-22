@@ -1,13 +1,16 @@
 
 import React, {
-  createContext,
-  useContext,
   useEffect,
   useRef,
   useState,
   useMemo,
   useCallback,
 } from "react";
+import {
+  CollaborationContext,
+  useCollaboration,
+  useCollaborationOptional,
+} from "@/features/collaboration/context/CollaborationContext";
 import { useAuth } from '@clerk/tanstack-react-start';
 
 import {
@@ -38,23 +41,7 @@ import type {
 const DEFAULT_WS_URL = "ws://localhost:8080";
 const PRESENCE_SEND_THROTTLE_MS = 50;
 
-const CollaborationContext = createContext<CollaborationContextValue | null>(
-  null,
-);
-
-export function useCollaboration(): CollaborationContextValue {
-  const context = useContext(CollaborationContext);
-  if (!context) {
-    throw new Error(
-      "useCollaboration must be used within a <CollaborationProvider>",
-    );
-  }
-  return context;
-}
-
-export function useCollaborationOptional(): CollaborationContextValue | null {
-  return useContext(CollaborationContext);
-}
+export { useCollaboration, useCollaborationOptional };
 
 interface CollaborationProviderProps {
   children: React.ReactNode;

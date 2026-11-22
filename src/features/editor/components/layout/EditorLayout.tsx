@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { PanelRightOpen } from "lucide-react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { ElementCommentsPanel } from "../comments/ElementCommentsPanel";
 import Inspector from "../sidebar/Inspector";

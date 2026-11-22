@@ -2,7 +2,7 @@ import { Layers } from "lucide-react";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElements } from "@/features/editor";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import EditorContextMenu from "../EditorContextMenu";
 import ElementTreeItem from "../sidebar/ElementTreeItem";
 import PanelIntro from "@/components/PanelIntro";

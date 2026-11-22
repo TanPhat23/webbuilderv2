@@ -1,7 +1,7 @@
 import type React from "react";
 import { useSelectedElement, useUpdateElement } from "@/features/editor";
 import { elementHelper } from "@/features/elements/lib/elementhelper";
-import { useEditorContext } from "@/providers/editorprovider";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import {
   compactStyles,
   withoutKeys,
