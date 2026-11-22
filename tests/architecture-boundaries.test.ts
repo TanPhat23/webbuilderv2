@@ -166,3 +166,169 @@ test("boundary rule 4: src/features/editor/utils/** never imports store, hooks, 
   );
   assert.deepEqual(violations, [], `Forbidden imports inside features/editor/utils:\n${violations.join("\n")}`);
 });
+
+export function findStronglyConnectedComponents(
+  adjacency: ReadonlyMap<string, ReadonlySet<string>>,
+): string[][] {
+  let nextIndex = 0;
+  const indices = new Map<string, number>();
+  const lowLink = new Map<string, number>();
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  const components: string[][] = [];
+
+  function strongConnect(node: string): void {
+    indices.set(node, nextIndex);
+    lowLink.set(node, nextIndex);
+    nextIndex += 1;
+    stack.push(node);
+    onStack.add(node);
+
+    for (const neighbor of adjacency.get(node) ?? []) {
+      if (!indices.has(neighbor)) {
+        strongConnect(neighbor);
+        lowLink.set(node, Math.min(lowLink.get(node)!, lowLink.get(neighbor)!));
+      } else if (onStack.has(neighbor)) {
+        lowLink.set(node, Math.min(lowLink.get(node)!, indices.get(neighbor)!));
+      }
+    }
+
+    if (lowLink.get(node) === indices.get(node)) {
+      const component: string[] = [];
+      while (true) {
+        const member = stack.pop()!;
+        onStack.delete(member);
+        component.push(member);
+        if (member === node) break;
+      }
+      if (component.length > 1) {
+        components.push(component.sort());
+      }
+    }
+  }
+
+  for (const node of adjacency.keys()) {
+    if (!indices.has(node)) {
+      strongConnect(node);
+    }
+  }
+
+  return components.sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+function buildSourceGraphs(): {
+  topLevel: Map<string, Set<string>>;
+  features: Map<string, Set<string>>;
+  files: Map<string, Set<string>>;
+} {
+  const allFiles = walkSourceFiles(SRC_ROOT).map((full) =>
+    toPosix(path.relative(SRC_ROOT, full)),
+  );
+  const fileSet = new Set(allFiles);
+  const generatedFiles = new Set(["routeTree.gen.ts"]);
+
+  const resolveToFile = (fromRel: string, specifier: string): string | null => {
+    const base = resolveImportToSrcRelative(fromRel, specifier);
+    if (!base) return null;
+    for (const candidate of [
+      base,
+      `${base}.ts`,
+      `${base}.tsx`,
+      `${base}/index.ts`,
+      `${base}/index.tsx`,
+    ]) {
+      if (fileSet.has(candidate)) return candidate;
+    }
+    return null;
+  };
+
+  const topLevel = new Map<string, Set<string>>();
+  const features = new Map<string, Set<string>>();
+  const files = new Map<string, Set<string>>();
+
+  for (const rel of allFiles) {
+    if (generatedFiles.has(rel)) continue;
+    files.set(rel, new Set());
+    const top = rel.split("/")[0];
+    if (!topLevel.has(top)) topLevel.set(top, new Set());
+    if (top === "features") {
+      const feat = rel.split("/")[1];
+      if (!features.has(feat)) features.set(feat, new Set());
+    }
+  }
+
+  for (const rel of allFiles) {
+    if (generatedFiles.has(rel)) continue;
+    const fromTop = rel.split("/")[0];
+    const fromFeat = fromTop === "features" ? rel.split("/")[1] : null;
+    const full = path.join(SRC_ROOT, rel);
+    const text = fs.readFileSync(full, "utf8");
+    for (const specifier of extractModuleSpecifiers(text, full)) {
+      const target = resolveToFile(rel, specifier);
+      if (!target || target === rel || generatedFiles.has(target)) continue;
+      files.get(rel)!.add(target);
+      const toTop = target.split("/")[0];
+      if (fromTop !== toTop) {
+        topLevel.get(fromTop)!.add(toTop);
+      }
+      const toFeat = toTop === "features" ? target.split("/")[1] : null;
+      if (fromFeat && toFeat && fromFeat !== toFeat) {
+        features.get(fromFeat)!.add(toFeat);
+      }
+    }
+  }
+
+  return { topLevel, features, files };
+}
+
+test("Tarjan SCC detector identifies cycles and returns empty on DAGs", () => {
+  const dag = new Map<string, Set<string>>([
+    ["a", new Set(["b", "c"])],
+    ["b", new Set(["c"])],
+    ["c", new Set()],
+  ]);
+  assert.deepEqual(findStronglyConnectedComponents(dag), []);
+
+  const cyclic = new Map<string, Set<string>>([
+    ["a", new Set(["b"])],
+    ["b", new Set(["c"])],
+    ["c", new Set(["a"])],
+    ["d", new Set(["e"])],
+    ["e", new Set(["d"])],
+    ["f", new Set(["a"])],
+  ]);
+  assert.deepEqual(findStronglyConnectedComponents(cyclic), [
+    ["a", "b", "c"],
+    ["d", "e"],
+  ]);
+});
+
+test("boundary rule 5: zero top-level layer cycles across src/*", () => {
+  const { topLevel } = buildSourceGraphs();
+  const cycles = findStronglyConnectedComponents(topLevel);
+  assert.deepEqual(
+    cycles,
+    [],
+    `Top-level layer cycles detected:\n${cycles.map((c) => c.join(" <-> ")).join("\n")}`,
+  );
+});
+
+test("boundary rule 6: zero cross-feature cycles across src/features/*", () => {
+  const { features } = buildSourceGraphs();
+  const cycles = findStronglyConnectedComponents(features);
+  assert.deepEqual(
+    cycles,
+    [],
+    `Cross-feature cycles detected:\n${cycles.map((c) => c.join(" <-> ")).join("\n")}`,
+  );
+});
+
+test("boundary rule 7: zero file-level cycles across handwritten src/**", () => {
+  const { files } = buildSourceGraphs();
+  const cycles = findStronglyConnectedComponents(files);
+  assert.deepEqual(
+    cycles,
+    [],
+    `File-level cycles detected:\n${cycles.map((c) => c.join(" <-> ")).join("\n")}`,
+  );
+});
