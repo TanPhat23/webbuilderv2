@@ -38,48 +38,80 @@ const fail = (path: string, message: string): EditResult => ({ ok: false, issues
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
 const TEXT_FIELDS = ["name", "content", "tailwindStyles", "src", "href"] as const;
+const EDIT_OPERATIONS: ReadonlySet<unknown> = new Set<EditOp["op"]>(["create", "update", "move", "delete"]);
 
 /** Shape checks that need no tree. Returns the first problem. */
 function checkShapes(ops: unknown[]): AgentIssue | undefined {
-  for (let i = 0; i < ops.length; i++) {
-    const at = (f: string) => `operations[${i}].${f}`;
-    const op = ops[i];
-    if (!isObject(op)) return { path: `operations[${i}]`, message: "must be an object" };
-    if (!["create", "update", "move", "delete"].includes(op.op as string)) return { path: at("op"), message: "must be create, update, move or delete" };
-    if (op.parentId !== undefined && op.parentId !== null && typeof op.parentId !== "string") return { path: at("parentId"), message: "must be a string or null" };
-    if (op.index !== undefined && (!Number.isInteger(op.index) || (op.index as number) < 0)) return { path: at("index"), message: "must be a non-negative integer" };
+  for (let index = 0; index < ops.length; index++) {
+    const path = `operations[${index}]`;
+    const op = ops[index];
+    if (!isObject(op)) return { path, message: "must be an object" };
+    if (!EDIT_OPERATIONS.has(op.op)) {
+      return { path: `${path}.op`, message: "must be create, update, move or delete" };
+    }
+    if (op.parentId !== undefined && op.parentId !== null && typeof op.parentId !== "string") {
+      return { path: `${path}.parentId`, message: "must be a string or null" };
+    }
+    if (op.index !== undefined && (typeof op.index !== "number" || !Number.isInteger(op.index) || op.index < 0)) {
+      return { path: `${path}.index`, message: "must be a non-negative integer" };
+    }
     if (op.op === "create") {
-      const el = op.element;
-      if (!isObject(el)) return { path: at("element"), message: "create needs an element" };
-      if (el.component !== undefined) {
-        const component = el.component;
-        if (!isObject(component) || typeof component.id !== "string" || !component.id || component.id.length > 255 ||
-            Object.keys(component).some((key) => key !== "id" && key !== "overrides")) {
-          return { path: at("element.component"), message: "must contain a component page id and optional overrides" };
-        }
-        if (component.overrides !== undefined && !validComponentOverrides(component.overrides)) {
-          return { path: at("element.component.overrides"), message: "must be a bounded map of text, src, alt or href strings" };
-        }
-      }
-      if ((el.component === undefined || el.type !== undefined) && !AGENT_ELEMENT_TYPES.includes(el.type as never)) return { path: at("element.type"), message: `unsupported type ${JSON.stringify(el.type)}; use one of ${AGENT_ELEMENT_TYPES.join(", ")}` };
-      const bad = checkFields(el, at("element"));
-      if (isObject(el.settings) && "component" in el.settings) return { path: at("element.settings.component"), message: "use element.component to create a linked instance" };
-      if (bad) return bad;
-    } else if (typeof op.id !== "string" || !op.id) {
-      return { path: at("id"), message: `${op.op} needs an element id` };
+      const issue = checkCreateElement(op.element, `${path}.element`);
+      if (issue) return issue;
+      continue;
+    }
+    if (typeof op.id !== "string" || !op.id) {
+      return { path: `${path}.id`, message: `${op.op} needs an element id` };
     }
     if (op.op === "update") {
-      if (!isObject(op.set)) return { path: at("set"), message: "update needs the fields to set" };
-      const bad = checkFields(op.set, at("set"));
-      if (bad) return bad;
-      if (isObject(op.set.settings) && "component" in op.set.settings) {
-        const setting = op.set.settings.component;
-        if (!isObject(setting) || Object.keys(setting).length !== 1 || !Object.hasOwn(setting, "overrides") ||
-            (setting.overrides !== null && !validComponentOverrides(setting.overrides))) {
-          return { path: at("set.settings.component.overrides"), message: "must be a bounded map of content overrides or null to clear it" };
-        }
-      }
+      const issue = checkUpdateFields(op.set, `${path}.set`);
+      if (issue) return issue;
     }
+  }
+  return undefined;
+}
+
+function checkCreateElement(element: unknown, path: string): AgentIssue | undefined {
+  if (!isObject(element)) return { path, message: "create needs an element" };
+  if (element.component !== undefined) {
+    const issue = checkCreateComponent(element.component, `${path}.component`);
+    if (issue) return issue;
+  }
+  if ((element.component === undefined || element.type !== undefined) &&
+      !AGENT_ELEMENT_TYPES.some((type) => type === element.type)) {
+    return {
+      path: `${path}.type`,
+      message: `unsupported type ${JSON.stringify(element.type)}; use one of ${AGENT_ELEMENT_TYPES.join(", ")}`,
+    };
+  }
+  const issue = checkFields(element, path);
+  if (isObject(element.settings) && "component" in element.settings) {
+    return { path: `${path}.settings.component`, message: "use element.component to create a linked instance" };
+  }
+  return issue;
+}
+
+function checkCreateComponent(component: unknown, path: string): AgentIssue | undefined {
+  if (!isObject(component) || typeof component.id !== "string" || !component.id || component.id.length > 255 ||
+      Object.keys(component).some((key) => key !== "id" && key !== "overrides")) {
+    return { path, message: "must contain a component page id and optional overrides" };
+  }
+  if (component.overrides !== undefined && !validComponentOverrides(component.overrides)) {
+    return { path: `${path}.overrides`, message: "must be a bounded map of text, src, alt or href strings" };
+  }
+  return undefined;
+}
+
+function checkUpdateFields(fields: unknown, path: string): AgentIssue | undefined {
+  if (!isObject(fields)) return { path, message: "update needs the fields to set" };
+  const issue = checkFields(fields, path);
+  if (issue) return issue;
+  if (!isObject(fields.settings) || !("component" in fields.settings)) return undefined;
+
+  const setting = fields.settings.component;
+  if (!isObject(setting) || Object.keys(setting).length !== 1 || !Object.hasOwn(setting, "overrides") ||
+      (setting.overrides !== null && !validComponentOverrides(setting.overrides))) {
+    return { path: `${path}.settings.component.overrides`, message: "must be a bounded map of content overrides or null to clear it" };
   }
   return undefined;
 }
@@ -121,6 +153,114 @@ const countAll = (list: Node[]): number => {
   return n;
 };
 
+type NodeLocation = { node: Node; siblings: Node[] };
+
+type ValidatedEditOp = Pick<EditOp, "parentId" | "index"> & (
+  | { op: "create"; element: NewElementInput; ref?: unknown }
+  | { op: "update"; id: string; set: ElementPatch }
+  | { op: "move" | "delete"; id: string }
+);
+
+interface EditBatch {
+  root: Node[];
+  pageId: string;
+  components?: ComponentSource;
+  masters?: ReturnType<typeof componentRoots>;
+  refs: Map<string, string>;
+  created: { ref?: string; id: string }[];
+}
+
+function findNode(root: Node[], id: string): NodeLocation | undefined {
+  let hit: NodeLocation | undefined;
+  walk(root, (node, _parent, siblings) => {
+    if (!hit && node.id === id) hit = { node, siblings };
+  });
+  return hit;
+}
+
+function childrenOf(batch: EditBatch, parent: string | null | undefined, path: string): { list: Node[]; id: string | null } | AgentIssue {
+  if (parent === undefined || parent === null) return { list: batch.root, id: null };
+  const id = batch.refs.get(parent) ?? parent;
+  const hit = findNode(batch.root, id);
+  if (!hit) return { path, message: `unknown element "${parent}"` };
+  if (componentSetting(hit.node as unknown as EditorElement)) return { path, message: "component instances cannot have children" };
+  if (!CONTAINERS.has(hit.node.type)) return { path, message: `${hit.node.type} elements cannot have children` };
+  hit.node.elements ??= [];
+  return { list: hit.node.elements, id };
+}
+
+function place(list: Node[], node: Node, index: number | undefined, path: string): AgentIssue | undefined {
+  if (index !== undefined && index > list.length) {
+    return { path, message: `out of range: this parent has ${list.length} children, so the index is 0 to ${list.length}` };
+  }
+  list.splice(index ?? list.length, 0, node);
+  return undefined;
+}
+
+function createElement(batch: EditBatch, op: Extract<ValidatedEditOp, { op: "create" }>, path: string): AgentIssue | undefined {
+  const { element, ref } = op;
+  if (ref !== undefined && (typeof ref !== "string" || !ref || batch.refs.has(ref) || findNode(batch.root, ref))) {
+    return { path: `${path}.ref`, message: "a ref must be a new, unique name" };
+  }
+  const target = childrenOf(batch, op.parentId, `${path}.parentId`);
+  if ("path" in target) return target;
+
+  const { pageId, components, masters } = batch;
+  const master = element.component && masters?.get(element.component.id);
+  if (element.component && (!master || !components || wouldCreateComponentCycle(pageId, element.component.id, components))) {
+    return { path: `${path}.element.component.id`, message: "choose a component with a master that does not reference this page" };
+  }
+  const instance = master && makeComponentInstance(master, pageId, element.component?.overrides);
+  const id = instance?.id ?? newEntityId();
+  const node: Node = {
+    id, type: instance?.type ?? element.type!, pageId, parentId: target.id, content: element.content ?? "", styles: {},
+    settings: instance?.settings ?? element.settings ?? null,
+    ...(element.name !== undefined && { name: element.name }),
+    ...(element.tailwindStyles !== undefined && { tailwindStyles: element.tailwindStyles }),
+    ...(element.src !== undefined && { src: element.src }),
+    ...(element.href !== undefined && { href: element.href }),
+    ...(!instance && CONTAINERS.has(element.type!) && { elements: [] }),
+  };
+  const issue = place(target.list, node, op.index, `${path}.index`);
+  if (issue) return issue;
+  if (ref) batch.refs.set(ref, id);
+  batch.created.push({ ...(ref && { ref }), id });
+  return undefined;
+}
+
+function updateElement(node: Node, fields: ElementPatch, path: string): AgentIssue | undefined {
+  for (const field of TEXT_FIELDS) {
+    if (fields[field] !== undefined) node[field] = fields[field];
+  }
+  if (!fields.settings) return undefined;
+
+  const { component, ...other } = fields.settings;
+  const settings = { ...((node.settings as Record<string, unknown> | null) ?? {}), ...other };
+  if (component !== undefined) {
+    const link = componentSetting(node as unknown as EditorElement);
+    if (!link) return { path: `${path}.set.settings.component`, message: "this element is not a component instance" };
+    const { overrides } = component as { overrides: ComponentOverrides | null };
+    settings.component = { pageId: link.pageId, rootId: link.rootId, ...(overrides && { overrides }) };
+  }
+  node.settings = settings;
+  return undefined;
+}
+
+function moveElement(batch: EditBatch, hit: NodeLocation, { parentId, index }: Pick<EditOp, "parentId" | "index">, path: string): AgentIssue | undefined {
+  const { node, siblings } = hit;
+  if (parentId !== undefined && parentId !== null) {
+    const targetId = batch.refs.get(parentId) ?? parentId;
+    if (targetId === node.id || (node.elements && findNode(node.elements, targetId))) {
+      return { path: `${path}.parentId`, message: "an element cannot be moved into itself or its own descendant" };
+    }
+  }
+  const target = childrenOf(batch, parentId, `${path}.parentId`);
+  if ("path" in target) return target;
+  siblings.splice(siblings.indexOf(node), 1);
+  node.parentId = target.id;
+  return place(target.list, node, index, `${path}.index`);
+}
+
 export function applyEdits(current: EditorElement[], ops: unknown, pageId: string, components?: ComponentSource): EditResult {
   if (!Array.isArray(ops) || ops.length === 0) return fail("operations", "at least one operation is required");
   if (ops.length > MAX_OPS) return fail("operations", `at most ${MAX_OPS} operations per call`);
@@ -128,102 +268,33 @@ export function applyEdits(current: EditorElement[], ops: unknown, pageId: strin
   if (shape) return { ok: false, issues: [shape] };
 
   const root = structuredClone(current) as unknown as Node[];
-  const masters = components && componentRoots(components);
-  const refs = new Map<string, string>();
-  const created: { ref?: string; id: string }[] = [];
-
-  const find = (id: string) => {
-    let hit: { node: Node; siblings: Node[] } | undefined;
-    walk(root, (n, _p, siblings) => { if (!hit && n.id === id) hit = { node: n, siblings }; });
-    return hit;
-  };
-  /** The children list a parent reference points at: the page root, a container, or undefined. */
-  const childrenOf = (parent: string | null | undefined, path: string): { list: Node[]; id: string | null } | AgentIssue => {
-    if (parent === undefined || parent === null) return { list: root, id: null };
-    const id = refs.get(parent) ?? parent;
-    const hit = find(id);
-    if (!hit) return { path, message: `unknown element "${parent}"` };
-    if (componentSetting(hit.node as unknown as EditorElement)) return { path, message: "component instances cannot have children" };
-    if (!CONTAINERS.has(hit.node.type)) return { path, message: `${hit.node.type} elements cannot have children` };
-    hit.node.elements ??= [];
-    return { list: hit.node.elements, id };
-  };
-  const place = (list: Node[], node: Node, index: number | undefined, path: string): AgentIssue | undefined => {
-    if (index !== undefined && index > list.length) return { path, message: `out of range: this parent has ${list.length} children, so the index is 0 to ${list.length}` };
-    list.splice(index ?? list.length, 0, node);
-    return undefined;
+  const batch: EditBatch = {
+    root, pageId, components, masters: components && componentRoots(components),
+    refs: new Map(), created: [],
   };
 
-  for (let i = 0; i < ops.length; i++) {
-    const op = ops[i] as EditOp;
-    const at = (f: string) => `operations[${i}].${f}`;
-
+  const validatedOps = ops as ValidatedEditOp[];
+  for (let index = 0; index < validatedOps.length; index++) {
+    const op = validatedOps[index];
+    const path = `operations[${index}]`;
     if (op.op === "create") {
-      if (op.ref !== undefined) {
-        if (typeof op.ref !== "string" || !op.ref || refs.has(op.ref) || find(op.ref)) return fail(at("ref"), "a ref must be a new, unique name");
-      }
-      const target = childrenOf(op.parentId, at("parentId"));
-      if ("path" in target) return { ok: false, issues: [target] };
-      const input = op.element as NewElementInput;
-      const master = input.component && masters?.get(input.component.id);
-      if (input.component && (!master || !components ||
-          wouldCreateComponentCycle(pageId, input.component.id, components))) {
-        return fail(at("element.component.id"), "choose a component with a master that does not reference this page");
-      }
-      const instance = master && makeComponentInstance(master, pageId, input.component?.overrides);
-      const id = instance?.id ?? newEntityId();
-      const node: Node = {
-        id, type: instance?.type ?? input.type!, pageId, parentId: target.id, content: input.content ?? "", styles: {},
-        settings: instance?.settings ?? input.settings ?? null,
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.tailwindStyles !== undefined && { tailwindStyles: input.tailwindStyles }),
-        ...(input.src !== undefined && { src: input.src }),
-        ...(input.href !== undefined && { href: input.href }),
-        ...(!instance && CONTAINERS.has(input.type!) && { elements: [] }),
-      };
-      const bad = place(target.list, node, op.index, at("index"));
-      if (bad) return { ok: false, issues: [bad] };
-      if (op.ref) refs.set(op.ref, id);
-      created.push({ ...(op.ref && { ref: op.ref }), id });
-    } else if (op.op === "update") {
-      const hit = find(op.id as string);
-      if (!hit) return fail(at("id"), `unknown element "${op.id}"`);
-      const set = op.set as ElementPatch;
-      for (const f of TEXT_FIELDS) if (set[f] !== undefined) hit.node[f] = set[f];
-      if (set.settings) {
-        const { component, ...other } = set.settings;
-        const settings = { ...((hit.node.settings as Record<string, unknown> | null) ?? {}), ...other };
-        if (component !== undefined) {
-          const link = componentSetting(hit.node as unknown as EditorElement);
-          if (!link) return fail(at("set.settings.component"), "this element is not a component instance");
-          const { overrides } = component as { overrides: ComponentOverrides | null };
-          settings.component = { pageId: link.pageId, rootId: link.rootId, ...(overrides && { overrides }) };
-        }
-        hit.node.settings = settings;
-      }
-    } else if (op.op === "move") {
-      const hit = find(op.id as string);
-      if (!hit) return fail(at("id"), `unknown element "${op.id}"`);
-      const targetId = op.parentId === undefined || op.parentId === null ? null : (refs.get(op.parentId) ?? op.parentId);
-      if (targetId !== null) {
-        let inside = targetId === hit.node.id;
-        if (hit.node.elements) walk(hit.node.elements, (n) => { if (n.id === targetId) inside = true; });
-        if (inside) return fail(at("parentId"), "an element cannot be moved into itself or its own descendant");
-      }
-      const target = childrenOf(op.parentId, at("parentId"));
-      if ("path" in target) return { ok: false, issues: [target] };
-      hit.siblings.splice(hit.siblings.indexOf(hit.node), 1);
-      hit.node.parentId = target.id;
-      const bad = place(target.list, hit.node, op.index, at("index"));
-      if (bad) return { ok: false, issues: [bad] };
-    } else {
-      const hit = find(op.id as string);
-      if (!hit) return fail(at("id"), `unknown element "${op.id}"`);
-      hit.siblings.splice(hit.siblings.indexOf(hit.node), 1);
+      const issue = createElement(batch, op, path);
+      if (issue) return { ok: false, issues: [issue] };
+      continue;
     }
+
+    const hit = findNode(root, op.id);
+    if (!hit) return fail(`${path}.id`, `unknown element "${op.id}"`);
+    if (op.op === "delete") {
+      hit.siblings.splice(hit.siblings.indexOf(hit.node), 1);
+      continue;
+    }
+
+    const issue = op.op === "update" ? updateElement(hit.node, op.set, path) : moveElement(batch, hit, op, path);
+    if (issue) return { ok: false, issues: [issue] };
   }
 
   if (components?.pageIds.has(pageId) && root.length > 1) return fail("operations", "a component page can have only one root");
   if (countAll(root) > MAX_ELEMENTS) return fail("operations", `the page would exceed ${MAX_ELEMENTS} elements`);
-  return { ok: true, elements: root as unknown as EditorElement[], created, changes: ops.length };
+  return { ok: true, elements: root as unknown as EditorElement[], created: batch.created, changes: validatedOps.length };
 }

@@ -104,6 +104,20 @@ test("an element cannot move into itself or its own descendant", () => {
   }
 });
 
+test("move rejects a descendant addressed by a ref created in the batch", () => {
+  const result = applyEdits(tree(), [
+    { op: "create", ref: "card", parentId: "sec", element: { type: "Frame" } },
+    { op: "move", id: "sec", parentId: "card" },
+  ], PAGE);
+  assert.deepEqual(result, {
+    ok: false,
+    issues: [{
+      path: "operations[1].parentId",
+      message: "an element cannot be moved into itself or its own descendant",
+    }],
+  });
+});
+
 test("unknown element types, bad indexes and reserved settings are rejected", () => {
   assert.equal(applyEdits(tree(), [{ op: "create", parentId: "sec", element: { type: "Heading7" } }], PAGE).ok, false);
   assert.equal(applyEdits(tree(), [{ op: "create", parentId: "sec", index: 9, element: { type: "Text" } }], PAGE).ok, false);
@@ -127,6 +141,31 @@ test("size limits and malformed input", () => {
   assert.equal(applyEdits(tree(), Array.from({ length: MAX_OPS + 1 }, () => ({ op: "delete", id: "title" })), PAGE).ok, false);
   assert.equal(applyEdits(tree(), [{ op: "update", id: "title", set: { content: "x".repeat(20_001) } }], PAGE).ok, false);
   assert.equal(applyEdits(tree(), [{ op: "create", element: { type: "Text" }, parentId: 7 }], PAGE).ok, false);
+});
+
+test("create reports direct component settings before other field errors", () => {
+  const result = applyEdits(tree(), [{
+    op: "create",
+    element: { type: "Text", name: 42, settings: { component: {} } },
+  }], PAGE);
+  assert.deepEqual(result, {
+    ok: false,
+    issues: [{
+      path: "operations[0].element.settings.component",
+      message: "use element.component to create a linked instance",
+    }],
+  });
+});
+
+test("update reports field errors before component override errors", () => {
+  const result = applyEdits(tree(), [
+    { op: "delete", id: "ghost" },
+    { op: "update", id: "title", set: { name: 42, settings: { component: {} } } },
+  ], PAGE);
+  assert.deepEqual(result, {
+    ok: false,
+    issues: [{ path: "operations[1].set.name", message: "must be a string" }],
+  });
 });
 
 test("scroll reveal settings are accepted when valid and rejected with a path when not", () => {
