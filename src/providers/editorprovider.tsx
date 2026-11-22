@@ -9,8 +9,14 @@ import { useEditor } from "@/features/editor/hooks/useEditor";
 import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorLayout from "@/features/editor/components/layout/EditorLayout";
+import { AgentHost } from "@/features/agent/AgentHost";
+import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerInteractionsBridge";
 import { toast } from "sonner";
 import AIChatProvider from "./aiprovider";
+
+ensureInteractionsEditorBridge();
+
+const AiChatPanel = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
 
 interface EditorProviderProps {
   children: React.ReactNode;
@@ -29,6 +35,7 @@ interface EditorContextType {
   editingMode: "visual" | "code";
   setEditingMode: (mode: "visual" | "code") => void;
   pageId: string;
+  renderAiPanel?: (onClose: () => void) => React.ReactNode;
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -65,6 +72,7 @@ export default function EditorProvider({
       editingMode,
       setEditingMode,
       pageId,
+      renderAiPanel: (onClose: () => void) => <AiChatPanel onClose={onClose} />,
     }),
     [projectId, userId, editorData, mode, editingMode, pageId],
   );
@@ -96,6 +104,7 @@ export default function EditorProvider({
       >
         <AIChatProvider>
           <EditorLayout>{children}</EditorLayout>
+          <AgentHost />
         </AIChatProvider>
       </CollaborationProvider>
     </EditorContext.Provider>

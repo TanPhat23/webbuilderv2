@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Plus, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { EditorElement } from "@/types/global.type";
-import { useElements, useSelectedElement } from "@/features/editor";
+import { getInteractionsEditorAdapter } from "../editor-bridge";
 import { validateInteractionMap, type Interaction } from "../schema";
 import { referenceWarnings } from "../references";
 import { getInteractions, type OpResult } from "../ops";
@@ -29,8 +29,9 @@ function flatten(tree: EditorElement[]): { id: string; name: string }[] {
 }
 
 export default function InteractTab() {
-  const selected = useSelectedElement();
-  const tree = useElements();
+  const adapter = getInteractionsEditorAdapter();
+  const selected = adapter.useSelectedElement();
+  const tree = adapter.useElements();
   const elements = useMemo(() => flatten(tree), [tree]);
   const names = useMemo(() => new Map(elements.map((e) => [e.id, e.name])), [elements]);
   const map = getInteractions(selected);

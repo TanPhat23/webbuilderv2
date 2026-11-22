@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import type { EditorElement } from "@/types/global.type";
-import { useElements, useSetSelectedElement } from "@/features/editor";
+import { getInteractionsEditorAdapter } from "../editor-bridge";
 import { NAME_RE, validateInteractionMap, type Issue, type Step } from "../schema";
 import { referenceWarnings } from "../references";
 import { getInteractions } from "../ops";
@@ -45,8 +45,9 @@ export default function LogicPanel() {
   const { undo, redo } = useLogicStore.getState();
   const canUndo = useLogicStore((s) => s.past.length > 0);
   const canRedo = useLogicStore((s) => s.future.length > 0);
-  const tree = useElements();
-  const selectElement = useSetSelectedElement();
+  const adapter = getInteractionsEditorAdapter();
+  const tree = adapter.useElements();
+  const selectElement = adapter.useSetSelectedElement();
   const elements = useMemo(() => walkElements(tree), [tree]);
   const [pendingRemoval, setPendingRemoval] = useState<{ kind: "variable" | "flow"; entry: Entry<unknown> } | null>(null);
 

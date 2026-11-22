@@ -20,8 +20,11 @@ import { ElementSelector } from "../sidebar/ElementSelector";
 import PagesPanel from "./PagesPanel";
 import LayersPanel from "./LayersPanel";
 
+import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerInteractionsBridge";
+
+ensureInteractionsEditorBridge();
+
 const SectionsLibrary = React.lazy(() => import("../wireframe/SectionsLibrary"));
-const AIChat = React.lazy(() => import("@/features/ai/components/AiChatPanel"));
 const LogicPanel = React.lazy(() => import("@/features/interactions/components/LogicPanel"));
 const ComponentsPanel = React.lazy(() => import("./ComponentsPanel"));
 const CmsPanel = React.lazy(() => import("./CmsPanel"));
@@ -48,7 +51,8 @@ export type RailItem = {
 
 function CloseableAIChat() {
   const closePanel = useEditorChromeStore((s) => s.closePanel);
-  return <AIChat onClose={closePanel} />;
+  const { renderAiPanel } = useEditorContext();
+  return renderAiPanel ? <>{renderAiPanel(closePanel)}</> : null;
 }
 
 /** Insert shows the element list in Design and the Sections library in Wireframe. */

@@ -8,7 +8,10 @@ import { componentSetting } from "@/features/projects/lib/components";
 import { ComponentConfiguration } from "./configurations/ComponentConfiguration";
 import PageProperties from "./PageProperties";
 
+import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerInteractionsBridge";
 import { BreakpointButtons } from "./style/BreakpointButtons";
+
+ensureInteractionsEditorBridge();
 import type { Breakpoint } from "./style/styleModel";
 
 const Settings = React.lazy(() => import("./configurations/Settings"));
