@@ -6,7 +6,7 @@ import {
   useMoveElement,
   useSetSelectedElement,
 } from "@/features/editor";
-import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
+import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { newEntityId } from "@/lib/entity-id";
 import type { EditorElement, ElementTemplate } from "@/types/global.type";
 import { cloneWithNewIds, dropTarget } from "./sketchModel";

@@ -19,7 +19,7 @@ import {
   SendToBack,
   Trash2,
 } from "lucide-react";
-import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
+import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 
 import { useComponentActions } from "@/features/editor/hooks/useComponentActions";
 import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";

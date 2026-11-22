@@ -1,30 +1,20 @@
-import {
+import type {
   ContainerElement,
   ContainerElementTemplate,
-  ContainerElementType,
   EditorElement,
   ElementTemplate,
   ElementType,
 } from "@/types/global.type";
-import type { ResponsiveStyles, ElementTypeMap } from "@/features/editor";
+import type { ResponsiveStyles, ElementTypeMap } from "@/types/elements";
 import { newEntityId } from "@/lib/entity-id";
-import { getElementStrategy } from "./elementStrategyMap";
-import { BuilderState } from "./elementCreateStrategy";
-import { SelectionStore } from "@/features/editor";
+import { getElementStrategy } from "../utils/element/create/elementStrategyMap";
+import type { BuilderState } from "../utils/element/create/elementCreateStrategy";
+import { SelectionStore } from "../store/selection-store";
 
-/**
- * Maps an {@link ElementType} string to its concrete element interface.
- *
- * @example
- * ```ts
- * type Btn = ElementByType<"Button">; // ButtonElement
- * ```
- */
 type ElementByType<T extends ElementType> = T extends keyof ElementTypeMap
   ? ElementTypeMap[T]
   : never;
 
-/** Parameters accepted by {@link ElementFactory.createElement}. */
 interface CreateElementParams<T extends ElementType = ElementType> {
   readonly type: T;
   readonly pageId: string;
@@ -33,7 +23,7 @@ interface CreateElementParams<T extends ElementType = ElementType> {
 
 type CreateElementResult<T extends ElementType> = ElementByType<T> | undefined;
 
-interface CreateElementFromTemplateParams<T extends ElementType = ElementType> {
+interface CreateElementFromTemplateParams {
   readonly element: ElementTemplate;
   readonly pageId: string;
 }
@@ -52,39 +42,11 @@ class ElementFactoryError extends Error {
   }
 }
 
-/**
- * Singleton factory for creating editor elements with full type safety.
- *
- * Uses the Strategy pattern internally — each {@link ElementType} has a
- * corresponding {@link ElementCreateStrategy} that knows how to produce
- * the correct default values. The factory itself handles ID generation,
- * validation, template recursion, and selection-store side-effects.
- *
- * @example
- * ```ts
- * // Create a simple element
- * const button = ElementFactory.getInstance().createElement({
- *   type: "Button",
- *   pageId: "page-1",
- * });
- *
- * // Create a full component tree from a template
- * const section = ElementFactory.getInstance().createElementFromTemplate({
- *   element: sectionTemplate,
- *   pageId: "page-1",
- * });
- * ```
- */
 export class ElementFactory {
   private static instance: ElementFactory;
 
   private constructor() {}
 
-  /**
-   * Returns the singleton {@link ElementFactory} instance.
-   *
-   * The instance is created lazily on first access.
-   */
   static getInstance(): ElementFactory {
     if (!ElementFactory.instance) {
       ElementFactory.instance = new ElementFactory();
@@ -99,7 +61,7 @@ export class ElementFactory {
   private isContainerTemplate(
     t: ElementTemplate,
   ): t is ContainerElementTemplate {
-    return (t as Partial<Record<string, unknown>>).hasOwnProperty("elements");
+    return Object.prototype.hasOwnProperty.call(t, "elements");
   }
 
   private validatePageId(pageId: string | undefined): asserts pageId is string {
@@ -185,32 +147,12 @@ export class ElementFactory {
       typeof templateSettings === "object" &&
       templateSettings !== null
     ) {
-      return { ...strategySettings, ...templateSettings } as unknown;
+      return { ...strategySettings, ...templateSettings };
     }
 
     return templateSettings ?? strategySettings;
   }
 
-  /**
-   * Create a new element of the specified type with sensible defaults.
-   *
-   * The created element is automatically set as the selected element in the
-   * global {@link SelectionStore}.
-   *
-   * @typeParam T - The element type literal (e.g. `"Button"`, `"Section"`).
-   * @param params - Creation parameters (type, pageId, optional parentId).
-   * @returns The newly created element narrowed to `ElementByType<T>`, or
-   *          `undefined` if creation failed.
-   *
-   * @example
-   * ```ts
-   * const input = ElementFactory.getInstance().createElement({
-   *   type: "Input",
-   *   pageId: "page-1",
-   *   parentId: "form-abc",
-   * });
-   * ```
-   */
   public createElement<T extends ElementType>(
     params: CreateElementParams<T>,
   ): CreateElementResult<T> {
@@ -243,28 +185,6 @@ export class ElementFactory {
     }
   }
 
-  /**
-   * Recursively create an element tree from a template definition.
-   *
-   * Each node in the template receives a fresh UUID. Container templates
-   * have their `elements` array recursively instantiated as well. Template
-   * `settings` are merged on top of the strategy defaults.
-   *
-   * The root element is automatically set as the selected element in the
-   * global {@link SelectionStore}.
-   *
-   * @typeParam T - Optional narrowed return type (defaults to `EditorElement`).
-   * @param params - Template and target pageId.
-   * @returns The fully instantiated root element, or `undefined` on failure.
-   *
-   * @example
-   * ```ts
-   * const card = ElementFactory.getInstance().createElementFromTemplate({
-   *   element: cardTemplate,
-   *   pageId: "page-1",
-   * });
-   * ```
-   */
   public createElementFromTemplate<T extends EditorElement = EditorElement>(
     params: CreateElementFromTemplateParams,
   ): T | undefined {
@@ -294,7 +214,7 @@ export class ElementFactory {
         const base = this.buildWithStrategy(state);
 
         if (this.isContainerTemplate(tmpl)) {
-          const children = (tmpl as ContainerElementTemplate).elements ?? [];
+          const children = tmpl.elements ?? [];
           const createdChildren = children.map((child) =>
             recursivelyCreate(child, id),
           );
@@ -302,10 +222,9 @@ export class ElementFactory {
         }
 
         if (tmpl.settings) {
-          base.settings = this.mergeSettings(
-            base.settings,
-            tmpl.settings,
-          ) as any;
+          Object.assign(base, {
+            settings: this.mergeSettings(base.settings, tmpl.settings),
+          });
         }
 
         return base;

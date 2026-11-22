@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { componentFromDrop } from "@/features/editor/utils/element/componentDrop";
+import { componentFromDrop } from "@/features/editor/lib/componentDrop";
 import { useEditorContext } from "@/providers/editorprovider";
 import type { EditorElement } from "@/types/global.type";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectionStore } from "@/features/editor/store/selection-store";
 import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
+import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import {
   DRAG_KEYS,

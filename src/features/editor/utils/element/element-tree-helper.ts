@@ -8,7 +8,7 @@ import type {
 import {
   CONTAINER_ELEMENT_TYPES,
   EDITABLE_ELEMENT_TYPES,
-} from "@/features/editor/constants/elements";
+} from "@/types/elements";
 
 const asContainer = (el: EditorElement): ContainerElement =>
   el as unknown as ContainerElement;

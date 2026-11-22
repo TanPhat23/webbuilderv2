@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ElementKeyboardActions } from "@/features/editor/utils/element/keyBoardEvents";
+import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 
 interface UseEditorShortcutsOptions {
   canvasRef: React.RefObject<HTMLDivElement | null>;

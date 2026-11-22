@@ -1,4 +1,4 @@
-import {
+import type {
   AudioElement,
   BlockquoteElement,
   CarouselElement,
@@ -17,7 +17,7 @@ import {
   TableElement,
   TextareaElement,
   VideoElement,
-} from "@/features/editor";
+} from "@/types/elements";
 import { EditorElement } from "@/types/global.type";
 
 export type BuilderState = Omit<

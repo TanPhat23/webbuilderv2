@@ -2,7 +2,7 @@ import React from "react";
 import { useInsertElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { useCurrentPage } from "@/features/projects/hooks/useProjects";
-import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
+import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { Button } from "@/components/ui/button";
 import { SectionElement } from "@/features/editor";
 

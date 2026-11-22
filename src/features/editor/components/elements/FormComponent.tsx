@@ -1,6 +1,6 @@
 
 import React from "react";
-import { ElementFactory } from "@/features/editor/utils/element/create/ElementFactory";
+import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { useAddElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { FormElement } from "@/features/editor";

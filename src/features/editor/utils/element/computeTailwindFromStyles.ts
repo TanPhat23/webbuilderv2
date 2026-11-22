@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import { get, isUndefined, isNull, isString, isNumber, includes } from 'lodash-es';
-import { ResponsiveStyles } from "@/features/editor";
+import type { ResponsiveStyles } from "@/types/elements";
 
 function computeTailwindFromStylesSingle(
   styles: Partial<CSSProperties> | undefined,

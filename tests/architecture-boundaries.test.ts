@@ -152,3 +152,17 @@ test("isolated loading of types, elements registry, and projects/components has 
   assert.equal(typeof projectsComponents.resolveComponents, "function");
   assert.equal(typeof resolveMod.resolveContent, "function");
 });
+
+test("boundary rule 4: src/features/editor/utils/** never imports store, hooks, services, or the editor barrel", () => {
+  const forbidden = [
+    "features/editor",
+    "features/editor/index",
+    "features/editor/store",
+    "features/editor/hooks",
+    "features/editor/services",
+  ];
+  const violations = collectViolations("features/editor/utils/", (resolved) =>
+    forbidden.some((prefix) => resolved === prefix || (prefix !== "features/editor" && resolved.startsWith(`${prefix}/`))),
+  );
+  assert.deepEqual(violations, [], `Forbidden imports inside features/editor/utils:\n${violations.join("\n")}`);
+});

@@ -1,33 +1,37 @@
-import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
-import { EditorElement } from "@/types/global.type";
-import { cloneComponentTree, componentSetting, visitComponentTree } from "@/features/projects/lib/components";
-import { elementHelper } from "./elementhelper";
-import { ElementStore } from "@/features/editor";
-import { SelectionStore } from "@/features/editor";
+import { getSelectedOrHoveredElement } from "../store/selected-element";
+import { ElementStore } from "../store/element-store";
+import { SelectionStore } from "../store/selection-store";
+import type { EditorElement } from "@/types/global.type";
+import {
+  cloneComponentTree,
+  componentSetting,
+  visitComponentTree,
+} from "@/features/projects/lib/components";
 import { toast } from "sonner";
 
 export class ElementKeyboardActions {
   private isReadOnly = false;
   private isLocked = false;
 
-  public setReadOnly = (value: boolean) => {
+  public setReadOnly = (value: boolean): void => {
     this.isReadOnly = value;
   };
 
-  public setLocked = (value: boolean) => {
+  public setLocked = (value: boolean): void => {
     this.isLocked = value;
   };
 
-  public copyElement = () => {
-    const selectedElement =
-      getSelectedOrHoveredElement();
+  public copyElement = (): void => {
+    const selectedElement = getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
-    sessionStorage.setItem("copiedElementProject", ElementStore.getState().activePage?.projectId ?? "");
+    sessionStorage.setItem(
+      "copiedElementProject",
+      ElementStore.getState().activePage?.projectId ?? "",
+    );
   };
 
-  public cutElement = () => {
-    // Prevent cut in read-only or locked mode
+  public cutElement = (): void => {
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot cut elements - editor is in read-only mode", {
         duration: 2000,
@@ -35,17 +39,18 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement =
-      getSelectedOrHoveredElement();
+    const selectedElement = getSelectedOrHoveredElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
-    sessionStorage.setItem("copiedElementProject", ElementStore.getState().activePage?.projectId ?? "");
+    sessionStorage.setItem(
+      "copiedElementProject",
+      ElementStore.getState().activePage?.projectId ?? "",
+    );
     ElementStore.getState().deleteElement(selectedElement.id);
     SelectionStore.getState().setSelectedElement(undefined);
   };
 
-  public pasteElement = () => {
-    // Prevent paste in read-only or locked mode
+  public pasteElement = (): void => {
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot paste elements - editor is in read-only mode", {
         duration: 2000,
@@ -61,16 +66,23 @@ export class ElementKeyboardActions {
     const { activePage } = state;
     if (!activePage) return;
     let linked = false;
-    visitComponentTree([elementData], (element) => { if (componentSetting(element)) linked = true; });
-    if (linked && (state.isComponentPage || sessionStorage.getItem("copiedElementProject") !== activePage.projectId)) {
-      toast.error("Use the Components panel to add linked components to a master, or detach them to copy across projects.");
+    visitComponentTree([elementData], (element) => {
+      if (componentSetting(element)) linked = true;
+    });
+    if (
+      linked &&
+      (state.isComponentPage ||
+        sessionStorage.getItem("copiedElementProject") !== activePage.projectId)
+    ) {
+      toast.error(
+        "Use the Components panel to add linked components to a master, or detach them to copy across projects.",
+      );
       return;
     }
     state.addElement(cloneComponentTree(elementData, activePage.pageId));
   };
 
-  public bringToFront = () => {
-    // Prevent reorder in read-only or locked mode
+  public bringToFront = (): void => {
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot reorder elements - editor is in read-only mode", {
         duration: 2000,
@@ -78,8 +90,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement =
-      getSelectedOrHoveredElement();
+    const selectedElement = getSelectedOrHoveredElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -93,8 +104,7 @@ export class ElementKeyboardActions {
     elementState.loadElements(newElements);
   };
 
-  public sendToBack = () => {
-    // Prevent reorder in read-only or locked mode
+  public sendToBack = (): void => {
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot reorder elements - editor is in read-only mode", {
         duration: 2000,
@@ -102,8 +112,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement =
-      getSelectedOrHoveredElement();
+    const selectedElement = getSelectedOrHoveredElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -117,8 +126,7 @@ export class ElementKeyboardActions {
     elementState.loadElements(newElements);
   };
 
-  public deleteElement = () => {
-    // Prevent delete in read-only or locked mode
+  public deleteElement = (): void => {
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot delete elements - editor is in read-only mode", {
         duration: 2000,
@@ -126,22 +134,21 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement =
-      getSelectedOrHoveredElement();
+    const selectedElement = getSelectedOrHoveredElement();
     if (!selectedElement) return;
     ElementStore.getState().deleteElement(selectedElement.id);
     SelectionStore.getState().setSelectedElement(undefined);
   };
 
-  public deselectAll = () => {
+  public deselectAll = (): void => {
     SelectionStore.getState().setSelectedElement(undefined);
   };
 
-  public undo = () => {
+  public undo = (): void => {
     ElementStore.getState().undo();
   };
 
-  public redo = () => {
+  public redo = (): void => {
     ElementStore.getState().redo();
   };
 }
