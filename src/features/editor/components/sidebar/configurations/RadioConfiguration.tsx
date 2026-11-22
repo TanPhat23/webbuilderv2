@@ -1,4 +1,3 @@
-import React, { ChangeEvent } from "react";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import {
@@ -23,13 +22,6 @@ export default function RadioConfiguration() {
   const settings: RadioSettings =
     (selectedElement as RadioElement).settings ?? {};
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [name]: value },
-    });
-  };
-
   const updateSetting = looseSettingUpdater(
     updateElement,
     selectedElement.id,
@@ -44,7 +36,6 @@ export default function RadioConfiguration() {
       icon={<Circle className="h-3.5 w-3.5" />}
       stateIcon={<CircleDot />}
       settings={settings}
-      onFieldChange={handleChange}
       onSettingChange={updateSetting}
       nameHint="The name attribute for the radio button. Radio buttons with the same name form a mutually exclusive group — only one can be selected at a time."
       namePlaceholder="groupName"

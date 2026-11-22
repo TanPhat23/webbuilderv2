@@ -1,16 +1,12 @@
-import React, { ChangeEvent } from "react";
-import { Switch } from "@/components/ui/switch";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import {
   CheckboxElement,
   CheckboxSettings,
 } from "@/features/editor";
-import {
-  ConfigField,
-  looseSettingUpdater,
-} from "./_shared";
+import { looseSettingUpdater } from "./_shared";
 import { ChoiceConfigurationShell } from "./_shared/ChoiceConfigurationSection";
+import { ConfigSwitch } from "./_shared/ConfigInputs";
 import {
   CheckSquare,
   MinusSquare,
@@ -27,13 +23,6 @@ export default function CheckboxConfiguration() {
   const settings: CheckboxSettings =
     (selectedElement as CheckboxElement).settings ?? {};
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [name]: value },
-    });
-  };
-
   const updateSetting = looseSettingUpdater(
     updateElement,
     selectedElement.id,
@@ -48,7 +37,6 @@ export default function CheckboxConfiguration() {
       icon={<CheckSquare className="h-3.5 w-3.5" />}
       stateIcon={<CheckSquare />}
       settings={settings}
-      onFieldChange={handleChange}
       onSettingChange={updateSetting}
       nameHint="The name attribute for the checkbox. Used as the key when the form is submitted."
       namePlaceholder="fieldName"
@@ -61,20 +49,13 @@ export default function CheckboxConfiguration() {
       requiredHint="The checkbox must be checked for the form to be submitted. Commonly used for terms & conditions."
       disabledHint="Prevents all interaction and dims the checkbox. The value is NOT submitted with the form."
       extraStateFields={
-        <ConfigField
+        <ConfigSwitch
           label="Indeterminate"
-          htmlFor="checkbox-indeterminate"
+          id="checkbox-indeterminate"
           hint="Show the checkbox in an indeterminate (mixed) state. Typically used for 'select all' checkboxes where only some children are checked."
-        >
-          <Switch
-            id="checkbox-indeterminate"
-            checked={!!settings.indeterminate}
-            onCheckedChange={(checked) =>
-              updateSetting("indeterminate", !!checked)
-            }
-            className="scale-75 origin-right"
-          />
-        </ConfigField>
+          checked={!!settings.indeterminate}
+          onCheckedChange={(checked) => updateSetting("indeterminate", checked)}
+        />
       }
       stateSummary={
         <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">

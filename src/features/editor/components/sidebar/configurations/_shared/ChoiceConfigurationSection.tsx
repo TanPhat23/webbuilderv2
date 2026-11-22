@@ -1,7 +1,5 @@
-import React, { ChangeEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Accordion } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import {
   AccordionContent,
   AccordionItem,
@@ -11,12 +9,11 @@ import {
   AccordionSection,
   SectionDivider,
 } from "./AccordionSection";
-import { ConfigField } from "./ConfigField";
-import ValidationConfiguration from "../ValidationConfiguration";
+import { ConfigSwitch, ConfigTextInput } from "./ConfigInputs";
+import { FieldValidationSection } from "./TextControlSections";
 import { cn } from "@/lib/utils";
 import {
   Settings2,
-  ShieldCheck,
   Lock,
   Tag,
 } from "lucide-react";
@@ -52,7 +49,7 @@ export function getChoiceConfigurationDefaults(
   };
 }
 
-export type ChoiceSettingKey = "defaultChecked" | "required" | "disabled";
+export type ChoiceSettingKey = keyof ChoiceSettingsBase;
 
 export interface ChoiceConfigurationShellProps<T extends string = string> {
   idPrefix: "checkbox" | "radio";
@@ -61,7 +58,6 @@ export interface ChoiceConfigurationShellProps<T extends string = string> {
   icon: ReactNode;
   stateIcon: ReactNode;
   settings: ChoiceSettingsBase;
-  onFieldChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onSettingChange: (name: T | ChoiceSettingKey, value: unknown) => void;
   nameHint: string;
   namePlaceholder: string;
@@ -86,7 +82,6 @@ export function ChoiceConfigurationShell<T extends string = string>({
   icon,
   stateIcon,
   settings,
-  onFieldChange,
   onSettingChange,
   nameHint,
   namePlaceholder,
@@ -142,64 +137,45 @@ export function ChoiceConfigurationShell<T extends string = string>({
             nested
           >
             {/* Name */}
-            <ConfigField
+            <ConfigTextInput
               label="Name"
-              htmlFor={`${idPrefix}-name`}
               hint={nameHint}
-            >
-              <Input
-                id={`${idPrefix}-name`}
-                name="name"
-                type="text"
-                value={settings.name || ""}
-                onChange={onFieldChange}
-                placeholder={namePlaceholder}
-                className="h-7 w-full max-w-[140px] px-2 text-[11px] font-mono rounded-md"
-                autoComplete="off"
-              />
-            </ConfigField>
+              id={`${idPrefix}-name`}
+              name="name"
+              value={settings.name || ""}
+              onValueChange={(value) => onSettingChange("name", value)}
+              placeholder={namePlaceholder}
+              className="h-7 w-full max-w-[140px] px-2 text-[11px] font-mono rounded-md"
+            />
 
             {afterNameField}
 
             <SectionDivider />
 
             {/* Value */}
-            <ConfigField
+            <ConfigTextInput
               label="Value"
-              htmlFor={`${idPrefix}-value`}
               hint={valueHint}
-            >
-              <Input
-                id={`${idPrefix}-value`}
-                name="value"
-                type="text"
-                value={settings.value || ""}
-                onChange={onFieldChange}
-                placeholder={valuePlaceholder}
-                className="h-7 w-full max-w-[140px] px-2 text-[11px] font-mono rounded-md"
-                autoComplete="off"
-              />
-            </ConfigField>
+              id={`${idPrefix}-value`}
+              name="value"
+              value={settings.value || ""}
+              onValueChange={(value) => onSettingChange("value", value)}
+              placeholder={valuePlaceholder}
+              className="h-7 w-full max-w-[140px] px-2 text-[11px] font-mono rounded-md"
+            />
 
             <SectionDivider />
 
             {/* Label */}
-            <ConfigField
+            <ConfigTextInput
               label="Label text"
-              htmlFor={`${idPrefix}-label`}
               hint={labelHint}
-            >
-              <Input
-                id={`${idPrefix}-label`}
-                name="label"
-                type="text"
-                value={settings.label || ""}
-                onChange={onFieldChange}
-                placeholder={labelPlaceholder}
-                className="h-7 w-full max-w-[140px] px-2 text-[11px] rounded-md"
-                autoComplete="off"
-              />
-            </ConfigField>
+              id={`${idPrefix}-label`}
+              name="label"
+              value={settings.label || ""}
+              onValueChange={(value) => onSettingChange("label", value)}
+              placeholder={labelPlaceholder}
+            />
 
             {/* Label preview */}
             {settings.label && (
@@ -220,20 +196,13 @@ export function ChoiceConfigurationShell<T extends string = string>({
             nested
           >
             {/* Default Checked */}
-            <ConfigField
+            <ConfigSwitch
               label={defaultCheckedLabel}
-              htmlFor={`${idPrefix}-defaultChecked`}
               hint={defaultCheckedHint}
-            >
-              <Switch
-                id={`${idPrefix}-defaultChecked`}
-                checked={!!settings.defaultChecked}
-                onCheckedChange={(checked) =>
-                  onSettingChange("defaultChecked", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
+              id={`${idPrefix}-defaultChecked`}
+              checked={!!settings.defaultChecked}
+              onCheckedChange={(checked) => onSettingChange("defaultChecked", checked)}
+            />
 
             {extraStateFields}
 
@@ -244,14 +213,7 @@ export function ChoiceConfigurationShell<T extends string = string>({
           </AccordionSection>
 
           {/* ── Validation ── */}
-          <AccordionSection
-            value="validation"
-            title="Validation Rules"
-            icon={<ShieldCheck />}
-            nested
-          >
-            <ValidationConfiguration />
-          </AccordionSection>
+          <FieldValidationSection />
 
           {/* ── Constraints ── */}
           <AccordionSection
@@ -261,36 +223,22 @@ export function ChoiceConfigurationShell<T extends string = string>({
             nested
           >
             {/* Required */}
-            <ConfigField
+            <ConfigSwitch
               label="Required"
-              htmlFor={`${idPrefix}-required`}
               hint={requiredHint}
-            >
-              <Switch
-                id={`${idPrefix}-required`}
-                checked={!!settings.required}
-                onCheckedChange={(checked) =>
-                  onSettingChange("required", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
+              id={`${idPrefix}-required`}
+              checked={!!settings.required}
+              onCheckedChange={(checked) => onSettingChange("required", checked)}
+            />
 
             {/* Disabled */}
-            <ConfigField
+            <ConfigSwitch
               label="Disabled"
-              htmlFor={`${idPrefix}-disabled`}
               hint={disabledHint}
-            >
-              <Switch
-                id={`${idPrefix}-disabled`}
-                checked={!!settings.disabled}
-                onCheckedChange={(checked) =>
-                  onSettingChange("disabled", !!checked)
-                }
-                className="scale-75 origin-right"
-              />
-            </ConfigField>
+              id={`${idPrefix}-disabled`}
+              checked={!!settings.disabled}
+              onCheckedChange={(checked) => onSettingChange("disabled", checked)}
+            />
 
             {/* Constraint summary */}
             <SectionDivider />

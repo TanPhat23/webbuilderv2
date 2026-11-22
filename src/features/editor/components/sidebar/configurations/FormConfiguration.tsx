@@ -1,7 +1,5 @@
-
-import React, { ChangeEvent } from "react";
+import type { ReactNode } from "react";
 import { Accordion } from "@/components/ui/accordion";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -9,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { ConfigSelectInput, ConfigSwitch, ConfigTextInput } from "./_shared/ConfigInputs";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { FormElement, FormSettings } from "@/features/editor";
@@ -38,7 +36,7 @@ interface MethodOption {
   value: string;
   label: string;
   description: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const METHOD_OPTIONS: MethodOption[] = [
@@ -80,13 +78,6 @@ export const FormConfigurationAccordion = () => {
   const settings: Partial<FormSettings> =
     (selectedElement as FormElement).settings || {};
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    updateElement(selectedElement.id, {
-      settings: { ...settings, [name]: value },
-    });
-  };
-
   const updateSetting = looseSettingUpdater(
     updateElement,
     selectedElement.id,
@@ -121,22 +112,16 @@ export const FormConfigurationAccordion = () => {
           nested
         >
           {/* Action URL */}
-          <ConfigField
+          <ConfigTextInput
             label="Action URL"
-            htmlFor="form-action"
             hint="The URL where the form data will be submitted. Use a relative path for same-origin or an absolute URL for external endpoints."
-          >
-            <Input
-              id="form-action"
-              name="action"
-              type="text"
-              value={settings.action || ""}
-              onChange={handleChange}
-              placeholder="/api/submit"
-              className="h-7 w-full max-w-[160px] px-2 text-[11px] font-mono rounded-md"
-              autoComplete="off"
-            />
-          </ConfigField>
+            id="form-action"
+            name="action"
+            value={settings.action || ""}
+            onValueChange={(value) => updateSetting("action", value)}
+            placeholder="/api/submit"
+            className="h-7 w-full max-w-[160px] px-2 text-[11px] font-mono rounded-md"
+          />
 
           {/* URL type indicator */}
           {hasAction && (
@@ -167,63 +152,26 @@ export const FormConfigurationAccordion = () => {
           <SectionDivider />
 
           {/* Method */}
-          <ConfigField
+          <ConfigSelectInput
+            id="form-method"
             label="Method"
-            htmlFor="form-method"
             hint="HTTP method for form submission. POST is recommended for data mutations."
-          >
-            <Select
-              value={settings.method || "post"}
-              onValueChange={(value) => updateSetting("method", value)}
-            >
-              <SelectTrigger
-                id="form-method"
-                className="h-7 w-[100px] px-2 text-[11px] rounded-md"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {METHOD_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {opt.icon}
-                      </span>
-                      <span className="font-mono text-[11px]">
-                        {opt.label}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ConfigField>
+            value={settings.method || "post"}
+            onValueChange={(value) => updateSetting("method", value)}
+            options={METHOD_OPTIONS}
+            className="h-7 w-[100px] px-2 text-[11px] rounded-md"
+            optionLabelClassName="font-mono text-[11px]"
+          />
 
           {/* Encoding Type */}
-          <ConfigField
+          <ConfigSelectInput
+            id="form-encType"
             label="Encoding"
-            htmlFor="form-encType"
             hint="How form data is encoded when sent. Use 'Multipart' for file uploads."
-          >
-            <Select
-              value={settings.encType || "application/x-www-form-urlencoded"}
-              onValueChange={(value) => updateSetting("encType", value)}
-            >
-              <SelectTrigger
-                id="form-encType"
-                className="h-7 w-[120px] px-2 text-[11px] rounded-md"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ENCODING_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </ConfigField>
+            value={settings.encType || "application/x-www-form-urlencoded"}
+            onValueChange={(value) => updateSetting("encType", value)}
+            options={ENCODING_OPTIONS}
+          />
 
           {/* Auto Complete */}
           <ConfigField
@@ -287,20 +235,13 @@ export const FormConfigurationAccordion = () => {
           icon={<ShieldCheck />}
           nested
         >
-          <ConfigField
+          <ConfigSwitch
             label="Validate on submit"
-            htmlFor="validate-on-submit"
             hint="Enable client-side validation before form submission. This will check all input rules before allowing the form to submit."
-          >
-            <Switch
-              id="validate-on-submit"
-              checked={!!settings.validateOnSubmit}
-              onCheckedChange={(checked) =>
-                updateSetting("validateOnSubmit", !!checked)
-              }
-              className="scale-75 origin-right"
-            />
-          </ConfigField>
+            id="validate-on-submit"
+            checked={!!settings.validateOnSubmit}
+            onCheckedChange={(checked) => updateSetting("validateOnSubmit", checked)}
+          />
 
           {/* Validation status */}
           <div className="flex items-center gap-1.5 pl-0.5 animate-in fade-in-0 duration-150">
@@ -330,75 +271,49 @@ export const FormConfigurationAccordion = () => {
           nested
         >
           {/* Redirect URL */}
-          <ConfigField
+          <ConfigTextInput
             label="Redirect URL"
-            htmlFor="form-redirectUrl"
             hint="URL to redirect to after successful form submission."
             vertical
-          >
-            <Input
-              id="form-redirectUrl"
-              name="redirectUrl"
-              type="text"
-              value={settings.redirectUrl || ""}
-              onChange={handleChange}
-              placeholder="/thank-you"
-              className="h-7 w-full px-2 text-[11px] font-mono rounded-md"
-              autoComplete="off"
-            />
-          </ConfigField>
+            id="form-redirectUrl"
+            name="redirectUrl"
+            value={settings.redirectUrl || ""}
+            onValueChange={(value) => updateSetting("redirectUrl", value)}
+            placeholder="/thank-you"
+            className="h-7 w-full px-2 text-[11px] font-mono rounded-md"
+          />
 
           <SectionDivider />
 
           {/* No Validate */}
-          <ConfigField
+          <ConfigSwitch
             label="No validate (HTML)"
-            htmlFor="form-noValidate"
             hint="Disable the browser's built-in form validation. Use this if you handle validation entirely in JavaScript."
-          >
-            <Switch
-              id="form-noValidate"
-              checked={!!settings.noValidate}
-              onCheckedChange={(checked) =>
-                updateSetting("noValidate", !!checked)
-              }
-              className="scale-75 origin-right"
-            />
-          </ConfigField>
+            id="form-noValidate"
+            checked={!!settings.noValidate}
+            onCheckedChange={(checked) => updateSetting("noValidate", checked)}
+          />
 
           {/* Custom submit */}
-          <ConfigField
+          <ConfigSwitch
             label="Handle submit in my code"
-            htmlFor="form-customSubmit"
             hint="Use this with a form library such as React Hook Form or Formik. The exported code won't bind this form's submit interactions, so your own onSubmit runs unopposed. Adding onSubmit to the form in the Code tab turns this on."
-          >
-            <Switch
-              id="form-customSubmit"
-              checked={!!settings.customSubmit}
-              onCheckedChange={(checked) =>
-                updateSetting("customSubmit", !!checked)
-              }
-              className="scale-75 origin-right"
-            />
-          </ConfigField>
+            id="form-customSubmit"
+            checked={!!settings.customSubmit}
+            onCheckedChange={(checked) => updateSetting("customSubmit", checked)}
+          />
 
           {/* Accept Charset */}
-          <ConfigField
+          <ConfigTextInput
             label="Charset"
-            htmlFor="form-acceptCharset"
             hint="Character encoding for form submission. Almost always UTF-8."
-          >
-            <Input
-              id="form-acceptCharset"
-              name="acceptCharset"
-              type="text"
-              value={settings.acceptCharset || ""}
-              onChange={handleChange}
-              placeholder="UTF-8"
-              className="h-7 w-[90px] px-2 text-[11px] font-mono rounded-md"
-              autoComplete="off"
-            />
-          </ConfigField>
+            id="form-acceptCharset"
+            name="acceptCharset"
+            value={settings.acceptCharset || ""}
+            onValueChange={(value) => updateSetting("acceptCharset", value)}
+            placeholder="UTF-8"
+            className="h-7 w-[90px] px-2 text-[11px] font-mono rounded-md"
+          />
 
           {/* Security summary */}
           <div className="flex flex-col gap-1 pt-1 animate-in fade-in-0 duration-150">
