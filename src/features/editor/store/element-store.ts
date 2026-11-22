@@ -10,37 +10,27 @@ import {
   patchWithDeletions,
 } from "@/features/editor/utils/element/treeDiff";
 import { SelectionStore } from "./selection-store";
-import type { ContainerElement, EditorElement } from "@/types/global.type";
+import type { EditorElement } from "@/types/global.type";
 import type { MoveData } from "@/types/elements";
 import { elementHelper } from "@/features/elements/lib/elementhelper";
 import type { DropPosition } from "@/features/elements/lib/element-tree-helper";
 
 export type { MoveData };
 
+export type ElementUpdateWirePatch = Omit<
+  Partial<EditorElement>,
+  "styles" | "settings"
+> & {
+  styles?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
+};
+
 export type CollaborativeData =
   | Partial<EditorElement>
+  | ElementUpdateWirePatch
   | EditorElement
   | MoveData;
 
-/**
- * ElementStore
- *
- * Manages the editor element tree, undo/redo history, and collaborative
- * callbacks. This is the largest store in the application — use selectors
- * from `@/features/editor` to avoid unnecessary
- * re-renders.
- *
- * @example
- * ```ts
- * import { useElements, useUpdateElement } from "@/features/editor";
- * const elements = useElements();
- * const updateElement = useUpdateElement();
- *
- * // ⚠️ Full store — causes re-renders on ANY store change
- * import { useElementStore } from "@/features/editor";
- * const { elements, updateElement } = useElementStore();
- * ```
- */
 export type ElementStore = {
   elements: EditorElement[];
   activePage: { projectId: string; pageId: string } | null;
@@ -48,7 +38,7 @@ export type ElementStore = {
   isComponentPage: boolean;
   past: EditorElement[][];
   future: EditorElement[][];
-  yjsUpdateCallback: ((elements: EditorElement[]) => void) | null;
+  elementsChangeCallback: ((elements: EditorElement[]) => void) | null;
   collaborativeCallback:
     | ((
         type: "update" | "delete" | "create" | "move",
@@ -71,14 +61,11 @@ export type ElementStore = {
     parentElement: EditorElement,
     elementToBeInserted: EditorElement,
   ) => ElementStore;
-  swapElement: (id1: string, id2: string) => ElementStore;
-  /** Moves an element before/after another element, or into a container. */
   moveElement: (
     id: string,
     targetId: string,
     position: DropPosition,
   ) => ElementStore;
-  /** Inserts a new element before/after another element, or into a container. */
   insertElementRelative: (
     element: EditorElement,
     targetId: string,
@@ -89,7 +76,7 @@ export type ElementStore = {
   rememberTree: (previous: EditorElement[]) => void;
   undo: () => ElementStore;
   redo: () => ElementStore;
-  setYjsUpdateCallback: (
+  setElementsChangeCallback: (
     callback: ((elements: EditorElement[]) => void) | null,
   ) => void;
   setCollaborativeCallback: (
@@ -97,18 +84,11 @@ export type ElementStore = {
   ) => void;
 };
 
-/**
- * After an element lands in a parent, fix a size that doesn't fit that
- * parent's layout (see sizing.ts). Returns the patched tree and the new
- * styles, or the same tree when nothing changed.
- */
 function fitToParent(
   tree: EditorElement[],
   id: string,
 ): {
   tree: EditorElement[];
-  styles?: EditorElement["styles"];
-  /** The same change as a merge patch (removed keys are null), for the wire. */
   stylesPatch?: Record<string, unknown>;
 } {
   const el = elementHelper.findById(tree, id);
@@ -125,9 +105,26 @@ function fitToParent(
       id,
       (e) => ({ ...e, styles }) as EditorElement,
     ) as EditorElement[],
-    styles,
     stylesPatch: patchWithDeletions(el.styles, styles),
   };
+}
+
+function toElementUpdateWirePatch(
+  before: EditorElement | undefined,
+  updated: Partial<EditorElement>,
+): Partial<EditorElement> | ElementUpdateWirePatch {
+  if (!before) return updated;
+  const { styles, settings, ...rest } = updated;
+  const wire: ElementUpdateWirePatch = { ...rest };
+  if (styles !== undefined) {
+    const delta = patchWithDeletions(before.styles, styles);
+    if (delta) wire.styles = delta;
+  }
+  if (settings !== undefined) {
+    const delta = patchWithDeletions(before.settings, settings);
+    if (delta) wire.settings = delta;
+  }
+  return wire;
 }
 
 const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
@@ -148,10 +145,10 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
   const allowsRootCount = (next: EditorElement[]): boolean =>
     !get().isComponentPage || next.length <= Math.max(1, get().elements.length);
 
-  const triggerYjsCallback = () => {
-    const { elements, yjsUpdateCallback } = get();
-    if (yjsUpdateCallback && typeof yjsUpdateCallback === "function") {
-      yjsUpdateCallback(elements as EditorElement[]);
+  const notifyElementsChange = () => {
+    const { elements, elementsChangeCallback } = get();
+    if (elementsChangeCallback && typeof elementsChangeCallback === "function") {
+      elementsChangeCallback(elements as EditorElement[]);
     }
   };
 
@@ -166,7 +163,6 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     }
   };
 
-  /** Sends what changed between two trees, for undo and redo. */
   const syncTreeChange = (from: EditorElement[], to: EditorElement[]) => {
     for (const op of diffTrees(from, to)) {
       if (op.type === "delete") triggerCollaborativeCallback("delete", op.id);
@@ -197,13 +193,13 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
     },
     past: [],
     future: [],
-    yjsUpdateCallback: null,
+    elementsChangeCallback: null,
     collaborativeCallback: null,
 
     loadElements: (elements: EditorElement[], skipSave?: boolean) => {
       set({ elements });
       if (!skipSave) {
-        triggerYjsCallback();
+        notifyElementsChange();
       }
       return get();
     },
@@ -244,16 +240,8 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         parentId: newParentId ?? undefined,
         order,
       };
-      // `order` is the index in the new parent; negative means "append".
-      const index =
-        order >= 0
-          ? order
-          : (newParentId
-              ? ((elementHelper.findById(without, newParentId) as ContainerElement | undefined)
-                  ?.elements?.length ?? 0)
-              : without.length);
       set({
-        elements: elementHelper.mapInsertAt(without, newParentId, index, moved),
+        elements: elementHelper.mapInsertAt(without, newParentId, order, moved),
       });
     },
 
@@ -273,17 +261,12 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
 
       set({ elements: updatedTree });
 
-      triggerYjsCallback();
-      // The server deep-merges styles and settings, so a key removed here
-      // must travel as null or it would survive there.
-      const wire: Partial<EditorElement> = { ...updatedElement };
-      for (const key of ["styles", "settings"] as const) {
-        if (updatedElement[key] === undefined || !before) continue;
-        const delta = patchWithDeletions(before[key], updatedElement[key]);
-        if (delta) (wire as Record<string, unknown>)[key] = delta;
-        else delete wire[key];
-      }
-      triggerCollaborativeCallback("update", id, wire);
+      notifyElementsChange();
+      triggerCollaborativeCallback(
+        "update",
+        id,
+        toElementUpdateWirePatch(before, updatedElement),
+      );
       return get();
     },
 
@@ -297,7 +280,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       set({
         elements: updatedTree,
       });
-      triggerYjsCallback();
+      notifyElementsChange();
       triggerCollaborativeCallback("delete", id);
       return get();
     },
@@ -319,8 +302,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       if (updated === elements || !allowsRootCount(updated)) return get();
       takeSnapshot();
       set({ elements: updated });
-      triggerYjsCallback();
-      // Send the inserted copy: it carries the corrected parentId.
+      notifyElementsChange();
       const inserted =
         elementHelper.findById(updated, elementToBeInserted.id) ??
         elementToBeInserted;
@@ -340,7 +322,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       const updated = fitToParent(placed, element.id).tree;
       takeSnapshot();
       set({ elements: updated });
-      triggerYjsCallback();
+      notifyElementsChange();
       const inserted = elementHelper.findById(updated, element.id) ?? element;
       triggerCollaborativeCallback("create", inserted.id, inserted);
       return get();
@@ -358,7 +340,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       const { tree: updated, stylesPatch } = fitToParent(moved, id);
       takeSnapshot();
       set({ elements: updated });
-      triggerYjsCallback();
+      notifyElementsChange();
       const location = elementHelper.findLocation(updated, id);
       if (location) {
         triggerCollaborativeCallback("move", id, {
@@ -370,7 +352,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       if (stylesPatch) {
         triggerCollaborativeCallback("update", id, {
           styles: stylesPatch,
-        } as Partial<EditorElement>);
+        });
       }
       return get();
     },
@@ -390,7 +372,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       if (!added.length || !allowsRootCount(updatedTree)) return get();
       takeSnapshot();
       set({ elements: updatedTree });
-      triggerYjsCallback();
+      notifyElementsChange();
       for (const element of added) {
         triggerCollaborativeCallback("create", element.id, element);
       }
@@ -402,7 +384,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
       if (!allowsRootCount(next) || diffTrees(elements, next).length === 0) return get();
       takeSnapshot();
       set({ elements: next });
-      triggerYjsCallback();
+      notifyElementsChange();
       syncTreeChange(elements, next);
       return get();
     },
@@ -419,7 +401,7 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         elements: previous,
         future: [elements, ...future],
       });
-      triggerYjsCallback();
+      notifyElementsChange();
       syncTreeChange(elements, previous);
       return get();
     },
@@ -434,57 +416,15 @@ const createElementStoreImpl: StateCreator<ElementStore> = (set, get) => {
         elements: next,
         future: newFuture,
       });
-      triggerYjsCallback();
+      notifyElementsChange();
       syncTreeChange(elements, next);
       return get();
     },
 
-    swapElement: (id1: string, id2: string) => {
-      takeSnapshot();
-      const { elements } = get();
-      const el1 = elementHelper.findById(elements as EditorElement[], id1);
-      const el2 = elementHelper.findById(elements as EditorElement[], id2);
-
-      if (!el1 || !el2 || el1.parentId !== el2.parentId) return get();
-
-      const parentId = el1.parentId ?? null;
-      const updatedTree = elementHelper.mapSwapChildrenById(
-        elements as EditorElement[],
-        parentId,
-        id1,
-        id2,
-      ) as EditorElement[];
-
-      set({ elements: updatedTree });
-      triggerYjsCallback();
-
-      // Find the new position of id1 after swap
-      const newIdx =
-        updatedTree.length > 0
-          ? parentId
-            ? (() => {
-                const parent = elementHelper.findById(updatedTree, parentId);
-                return parent && elementHelper.isContainerElement(parent)
-                  ? parent.elements.findIndex((e) => e.id === id1)
-                  : -1;
-              })()
-            : updatedTree.findIndex((e) => e.id === id1)
-          : -1;
-
-      // Send only the first element's move to avoid conflicts
-      triggerCollaborativeCallback("move", id1, {
-        elementId: id1,
-        newParentId: parentId,
-        newPosition: newIdx,
-      });
-
-      return get();
-    },
-
-    setYjsUpdateCallback: (
+    setElementsChangeCallback: (
       callback: ((elements: EditorElement[]) => void) | null,
     ) => {
-      set({ yjsUpdateCallback: callback });
+      set({ elementsChangeCallback: callback });
     },
 
     setCollaborativeCallback: (
@@ -501,14 +441,4 @@ export const createElementStore = () =>
 
 export const useElementStore = createElementStore();
 
-/**
- * Direct access to the element store instance for use outside of React
- * (e.g. from other Zustand stores or imperative code).
- *
- * @example
- * ```ts
- * const { elements } = ElementStore.getState();
- * ElementStore.getState().updateElement(id, updates);
- * ```
- */
 export const ElementStore = useElementStore;

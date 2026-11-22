@@ -65,12 +65,12 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     isLocked,
   });
 
-  // Assign the canvas ref to the collaboration provider for mouse tracking
   useEffect(() => {
-    if (collab && canvasRef.current) {
-      (collab.canvasRef as React.RefObject<HTMLElement | null>).current =
-        canvasRef.current;
-    }
+    if (!collab) return;
+    collab.setCanvasElement?.(canvasRef.current);
+    return () => {
+      collab.setCanvasElement?.(null);
+    };
   }, [collab]);
 
   // Keep scroll offsets synced for collaborative cursors

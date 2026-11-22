@@ -14,11 +14,15 @@ export function resolveFallbackPage(
   return routes.find((page) => page.Name === "") ?? routes[0];
 }
 
+function hasClosest(target: EventTarget | null): target is Element {
+  return (
+    target !== null &&
+    typeof target === "object" &&
+    "closest" in target &&
+    typeof target.closest === "function"
+  );
+}
+
 export function isEventOverElement(target: EventTarget | null): boolean {
-  if (!target || typeof target !== "object" || !("closest" in target)) {
-    return false;
-  }
-  const candidate = target.closest;
-  if (typeof candidate !== "function") return false;
-  return Boolean(Reflect.apply(candidate, target, ["[data-element-id]"]));
+  return hasClosest(target) ? Boolean(target.closest("[data-element-id]")) : false;
 }

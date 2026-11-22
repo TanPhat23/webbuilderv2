@@ -27,9 +27,6 @@ export const useAddElement = () => useElementStore((s) => s.addElement);
 /** Select only the insertElement action. */
 export const useInsertElement = () => useElementStore((s) => s.insertElement);
 
-/** Select only the swapElement action. */
-export const useSwapElement = () => useElementStore((s) => s.swapElement);
-
 /** Elements + full CRUD — used by canvas / wireframe views. */
 export const useElementsWithActions = () =>
   useElementStore(
@@ -39,7 +36,6 @@ export const useElementsWithActions = () =>
       deleteElement: s.deleteElement,
       updateElement: s.updateElement,
       insertElement: s.insertElement,
-      swapElement: s.swapElement,
     })),
   );
 

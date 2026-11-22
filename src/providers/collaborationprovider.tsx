@@ -1,45 +1,19 @@
-
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/tanstack-react-start";
 import {
   CollaborationContext,
   useCollaboration,
   useCollaborationOptional,
 } from "@/features/collaboration/context/CollaborationContext";
-import { useAuth } from '@clerk/tanstack-react-start';
-
-import {
-  useElementStore,
-  ElementStore,
-  type MoveData,
-} from "@/features/editor";
-import { useMouseStore } from "@/features/editor";
-import { runAgentRequest } from "@/features/agent/runtime";
-import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
-import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
-import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
-import { toast } from "sonner";
-import { useLogicStore } from "@/features/interactions/logic-store";
-import type { EditorElement } from "@/types/global.type";
-
-import type { Page } from "@/features/pages";
+import { useCanvasCursorBroadcast } from "@/features/collaboration/hooks/useCanvasCursorBroadcast";
 import type {
-  WSCollabState,
-  WSRoomState,
   CollaborationContextValue,
   WSCollaborationConfig,
-  RemotePresence,
-  PresenceBroadcastPayload,
-} from "@/features/collaboration";
+} from "@/features/collaboration/interfaces/websocket";
+import type { EditorElement } from "@/types/global.type";
+import { useCollabRoom } from "./collaboration/useCollabRoom";
 
 const DEFAULT_WS_URL = "ws://localhost:8080";
-const PRESENCE_SEND_THROTTLE_MS = 50;
 
 export { useCollaboration, useCollaborationOptional };
 
@@ -52,341 +26,26 @@ export default function CollaborationProvider({
   children,
   config,
 }: CollaborationProviderProps) {
-  const {
-    projectId,
-    pageId,
-    wsUrl = DEFAULT_WS_URL,
-    enabled = true,
-    onSync,
-    onError,
-    onDisconnect,
-    onReconnect,
-  } = config;
-
+  const { wsUrl = DEFAULT_WS_URL, enabled = true } = config;
   const { userId, getToken, isLoaded } = useAuth();
-  const { loadElements } = useElementStore();
-
-  const setUsers = useMouseStore((s) => s.setUsers);
-  const setRemoteUsers = useMouseStore((s) => s.setRemoteUsers);
-  const setSelectedByUser = useMouseStore((s) => s.setSelectedByUser);
-  const updateMousePosition = useMouseStore((s) => s.updateMousePosition);
-  const removeUser = useMouseStore((s) => s.removeUser);
-
-  const [state, setState] = useState<WSCollabState>({
-    roomState: "connecting",
-    error: null,
-    isSynced: false,
-    pendingUpdates: 0,
-  });
-
-  const [remotePresences, setRemotePresences] = useState<
-    Map<string, RemotePresence>
-  >(new Map());
-
-  const providerRef = useRef<CustomYjsProviderV2 | null>(null);
   const canvasRef = useRef<HTMLElement | null>(null);
+  const [canvasElement, setCanvasElementState] = useState<HTMLElement | null>(null);
 
-  const internalRef = useRef({
-    isApplyingRemoteUpdate: false,
-    pendingMoves: new Set<string>(),
-  });
+  const setCanvasElement = useCallback((element: HTMLElement | null) => {
+    canvasRef.current = element;
+    setCanvasElementState(element);
+  }, []);
 
-  // Keep latest callback refs to avoid stale closures
-  const latest = useRef({
-    onSync,
-    onError,
-    onDisconnect,
-    onReconnect,
-    getToken,
-    pageId,
-  });
-  latest.current = {
-    onSync,
-    onError,
-    onDisconnect,
-    onReconnect,
-    getToken,
-    pageId,
-  };
-
-  // Core effect: Setup WebSocketProvider and wire everything together
-  useEffect(() => {
-    if (!enabled || !isLoaded || !userId || !pageId || pageId === "undefined")
-      return;
-
-    let latestLocalElements: EditorElement[] | undefined;
-    let disposed = false;
-    let draftStore: ReturnType<typeof createEditorDraftStore> | undefined;
-    try {
-      draftStore = createEditorDraftStore(window.localStorage, userId, projectId, pageId);
-    } catch {
-      toast.error("Local draft storage is unavailable. Offline edits may be lost.");
-    }
-    const draftToastId = `editor-draft:${projectId}:${pageId}`;
-    const offerDraftRecovery = () => {
-      try {
-        const draft = draftStore?.read();
-        if (!draft) return;
-        toast.warning("An offline draft is available", {
-          id: draftToastId,
-          duration: Infinity,
-          description: "Restoring replaces the current editor view. The draft is not automatically synchronized.",
-          action: {
-            label: "Restore draft",
-            onClick: () => {
-              if (latest.current.pageId !== pageId) return;
-              try {
-                loadElements(draft.elements, true);
-              } catch {
-                toast.error("Could not read the local draft.");
-              }
-            },
-          },
-          cancel: {
-            label: "Discard draft",
-            onClick: () => {
-              try { draftStore?.remove(draft.id); } catch { toast.error("Could not discard the local draft."); }
-            },
-          },
-        });
-      } catch {
-        toast.error("Could not read the local draft.");
-      }
-    };
-
-    // Create the Yjs-backed provider (wraps WS envelope protocol).
-    const provider = new CustomYjsProviderV2({
-      url: wsUrl,
-      pageId,
-      projectId,
-      userId,
-      userName: userId,
-      onAgentRequest: (req) => runAgentRequest(req),
-      getToken: () => latest.current.getToken(),
-      getElementState: () => ElementStore.getState(),
-      onPendingChange: (pendingUpdates) => {
-        setState((state) => ({ ...state, pendingUpdates }));
-      },
-      // Called when awareness/user list changes (sync + awareness updates)
-      onSyncUsers: (users) => {
-        setUsers(users);
-      },
-      // Errors from provider surface here
-      onError: (e: any) => {
-        const msg = e?.message || e?.error || "Unknown provider error";
-        latest.current.onError?.(new Error(msg));
-        offerDraftRecovery();
-        setState((s: WSCollabState) => ({ ...s, error: msg }));
-      },
-
-      // Variables and flows: the server's documents replace the store's confirmed state.
-      onLogicSync: (payload) => useLogicStore.getState().receiveSync(payload),
-      onLogicChanged: (payload) =>
-        useLogicStore.getState().receiveChange(payload.scope, payload.pageId, payload.logic, payload.revision),
-
-      // Presence envelopes from the server can be handled immediately
-      onPresence: (data: PresenceBroadcastPayload) => {
-        if (data.userId === userId) return;
-
-        updateMousePosition(data.userId, {
-          x: data.cursorX,
-          y: data.cursorY,
-        });
-
-        if (data.elementId) {
-          useMouseStore
-            .getState()
-            .setSelectedElement(data.userId, data.elementId);
-        }
-      },
-    });
-
-    providerRef.current = provider;
-
-    useLogicStore.getState().load(projectId);
-    useLogicStore.getState().bindRemote({
-      pageId,
-      isOnline: () => provider.isConnected(),
-      send: (scope, patch, nullPaths) => provider.updateLogic(scope, patch, nullPaths),
-      move: (kind, name, to) => provider.moveLogic(kind, name, to),
-      requestSync: () => provider.requestLogicSync(),
-      onRejected: (message) => toast.error(`Change not saved: ${message}`),
-    });
-
-    provider.on("status", ({ status }: { status: string }) => {
-      const roomState: WSRoomState =
-        status === "connected"
-          ? "connected"
-          : status === "error"
-            ? "error"
-            : "connecting";
-      setState((s: WSCollabState) => ({
-        ...s,
-        roomState,
-        error: status === "error" ? "Connection failed" : status === "connected" ? null : s.error,
-        pendingUpdates: providerRef.current?.pendingUpdates ?? s.pendingUpdates,
-      }));
-      if (status === "connected") latest.current.onReconnect?.();
-      else if (status === "disconnected") latest.current.onDisconnect?.();
-    });
-
-    provider.on("synced", (synced: boolean) => {
-      setState((s: WSCollabState) => ({ ...s, isSynced: synced }));
-      if (synced) {
-        latest.current.onSync?.();
-        offerDraftRecovery();
-      }
-    });
-
-    // Subscribe to normalized presence changes from the provider
-    const unsubPresence = provider.onPresenceChange((presences) => {
-      setRemotePresences(new Map(presences));
-
-      // Also sync to mouse store for EditorCanvas compatibility
-      const remoteUsersRecord: Record<string, { x: number; y: number }> = {};
-      const selectedByUserRecord: Record<string, string> = {};
-      const usersRecord: Record<
-        string,
-        { userId: string; userName: string; email: string }
-      > = {};
-
-      presences.forEach((p, uid) => {
-        remoteUsersRecord[uid] = { x: p.cursorX, y: p.cursorY };
-        if (p.elementId) {
-          selectedByUserRecord[uid] = p.elementId;
-        }
-        usersRecord[uid] = {
-          userId: p.userId,
-          userName: p.userName,
-          email: "",
-        };
-      });
-
-      setRemoteUsers(remoteUsersRecord);
-      setSelectedByUser(selectedByUserRecord);
-      // Merge new user records into existing ones
-      const existingUsers = useMouseStore.getState().users;
-      setUsers({ ...existingUsers, ...usersRecord });
-    });
-
-    ElementStore.getState().setYjsUpdateCallback((elements) => {
-      latestLocalElements = elements;
-      if (provider.isConnected() && provider.isSynced) return;
-      if (!draftStore) return;
-      try {
-        draftStore.save(elements);
-      } catch {
-        toast.error("Could not save the local draft. Offline edits may be lost.");
-      }
-    });
-
-    // Wire up the element store's collaborative callback so that local user
-    // actions (create/update/delete/move) are sent over the provider.
-    ElementStore.getState().setCollaborativeCallback(async (type, id, data) => {
-      if (internalRef.current.isApplyingRemoteUpdate) return;
-      if (!providerRef.current?.isSynced) return;
-      if (!providerRef.current.isConnected()) return;
-
-      const p = providerRef.current;
-      try {
-        await sendElementOp(
-          p,
-          () => ElementStore.getState().elements,
-          internalRef.current.pendingMoves,
-          type,
-          id,
-          data,
-        );
-      } catch (err) {
-        try {
-          const state = ElementStore.getState();
-          const isSamePage = state.activePage?.projectId === projectId && state.activePage.pageId === pageId;
-          const elements = isSamePage ? state.elements : latestLocalElements;
-          if (elements) draftStore?.save(elements);
-        } catch {
-          toast.error("Could not save the local draft. Unsynced edits may be lost.");
-        }
-        if (!disposed) latest.current.onError?.(err as Error);
-      }
-    });
-
-    // Cleanup
-    return () => {
-      disposed = true;
-      unsubPresence();
-      useLogicStore.getState().unbindRemote();
-      toast.dismiss(draftToastId);
-      ElementStore.getState().setCollaborativeCallback(null);
-      // Also clear the yjs callback if it was set (backward compat)
-      ElementStore.getState().setYjsUpdateCallback(null);
-      provider.destroy();
-      providerRef.current = null;
-      // The next page is not synced until its own sync:page arrives.
-      setState((s: WSCollabState) => ({ ...s, isSynced: false }));
-    };
-  }, [
-    pageId,
-    projectId,
+  const { state, providerRef } = useCollabRoom({
+    config,
     wsUrl,
     enabled,
     userId,
+    getToken,
     isLoaded,
-    loadElements,
-    setUsers,
-    setRemoteUsers,
-    setSelectedByUser,
-    updateMousePosition,
-    removeUser,
-  ]);
+  });
 
-  // Mouse tracking on canvas — send presence updates via WebSocket
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !providerRef.current) return;
-
-    let lastX = -1;
-    let lastY = -1;
-    let lastSendTime = 0;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!providerRef.current?.isConnected()) return;
-
-      const now = Date.now();
-      if (now - lastSendTime < PRESENCE_SEND_THROTTLE_MS) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // Skip if movement is tiny
-      const deltaX = Math.abs(x - lastX);
-      const deltaY = Math.abs(y - lastY);
-      if (lastX !== -1 && deltaX < 3 && deltaY < 3) return;
-
-      lastX = x;
-      lastY = y;
-      lastSendTime = now;
-
-      providerRef.current.sendPresence(x, y);
-    };
-
-    const handleMouseLeave = () => {
-      // Send a "null" cursor presence when leaving the canvas
-      if (providerRef.current?.isConnected()) {
-        providerRef.current.sendPresence(-1, -1);
-      }
-    };
-
-    canvas.addEventListener("mousemove", handleMouseMove, { passive: true });
-    canvas.addEventListener("mouseleave", handleMouseLeave);
-
-    return () => {
-      canvas.removeEventListener("mousemove", handleMouseMove);
-      canvas.removeEventListener("mouseleave", handleMouseLeave);
-    };
-  }, [state.roomState]);
-
-  // Stable operation callbacks
+  useCanvasCursorBroadcast(canvasElement, providerRef, state.roomState);
 
   const createElement = useCallback(
     async (
@@ -397,7 +56,7 @@ export default function CollaborationProvider({
       if (!providerRef.current) throw new Error("Provider not initialized");
       await providerRef.current.createElement(el, parentId, position);
     },
-    [],
+    [providerRef],
   );
 
   const updateElement = useCallback(
@@ -405,13 +64,16 @@ export default function CollaborationProvider({
       if (!providerRef.current) throw new Error("Provider not initialized");
       await providerRef.current.updateElement(id, updates);
     },
-    [],
+    [providerRef],
   );
 
-  const deleteElement = useCallback(async (id: string): Promise<void> => {
-    if (!providerRef.current) throw new Error("Provider not initialized");
-    await providerRef.current.deleteElement(id);
-  }, []);
+  const deleteElement = useCallback(
+    async (id: string): Promise<void> => {
+      if (!providerRef.current) throw new Error("Provider not initialized");
+      await providerRef.current.deleteElement(id);
+    },
+    [providerRef],
+  );
 
   const moveElement = useCallback(
     async (
@@ -420,71 +82,29 @@ export default function CollaborationProvider({
       newPosition?: number,
     ): Promise<void> => {
       if (!providerRef.current) throw new Error("Provider not initialized");
-      await providerRef.current.moveElement(
-        id,
-        newParentId ?? null,
-        newPosition ?? 0,
-      );
+      await providerRef.current.moveElement(id, newParentId ?? null, newPosition ?? 0);
     },
-    [],
+    [providerRef],
   );
-
-  const createPage = useCallback(async (_page: Page): Promise<void> => {
-    // Page operations can be handled via REST API or extended WS messages
-    // For now this is a no-op placeholder matching the interface
-    console.warn(
-      "[CollaborationProvider] createPage via WebSocket not yet implemented — use REST API",
-    );
-  }, []);
-
-  const updatePage = useCallback(
-    async (_id: string, _updates: Partial<Page>): Promise<void> => {
-      console.warn(
-        "[CollaborationProvider] updatePage via WebSocket not yet implemented — use REST API",
-      );
-    },
-    [],
-  );
-
-  const deletePage = useCallback(async (_id: string): Promise<void> => {
-    console.warn(
-      "[CollaborationProvider] deletePage via WebSocket not yet implemented — use REST API",
-    );
-  }, []);
 
   const reconnect = useCallback(async () => {
     await providerRef.current?.reconnect();
-  }, []);
+  }, [providerRef]);
 
-  // Memoized context value
   const contextValue = useMemo<CollaborationContextValue>(
     () => ({
-      // State
       isConnected: state.roomState === "connected",
       isSynced: state.isSynced,
       roomState: state.roomState,
       error: state.error,
       pendingUpdates: state.pendingUpdates,
       collabType: "websocket" as const,
-
-      // Canvas ref
       canvasRef,
-
-      // Remote presences
-      remotePresences,
-
-      // Element operations
+      setCanvasElement,
       createElement,
       updateElement,
       deleteElement,
       moveElement,
-
-      // Page operations
-      createPage,
-      updatePage,
-      deletePage,
-
-      // Control
       reconnect,
     }),
     [
@@ -492,14 +112,11 @@ export default function CollaborationProvider({
       state.isSynced,
       state.error,
       state.pendingUpdates,
-      remotePresences,
+      setCanvasElement,
       createElement,
       updateElement,
       deleteElement,
       moveElement,
-      createPage,
-      updatePage,
-      deletePage,
       reconnect,
     ],
   );

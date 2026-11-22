@@ -1,5 +1,4 @@
 import type { EditorElement } from "@/types/global.type";
-import type { Page } from "@/features/pages";
 
 export type WSErrorCode =
   | "VALIDATION_ERROR"
@@ -26,7 +25,6 @@ export const WS_MESSAGE = {
 
 export type WSMessageType = (typeof WS_MESSAGE)[keyof typeof WS_MESSAGE];
 
-/** Standard envelope for all WebSocket messages (client <-> server). */
 export interface WSEnvelope<T = unknown> {
   type: WSMessageType;
   projectId: string;
@@ -252,7 +250,7 @@ export interface CollaborationContextValue {
   pendingUpdates: number;
   collabType: "websocket";
   canvasRef: React.RefObject<HTMLElement | null>;
-  remotePresences: Map<string, RemotePresence>;
+  setCanvasElement?: (element: HTMLElement | null) => void;
   createElement: (
     element: EditorElement,
     parentId?: string | null,
@@ -268,8 +266,5 @@ export interface CollaborationContextValue {
     newParentId?: string | null,
     newPosition?: number,
   ) => Promise<void>;
-  createPage: (page: Page) => Promise<void>;
-  updatePage: (pageId: string, updates: Partial<Page>) => Promise<void>;
-  deletePage: (pageId: string) => Promise<void>;
   reconnect: () => Promise<void>;
 }
