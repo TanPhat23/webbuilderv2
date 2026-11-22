@@ -1,4 +1,4 @@
-export * from './services/element.service';
+export * from '@/features/elements/services/element.service';
 export * from './interfaces/editor.interface';
 export * from './interfaces/elements.interface';
 export * from './interfaces/events.interface';
@@ -7,7 +7,7 @@ export * from './interfaces/validate.interface';
 export * from './store/element-comment-store';
 export * from './store/element-store';
 export * from './store/event-mode-store';
-export * from './store/image-store';
+export * from '@/features/images/store/image-store';
 export * from './store/mouse-store';
 export * from './store/selection-store';
 export * from './store/selectors/element-selectors';

@@ -15,7 +15,7 @@ import {
   componentRoots, componentSetting, detach, usageCount, visitComponentTree,
   type ComponentSource,
 } from "@/features/projects/lib/components";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { toTree } from "./readTree";
 
 /** A change to the project's shared styling. A null theme value removes that key. */

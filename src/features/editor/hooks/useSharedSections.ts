@@ -6,7 +6,7 @@ import {
 } from "@/features/projects/lib/shared-sections";
 import { useEditorContext } from "@/providers/editorprovider";
 import type { EditorElement } from "@/types/global.type";
-import { elementService } from "../services/element.service";
+import { elementService } from "@/features/elements/services/element.service";
 
 export function useSharedSectionSources(enabled: boolean) {
   const { projectId, pageId } = useEditorContext();

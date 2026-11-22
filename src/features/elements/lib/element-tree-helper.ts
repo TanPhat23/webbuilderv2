@@ -1,4 +1,4 @@
-import { componentSetting } from "@/features/projects/lib/components";
+import { componentSetting } from "@/types/elements";
 import type {
   ContainerElement,
   ContainerElementType,

@@ -20,7 +20,7 @@ import { runAgentRequest } from "@/features/agent/runtime";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
 import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
 import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
-import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 import { toast } from "sonner";
 import { useLogicStore } from "@/features/interactions/logic-store";
 import type { EditorElement } from "@/types/global.type";

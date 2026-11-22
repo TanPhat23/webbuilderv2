@@ -7,7 +7,7 @@ import type { EditorElement } from "@/types/global.type";
 import { CollaboratorRole } from "@/features/collaboration";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectionStore } from "@/features/editor/store/selection-store";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { ElementFactory } from "@/features/editor/lib/ElementFactory";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import {

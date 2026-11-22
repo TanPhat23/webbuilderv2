@@ -4,7 +4,7 @@ import { cloneComponentTree } from "@/features/projects/lib/components";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
 import { newEntityId } from "@/lib/entity-id";
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "../utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 import { ComponentConversionUnconfirmed } from "./component-conversion";
 
 type Session = { userId: string; getToken: () => Promise<string | null> };

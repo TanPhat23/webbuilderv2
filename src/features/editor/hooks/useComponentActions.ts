@@ -12,11 +12,11 @@ import { makeComponentInstance } from "@/features/projects/lib/components";
 import type { EditorElement } from "@/types/global.type";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 import { useEditorContext } from "@/providers/editorprovider";
-import { elementService } from "../services/element.service";
+import { elementService } from "@/features/elements/services/element.service";
 import { createComponentMaster } from "../services/component-master.service";
 import { ElementStore } from "../store/element-store";
 import { useSelectionStore } from "../store/selection-store";
-import { elementHelper } from "../utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { projectComponentElementsKey, projectElementsKey, rememberPendingMaster } from "./useProjectComponents";
 

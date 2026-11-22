@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { ElementTreeHelper } from '../src/features/editor/utils/element/element-tree-helper';
+import { ElementTreeHelper } from '../src/features/elements/lib/element-tree-helper';
 import type { EditorElement } from '../src/types/global.type';
 
 const element = (type: string, id: string, elements?: EditorElement[]): EditorElement =>

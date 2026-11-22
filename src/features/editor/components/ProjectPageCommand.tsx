@@ -1,4 +1,4 @@
-import { PageTypeSchema } from "@/features/projects/schema/page";
+import { PageTypeSchema } from "@/features/pages/schema/page";
 import React, { useState } from "react";
 import {
   Command,
@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreatePageSchema } from "@/features/projects/schema/page";
+import { CreatePageSchema } from "@/features/pages/schema/page";
 import { Page } from "@/features/pages";
 import { createPage } from "@/features/projects/api/page.api";
 

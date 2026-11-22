@@ -4,7 +4,7 @@
  * This module defines permissions, roles, and role descriptions for the RBAC system.
  */
 
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "@/types/collaboration";
 
 /**
  * Granular permissions for project resources

@@ -10,7 +10,7 @@ import { useCollaborationOptional } from "@/providers/collaborationprovider";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import { useActiveLogic } from "@/features/interactions/logic-hooks";
 import { loadPreamble, savePreamble } from "@/features/editor/lib/code/customCode";
-import { elementService } from "@/features/editor/services/element.service";
+import { elementService } from "@/features/elements/services/element.service";
 import { getProjectById, getProjectPages, updateProject } from "@/features/projects/api/project.api";
 import { createPage } from "@/features/projects/api/page.api";
 import { newEntityId } from "@/lib/entity-id";

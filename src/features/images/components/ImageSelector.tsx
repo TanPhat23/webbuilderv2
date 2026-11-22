@@ -1,9 +1,9 @@
 
 import { useState } from "react";
-import { useImageStore } from "@/features/editor";
+import { useImageStore } from "../store/image-store";
 import { Button } from "@/components/ui/button";
 import { ImageIcon, Plus, X } from "lucide-react";
-import PanelIntro from "@/features/editor/components/layout/PanelIntro";
+import PanelIntro from "@/components/PanelIntro";
 import { ImageDragDataSchema } from "@/features/images/schema/imageupload";
 import { ImageManagerDialog } from "@/features/images/components/ImageManagerDialog";
 

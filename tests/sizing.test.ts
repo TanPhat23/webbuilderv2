@@ -146,7 +146,7 @@ test("small elements get only the handles that fit", () => {
 });
 
 import { isSizeClass } from "../src/features/editor/utils/element/sizing";
-import { elementHelper } from "../src/features/editor/utils/element/elementhelper";
+import { elementHelper } from "../src/features/elements/lib/elementhelper";
 
 test("isSizeClass matches one axis at one breakpoint", () => {
   assert.equal(isSizeClass("w-full", "width"), true);

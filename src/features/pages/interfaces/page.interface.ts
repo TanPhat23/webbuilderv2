@@ -3,7 +3,7 @@ import type {
   JsonRecord,
   PageType,
   JsonValue as PageStyleValue,
-} from "@/features/projects/schema/page";
+} from "@/features/pages/schema/page";
 
 export interface Page {
   Id: string;

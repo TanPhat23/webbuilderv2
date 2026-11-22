@@ -1,4 +1,4 @@
-import { replacePlaceholders } from "@/features/elements/lib/replacePlaceholders";
+import { replacePlaceholders } from "./replacePlaceholders";
 import { EditorElement, ElementType } from "@/types/global.type";
 import { ElementTreeHelper } from "./element-tree-helper";
 import { ALL_ELEMENT_TYPES, type ResponsiveStyles } from "@/types/elements";

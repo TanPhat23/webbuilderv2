@@ -2,7 +2,7 @@ import type { EditorElement } from "@/types/global.type";
 import React, { createContext, useContext } from "react";
 import { getView } from "@/features/elements/registry";
 import { getViewChildren } from "@/features/elements/element-children";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { isMissingComponent } from "@/features/projects/lib/components";
 import { PreviewCMSCollection, PreviewCMSItem } from "./PreviewCMSContent";
 
@@ -37,11 +37,16 @@ function PreviewElement({ element, data, draggableRoot }: {
   };
   const props = { rootProps, mode: "preview" as const };
 
+  const renderElements = (
+    nestedElements: EditorElement[],
+    nestedData?: Record<string, unknown>,
+  ) => <PreviewElementLoader elements={nestedElements} data={nestedData} />;
+
   if (element.type === "CMSContentList" || element.type === "CMSContentGrid") {
-    return <PreviewCMSCollection {...props} element={element} />;
+    return <PreviewCMSCollection {...props} element={element} renderElements={renderElements} />;
   }
   if (element.type === "CMSContentItem") {
-    return <PreviewCMSItem {...props} element={element} />;
+    return <PreviewCMSItem {...props} element={element} renderElements={renderElements} />;
   }
 
   const elements = getViewChildren(element);

@@ -1,8 +1,6 @@
-export enum CollaboratorRole {
-  OWNER = "owner",
-  EDITOR = "editor",
-  VIEWER = "viewer",
-}
+import { CollaboratorRole } from "@/types/collaboration";
+
+export { CollaboratorRole };
 
 export interface Invitation {
   id: string;

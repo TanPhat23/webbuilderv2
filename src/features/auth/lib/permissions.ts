@@ -9,7 +9,7 @@ import {
   ROLE_PERMISSIONS,
   ROLE_DESCRIPTIONS,
 } from "../constants/rbac";
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "@/types/collaboration";
 
 /**
  * Check if a role has a specific permission

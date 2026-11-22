@@ -1,12 +1,14 @@
 import { newEntityId } from "@/lib/entity-id";
 import {
   CONTAINER_ELEMENT_TYPES,
+  componentSetting,
   type ComponentOverride,
   type ComponentOverrides,
   type ComponentSetting,
 } from "@/types/elements";
 import type { EditorElement } from "@/types/global.type";
 
+export { componentSetting };
 export type { ComponentOverride, ComponentOverrides, ComponentSetting };
 
 export interface ComponentSource {
@@ -33,13 +35,6 @@ export function validComponentOverrides(value: unknown): value is ComponentOverr
       overrideFields.some((field) => field === key) && typeof val === "string" && val.length <= 20_000,
     ),
   ) && JSON.stringify(value).length <= 20_000;
-}
-
-export function componentSetting(element: EditorElement): ComponentSetting | undefined {
-  const value = (element.settings as { component?: unknown } | null)?.component;
-  if (!isRecord(value) || typeof value.pageId !== "string" || !value.pageId ||
-      typeof value.rootId !== "string" || !value.rootId) return;
-  return { pageId: value.pageId, rootId: value.rootId, ...(isRecord(value.overrides) && { overrides: value.overrides as ComponentOverrides }) };
 }
 
 export function componentChildren(element: EditorElement): EditorElement[] | undefined {

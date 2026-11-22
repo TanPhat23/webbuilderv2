@@ -1,5 +1,5 @@
 import { useElementStore } from "@/features/editor/store/element-store";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import {
   parentLayout,
   type ParentLayout,

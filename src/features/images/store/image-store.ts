@@ -1,7 +1,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { Image } from "@/features/images";
+import type { Image } from "../interfaces/image.interface";
 
 /**
  * ImageStore (client / persisted)

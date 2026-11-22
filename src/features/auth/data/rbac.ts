@@ -3,10 +3,18 @@
  * project. Server-only (uses the request's Clerk session token).
  */
 
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "@/types/collaboration";
 import { Permission, ROLE_PERMISSIONS } from "../constants/rbac";
 import { getAuthToken } from "../lib/gettoken";
-import { projectService } from "@/features/projects/services/project.service";
+import apiClient from "@/services/apiclient";
+import { URLBuilder } from "@/utils/urlbuilder";
+import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
+
+interface ProjectAccessResponse {
+  role: string;
+  isOwner: boolean;
+  isCollaborator: boolean;
+}
 
 /**
  * User access information for a project
@@ -36,7 +44,14 @@ export async function getUserProjectAccess(
       console.error("[RBAC] Access can only be checked for the signed-in user");
       return null;
     }
-    const access = await projectService.getProjectAccess(projectId, token);
+    const accessUrl = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.ACCESS(projectId))
+      .build();
+    const access = await apiClient.get<ProjectAccessResponse>(
+      accessUrl,
+      undefined,
+      token,
+    );
     if (!ROLES.has(access.role)) return null;
     return {
       userId,

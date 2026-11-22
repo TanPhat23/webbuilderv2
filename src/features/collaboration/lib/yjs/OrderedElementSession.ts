@@ -1,5 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 
 export type ElementOperation = {
   type: "element:create" | "element:update" | "element:move" | "element:delete";

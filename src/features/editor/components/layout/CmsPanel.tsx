@@ -1,6 +1,6 @@
 import React from "react";
 import { Database } from "lucide-react";
-import PanelIntro from "./PanelIntro";
+import PanelIntro from "@/components/PanelIntro";
 
 const CMSManagerDialog = React.lazy(
   () => import("@/features/cms/components/CMSManagerDialog"),

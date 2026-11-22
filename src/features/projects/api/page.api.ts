@@ -5,7 +5,7 @@ import {
   CreatePageSchema,
   type CreatePageInput,
   type JsonRecord,
-} from "@/features/projects/schema/page";
+} from "@/features/pages/schema/page";
 import { newEntityId } from "@/lib/entity-id";
 import { deletePageInputSchema } from "@/features/projects/schema/page-deletion";
 import { getAuthToken } from "@/features/auth/lib/gettoken";

@@ -1,4 +1,4 @@
-import computeTailwindFromStyles from "../../utils/element/computeTailwindFromStyles";
+import computeTailwindFromStyles from "@/features/elements/lib/computeTailwindFromStyles";
 import type { EditorElement } from "@/types/global.type";
 
 /** Class names in a `className` string, in order. */

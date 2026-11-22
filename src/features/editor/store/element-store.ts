@@ -11,14 +11,11 @@ import {
 } from "@/features/editor/utils/element/treeDiff";
 import { SelectionStore } from "./selection-store";
 import type { ContainerElement, EditorElement } from "@/types/global.type";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
-import type { DropPosition } from "@/features/editor/utils/element/element-tree-helper";
+import type { MoveData } from "@/types/elements";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
+import type { DropPosition } from "@/features/elements/lib/element-tree-helper";
 
-export type MoveData = {
-  elementId: string;
-  newParentId: string | null;
-  newPosition: number;
-};
+export type { MoveData };
 
 export type CollaborativeData =
   | Partial<EditorElement>

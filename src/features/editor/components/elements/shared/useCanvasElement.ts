@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import type { EditorElement } from "@/types/global.type";
 import { useEventModeStore, useIsSelected, useUpdateElement } from "@/features/editor";
 import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { eventsStyle } from "./eventsStyle";
 
 interface UseCanvasElementOptions {

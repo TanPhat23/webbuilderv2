@@ -11,7 +11,7 @@ import {
   DeletePageDialog,
   useDeletePage,
 } from "../ProjectPageCommand";
-import PanelIntro from "./PanelIntro";
+import PanelIntro from "@/components/PanelIntro";
 
 export default function PagesPanel() {
   const { projectId, pageId } = useEditorContext();

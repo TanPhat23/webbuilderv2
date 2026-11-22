@@ -5,7 +5,7 @@ import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissio
 import { useEditorContext } from "@/providers/editorprovider";
 import EditorContextMenu from "../EditorContextMenu";
 import ElementTreeItem from "../sidebar/ElementTreeItem";
-import PanelIntro from "./PanelIntro";
+import PanelIntro from "@/components/PanelIntro";
 
 export default function LayersPanel() {
   const elements = useElements();

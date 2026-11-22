@@ -1,4 +1,4 @@
-import type { DropPosition } from "./element-tree-helper";
+import type { DropPosition } from "@/features/elements/lib/element-tree-helper";
 
 export type { DropPosition };
 

@@ -2,7 +2,7 @@ import { EditorElement } from "@/types/global.type";
 import { URLBuilder } from "@/utils/urlbuilder";
 import apiClient from "@/services/apiclient";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
-import type { Snapshot } from "../interfaces/snapshot.interface";
+import type { Snapshot } from "@/types/elements";
 
 /** Mirrors maxPageIDsPerRequest in the API element handler. */
 const MAX_PAGE_IDS = 100;

@@ -5,7 +5,7 @@
  * specific actions on projects and their resources.
  */
 
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "@/types/collaboration";
 import { Permission } from "../constants/rbac";
 import { hasPermission } from "./permissions";
 import { getUserProjectAccess, getUserPermissions } from "../data/rbac";

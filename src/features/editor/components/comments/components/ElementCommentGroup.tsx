@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ElementComment } from "@/features/comments";
 import { useElements } from "@/features/editor";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { CommentCard } from "./CommentCard";
 
 interface ElementCommentGroupProps {

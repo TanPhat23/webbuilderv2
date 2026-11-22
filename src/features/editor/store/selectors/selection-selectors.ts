@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "../selection-store";
 import { useElementStore } from "../element-store";
-import { ElementTreeHelper } from "../../utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 import type { EditorElement } from "@/types/global.type";
 
 /*

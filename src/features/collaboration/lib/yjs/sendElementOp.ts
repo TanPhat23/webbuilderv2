@@ -1,6 +1,6 @@
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
-import type { MoveData } from "@/features/editor/store/element-store";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import type { MoveData } from "@/types/elements";
 import type { CustomYjsProviderV2 } from "./Provider";
 
 type Op = "update" | "delete" | "create" | "move";

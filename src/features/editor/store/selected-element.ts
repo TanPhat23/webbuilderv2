@@ -1,6 +1,6 @@
 import { ElementStore } from "./element-store";
 import { SelectionStore } from "./selection-store";
-import { ElementTreeHelper } from "../utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 
 export function getSelectedOrHoveredElement() {
   const selection = SelectionStore.getState();

@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useUserImages, useUploadImage, useDeleteImage } from "@/features/images";
-import { useImageStore } from "@/features/editor";
+import { useImageStore } from "../store/image-store";
 import { Image as ImageType } from "@/features/images";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

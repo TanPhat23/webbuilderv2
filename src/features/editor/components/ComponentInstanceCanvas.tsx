@@ -3,7 +3,7 @@ import type { EditorElement } from "@/types/global.type";
 import { isMissingComponent } from "@/features/projects/lib/components";
 import { useEditorFlags } from "./context/EditorFlagsContext";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
-import { elementHelper } from "../utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 
 export const ResolvedInstancesContext = createContext<ReadonlyMap<string, EditorElement>>(new Map());
 

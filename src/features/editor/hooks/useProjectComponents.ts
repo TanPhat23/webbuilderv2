@@ -6,7 +6,7 @@ import type { EditorElement } from "@/types/global.type";
 import { useCollaborationOptional } from "@/providers/collaborationprovider";
 import { useEditorContext } from "@/providers/editorprovider";
 import { useElements } from "../store/selectors/element-selectors";
-import { elementService } from "../services/element.service";
+import { elementService } from "@/features/elements/services/element.service";
 
 const NO_ELEMENTS: EditorElement[] = [];
 

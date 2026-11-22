@@ -2,7 +2,7 @@ import { auth } from "@clerk/tanstack-react-start/server";
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
-import { elementService } from "@/features/editor/services/element.service";
+import { elementService } from "@/features/elements/services/element.service";
 import { projectService } from "@/features/projects/services/project.service";
 import { isApiError } from "@/utils/errors/api-error";
 import { loadPreviewData } from "../lib/preview-data";

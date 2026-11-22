@@ -222,7 +222,7 @@ export interface YjsProviderV2Options {
   /** Helper socket that must not replace the editor's own connection (server: ?conn=writer). */
   writer?: boolean;
   /** Runs a CLI tool call in this tab (see features/agent). */
-  onAgentRequest?: (req: import("@/features/agent/protocol").AgentRequest) => Promise<import("@/features/agent/protocol").AgentOutcome>;
+  onAgentRequest?: (req: import("@/types/agent-protocol").AgentRequest) => Promise<import("@/types/agent-protocol").AgentOutcome>;
   url: string;
   pageId: string;
   projectId: string;

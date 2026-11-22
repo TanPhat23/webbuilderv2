@@ -54,4 +54,4 @@ export {
 } from "./authorization";
 
 // Re-export CollaboratorRole from interfaces
-export { CollaboratorRole } from "@/features/collaboration";
+export { CollaboratorRole } from "@/types/collaboration";

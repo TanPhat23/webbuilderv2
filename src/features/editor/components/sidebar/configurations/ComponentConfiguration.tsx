@@ -15,7 +15,7 @@ import { useProjectComponents } from "../../../hooks/useProjectComponents";
 import { useEditorPermissions } from "../../../hooks/useEditorPermissions";
 import { useSelectionStore } from "../../../store/selection-store";
 import { ElementStore } from "../../../store/element-store";
-import { elementHelper } from "../../../utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 
 const fieldLabels: Record<keyof ComponentOverride, string> = {
   text: "Text", src: "Image URL", alt: "Alt text", href: "Link URL",

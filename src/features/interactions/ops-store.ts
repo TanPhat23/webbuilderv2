@@ -6,7 +6,7 @@
  */
 import type { EditorElement } from "@/types/global.type";
 import { useElementStore } from "@/features/editor/store/element-store";
-import { elementHelper } from "@/features/editor/utils/element/elementhelper";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
 import { addInteraction, removeInteraction, updateInteraction, type OpOptions, type OpResult } from "./ops";
 import { setVariable, removeVariable, setFlow, removeFlow } from "./logic";
 import { mergedLogic, useLogicStore, type LogicScope, type RemoteScope } from "./logic-store";

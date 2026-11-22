@@ -11,7 +11,7 @@ import type {
   PresenceBroadcastPayload,
 } from "../../interfaces/websocket";
 import { OrderedElementSession, mergeServerPatch, type ElementOperation } from "./OrderedElementSession";
-import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
+import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 
 type ErrorCallback = (payload: ErrorPayload & { requestId?: string }) => void;
 type PresenceCallback = (payload: PresenceBroadcastPayload) => void;

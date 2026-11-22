@@ -20,7 +20,7 @@ import {
   useLoadSnapshot,
 } from "@/features/editor/hooks/useSnapshot";
 import type { EditorElement } from "@/types/global.type";
-import PanelIntro from "../layout/PanelIntro";
+import PanelIntro from "@/components/PanelIntro";
 
 function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
