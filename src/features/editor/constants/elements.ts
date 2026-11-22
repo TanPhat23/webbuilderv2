@@ -1,56 +1,21 @@
-import type { ElementTypeMap } from "@/features/editor/interfaces/elements.interface";
+import {
+  ALL_ELEMENT_TYPES,
+  CONTAINER_ELEMENT_TYPES,
+  EDITABLE_ELEMENT_TYPES,
+  isContainerElement,
+  isEditableElement,
+  type ElementType,
+} from "@/types/elements";
 import type { IconName } from "@/features/editor/utils/icons/iconMap";
 
-export const CONTAINER_ELEMENT_TYPES = [
-  "Frame",
-  "Form",
-  "List",
-  "Section",
-  "Carousel",
-  "CMSContentList",
-  "CMSContentItem",
-  "CMSContentGrid",
-  "Table",
-  "Nav",
-  "Header",
-  "Footer",
-  "Article",
-  "Aside",
-] as const;
-
-export const EDITABLE_ELEMENT_TYPES = [
-  "Text",
-  "Span",
-  "Heading",
-  "Label",
-  "Blockquote",
-  "Code",
-  "Button",
-  "Input",
-  "Textarea",
-  "Select",
-  "Link",
-] as const;
-
-export const ALL_ELEMENT_TYPES = [
-  ...CONTAINER_ELEMENT_TYPES,
-  ...EDITABLE_ELEMENT_TYPES,
-  "Image",
-  "Video",
-  "Audio",
-  "IFrame",
-  "Separator",
-  "Icon",
-  "Checkbox",
-  "Radio",
-  "Progress",
-] as const satisfies readonly ElementType[];
-
-export type ElementType = keyof ElementTypeMap;
-type AssertAllTypesListed<T extends true> = T;
-type AllElementTypesListed = AssertAllTypesListed<
-  Exclude<ElementType, (typeof ALL_ELEMENT_TYPES)[number]> extends never ? true : false
->;
+export {
+  ALL_ELEMENT_TYPES,
+  CONTAINER_ELEMENT_TYPES,
+  EDITABLE_ELEMENT_TYPES,
+  isContainerElement,
+  isEditableElement,
+  type ElementType,
+};
 
 const ELEMENT_METADATA: Record<ElementType, { icon: IconName; label: string }> = {
   Text: { icon: "Type", label: "Text" },
@@ -101,17 +66,5 @@ export const elementHolders: readonly ElementHolder[] = ALL_ELEMENT_TYPES.map(
     ...ELEMENT_METADATA[type],
   }),
 );
-
-export const isContainerElement = (
-  type: ElementType,
-): type is (typeof CONTAINER_ELEMENT_TYPES)[number] => {
-  return (CONTAINER_ELEMENT_TYPES as readonly ElementType[]).includes(type);
-};
-
-export const isEditableElement = (
-  type: ElementType,
-): type is (typeof EDITABLE_ELEMENT_TYPES)[number] => {
-  return (EDITABLE_ELEMENT_TYPES as readonly ElementType[]).includes(type);
-};
 
 export default elementHolders;

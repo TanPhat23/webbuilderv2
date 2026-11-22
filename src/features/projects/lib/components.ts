@@ -1,10 +1,13 @@
 import { newEntityId } from "@/lib/entity-id";
-import { CONTAINER_ELEMENT_TYPES } from "@/features/editor/constants/elements";
+import {
+  CONTAINER_ELEMENT_TYPES,
+  type ComponentOverride,
+  type ComponentOverrides,
+  type ComponentSetting,
+} from "@/types/elements";
 import type { EditorElement } from "@/types/global.type";
 
-export type ComponentOverride = { text?: string; src?: string; alt?: string; href?: string };
-export type ComponentOverrides = Record<string, ComponentOverride>;
-export type ComponentSetting = { pageId: string; rootId: string; overrides?: ComponentOverrides };
+export type { ComponentOverride, ComponentOverrides, ComponentSetting };
 
 export interface ComponentSource {
   elements: EditorElement[];

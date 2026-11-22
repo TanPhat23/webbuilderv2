@@ -12,11 +12,16 @@ export function isShareableSection(element: EditorElement): element is Section {
   return element.type === "Section" || element.type === "Header" || element.type === "Footer" || element.type === "Nav";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 export function sharedSectionSetting(element: EditorElement): SharedSectionSetting | undefined {
   if (!isShareableSection(element)) return;
   const setting = element.settings?.sharedSection;
-  if (setting?.slot !== "header" && setting?.slot !== "footer") return;
+  if (!isRecord(setting)) return;
   const { slot, sourcePageId, sourceId } = setting;
+  if (slot !== "header" && slot !== "footer") return;
   if (sourcePageId === undefined && sourceId === undefined) return { slot };
   if (typeof sourcePageId === "string" && sourcePageId && typeof sourceId === "string" && sourceId) {
     return { slot, sourcePageId, sourceId };
