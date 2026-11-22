@@ -85,9 +85,3 @@ export function getNumericPrice(plan: PricingPlan, frequency: BillingPeriod): nu
 export function requiresAuthentication(planId: PlanId): boolean {
   return planId !== 'hobby';
 }
-
-// Helper function to check if plan is paid
-export function isPaidPlan(planId: PlanId): boolean {
-  return planId === 'pro';
-}
-

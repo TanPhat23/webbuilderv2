@@ -82,10 +82,6 @@ const iconMap = {
 
 export type IconName = keyof typeof iconMap;
 
-export function getIconComponent(iconName: IconName): IconComponent | undefined {
-  return iconMap[iconName];
-}
-
 export function IconRenderer({
   name,
   className = "w-4 h-4",

@@ -151,15 +151,6 @@ export const API_ENDPOINTS = {
   },
 };
 
-export const AI_ENDPOINTS = {
-  GENERATE_CONTENT: "/api/v1/ai/generate-content",
-};
-
-export const AI_EXPORT_ENDPOINTS = {
-  RECONSTRUCT: "/reconstruct",
-  HEALTH: "/health",
-};
-
 export const NEXT_API_ENDPOINTS = {
   PROJECTS: {
     DELETE: (id: string) => `/api/projects/${id}`,
