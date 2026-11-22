@@ -5,7 +5,7 @@ import type {
   RateLimiter,
   WSEnvelope,
   WSMessageType,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 
 /**
  * Handles request tracking, rate limiting, message envelope creation, and

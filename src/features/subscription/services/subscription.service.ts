@@ -7,7 +7,7 @@ import type {
   CreatePaymentResponse,
   CancelSubscriptionRequest,
   CancelSubscriptionResponse,
-} from "@/features/subscription";
+} from "../interfaces/subscription.interface";
 
 interface ISubscriptionService {
   getSubscriptionStatus: () => Promise<SubscriptionStatus>;

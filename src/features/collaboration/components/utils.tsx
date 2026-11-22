@@ -1,4 +1,4 @@
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "../interfaces/collaboration.interface";
 import { Crown, Edit, Eye } from "lucide-react";
 
 export const getRoleIcon = (role: CollaboratorRole) => {

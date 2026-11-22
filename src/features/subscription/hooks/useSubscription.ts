@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { subscriptionService } from "@/features/subscription";
+import { subscriptionService } from "../services/subscription.service";
 import { userPlanKeys } from "./useUserPlan";
 import type {
   SubscriptionStatus,
   CreatePaymentRequest,
-} from "@/features/subscription";
+} from "../interfaces/subscription.interface";
 import {
   showErrorToast,
   showSuccessToast,

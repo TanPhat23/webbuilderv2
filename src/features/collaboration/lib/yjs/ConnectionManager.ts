@@ -1,5 +1,5 @@
 import { EventEmitter } from "./EventEmitter";
-import type { ConnectionOptions } from "@/features/collaboration";
+import type { ConnectionOptions } from "../../interfaces/websocket";
 import { URLBuilder } from "@/utils/urlbuilder";
 import { classifyClose } from "./connectionErrors";
 

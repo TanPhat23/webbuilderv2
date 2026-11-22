@@ -5,7 +5,7 @@ import {
   Collaborator,
   UpdateCollaboratorRoleRequest,
   CollaboratorListResponse,
-} from "@/features/collaboration";
+} from "../interfaces/collaboration.interface";
 
 interface ICollaboratorService {
   getProjectCollaborators: (projectId: string) => Promise<Collaborator[]>;

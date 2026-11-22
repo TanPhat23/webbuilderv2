@@ -2,7 +2,7 @@ import { projectScopedKeys } from "./projectScopedKeys";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { collaboratorService } from "../services/collaborator.service";
-import type { UpdateCollaboratorRoleRequest } from "@/features/collaboration";
+import type { UpdateCollaboratorRoleRequest } from "../interfaces/collaboration.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
   onMutationError,

@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "../interfaces/collaboration.interface";
 import { useSearchUsers } from "@/features/users/hooks/useUsers";
 import {
   Dialog,

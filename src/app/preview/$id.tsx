@@ -8,7 +8,7 @@ import { useProjectTailwindCss } from "@/features/projects/hooks/useProjectTailw
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
 import { InteractionHost } from "@/features/interactions/components/InteractionHost";
 import { mergedLogic, snapshotFromServer } from "@/features/interactions/logic-store";
-import { errorMessage } from "@/services/api-error";
+import { errorMessage } from "@/utils/errors/api-error";
 
 export const Route = createFileRoute("/preview/$id")({
   validateSearch: (search: Record<string, unknown>): { page?: string } => ({

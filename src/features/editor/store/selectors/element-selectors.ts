@@ -7,7 +7,7 @@
  **/
 
 import { useShallow } from "zustand/react/shallow";
-import { useElementStore } from "@/features/editor";
+import { useElementStore } from "../element-store";
 import type { EditorElement } from "@/types/global.type";
 
 

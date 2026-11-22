@@ -9,7 +9,7 @@ import type {
   ElementDeleteBroadcastPayload,
   ErrorPayload,
   PresenceBroadcastPayload,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 import { OrderedElementSession, mergeServerPatch, type ElementOperation } from "./OrderedElementSession";
 import { ElementTreeHelper } from "@/features/editor/utils/element/element-tree-helper";
 

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UpdateMetadataDialog } from "./UpdateMetadataDialog";
-import { PersonalInfoCardProps } from "@/features/profile";
+import { PersonalInfoCardProps } from "../interfaces/profile.interface";
 
 export default function PersonalInfoCard({ profile }: PersonalInfoCardProps) {
   const [isMetadataDialogOpen, setIsMetadataDialogOpen] = useState(false);

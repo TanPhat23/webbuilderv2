@@ -1,4 +1,4 @@
-import { CustomComponent } from "../customComponents";
+import { CustomComponent } from "../types";
 
 export const sidebarRightComponent: CustomComponent = {
   component: {

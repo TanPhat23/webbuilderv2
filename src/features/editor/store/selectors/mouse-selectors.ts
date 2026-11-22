@@ -12,7 +12,7 @@
  **/
 
 import { useShallow } from "zustand/react/shallow";
-import { useMouseStore } from "@/features/editor";
+import { useMouseStore } from "../mouse-store";
 
 /** Select only the online collaborator users record. */
 export const useCollaboratorUsers = () => useMouseStore((s) => s.users);

@@ -1,5 +1,5 @@
 
-import { Invitation } from "@/features/collaboration";
+import { Invitation } from "../interfaces/collaboration.interface";
 import {
   Table,
   TableBody,

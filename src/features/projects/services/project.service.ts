@@ -1,6 +1,6 @@
 import { URLBuilder } from "@/utils/urlbuilder";
 import { Page } from "@/features/pages";
-import { Project } from "@/features/projects";
+import { Project } from "../interfaces/project.interface";
 import { API_ENDPOINTS } from "@/utils/shared/constants/endpoints";
 import apiClient from "@/services/apiclient";
 

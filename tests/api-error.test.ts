@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
   ApiError, errorMessage, isRetryable, networkError, parseErrorResponse,
-} from '../src/services/api-error';
+} from '../src/utils/errors/api-error';
 import { classifyClose, handleServerError } from '../src/features/collaboration/lib/yjs/connectionErrors';
 
 test('parses the Go error shape', () => {

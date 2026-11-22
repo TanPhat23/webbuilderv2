@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import { ApiError } from "../src/services/api-error";
+import { ApiError } from "../src/utils/errors/api-error";
 import { loadPreviewData } from "../src/features/preview/lib/preview-data";
 import type { ApiPage } from "../src/features/projects/services/project.service";
 import type { EditorElement } from "../src/types/global.type";

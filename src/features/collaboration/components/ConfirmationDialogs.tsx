@@ -1,5 +1,5 @@
 
-import { Collaborator } from "@/features/collaboration";
+import { Collaborator } from "../interfaces/collaboration.interface";
 import {
   AlertDialog,
   AlertDialogAction,

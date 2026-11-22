@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { CustomComponent } from "../customComponents";
+import { CustomComponent } from "../types";
 
 function mkId(prefix: string) {
   return `${prefix}-${uuidv4().slice(0, 8)}`;

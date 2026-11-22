@@ -4,7 +4,7 @@ import { Edit2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ProfileHeroProps } from "@/features/profile";
+import { ProfileHeroProps } from "../interfaces/profile.interface";
 
 export default function ProfileHero({
   profile,

@@ -19,7 +19,7 @@ import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
 import { InputElement } from "@/features/editor";
 import { RuleType, ValidationRule } from "@/features/editor";
-import { ConfigEmpty } from "./_shared";
+import { ConfigEmpty } from "./_shared/ConfigField";
 import { cn } from "@/lib/utils";
 import {
   Plus,

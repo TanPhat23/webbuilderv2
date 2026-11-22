@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { notificationsServer } from "@/features/notifications/server/notifications.server";
-import { isApiError } from "@/services/api-error";
+import { isApiError } from "@/utils/errors/api-error";
 
 /** The caller's Clerk session token, or null when signed out. */
 async function sessionToken(): Promise<string | null> {

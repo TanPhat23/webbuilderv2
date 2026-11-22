@@ -1,5 +1,5 @@
 import { Star, Zap, Shield, LucideIcon } from 'lucide-react';
-import type { PlanId, BillingPeriod } from '@/features/subscription';
+import type { PlanId, BillingPeriod } from '../interfaces/subscription.interface';
 
 export interface PricingPlan {
   id: PlanId;

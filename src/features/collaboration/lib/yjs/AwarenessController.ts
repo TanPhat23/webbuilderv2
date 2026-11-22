@@ -4,7 +4,7 @@ import type {
   MousePosition,
   PresenceBroadcastPayload,
   RemotePresence,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 
 /**
  * Tracks presence (cursor + selection) for the current page.

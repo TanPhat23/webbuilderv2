@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useProjectInvitations, useCreateInvitation, useDeleteInvitation } from "@/features/collaboration/hooks/useInvitations";
 import { useProjectCollaborators, useUpdateCollaboratorRole, useRemoveCollaborator } from "@/features/collaboration/hooks/useCollaborators";
-import { CollaboratorRole } from "@/features/collaboration";
+import { CollaboratorRole } from "../interfaces/collaboration.interface";
 import {
   Card,
   CardContent,

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { errorMessage } from "@/services/api-error";
+import { errorMessage } from "@/utils/errors/api-error";
 
 export function ComponentNameDialog({
   title, initialName = "", confirmLabel, onClose, onSubmit,

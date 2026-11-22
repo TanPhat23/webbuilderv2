@@ -5,7 +5,7 @@ import {
   Invitation,
   CreateInvitationRequest,
   AcceptInvitationRequest,
-} from "@/features/collaboration";
+} from "../interfaces/collaboration.interface";
 
 export interface UpdateInvitationStatusRequest {
   status: string;

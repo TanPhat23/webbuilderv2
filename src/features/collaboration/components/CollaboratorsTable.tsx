@@ -2,7 +2,7 @@
 import {
   CollaboratorRole,
   Collaborator,
-} from "@/features/collaboration";
+} from "../interfaces/collaboration.interface";
 import {
   Table,
   TableBody,

@@ -5,7 +5,7 @@ import {
   QueryClient,
 } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { isApiError, isRetryable } from "@/services/api-error";
+import { isApiError, isRetryable } from "@/utils/errors/api-error";
 import { showErrorToast } from "@/utils/errors/errorToast";
 
 const MAX_RETRIES = 2;

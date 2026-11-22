@@ -5,7 +5,7 @@ import { invitationService } from "../services/invitation.service";
 import type {
   CreateInvitationRequest,
   AcceptInvitationRequest,
-} from "@/features/collaboration";
+} from "../interfaces/collaboration.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
   onMutationError,

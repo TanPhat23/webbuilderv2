@@ -3,7 +3,7 @@ import { projectService } from "@/features/projects/services/project.service";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { newEntityId } from "@/lib/entity-id";
 import type { Page } from "@/features/pages";
-import type { Project } from "@/features/projects";
+import type { Project } from "../interfaces/project.interface";
 import {
   CreateProjectInput,
   CreateProjectSchema,

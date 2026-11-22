@@ -9,7 +9,7 @@ import type {
   ElementUpdatePayload,
   ElementMovePayload,
   ElementDeletePayload,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 import type { MessageDispatcher } from "./MessageDispatcher";
 import type { MessageSender } from "./MessageSender";
 

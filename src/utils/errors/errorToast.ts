@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { isApiError } from "@/services/api-error";
+import { isApiError } from "@/utils/errors/api-error";
 
 /** Default duration (ms) for error toasts. */
 const DEFAULT_ERROR_DURATION = 4000;

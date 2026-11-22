@@ -2,7 +2,7 @@ import type { ApiPage } from "@/features/projects/services/project.service";
 import type { Project } from "@/features/projects";
 import type { EditorElement } from "@/types/global.type";
 import { resolveElements } from "@/features/projects/lib/resolve-elements";
-import { ApiError, isApiError } from "@/services/api-error";
+import { ApiError, isApiError } from "@/utils/errors/api-error";
 
 interface PreviewReads {
   draftToken: () => Promise<string | null | undefined>;

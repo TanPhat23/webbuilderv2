@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { errorMessage } from "@/services/api-error";
+import { errorMessage } from "@/utils/errors/api-error";
 import { useEditorContext } from "@/providers/editorprovider";
 import { plainComponentSnapshot } from "@/features/projects/lib/resolve-elements";
 import type { EditorElement } from "@/types/global.type";

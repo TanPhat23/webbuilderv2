@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { CustomComponent } from "../customComponents";
+import { CustomComponent } from "../types";
 
 /**
  * Split landing page: each major section exported as its own CustomComponent.

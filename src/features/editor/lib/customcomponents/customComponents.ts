@@ -33,11 +33,9 @@ import {
 import { formComponent1, formComponent2 } from "./form/formComponents";
 import { landingPageSections } from "./landingpage/landingPageComponents";
 
-export type CustomComponent = {
-  component: ElementTemplate & {
-    elements?: ElementTemplate[];
-  };
-};
+import type { CustomComponent } from "./types";
+
+export type { CustomComponent };
 
 const customComponents: CustomComponent[] = [
   navbarComponent,

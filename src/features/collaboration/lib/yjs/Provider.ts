@@ -25,7 +25,7 @@ import type {
   LogicSyncPayload,
   LogicUpdatePayload,
   CustomYjsProviderV2 as ICustomYjsProviderV2,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 import type { EditorElement } from "@/types/global.type";
 
 export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
@@ -343,7 +343,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         cursorY,
         elementId:
           elementId ?? this.awarenessController.getLocalSelectedElement(),
-      } satisfies import("@/features/collaboration").PresencePayload,
+      } satisfies import("../../interfaces/websocket").PresencePayload,
       { userId: this.userId },
     );
     this.sender.sendOrQueue(envelope);

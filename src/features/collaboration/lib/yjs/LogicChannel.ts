@@ -2,7 +2,7 @@ import type {
   LogicChangedPayload,
   LogicSyncPayload,
   WSEnvelope,
-} from "@/features/collaboration";
+} from "../../interfaces/websocket";
 
 export interface LogicChannelOptions {
   /** Settles the request with this id; returns whether one was waiting. */

@@ -1,5 +1,5 @@
 import getToken from "./token";
-import { networkError, parseErrorResponse } from "./api-error";
+import { networkError, parseErrorResponse } from "@/utils/errors/api-error";
 
 const REQUEST_TIMEOUT_MS = 15_000;
 

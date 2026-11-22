@@ -1,4 +1,4 @@
-import { CustomComponent } from "../customComponents";
+import { CustomComponent } from "../types";
 import { v4 as uuidv4 } from "uuid";
 
 // Contact Form

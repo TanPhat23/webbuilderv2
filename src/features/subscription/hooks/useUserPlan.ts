@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { subscriptionService } from "@/features/subscription";
-import type { PlanId } from "@/features/subscription";
+import { subscriptionService } from "../services/subscription.service";
+import type { PlanId } from "../interfaces/subscription.interface";
 
 export const userPlanKeys = {
   all: ["user-plan"] as const,

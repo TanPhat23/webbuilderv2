@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
-import { ActivityItem, RecentActivitiesCardProps } from "@/features/profile";
+import { ActivityItem, RecentActivitiesCardProps } from "../interfaces/profile.interface";
 
 export default function RecentActivitiesCard({ projects = [] }: RecentActivitiesCardProps) {
   const recentActivities: ActivityItem[] = useMemo(() => {

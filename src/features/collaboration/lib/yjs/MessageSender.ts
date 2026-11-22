@@ -15,7 +15,7 @@
 import { EventEmitter } from "./EventEmitter";
 import { ConnectionManager } from "./ConnectionManager";
 import { MessageDispatcher } from "./MessageDispatcher";
-import type { WSEnvelope } from "@/features/collaboration";
+import type { WSEnvelope } from "../../interfaces/websocket";
 
 export class MessageSender extends EventEmitter {
   private readonly connection: ConnectionManager;
