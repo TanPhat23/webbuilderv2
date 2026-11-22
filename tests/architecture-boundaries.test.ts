@@ -129,3 +129,26 @@ test("compatibility shims expose identical runtime exports to @/types/elements",
   assert.strictEqual(editorEventsConst.EVENT_TYPES, canonical.EVENT_TYPES);
   assert.strictEqual(editorEventsConst.ACTION_TYPES, canonical.ACTION_TYPES);
 });
+
+test("boundary rule 2: src/features/elements/** never imports from any other src/features/<other>/**", () => {
+  const violations = collectViolations("features/elements/", (resolved) =>
+    resolved.startsWith("features/") &&
+    resolved !== "features/elements" &&
+    !resolved.startsWith("features/elements/"),
+  );
+  assert.deepEqual(violations, [], `Forbidden cross-feature imports from features/elements:\n${violations.join("\n")}`);
+});
+
+test("isolated loading of types, elements registry, and projects/components has no circular init errors", async () => {
+  const globalTypes = await import("../src/types/global.type");
+  const elementsDomain = await import("../src/types/elements");
+  const registry = await import("../src/features/elements/registry");
+  const projectsComponents = await import("../src/features/projects/lib/components");
+  const resolveMod = await import("../src/features/elements/lib/resolveContent");
+
+  assert.ok(globalTypes);
+  assert.ok(elementsDomain.ALL_ELEMENT_TYPES.length > 0);
+  assert.equal(typeof registry.getView, "function");
+  assert.equal(typeof projectsComponents.resolveComponents, "function");
+  assert.equal(typeof resolveMod.resolveContent, "function");
+});

@@ -1,5 +1,5 @@
 import React from "react";
-import type { SelectElement } from "@/features/editor/interfaces/elements.interface";
+import type { SelectElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function SelectView({ element, rootProps }: ViewProps<SelectElement>) {

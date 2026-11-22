@@ -1,5 +1,5 @@
 import React from "react";
-import type { ProgressElement } from "@/features/editor/interfaces/elements.interface";
+import type { ProgressElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function ProgressView({ element, rootProps }: ViewProps<ProgressElement>) {

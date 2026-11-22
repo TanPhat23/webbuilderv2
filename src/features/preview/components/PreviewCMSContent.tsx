@@ -1,5 +1,5 @@
 import React from "react";
-import type { CMSContentGridElement, CMSContentItemElement, CMSContentListElement } from "@/features/editor/interfaces/elements.interface";
+import type { CMSContentGridElement, CMSContentItemElement, CMSContentListElement } from "@/types/elements";
 import { getView } from "@/features/elements/registry";
 import type { ViewProps } from "@/features/elements/view-props";
 import { useCMSFetch, useCMSItemList } from "../hooks/useCMSFetch";

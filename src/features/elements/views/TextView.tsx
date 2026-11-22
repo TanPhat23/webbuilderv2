@@ -1,7 +1,7 @@
 import React from "react";
 import DOMPurify from "isomorphic-dompurify";
 import type { EditorElement } from "@/types/global.type";
-import { resolveContent } from "@/features/editor/utils/element/resolveContent";
+import { resolveContent } from "../lib/resolveContent";
 import type { ViewProps } from "../view-props";
 
 type Text = Extract<EditorElement, { type: "Text" | "Span" | "Label" | "Heading" | "Blockquote" }>;

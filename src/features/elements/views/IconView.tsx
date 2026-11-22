@@ -1,6 +1,6 @@
 import React from "react";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic.mjs";
-import type { IconElement } from "@/features/editor/interfaces/elements.interface";
+import type { IconElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 interface IconViewProps extends ViewProps<IconElement> {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { InputElement } from "@/features/editor/interfaces/elements.interface";
+import type { InputElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function InputView({ element, rootProps }: ViewProps<InputElement>) {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { AudioElement, VideoElement } from "@/features/editor/interfaces/elements.interface";
+import type { AudioElement, VideoElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function MediaView({ element, rootProps }: ViewProps<AudioElement | VideoElement>) {

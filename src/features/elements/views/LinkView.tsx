@@ -1,7 +1,7 @@
 import React from "react";
-import type { LinkElement } from "@/features/editor/interfaces/elements.interface";
-import { resolveContent } from "@/features/editor/utils/element/resolveContent";
-import { previewLinkProps } from "@/features/preview/lib/link-props";
+import type { LinkElement } from "@/types/elements";
+import { resolveContent } from "../lib/resolveContent";
+import { previewLinkProps } from "../lib/link-props";
 import { sanitizeTextContent } from "./TextView";
 import type { ViewProps } from "../view-props";
 

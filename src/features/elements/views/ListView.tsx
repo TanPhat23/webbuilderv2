@@ -1,5 +1,5 @@
 import React from "react";
-import type { ListElement } from "@/features/editor/interfaces/elements.interface";
+import type { ListElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function ListView({ rootProps, children, data }: ViewProps<ListElement>) {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { TableElement } from "@/features/editor/interfaces/elements.interface";
+import type { TableElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function TableView({ element, rootProps, children }: ViewProps<TableElement>) {

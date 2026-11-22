@@ -1,5 +1,5 @@
 import React from "react";
-import type { TextareaElement } from "@/features/editor/interfaces/elements.interface";
+import type { TextareaElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function TextareaView({ element, rootProps }: ViewProps<TextareaElement>) {

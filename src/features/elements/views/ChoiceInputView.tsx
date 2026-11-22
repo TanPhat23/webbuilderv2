@@ -1,5 +1,5 @@
 import React from "react";
-import type { CheckboxElement, RadioElement } from "@/features/editor/interfaces/elements.interface";
+import type { CheckboxElement, RadioElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 interface ChoiceInputViewProps extends ViewProps<CheckboxElement | RadioElement> {

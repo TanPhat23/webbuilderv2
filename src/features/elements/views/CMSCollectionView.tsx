@@ -1,5 +1,5 @@
 import React from "react";
-import type { CMSContentGridElement, CMSContentListElement } from "@/features/editor/interfaces/elements.interface";
+import type { CMSContentGridElement, CMSContentListElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function CMSCollectionView({ element, rootProps, children }: ViewProps<CMSContentGridElement | CMSContentListElement>) {

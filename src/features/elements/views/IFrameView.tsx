@@ -1,5 +1,5 @@
 import React from "react";
-import type { IFrameElement } from "@/features/editor/interfaces/elements.interface";
+import type { IFrameElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function IFrameView({ element, rootProps, children }: ViewProps<IFrameElement>) {

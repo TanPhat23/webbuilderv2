@@ -1,5 +1,5 @@
 import React from "react";
-import type { ImageElement } from "@/features/editor/interfaces/elements.interface";
+import type { ImageElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function ImageView({ element, rootProps }: ViewProps<ImageElement>) {

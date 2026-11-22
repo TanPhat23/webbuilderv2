@@ -1,9 +1,11 @@
-import type { ButtonElement, LinkElement } from "@/features/editor";
+import type { ButtonElement, LinkElement } from "@/types/elements";
 
 const protocols = new Set(["http:", "https:", "mailto:", "tel:"]);
 const targets = new Set(["_self", "_blank", "_parent", "_top"]);
 
-export function previewLinkProps(element: LinkElement | ButtonElement) {
+export function previewLinkProps(
+  element: LinkElement | ButtonElement,
+): { href: string; target: string | undefined; rel: string | undefined } | undefined {
   const href = typeof element.href === "string" ? element.href.trim() : "";
   if (!href) return undefined;
   try {

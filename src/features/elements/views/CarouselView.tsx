@@ -1,6 +1,6 @@
 import React from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import type { CarouselElement } from "@/features/editor/interfaces/elements.interface";
+import type { CarouselElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function CarouselView({ element, rootProps, children }: ViewProps<CarouselElement>) {

@@ -1,5 +1,5 @@
 import React from "react";
-import type { FormElement } from "@/features/editor/interfaces/elements.interface";
+import type { FormElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function FormView({ element, rootProps, children }: ViewProps<FormElement>) {
