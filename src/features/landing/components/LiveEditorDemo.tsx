@@ -38,7 +38,7 @@ interface CodeLine {
 }
 
 /** The "export": plain JSX that mirrors whatever is on the canvas. */
-function buildCode(s: PageState): CodeLine[] {
+export function buildCode(s: PageState): CodeLine[] {
   const align = s.align === "center" ? "items-center text-center" : "items-start text-left";
   const button = s.filled
     ? "bg-black px-4 py-2 text-white"
@@ -77,7 +77,7 @@ function tokenTone(match: RegExpExecArray): string {
 }
 
 /** Colour tags, strings and keywords. Plain text lines are left alone. */
-function highlight(line: string): ReactNode[] {
+export function highlight(line: string): ReactNode[] {
   const isMarkup = line.trimStart().startsWith("<");
   if (!isMarkup && !/^\s*(export|return|const)\b/.test(line)) {
     return [line];

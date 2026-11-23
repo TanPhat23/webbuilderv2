@@ -335,3 +335,32 @@ const Page = () => {
   assert.match(parsed.preamble.top, /formatLabel/);
   assert.match(parsed.preamble.body, /const label = formatLabel/);
 });
+
+test("select options preserve untouched value attributes while resolving text updates", () => {
+  const selectTree: EditorElement[] = [
+    el("pick", "Select", {
+      elements: [
+        el("opt-a", "Text", { content: "opt-a" }),
+        el("opt-b", "Text", { content: "Beta" }),
+      ],
+    }),
+  ];
+  const edited = ok(
+    `const A = () => (
+      <section>
+        <select data-element-id="pick">
+          <option value="opt-a">Label A</option>
+          <option value="opt-b-next">Beta</option>
+          <option value="opt-c">Gamma</option>
+          <option>Delta</option>
+        </select>
+      </section>
+    );`,
+    selectTree,
+  );
+  const options = find(edited, "pick").elements as EditorElement[];
+  assert.deepEqual(
+    options.map((o) => o.content),
+    ["Label A", "opt-b-next", "opt-c", "Delta"],
+  );
+});

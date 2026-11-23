@@ -20,3 +20,15 @@ export function claudeCodeCommand(mcpUrl: string, token: string): string {
 export function codexCommand(mcpUrl: string, token: string): string {
   return `export WEBBUILDER_TOKEN=${checkToken(token)} && codex mcp add webbuilder --url ${checkUrl(mcpUrl)} --bearer-token-env-var WEBBUILDER_TOKEN`;
 }
+
+export function connectionStatus(
+  editing: boolean,
+  lastAt: number | null,
+  now = Date.now(),
+): { label: string; dot: string } {
+  if (editing) return { label: "Editing…", dot: "bg-primary animate-pulse" };
+  const recent = lastAt !== null && now - lastAt < 5 * 60_000;
+  return recent
+    ? { label: "Connected", dot: "bg-emerald-500" }
+    : { label: "Not connected", dot: "bg-muted-foreground/40" };
+}

@@ -241,3 +241,51 @@ test("overlapping animations restore the original duration only after the latest
   assert.equal(box.classes.has("ix-animate-spin"), false);
   assert.equal(box.style.animationDuration, "3s");
 });
+
+test("call preserves explicit content-type, sends plain string bodies, handles empty payloads and timeouts", async () => {
+  const seen: { headers: Record<string, string>; body: unknown }[] = [];
+  const { p } = platform({}, {
+    fetch: async (_url, init) => {
+      seen.push({ headers: init?.headers ?? {}, body: init?.body });
+      return { ok: true, status: 204, text: async () => "" };
+    },
+  });
+
+  const customHeader = await go(p, [
+    {
+      id: "r1",
+      call: "api",
+      method: "POST",
+      url: "/a",
+      headers: { "content-type": "application/merge-patch+json" },
+      body: "{{ steps }}",
+    },
+    {
+      id: "r2",
+      call: "api",
+      method: "POST",
+      url: "/b",
+      body: "raw-text-body",
+    },
+  ]);
+
+  assert.equal(seen[0].headers["content-type"], "application/merge-patch+json");
+  assert.equal(seen[0].headers["Content-Type"], undefined);
+  assert.equal(seen[1].body, "raw-text-body");
+  assert.equal(seen[1].headers["Content-Type"], undefined);
+  assert.deepEqual(customHeader.steps.r1, { ok: true, status: 204, data: null, error: null });
+
+  const { p: timeoutPlatform, timers } = platform({}, {
+    fetch: (_url, init) =>
+      new Promise((_, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new Error("aborted"));
+        });
+      }),
+  });
+  const pending = go(timeoutPlatform, [{ id: "r3", call: "api", method: "GET", url: "/slow", timeout: 50 }]);
+  await new Promise<void>((resolve) => queueMicrotask(resolve));
+  timers.forEach((fn) => fn());
+  const timedOut = await pending;
+  assert.deepEqual(timedOut.steps.r3, { ok: false, status: 0, data: null, error: "timed out" });
+});

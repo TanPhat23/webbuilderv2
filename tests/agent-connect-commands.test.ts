@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { claudeCodeCommand, codexCommand } from "../src/features/agent/connectCommands";
+import {
+  claudeCodeCommand,
+  codexCommand,
+  connectionStatus,
+} from "../src/features/agent/connectCommands";
 
 test("the Claude Code command registers an HTTP server with a bearer header", () => {
   assert.equal(
@@ -27,4 +31,24 @@ test("a url or token with shell metacharacters is rejected, not quoted into a co
     assert.throws(() => codexCommand(bad, "wbk_abc"), Error, bad);
   }
   assert.ok(claudeCodeCommand("http://localhost:8090/mcp", "wbk_abc").includes("http://localhost:8090/mcp"));
+});
+
+test("connectionStatus reports Editing, recent Connected window, and Not connected state", () => {
+  const now = 1_000_000;
+  assert.deepEqual(connectionStatus(true, null, now), {
+    label: "Editing…",
+    dot: "bg-primary animate-pulse",
+  });
+  assert.deepEqual(connectionStatus(false, null, now), {
+    label: "Not connected",
+    dot: "bg-muted-foreground/40",
+  });
+  assert.deepEqual(connectionStatus(false, now - 60_000, now), {
+    label: "Connected",
+    dot: "bg-emerald-500",
+  });
+  assert.deepEqual(connectionStatus(false, now - 5 * 60_000, now), {
+    label: "Not connected",
+    dot: "bg-muted-foreground/40",
+  });
 });

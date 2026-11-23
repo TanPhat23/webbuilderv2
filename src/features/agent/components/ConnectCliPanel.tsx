@@ -15,7 +15,11 @@ import {
   type AgentTokenInfo,
   type CreatedAgentToken,
 } from "../services/agentTokens.service";
-import { claudeCodeCommand, codexCommand } from "../connectCommands";
+import {
+  claudeCodeCommand,
+  codexCommand,
+  connectionStatus,
+} from "../connectCommands";
 import { useAgentActivity } from "../activity";
 
 const copy = (text: string) =>
@@ -25,14 +29,6 @@ const copy = (text: string) =>
       () => toast.success("Copied"),
       () => toast.error("Could not copy"),
     );
-
-function connectionStatus(editing: boolean, lastAt: number | null) {
-  if (editing) return { label: "Editing…", dot: "bg-primary animate-pulse" };
-  const recent = lastAt !== null && Date.now() - lastAt < 5 * 60_000;
-  return recent
-    ? { label: "Connected", dot: "bg-emerald-500" }
-    : { label: "Not connected", dot: "bg-muted-foreground/40" };
-}
 
 function CommandBlock({ label, text }: { label: string; text: string }) {
   return (

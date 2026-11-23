@@ -20,7 +20,7 @@ interface ColorSwatch {
   readonly color: string;
 }
 
-function buildOverlaySwatches(
+export function buildOverlaySwatches(
   resolvedColors: SimpleColorScheme | undefined,
 ): ColorSwatch[] {
   if (!resolvedColors) return [];
@@ -31,7 +31,7 @@ function buildOverlaySwatches(
   ];
 }
 
-function buildOverlaySections(
+export function buildOverlaySections(
   designSystem: DesignSystem | undefined,
 ): OverlayRow[][] {
   if (!designSystem) return [];

@@ -21,7 +21,7 @@ import type { VariableStore } from "../runtime/variables";
 
 export type ImageErrorState = { key: string; pendingNative: boolean };
 
-function pruneStaleLoadHistory(
+export function pruneStaleLoadHistory(
   fired: Map<string, Set<string>>,
   index: Map<string, InteractionMap>,
 ): void {
@@ -34,7 +34,7 @@ function pruneStaleLoadHistory(
   }
 }
 
-function resolveNativeTargetIds(
+export function resolveNativeTargetIds(
   eventTarget: EventTarget | null,
   root: Element,
   selfOnly: boolean,
@@ -46,7 +46,7 @@ function resolveNativeTargetIds(
   return directId && chain[0] === directId ? [directId] : [];
 }
 
-function handleNativeEvent(
+export function handleNativeEvent(
   event: Event,
   root: Element,
   index: Map<string, InteractionMap>,
@@ -65,7 +65,7 @@ function handleNativeEvent(
   }
 }
 
-function handleHoverEvent(
+export function handleHoverEvent(
   event: Event,
   root: Element,
   index: Map<string, InteractionMap>,
@@ -81,7 +81,7 @@ function handleHoverEvent(
   if (result.runs.length) runner.fireSequence(result.runs, event);
 }
 
-function dispatchImageError(
+export function dispatchImageError(
   target: Element | null,
   event: Event | null,
   root: Element,
