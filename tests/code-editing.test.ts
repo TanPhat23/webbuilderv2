@@ -286,3 +286,52 @@ test("generated interactions leave the submit of a form that owns it alone", asy
   assert.match(plain, /bind\("signup", "submit"/);
   assert.doesNotMatch(plain, /handle their own submit/);
 });
+
+test("export default function keeps component body statements in preamble", () => {
+  const code = `
+export default function Page() {
+  const greeting = "Hello";
+  return (
+    <>
+      <section><div>Hi</div></section>
+    </>
+  );
+}
+`;
+  const parsed = parseCode(code, [], PAGE);
+  assert.ok(parsed.ok, parsed.ok ? "" : parsed.diagnostic.message);
+  if (!parsed.ok) return;
+  assert.match(parsed.preamble.body, /const greeting = "Hello"/);
+  assert.equal(parsed.preamble.top, "");
+});
+
+test("inline whitespace, wrapped list text, and dynamic attributes behave safely", () => {
+  const spaced = parseCode("const A = () => <div><div>a</div> <div>b</div></div>;", [], PAGE);
+  assert.ok(spaced.ok);
+  if (spaced.ok) assert.equal(spaced.elements[0].content, " ");
+
+  const list = parseCode("const A = () => <ul><li>Plain text</li></ul>;", [], PAGE);
+  assert.ok(list.ok);
+  if (list.ok) {
+    assert.equal(find(list.elements, list.elements[0].id).elements[0].content, "Plain text");
+  }
+
+  const dynamicSrc = parseCode('const A = () => <img src={logoUrl} alt="Logo" />;', [], PAGE);
+  assert.equal(dynamicSrc.ok, false);
+});
+
+test("helper function before page component keeps helper in top preamble and hooks in body", () => {
+  const code = `
+const formatLabel = (n: number) => \`#\${n}\`;
+
+const Page = () => {
+  const label = formatLabel(1);
+  return <section><div>Hi</div></section>;
+};
+`;
+  const parsed = parseCode(code, [], PAGE);
+  assert.ok(parsed.ok, parsed.ok ? "" : parsed.diagnostic.message);
+  if (!parsed.ok) return;
+  assert.match(parsed.preamble.top, /formatLabel/);
+  assert.match(parsed.preamble.body, /const label = formatLabel/);
+});
