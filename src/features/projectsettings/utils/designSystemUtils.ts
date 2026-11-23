@@ -22,21 +22,6 @@ export interface SimpleColorScheme {
   accent: string;
 }
 
-export function generateShadowVars(style: string) {
-  const shadows: Record<string, string> = {
-    sm: `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
-  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);`,
-    md: `  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
-  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);`,
-    lg: `  --shadow-lg: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
-  --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);`,
-    xl: `  --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
-  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
-    "2xl": `  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
-  };
-  return shadows[style] || shadows.md;
-}
-
 export interface DesignSystem {
   colors?: SimpleColorScheme;
   fontFamily?: string;
@@ -46,193 +31,122 @@ export interface DesignSystem {
   shadowStyle?: string;
 }
 
-export function generateDesignSystemCSS(system: DesignSystem) {
-  const colorScheme = system.colors || {
-    primary: "#3b82f6",
-    secondary: "#e0e7ff",
-    accent: "#1e40af",
+export interface ResolvedDesignSystem {
+  readonly colors: SimpleColorScheme;
+  readonly fontFamily: string;
+  readonly letterTracking: number;
+  readonly borderRadius: number;
+  readonly spacing: number;
+  readonly shadowStyle: string;
+}
+
+const DEFAULT_COLORS: SimpleColorScheme = {
+  primary: "#3b82f6",
+  secondary: "#e0e7ff",
+  accent: "#1e40af",
+};
+
+const CSS_VALUE_PATTERN = /^[#a-zA-Z0-9(),.%_\s-]+$/;
+
+const SHADOW_MAP: Readonly<Record<string, string>> = {
+  sm: `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0px 2px 4px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow-lg: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
+  md: `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.1), 0px 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0px 6px 10px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.1), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
+  lg: `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.1), 0px 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0px 10px 15px -3px hsl(0 0% 0% / 0.12), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0px 10px 15px -3px hsl(0 0% 0% / 0.14), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
+  xl: `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 10px 15px -3px hsl(0 0% 0% / 0.12), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0px 10px 15px -3px hsl(0 0% 0% / 0.12), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0px 14px 20px -3px hsl(0 0% 0% / 0.14), 0px 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0px 18px 25px -5px hsl(0 0% 0% / 0.16), 0px 8px 10px -6px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
+  "2xl": `  --shadow-sm: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --shadow-md: 0px 12px 24px -6px hsl(0 0% 0% / 0.18);
+  --shadow-lg: 0px 18px 32px -8px hsl(0 0% 0% / 0.2);
+  --shadow-xl: 0px 22px 40px -10px hsl(0 0% 0% / 0.22);
+  --shadow-2xl: 0px 25px 50px -12px hsl(0 0% 0% / 0.25);`,
+};
+
+function sanitizeCssToken(value: string | undefined, fallback: string): string {
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  return trimmed && CSS_VALUE_PATTERN.test(trimmed) ? trimmed : fallback;
+}
+
+export function resolveDesignSystemTokens(
+  system: DesignSystem,
+  fallbackColors?: SimpleColorScheme,
+): ResolvedDesignSystem {
+  const rawColors = system.colors ?? fallbackColors ?? DEFAULT_COLORS;
+  const shadowCandidate = sanitizeCssToken(system.shadowStyle, "md");
+  return {
+    colors: {
+      primary: sanitizeCssToken(rawColors.primary, DEFAULT_COLORS.primary),
+      secondary: sanitizeCssToken(rawColors.secondary, DEFAULT_COLORS.secondary),
+      accent: sanitizeCssToken(rawColors.accent, DEFAULT_COLORS.accent),
+    },
+    fontFamily: sanitizeCssToken(system.fontFamily, "Inter"),
+    letterTracking:
+      typeof system.letterTracking === "number" &&
+      Number.isFinite(system.letterTracking)
+        ? system.letterTracking
+        : 0,
+    borderRadius:
+      typeof system.borderRadius === "number" &&
+      Number.isFinite(system.borderRadius)
+        ? Math.max(0, system.borderRadius)
+        : 8,
+    spacing:
+      typeof system.spacing === "number" && Number.isFinite(system.spacing)
+        ? Math.max(0, system.spacing)
+        : 4,
+    shadowStyle: Object.hasOwn(SHADOW_MAP, shadowCandidate)
+      ? shadowCandidate
+      : "md",
   };
-  const fontFamily = system.fontFamily || "Inter";
-  const letterTracking = system.letterTracking || 0;
-  const borderRadius = system.borderRadius || 8;
-  const spacing = system.spacing || 4;
-  const shadowStyle = system.shadowStyle || "md";
+}
+
+export function generateDesignSystemCSS(system: DesignSystem): string {
+  const resolved = resolveDesignSystemTokens(system);
+  const shadowVars = SHADOW_MAP[resolved.shadowStyle] ?? SHADOW_MAP.md;
 
   return `
-/* Design System Variables */
 :root {
-  /* Colors */
-  --color-primary: ${colorScheme.primary};
-  --color-secondary: ${colorScheme.secondary};
-  --color-accent: ${colorScheme.accent};
-  --primary: ${colorScheme.primary};
-  --secondary: ${colorScheme.secondary};
-  --accent: ${colorScheme.accent};
-
-  /* Typography */
-  --font-sans: "${fontFamily}", ui-sans-serif, system-ui, sans-serif;
-  --tracking-normal: ${letterTracking}em;
-
-  /* Spacing */
-  --spacing: ${spacing}px;
-
-  /* Border Radius */
-  --radius: ${borderRadius}px;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-primary: ${resolved.colors.primary};
+  --color-secondary: ${resolved.colors.secondary};
+  --color-accent: ${resolved.colors.accent};
+  --primary: ${resolved.colors.primary};
+  --secondary: ${resolved.colors.secondary};
+  --accent: ${resolved.colors.accent};
+  --font-sans: "${resolved.fontFamily}", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --tracking-normal: ${resolved.letterTracking}em;
+  --spacing: ${resolved.spacing}px;
+  --radius: ${resolved.borderRadius}px;
+  --radius-sm: max(0px, calc(var(--radius) - 4px));
+  --radius-md: max(0px, calc(var(--radius) - 2px));
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-
-  /* Shadows */
-${generateShadowVars(shadowStyle)}
+${shadowVars}
 }
 
 body {
   font-family: var(--font-sans);
   letter-spacing: var(--tracking-normal);
-}
-
-/* Color Utilities */
-.text-primary, [class*="text-primary"] {
-  color: ${colorScheme.primary} !important;
-}
-
-.bg-primary, [class*="bg-primary"] {
-  background-color: ${colorScheme.primary} !important;
-}
-
-.border-primary, [class*="border-primary"] {
-  border-color: ${colorScheme.primary} !important;
-}
-
-.text-secondary, [class*="text-secondary"] {
-  color: ${colorScheme.secondary} !important;
-}
-
-.bg-secondary, [class*="bg-secondary"] {
-  background-color: ${colorScheme.secondary} !important;
-}
-
-.text-accent, [class*="text-accent"] {
-  color: ${colorScheme.accent} !important;
-}
-
-.bg-accent, [class*="bg-accent"] {
-  background-color: ${colorScheme.accent} !important;
-}
-`;
-}
-
-export function generateColorsCSS(colors: ColorScheme) {
-  return `
-:root {
-  /* Primary Colors */
-  --color-primary: ${colors.primary};
-  --primary: ${colors.primary};
-  --primary-foreground: ${colors.primaryForeground};
-
-  /* Secondary Colors */
-  --color-secondary: ${colors.secondary};
-  --secondary: ${colors.secondary};
-  --secondary-foreground: ${colors.secondaryForeground};
-
-  /* Accent Colors */
-  --color-accent: ${colors.accent};
-  --accent: ${colors.accent};
-  --accent-foreground: ${colors.accentForeground};
-
-  /* Background Colors */
-  --background: ${colors.background};
-  --foreground: ${colors.foreground};
-
-  /* Card Colors */
-  --card: ${colors.card};
-  --card-foreground: ${colors.cardForeground};
-
-  /* Muted Colors */
-  --muted: ${colors.muted};
-  --muted-foreground: ${colors.mutedForeground};
-
-  /* Border */
-  --border: ${colors.border};
-
-  /* Destructive Colors */
-  --destructive: ${colors.destructive};
-  --destructive-foreground: ${colors.destructiveForeground};
-}
-
-/* Utility Classes */
-.bg-primary {
-  background-color: ${colors.primary} !important;
-}
-
-.text-primary {
-  color: ${colors.primary} !important;
-}
-
-.text-primary-foreground {
-  color: ${colors.primaryForeground} !important;
-}
-
-.bg-secondary {
-  background-color: ${colors.secondary} !important;
-}
-
-.text-secondary-foreground {
-  color: ${colors.secondaryForeground} !important;
-}
-
-.bg-accent {
-  background-color: ${colors.accent} !important;
-}
-
-.text-accent-foreground {
-  color: ${colors.accentForeground} !important;
-}
-
-.bg-card {
-  background-color: ${colors.card} !important;
-}
-
-.text-card-foreground {
-  color: ${colors.cardForeground} !important;
-}
-
-.bg-muted {
-  background-color: ${colors.muted} !important;
-}
-
-.text-muted-foreground {
-  color: ${colors.mutedForeground} !important;
-}
-
-.border-primary {
-  border-color: ${colors.primary} !important;
-}
-
-.border-border {
-  border-color: ${colors.border} !important;
-}
-
-.bg-destructive {
-  background-color: ${colors.destructive} !important;
-}
-
-.text-destructive-foreground {
-  color: ${colors.destructiveForeground} !important;
-}
-
-/* Hover States */
-.hover\\:bg-primary\\/90:hover {
-  background-color: ${colors.primary}e6 !important;
-}
-
-.hover\\:bg-secondary\\/90:hover {
-  background-color: ${colors.secondary}e6 !important;
-}
-
-.hover\\:bg-accent\\/90:hover {
-  background-color: ${colors.accent}e6 !important;
 }
 `;
 }
