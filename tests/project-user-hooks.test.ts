@@ -123,7 +123,7 @@ test('useCurrentPage picks the page named by the ?page search param', async () =
 test('useCreateProject posts the project and refreshes the user list', async () => {
   const client = makeClient();
   const invalidated: unknown[] = [];
-  client.invalidateQueries = (async (f) => void invalidated.push(f?.queryKey)) as never;
+  client.invalidateQueries = (async (f?: { queryKey?: unknown }) => void invalidated.push(f?.queryKey)) as typeof client.invalidateQueries;
   const { result } = renderHook(() => projects.useCreateProject(), client);
   const created = await result.mutateAsync({ name: 'Site', description: null } as never);
   assert.equal(created.views, 3);
@@ -135,7 +135,7 @@ test('useCreateProject posts the project and refreshes the user list', async () 
 test('useUpdateProject caches the returned project and refreshes the list', async () => {
   const client = makeClient();
   const invalidated: unknown[] = [];
-  client.invalidateQueries = (async (f) => void invalidated.push(f?.queryKey)) as never;
+  client.invalidateQueries = (async (f?: { queryKey?: unknown }) => void invalidated.push(f?.queryKey)) as typeof client.invalidateQueries;
   const { result } = renderHook(() => projects.useUpdateProject(), client);
   await result.mutateAsync({ projectId: 'p1', updates: { name: 'New' } } as never);
   assert.equal(calls[0].method, 'PATCH');
@@ -154,7 +154,7 @@ test('usePublishProject sends the published flag', async () => {
 test('useDeleteProject deletes and refreshes the list', async () => {
   const client = makeClient();
   const invalidated: unknown[] = [];
-  client.invalidateQueries = (async (f) => void invalidated.push(f?.queryKey)) as never;
+  client.invalidateQueries = (async (f?: { queryKey?: unknown }) => void invalidated.push(f?.queryKey)) as typeof client.invalidateQueries;
   const { result } = renderHook(() => projects.useDeleteProject(), client);
   await result.mutateAsync('p1');
   assert.deepEqual(calls.map((c) => [c.method, c.path]), [['DELETE', '/api/v1/projects/p1']]);
@@ -165,7 +165,7 @@ test('project mutations report failures instead of invalidating', async () => {
   failNext = true;
   const client = makeClient();
   const invalidated: unknown[] = [];
-  client.invalidateQueries = (async (f) => void invalidated.push(f?.queryKey)) as never;
+  client.invalidateQueries = (async (f?: { queryKey?: unknown }) => void invalidated.push(f?.queryKey)) as typeof client.invalidateQueries;
   const create = renderHook(() => projects.useCreateProject(), client).result;
   const update = renderHook(() => projects.useUpdateProject(), client).result;
   const del = renderHook(() => projects.useDeleteProject(), client).result;

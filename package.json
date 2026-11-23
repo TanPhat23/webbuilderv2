@@ -14,7 +14,7 @@
     "test:e2e:report": "playwright show-report",
     "test:e2e:collab": "bash scripts/e2e-collab.sh",
     "test:style-controls": "node --import tsx --test tests/style-controls.browser.ts",
-    "test:unit": "node --import tsx --test tests/*.test.ts",
+    "test:unit": "node --import tsx --test --test-concurrency=2 tests/*.test.ts",
     "test:integration": "bash scripts/it-realtime.sh",
     "interactions:schema": "node --import tsx scripts/interactions-schema.ts"
   },
