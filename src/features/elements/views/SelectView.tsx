@@ -3,13 +3,7 @@ import type { SelectElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function SelectView({ element, rootProps }: ViewProps<SelectElement>) {
-  const settings = (element.settings ?? {}) as unknown as {
-    name?: string;
-    defaultValue?: string;
-    required?: boolean;
-    disabled?: boolean;
-    selectOptions?: { id: string; value: string; label: string }[];
-  };
+  const settings = element.settings ?? {};
 
   return (
     <select name={settings.name} defaultValue={settings.defaultValue} required={settings.required} disabled={settings.disabled} {...rootProps}>

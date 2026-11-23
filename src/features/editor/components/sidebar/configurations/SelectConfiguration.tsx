@@ -1,143 +1,57 @@
-
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useUpdateElement } from "@/features/editor";
-import { useSelectedElement } from "@/features/editor";
-import { SelectElement } from "@/features/editor";
-import {
-  ArrowDown,
-  ArrowUp,
-  CheckCircle2,
-  Circle,
-  Plus,
-  Trash2,
-  ListFilter,
-  GripVertical,
-} from "lucide-react";
+import { useSelectedElement, useUpdateElement } from "@/features/editor";
 import { newEntityId } from "@/lib/entity-id";
 import { cn } from "@/lib/utils";
+import { CheckCircle2, ListFilter, Plus } from "lucide-react";
 import {
-  ConfigEmpty,
-  ConfigField,
-  ConfigPanel,
-  SectionDivider,
-} from "./_shared";
-
-interface SelectOption {
-  id: string;
-  label: string;
-  value: string;
-}
-
-interface SelectSettings {
-  selectOptions: SelectOption[];
-  defaultValue?: string;
-  required?: boolean;
-  disabled?: boolean;
-}
+  addSelectOption,
+  moveSelectOption,
+  readSelectSettings,
+  removeSelectOption,
+  resolveSelectOptions,
+  toggleDefaultSelectOption,
+  updateSelectOptionField,
+  type SelectSettings,
+} from "../../../lib/selectOptions";
+import { ConfigEmpty, ConfigPanel, SectionDivider } from "./_shared";
+import { SelectOptionRow, SelectStateToggles } from "./SelectOptionRow";
 
 export const SelectConfigurationAccordion = () => {
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
 
-  const selectElement = selectedElement?.type === "Select"
-    ? (selectedElement as SelectElement)
-    : undefined;
-  const settings = (selectElement?.settings as unknown as SelectSettings) || {};
-
-  const options: SelectOption[] = useMemo(
+  const selectElement =
+    selectedElement?.type === "Select" ? selectedElement : undefined;
+  const settings = useMemo(
+    () => readSelectSettings(selectElement?.settings),
+    [selectElement?.settings],
+  );
+  const options = useMemo(
     () =>
-      settings.selectOptions || [
-        {
-          id: "default-1",
-          label: selectElement?.content || "Option 1",
-          value: "option-1",
-        },
-        { id: "default-2", label: "Option 2", value: "option-2" },
-      ],
-    [settings.selectOptions, selectElement?.content],
+      resolveSelectOptions(
+        settings,
+        selectElement?.content,
+        selectElement?.elements,
+      ),
+    [settings, selectElement?.content, selectElement?.elements],
   );
 
   if (!selectElement) return null;
 
-  const defaultValue = settings.defaultValue || "";
+  const defaultValue = settings.defaultValue;
 
-  const updateSettings = (newSettings: Partial<SelectSettings>) => {
+  const updateSettings = (patch: Partial<SelectSettings>) => {
     updateElement(selectElement.id, {
-      settings: { ...settings, ...newSettings } as any,
+      settings: { ...(selectElement.settings ?? {}), ...patch },
     });
-  };
-
-  const handleAddOption = () => {
-    const newOption: SelectOption = {
-      id: newEntityId(),
-      label: `Option ${options.length + 1}`,
-      value: `option-${options.length + 1}`,
-    };
-    updateSettings({ selectOptions: [...options, newOption] });
-  };
-
-  const handleRemoveOption = (index: number) => {
-    const newOptions = options.filter((_, i) => i !== index);
-    let newDefault = defaultValue;
-    if (options[index].value === defaultValue) {
-      newDefault = "";
-    }
-    updateSettings({ selectOptions: newOptions, defaultValue: newDefault });
-  };
-
-  const handleUpdateOption = (
-    index: number,
-    field: keyof SelectOption,
-    newValue: string,
-  ) => {
-    const newOptions = options.map((opt, i) => {
-      if (i === index) {
-        return { ...opt, [field]: newValue };
-      }
-      return opt;
-    });
-
-    let newDefault = defaultValue;
-    if (field === "value" && options[index].value === defaultValue) {
-      newDefault = newValue;
-    }
-
-    updateSettings({ selectOptions: newOptions, defaultValue: newDefault });
-  };
-
-  const handleMoveOption = (index: number, direction: "up" | "down") => {
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === options.length - 1)
-    ) {
-      return;
-    }
-
-    const newOptions = [...options];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    [newOptions[index], newOptions[targetIndex]] = [
-      newOptions[targetIndex],
-      newOptions[index],
-    ];
-    updateSettings({ selectOptions: newOptions });
-  };
-
-  const handleSetDefault = (value: string) => {
-    if (defaultValue === value) {
-      updateSettings({ defaultValue: "" });
-    } else {
-      updateSettings({ defaultValue: value });
-    }
   };
 
   return (
@@ -157,51 +71,13 @@ export const SelectConfigurationAccordion = () => {
       }
     >
       <div className="flex flex-col gap-3">
-        {/* ── State Toggles ── */}
-        <div className="grid grid-cols-2 gap-1.5">
-          <div
-            className={cn(
-              "flex items-center justify-between gap-2",
-              "rounded-lg border border-border/40 bg-muted/10 px-2.5 py-2",
-              "transition-colors duration-150",
-              settings.required &&
-                "border-foreground/10 bg-foreground/[0.03]",
-            )}
-          >
-            <span className="text-[11px] font-medium text-muted-foreground select-none">
-              Required
-            </span>
-            <Switch
-              id="required-mode"
-              checked={settings.required}
-              onCheckedChange={(c) => updateSettings({ required: c })}
-              className="scale-[0.65] origin-right"
-            />
-          </div>
-          <div
-            className={cn(
-              "flex items-center justify-between gap-2",
-              "rounded-lg border border-border/40 bg-muted/10 px-2.5 py-2",
-              "transition-colors duration-150",
-              settings.disabled &&
-                "border-foreground/10 bg-foreground/[0.03]",
-            )}
-          >
-            <span className="text-[11px] font-medium text-muted-foreground select-none">
-              Disabled
-            </span>
-            <Switch
-              id="disabled-mode"
-              checked={settings.disabled}
-              onCheckedChange={(c) => updateSettings({ disabled: c })}
-              className="scale-[0.65] origin-right"
-            />
-          </div>
-        </div>
+        <SelectStateToggles
+          settings={settings}
+          onToggle={(key, checked) => updateSettings({ [key]: checked })}
+        />
 
         <SectionDivider />
 
-        {/* ── Options Header ── */}
         <div className="flex items-center justify-between px-0.5">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 select-none">
             Options
@@ -211,7 +87,6 @@ export const SelectConfigurationAccordion = () => {
           </span>
         </div>
 
-        {/* ── Column Headers ── */}
         <div className="grid grid-cols-[26px_1fr_1fr_52px] gap-1.5 px-1">
           <div className="flex justify-center">
             <Tooltip>
@@ -236,156 +111,49 @@ export const SelectConfigurationAccordion = () => {
           </span>
         </div>
 
-        {/* ── Options List ── */}
         <ScrollArea className="h-56 pr-2 -mr-2 rounded-lg border border-border/30 bg-muted/10">
           <div className="flex flex-col gap-0.5 p-1">
             {options.map((option, index) => (
-              <div
+              <SelectOptionRow
                 key={option.id || index}
-                className={cn(
-                  "group/item grid grid-cols-[26px_1fr_1fr_52px] gap-1.5 items-center",
-                  "rounded-md border border-transparent",
-                  "hover:border-border/40 hover:bg-background hover:shadow-sm",
-                  "transition-all duration-150 p-1",
-                  defaultValue === option.value &&
-                    "bg-primary/[0.03] border-primary/10",
-                )}
-              >
-                {/* Default Toggle */}
-                <div className="flex justify-center">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center justify-center",
-                          "h-5 w-5 rounded-full outline-none",
-                          "transition-all duration-150",
-                          defaultValue === option.value
-                            ? "text-primary hover:text-primary/80"
-                            : "text-muted-foreground/30 hover:text-primary/50",
-                        )}
-                        onClick={() => handleSetDefault(option.value)}
-                      >
-                        {defaultValue === option.value ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        ) : (
-                          <Circle className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="text-[11px]">
-                      {defaultValue === option.value
-                        ? "Default — click to unset"
-                        : "Set as default"}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-
-                {/* Label Input */}
-                <Input
-                  value={option.label}
-                  onChange={(e) =>
-                    handleUpdateOption(index, "label", e.target.value)
-                  }
-                  placeholder="Label"
-                  className={cn(
-                    "h-6 text-[10px] px-1.5 rounded-md",
-                    "bg-transparent border-transparent",
-                    "hover:border-border/40 hover:bg-background",
-                    "focus:border-foreground/20 focus:bg-background focus:ring-1 focus:ring-foreground/10",
-                    "transition-colors duration-150",
-                  )}
-                />
-
-                {/* Value Input */}
-                <Input
-                  value={option.value}
-                  onChange={(e) =>
-                    handleUpdateOption(index, "value", e.target.value)
-                  }
-                  placeholder="value"
-                  className={cn(
-                    "h-6 text-[10px] px-1.5 rounded-md font-mono",
-                    "bg-transparent border-transparent text-muted-foreground",
-                    "hover:border-border/40 hover:bg-background",
-                    "focus:border-foreground/20 focus:bg-background focus:ring-1 focus:ring-foreground/10 focus:text-foreground",
-                    "transition-colors duration-150",
-                  )}
-                />
-
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-0 opacity-0 group-hover/item:opacity-100 focus-within:opacity-100 transition-opacity duration-150">
-                  <div className="flex flex-col">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex items-center justify-center h-3 w-4",
-                            "rounded-t-sm outline-none",
-                            "text-muted-foreground/40 hover:text-foreground/70 hover:bg-muted/60",
-                            "disabled:opacity-20 disabled:pointer-events-none",
-                            "transition-colors duration-100",
-                          )}
-                          disabled={index === 0}
-                          onClick={() => handleMoveOption(index, "up")}
-                        >
-                          <ArrowUp className="h-2 w-2" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="text-[10px]">
-                        Move up
-                      </TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className={cn(
-                            "flex items-center justify-center h-3 w-4",
-                            "rounded-b-sm outline-none",
-                            "text-muted-foreground/40 hover:text-foreground/70 hover:bg-muted/60",
-                            "disabled:opacity-20 disabled:pointer-events-none",
-                            "transition-colors duration-100",
-                          )}
-                          disabled={index === options.length - 1}
-                          onClick={() => handleMoveOption(index, "down")}
-                        >
-                          <ArrowDown className="h-2 w-2" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="text-[10px]">
-                        Move down
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className={cn(
-                          "flex items-center justify-center",
-                          "h-5 w-5 rounded-md outline-none",
-                          "text-muted-foreground/40",
-                          "hover:text-destructive hover:bg-destructive/10",
-                          "transition-colors duration-150",
-                        )}
-                        onClick={() => handleRemoveOption(index)}
-                      >
-                        <Trash2 className="h-2.5 w-2.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="text-[10px]">
-                      Remove option
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
+                option={option}
+                index={index}
+                total={options.length}
+                isDefault={
+                  defaultValue !== undefined && defaultValue === option.value
+                }
+                onSetDefault={() =>
+                  updateSettings({
+                    ...(settings.selectOptions === undefined
+                      ? { selectOptions: options }
+                      : {}),
+                    defaultValue: toggleDefaultSelectOption(
+                      defaultValue,
+                      option.value,
+                    ),
+                  })
+                }
+                onUpdateField={(field, value) =>
+                  updateSettings(
+                    updateSelectOptionField(
+                      options,
+                      index,
+                      field,
+                      value,
+                      defaultValue,
+                    ),
+                  )
+                }
+                onMove={(dir) => {
+                  const reordered = moveSelectOption(options, index, dir);
+                  if (reordered) updateSettings({ selectOptions: reordered });
+                }}
+                onRemove={() =>
+                  updateSettings(removeSelectOption(options, index, defaultValue))
+                }
+              />
             ))}
 
-            {/* Empty State */}
             {options.length === 0 && (
               <ConfigEmpty
                 icon={<ListFilter className="h-5 w-5" />}
@@ -396,7 +164,6 @@ export const SelectConfigurationAccordion = () => {
           </div>
         </ScrollArea>
 
-        {/* ── Add Button ── */}
         <Button
           variant="ghost"
           size="sm"
@@ -407,13 +174,16 @@ export const SelectConfigurationAccordion = () => {
             "hover:border-border/60 hover:bg-muted/20 hover:text-muted-foreground",
             "transition-all duration-150",
           )}
-          onClick={handleAddOption}
+          onClick={() =>
+            updateSettings({
+              selectOptions: addSelectOption(options, newEntityId()),
+            })
+          }
         >
           <Plus className="mr-1.5 h-3 w-3" />
           Add option
         </Button>
 
-        {/* ── Summary ── */}
         {options.length > 0 && (
           <div className="flex items-center gap-1.5 pl-0.5 pt-0.5 animate-in fade-in-0 duration-150">
             <ListFilter className="h-3 w-3 text-muted-foreground/40" />
@@ -422,11 +192,11 @@ export const SelectConfigurationAccordion = () => {
                 {options.length}
               </span>{" "}
               {options.length === 1 ? "option" : "options"}
-              {defaultValue && (
+              {defaultValue !== undefined && (
                 <>
                   {" · default: "}
                   <span className="font-mono font-medium text-muted-foreground/70">
-                    {defaultValue}
+                    {defaultValue || "(empty)"}
                   </span>
                 </>
               )}

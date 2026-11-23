@@ -149,6 +149,7 @@ export interface IFrameElement extends Element<"IFrame", IFrameSettings> {
 
 export interface LinkElement extends Element<"Link"> {
   href?: string;
+  elements?: EditorElement[];
 }
 
 export interface ButtonElement extends Element<"Button"> {
@@ -241,10 +242,21 @@ export interface ListElement extends Element<"List"> {
   elements: EditorElement[];
 }
 
-export interface SelectElement extends Element<
-  "Select",
-  Partial<HTMLSelectElement>
-> {
+export interface SelectOption {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface SelectSettings {
+  name?: string;
+  selectOptions?: SelectOption[];
+  defaultValue?: string;
+  required?: boolean;
+  disabled?: boolean;
+}
+
+export interface SelectElement extends Element<"Select", SelectSettings> {
   elements: EditorElement[];
 }
 
