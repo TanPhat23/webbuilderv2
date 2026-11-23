@@ -113,8 +113,16 @@ export const useEditor = (
   const effectiveUserId = userId ?? undefined;
 
   const permissions = useEditorPermissions(id);
-  const { isReadOnly, isLocked, canCreate, permissionsSummary: accessPerms } =
-    resolveEditorAccess(options, permissions);
+  const { isReadOnly, isLocked, canCreate } = resolveEditorAccess(
+    options,
+    permissions,
+  );
+  const {
+    canCreateElements,
+    canEditElements,
+    canDeleteElements,
+    canReorderElements,
+  } = permissions;
 
   const addElement = useAddElement();
   const beginPage = useElementStore((state) => state.beginPage);
@@ -145,13 +153,13 @@ export const useEditor = (
 
   const isLoading = isLoadingPages || isLoadingProject;
   const permissionsSummary = useMemo(
-    () => accessPerms,
-    [
-      permissions.canCreateElements,
-      permissions.canEditElements,
-      permissions.canDeleteElements,
-      permissions.canReorderElements,
-    ],
+    () => ({
+      canCreateElements,
+      canEditElements,
+      canDeleteElements,
+      canReorderElements,
+    }),
+    [canCreateElements, canEditElements, canDeleteElements, canReorderElements],
   );
 
   return useMemo(

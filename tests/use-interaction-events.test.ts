@@ -3,9 +3,10 @@ import { test } from "node:test";
 import type { InteractionMap } from "../src/features/interactions/schema";
 import type { Planned } from "../src/features/interactions/runtime/dispatch";
 import type { HostRunner } from "../src/features/interactions/runtime/hostDom";
-import type { Platform } from "../src/features/interactions/runtime/executors";
+import type { NodeLike, Platform } from "../src/features/interactions/runtime/executors";
 import {
   dispatchImageError,
+  dispatchPendingLoads,
   handleHoverEvent,
   handleNativeEvent,
   pruneStaleLoadHistory,
@@ -16,6 +17,8 @@ import {
 class FakeElement {
   parentElement: FakeElement | null = null;
   ownerDocument: { defaultView: { Element: typeof FakeElement } };
+  complete = false;
+  naturalWidth = 0;
   currentSrc = "";
   readonly tagName: string;
   private readonly attrs: ReadonlyMap<string, string>;
@@ -77,13 +80,13 @@ function makeEvent(
   return { event: eventObj as unknown as Event, log };
 }
 
-function makeRunner(): {
+function makeRunner(nodes: Record<string, FakeElement> = {}): {
   runner: HostRunner;
   fired: { runs: Planned[]; event: Event | null }[];
 } {
   const fired: { runs: Planned[]; event: Event | null }[] = [];
   const platform: Platform = {
-    byId: () => null,
+    byId: (id) => (id in nodes ? (nodes[id] as unknown as NodeLike) : null),
     navigate: () => {},
     toast: () => {},
     copy: async () => {},
@@ -269,4 +272,34 @@ test("dispatchImageError deduplicates broken image loads and absorbs native erro
   const nextNative = makeEvent("error", img);
   dispatchImageError(asElement(img), nextNative.event, asElement(root), index, imageErrors, runner);
   assert.equal(fired.length, 2);
+});
+
+test("dispatchPendingLoads fires load interactions once per element and triggers error on broken loaded images", () => {
+  const { ownerDoc, root, button } = makeDomFixture();
+  const brokenImg = new FakeElement(
+    "IMG",
+    ownerDoc,
+    { "data-element-id": "img-1", src: "/broken.png" },
+    root,
+  );
+  brokenImg.complete = true;
+  brokenImg.naturalWidth = 0;
+
+  const index = new Map<string, InteractionMap>([
+    ["btn-1", { ix_load: { on: "load", do: [] } }],
+    ["img-1", { ix_err: { on: "error", do: [] } }],
+    ["missing-1", { ix_missing_load: { on: "load", do: [] } }],
+  ]);
+  const firedHistory = new Map<string, Set<string>>();
+  const imageErrors = new WeakMap<Element, ImageErrorState>();
+  const { runner, fired } = makeRunner({ "btn-1": button, "img-1": brokenImg });
+
+  dispatchPendingLoads(asElement(root), index, firedHistory, imageErrors, runner);
+  dispatchPendingLoads(asElement(root), index, firedHistory, imageErrors, runner);
+
+  assert.equal(fired.length, 2);
+  assert.deepEqual(
+    fired.map((entry) => entry.runs[0].ixId),
+    ["ix_load", "ix_err"],
+  );
 });

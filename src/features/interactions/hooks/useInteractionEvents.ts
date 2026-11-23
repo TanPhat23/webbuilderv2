@@ -118,7 +118,7 @@ export function dispatchImageError(
   runner.fireSequence(result.runs, event);
 }
 
-function dispatchPendingLoads(
+export function dispatchPendingLoads(
   root: Element,
   index: Map<string, InteractionMap>,
   fired: Map<string, Set<string>>,
