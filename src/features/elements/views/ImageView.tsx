@@ -3,6 +3,17 @@ import type { ImageElement } from "@/types/elements";
 import type { ViewProps } from "../view-props";
 
 export default function ImageView({ element, rootProps }: ViewProps<ImageElement>) {
-  return <img src={element.src || ""} alt={element.name ?? (element.content || "Image")}
-    {...rootProps} style={{ ...rootProps.style, objectFit: "cover" }} />;
+  return (
+    <img
+      src={element.src || ""}
+      alt={element.content ?? (element.name || "Image")}
+      loading={element.settings?.loading}
+      decoding={element.settings?.decoding}
+      {...rootProps}
+      style={{
+        objectFit: element.settings?.objectFit ?? "cover",
+        ...rootProps.style,
+      }}
+    />
+  );
 }

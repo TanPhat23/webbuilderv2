@@ -181,7 +181,9 @@ export default function Settings() {
   return (
     <div className="w-full">
       <Accordion type="multiple" className="w-full">
-        <Suspense fallback={<ConfigurationFallback />}>{content}</Suspense>
+        <Suspense fallback={<ConfigurationFallback />}>
+          <React.Fragment key={selectedElement.id}>{content}</React.Fragment>
+        </Suspense>
       </Accordion>
     </div>
   );
