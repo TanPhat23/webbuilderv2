@@ -152,13 +152,11 @@ function settingsFromAttributes(
   return next;
 }
 
-function withCustomProps(
-  settings: LooseRecord | null | undefined,
+function collectCustomProps(
   node: t.JSXElement,
   type: ElementType,
   tag: string,
-  attrs: ReadonlyMap<string, t.JSXAttribute>,
-): LooseRecord | null {
+): string[] {
   const modeled = new Set(["className", "data-element-id", ...(MODELED_ATTRIBUTES[tag] ?? [])]);
   const props: string[] = [];
   for (const attr of node.openingElement.attributes) {
@@ -168,7 +166,17 @@ function withCustomProps(
     }
     props.push(generate(attr).code);
   }
+  return props;
+}
 
+function withCustomProps(
+  settings: LooseRecord | null | undefined,
+  node: t.JSXElement,
+  type: ElementType,
+  tag: string,
+  attrs: ReadonlyMap<string, t.JSXAttribute>,
+): LooseRecord | null {
+  const props = collectCustomProps(node, type, tag);
   const before = settings ?? null;
   const beforeProps = Array.isArray(before?.codeProps) ? before.codeProps : [];
   let next = before;
@@ -242,6 +250,19 @@ function convertChildren(node: t.JSXElement, tag: string, parentId: string, ctx:
   return out;
 }
 
+function resolveOptionContent(
+  text: string,
+  value: string | undefined,
+  old: EditorElement | undefined,
+): string {
+  if (!old) return value !== undefined && value !== "" ? value : text;
+  const previous = old.content ?? "";
+  if (value === undefined || (text !== "" && text !== previous && value === previous)) {
+    return text;
+  }
+  return value;
+}
+
 function convertOptions(
   node: t.JSXElement,
   existing: EditorElement | undefined,
@@ -262,13 +283,7 @@ function convertOptions(
     const optionAttrs = readAttributes(option);
     const value = stringAttributeValue(optionAttrs, "value");
     const old = before[i];
-    const content = old
-      ? value === undefined || (text !== "" && text !== (old.content ?? "") && value === (old.content ?? ""))
-        ? text
-        : value
-      : value !== undefined && value !== ""
-        ? value
-        : text;
+    const content = resolveOptionContent(text, value, old);
 
     if (old) {
       if (old.content === content) return old;
@@ -302,6 +317,40 @@ function toComponentInstance(
   const rest = Object.fromEntries(entries);
   rest.parentId = parentId;
   return rest as unknown as EditorElement;
+}
+
+function assignElementContentAndUrls(
+  result: LooseRecord,
+  tag: string,
+  text: string,
+  attrs: ReadonlyMap<string, t.JSXAttribute>,
+  existing: EditorElement | undefined,
+): void {
+  if (tag === "img") {
+    const content = stringAttributeValue(attrs, "alt", true) ?? "";
+    if (content !== (existing?.content ?? "")) result.content = content;
+    result.src = stringAttribute(attrs, "src", existing?.src);
+  } else if (tag !== "select") {
+    if (text !== (existing?.content ?? "")) result.content = text;
+  }
+  if (tag === "a") result.href = stringAttribute(attrs, "href", existing?.href);
+}
+
+function assignElementChildren(
+  result: LooseRecord,
+  node: t.JSXElement,
+  tag: string,
+  type: ElementType,
+  id: string,
+  existing: EditorElement | undefined,
+  ctx: ParseContext,
+): void {
+  if (tag === "select") {
+    result.elements = convertOptions(node, existing, id, ctx);
+  } else if (!LEAF_TYPES.has(type)) {
+    const children = convertChildren(node, tag, id, ctx);
+    result.elements = existing ? keepUnsupported(children, childrenOf(existing)) : children;
+  }
 }
 
 export function convertElement(node: t.JSXElement, parentId: string | undefined, ctx: ParseContext): EditorElement {
@@ -338,23 +387,9 @@ export function convertElement(node: t.JSXElement, parentId: string | undefined,
   const tailwindStyles = ownClasses(written, existing);
   if (tailwindStyles !== undefined || existing) result.tailwindStyles = tailwindStyles;
 
-  if (tag === "img") {
-    const content = stringAttributeValue(attrs, "alt", true) ?? "";
-    if (content !== (existing?.content ?? "")) result.content = content;
-    result.src = stringAttribute(attrs, "src", existing?.src);
-  } else if (tag !== "select") {
-    if (text !== (existing?.content ?? "")) result.content = text;
-  }
-  if (tag === "a") result.href = stringAttribute(attrs, "href", existing?.href);
-
+  assignElementContentAndUrls(result, tag, text, attrs, existing);
   result.settings = resolveSettings(node, type, tag, attrs, existing);
-
-  if (tag === "select") {
-    result.elements = convertOptions(node, existing, id, ctx);
-  } else if (!LEAF_TYPES.has(type)) {
-    const children = convertChildren(node, tag, id, ctx);
-    result.elements = existing ? keepUnsupported(children, childrenOf(existing)) : children;
-  }
+  assignElementChildren(result, node, tag, type, id, existing, ctx);
 
   return result as unknown as EditorElement;
 }

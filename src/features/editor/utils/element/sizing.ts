@@ -110,6 +110,60 @@ export function readSizeMode(
   return "fixed";
 }
 
+function clearAxisMode(
+  next: SizingStyles,
+  axis: SizeAxis,
+  main: boolean,
+  cross: boolean,
+): void {
+  if (main) {
+    delete next.flexGrow;
+    delete next.flexShrink;
+    delete next.flexBasis;
+    if (isZero(next[MIN_KEY[axis]])) delete next[MIN_KEY[axis]];
+  }
+  if (cross && next.alignSelf === "stretch") delete next.alignSelf;
+  delete next[axis];
+}
+
+function applyFillMode(
+  next: SizingStyles,
+  axis: SizeAxis,
+  main: boolean,
+  cross: boolean,
+): void {
+  if (main) {
+    next.flexGrow = 1;
+    next.flexShrink = 1;
+    next.flexBasis = "0%";
+    next[MIN_KEY[axis]] = "0px";
+  } else if (cross) {
+    next.alignSelf = "stretch";
+  } else {
+    next[axis] = "100%";
+  }
+}
+
+function applyNonFillMode(
+  next: SizingStyles,
+  axis: SizeAxis,
+  mode: Exclude<SizeMode, "fill">,
+  layout: ParentLayout,
+  main: boolean,
+  current: string | number | undefined,
+  fixed?: string,
+): void {
+  if (mode === "hug") {
+    const autoHugs = main || (axis === "height" && layout.kind === "block");
+    if (!autoHugs) next[axis] = "fit-content";
+    return;
+  }
+  const keep =
+    !isUnset(current) && current !== "100%" && !INTRINSIC.has(String(current));
+  next[axis] = keep ? current : (fixed ?? "200px");
+  if (main) next.flexShrink = 0;
+}
+
 /**
  * Returns `styles` with one axis switched to `mode`. `fixed` is the size to
  * use for Fixed (e.g. the measured "320px"); the current value is kept when
@@ -125,39 +179,12 @@ export function writeSizeMode(
   const next: SizingStyles = { ...styles };
   const main = isMainAxis(axis, layout);
   const cross = layout.kind !== "block" && !main;
-  const current = styles[axis];
-
-  // Drop whatever the previous mode left behind on this axis.
-  if (main) {
-    delete next.flexGrow;
-    delete next.flexShrink;
-    delete next.flexBasis;
-    if (isZero(next[MIN_KEY[axis]])) delete next[MIN_KEY[axis]];
-  }
-  if (cross && next.alignSelf === "stretch") delete next.alignSelf;
-  delete next[axis];
+  clearAxisMode(next, axis, main, cross);
 
   if (mode === "fill") {
-    if (main) {
-      // Share the free space with siblings instead of claiming 100% of it.
-      next.flexGrow = 1;
-      next.flexShrink = 1;
-      next.flexBasis = "0%";
-      next[MIN_KEY[axis]] = "0px";
-    } else if (cross) {
-      next.alignSelf = "stretch";
-    } else {
-      next[axis] = "100%";
-    }
-  } else if (mode === "hug") {
-    // `auto` already hugs on a flex main axis and for block heights.
-    const autoHugs = main || (axis === "height" && layout.kind === "block");
-    if (!autoHugs) next[axis] = "fit-content";
+    applyFillMode(next, axis, main, cross);
   } else {
-    const keep =
-      !isUnset(current) && current !== "100%" && !INTRINSIC.has(String(current));
-    next[axis] = keep ? current : (fixed ?? "200px");
-    if (main) next.flexShrink = 0;
+    applyNonFillMode(next, axis, mode, layout, main, styles[axis], fixed);
   }
   return next;
 }

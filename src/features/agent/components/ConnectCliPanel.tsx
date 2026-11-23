@@ -26,6 +26,14 @@ const copy = (text: string) =>
       () => toast.error("Could not copy"),
     );
 
+function connectionStatus(editing: boolean, lastAt: number | null) {
+  if (editing) return { label: "Editing…", dot: "bg-primary animate-pulse" };
+  const recent = lastAt !== null && Date.now() - lastAt < 5 * 60_000;
+  return recent
+    ? { label: "Connected", dot: "bg-emerald-500" }
+    : { label: "Not connected", dot: "bg-muted-foreground/40" };
+}
+
 function CommandBlock({ label, text }: { label: string; text: string }) {
   return (
     <div className="space-y-1">
@@ -48,6 +56,80 @@ function CommandBlock({ label, text }: { label: string; text: string }) {
   );
 }
 
+function CreatedCommandsSection({
+  created,
+  onDone,
+}: {
+  created: CreatedAgentToken;
+  onDone: () => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">
+        Copy this now. It will not be shown again.
+      </p>
+      <CommandBlock
+        label="Claude Code"
+        text={claudeCodeCommand(created.mcpUrl, created.token)}
+      />
+      <CommandBlock
+        label="Codex CLI"
+        text={codexCommand(created.mcpUrl, created.token)}
+      />
+      <p className="text-muted-foreground text-xs">
+        After running the Codex setup command, start Codex from the same terminal.
+      </p>
+      <Button variant="outline" size="sm" onClick={onDone}>
+        Done
+      </Button>
+    </div>
+  );
+}
+
+function AgentTokenList({
+  tokens,
+  onRevoke,
+}: {
+  tokens: readonly AgentTokenInfo[];
+  onRevoke: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="text-muted-foreground text-xs font-medium">
+        Your tokens
+      </div>
+      {tokens.length === 0 && (
+        <p className="text-muted-foreground text-sm">None yet.</p>
+      )}
+      {tokens.map((t) => (
+        <div
+          key={t.id}
+          className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-sm"
+        >
+          <span className="min-w-0">
+            {t.name}{" "}
+            <span className="text-muted-foreground text-xs">
+              {t.prefix}…
+              {t.lastUsedAt
+                ? ` · used ${new Date(t.lastUsedAt).toLocaleString()}`
+                : " · never used"}
+            </span>
+          </span>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6 shrink-0"
+            aria-label={`Revoke ${t.name}`}
+            onClick={() => onRevoke(t.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * Inline "connect your CLI" card for the AI panel. Lets Claude Code or Codex
  * CLI read the user's projects and edit the open page.
@@ -60,13 +142,7 @@ export default function ConnectCliPanel() {
   const [created, setCreated] = useState<CreatedAgentToken | null>(null);
   const lastAt = useAgentActivity((s) => s.lastAt);
   const editing = useAgentActivity((s) => s.editing);
-  const recent = lastAt !== null && Date.now() - lastAt < 5 * 60_000;
-
-  const status = editing
-    ? { label: "Editing…", dot: "bg-primary animate-pulse" }
-    : recent
-      ? { label: "Connected", dot: "bg-emerald-500" }
-      : { label: "Not connected", dot: "bg-muted-foreground/40" };
+  const status = connectionStatus(editing, lastAt);
 
   const refresh = useCallback(async () => {
     try {
@@ -143,25 +219,10 @@ export default function ConnectCliPanel() {
         </p>
 
         {created ? (
-          <div className="space-y-3">
-            <p className="text-sm font-medium">
-              Copy this now. It will not be shown again.
-            </p>
-            <CommandBlock
-              label="Claude Code"
-              text={claudeCodeCommand(created.mcpUrl, created.token)}
-            />
-            <CommandBlock
-              label="Codex CLI"
-              text={codexCommand(created.mcpUrl, created.token)}
-            />
-            <p className="text-muted-foreground text-xs">
-              After running the Codex setup command, start Codex from the same terminal.
-            </p>
-            <Button variant="outline" size="sm" onClick={() => setCreated(null)}>
-              Done
-            </Button>
-          </div>
+          <CreatedCommandsSection
+            created={created}
+            onDone={() => setCreated(null)}
+          />
         ) : (
           <div className="flex gap-2">
             <Input
@@ -177,39 +238,7 @@ export default function ConnectCliPanel() {
           </div>
         )}
 
-        <div className="space-y-1">
-          <div className="text-muted-foreground text-xs font-medium">
-            Your tokens
-          </div>
-          {tokens.length === 0 && (
-            <p className="text-muted-foreground text-sm">None yet.</p>
-          )}
-          {tokens.map((t) => (
-            <div
-              key={t.id}
-              className="flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-sm"
-            >
-              <span className="min-w-0">
-                {t.name}{" "}
-                <span className="text-muted-foreground text-xs">
-                  {t.prefix}…
-                  {t.lastUsedAt
-                    ? ` · used ${new Date(t.lastUsedAt).toLocaleString()}`
-                    : " · never used"}
-                </span>
-              </span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 shrink-0"
-                aria-label={`Revoke ${t.name}`}
-                onClick={() => revoke(t.id)}
-              >
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          ))}
-        </div>
+        <AgentTokenList tokens={tokens} onRevoke={revoke} />
       </CollapsibleContent>
     </Collapsible>
   );

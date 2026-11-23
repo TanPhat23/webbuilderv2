@@ -30,6 +30,44 @@ function validDefault(type: string, value: unknown): boolean {
   }
 }
 
+function validateVariableEntries(
+  variables: Record<string, unknown>,
+  at: string,
+  error: (path: string, message: string) => void,
+): void {
+  for (const [name, def] of Object.entries(variables)) {
+    const path = `${at}.variables.${name}`;
+    if (!NAME_RE.test(name) || ['__proto__', 'constructor', 'prototype'].includes(name)) {
+      error(path, 'must be a valid expression-accessible name');
+    }
+    const result = VariableSchema.safeParse(def);
+    if (!result.success) {
+      for (const issue of result.error.issues) error([path, ...issue.path].join('.'), issue.message);
+    } else if (!isPlainObject(def) || !Object.hasOwn(def, 'default') || !validDefault(result.data.type, result.data.default)) {
+      error(`${path}.default`, 'default must match the variable type');
+    }
+  }
+}
+
+function validateFlowEntries(
+  flows: Record<string, unknown>,
+  at: string,
+  issues: Issue[],
+  error: (path: string, message: string) => void,
+): void {
+  const prefix = 'interactions.ix_aaaaaaaa';
+  for (const [name, flow] of Object.entries(flows)) {
+    const path = `${at}.flows.${name}`;
+    if (!NAME_RE.test(name)) error(path, 'must be a valid name');
+    if (!isPlainObject(flow)) { error(path, 'must be a flow object'); continue; }
+    for (const key of Object.keys(flow)) if (key !== 'do') error(`${path}.${key}`, 'unknown field');
+    if (!Array.isArray(flow.do)) { error(`${path}.do`, 'must be a list of steps'); continue; }
+    for (const issue of validateInteractionMap({ ix_aaaaaaaa: { on: 'click', do: flow.do } })) {
+      issues.push({ ...issue, path: path + issue.path.slice(prefix.length) });
+    }
+  }
+}
+
 export function validateLogic(value: unknown, at = 'logic'): Issue[] {
   const issues: Issue[] = [];
   const error = (path: string, message: string) => issues.push({ path, message, level: 'error' });
@@ -40,29 +78,9 @@ export function validateLogic(value: unknown, at = 'logic'): Issue[] {
   for (const key of Object.keys(value)) if (!['v', 'variables', 'flows'].includes(key)) error(`${at}.${key}`, 'unknown field');
   if (value.v !== 1) error(`${at}.v`, 'must be 1');
   if (!isPlainObject(value.variables)) error(`${at}.variables`, 'must be an object');
-  else for (const [name, def] of Object.entries(value.variables)) {
-    const path = `${at}.variables.${name}`;
-    if (!NAME_RE.test(name) || ['__proto__', 'constructor', 'prototype'].includes(name)) error(path, 'must be a valid expression-accessible name');
-    const result = VariableSchema.safeParse(def);
-    if (!result.success) {
-      for (const issue of result.error.issues) error([path, ...issue.path].join('.'), issue.message);
-    } else if (!isPlainObject(def) || !Object.hasOwn(def, 'default') || !validDefault(result.data.type, result.data.default)) {
-      error(`${path}.default`, 'default must match the variable type');
-    }
-  }
+  else validateVariableEntries(value.variables, at, error);
   if (!isPlainObject(value.flows)) error(`${at}.flows`, 'must be an object');
-  else for (const [name, flow] of Object.entries(value.flows)) {
-    const path = `${at}.flows.${name}`;
-    if (!NAME_RE.test(name)) error(path, 'must be a valid name');
-    if (!isPlainObject(flow)) { error(path, 'must be a flow object'); continue; }
-    for (const key of Object.keys(flow)) if (key !== 'do') error(`${path}.${key}`, 'unknown field');
-    // A flow always has a step list (possibly empty); the server requires it too.
-    if (!Array.isArray(flow.do)) { error(`${path}.do`, 'must be a list of steps'); continue; }
-    const prefix = 'interactions.ix_aaaaaaaa';
-    for (const issue of validateInteractionMap({ ix_aaaaaaaa: { on: 'click', do: flow.do } })) {
-      issues.push({ ...issue, path: path + issue.path.slice(prefix.length) });
-    }
-  }
+  else validateFlowEntries(value.flows, at, issues, error);
   return issues;
 }
 

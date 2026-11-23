@@ -216,6 +216,50 @@ export function findStronglyConnectedComponents(
   return components.sort((a, b) => a[0].localeCompare(b[0]));
 }
 
+function resolveToFile(
+  fileSet: ReadonlySet<string>,
+  fromRel: string,
+  specifier: string,
+): string | null {
+  const base = resolveImportToSrcRelative(fromRel, specifier);
+  if (!base) return null;
+  for (const candidate of [
+    base,
+    `${base}.ts`,
+    `${base}.tsx`,
+    `${base}/index.ts`,
+    `${base}/index.tsx`,
+  ]) {
+    if (fileSet.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+function addEdgesForFile(
+  rel: string,
+  fileSet: ReadonlySet<string>,
+  generatedFiles: ReadonlySet<string>,
+  topLevel: Map<string, Set<string>>,
+  features: Map<string, Set<string>>,
+  files: Map<string, Set<string>>,
+): void {
+  const fromTop = rel.split("/")[0];
+  const fromFeat = fromTop === "features" ? rel.split("/")[1] : null;
+  const full = path.join(SRC_ROOT, rel);
+  const text = fs.readFileSync(full, "utf8");
+  for (const specifier of extractModuleSpecifiers(text, full)) {
+    const target = resolveToFile(fileSet, rel, specifier);
+    if (!target || target === rel || generatedFiles.has(target)) continue;
+    files.get(rel)!.add(target);
+    const toTop = target.split("/")[0];
+    if (fromTop !== toTop) topLevel.get(fromTop)!.add(toTop);
+    const toFeat = toTop === "features" ? target.split("/")[1] : null;
+    if (fromFeat && toFeat && fromFeat !== toFeat) {
+      features.get(fromFeat)!.add(toFeat);
+    }
+  }
+}
+
 function buildSourceGraphs(): {
   topLevel: Map<string, Set<string>>;
   features: Map<string, Set<string>>;
@@ -226,22 +270,6 @@ function buildSourceGraphs(): {
   );
   const fileSet = new Set(allFiles);
   const generatedFiles = new Set(["routeTree.gen.ts"]);
-
-  const resolveToFile = (fromRel: string, specifier: string): string | null => {
-    const base = resolveImportToSrcRelative(fromRel, specifier);
-    if (!base) return null;
-    for (const candidate of [
-      base,
-      `${base}.ts`,
-      `${base}.tsx`,
-      `${base}/index.ts`,
-      `${base}/index.tsx`,
-    ]) {
-      if (fileSet.has(candidate)) return candidate;
-    }
-    return null;
-  };
-
   const topLevel = new Map<string, Set<string>>();
   const features = new Map<string, Set<string>>();
   const files = new Map<string, Set<string>>();
@@ -258,23 +286,8 @@ function buildSourceGraphs(): {
   }
 
   for (const rel of allFiles) {
-    if (generatedFiles.has(rel)) continue;
-    const fromTop = rel.split("/")[0];
-    const fromFeat = fromTop === "features" ? rel.split("/")[1] : null;
-    const full = path.join(SRC_ROOT, rel);
-    const text = fs.readFileSync(full, "utf8");
-    for (const specifier of extractModuleSpecifiers(text, full)) {
-      const target = resolveToFile(rel, specifier);
-      if (!target || target === rel || generatedFiles.has(target)) continue;
-      files.get(rel)!.add(target);
-      const toTop = target.split("/")[0];
-      if (fromTop !== toTop) {
-        topLevel.get(fromTop)!.add(toTop);
-      }
-      const toFeat = toTop === "features" ? target.split("/")[1] : null;
-      if (fromFeat && toFeat && fromFeat !== toFeat) {
-        features.get(fromFeat)!.add(toFeat);
-      }
+    if (!generatedFiles.has(rel)) {
+      addEdgesForFile(rel, fileSet, generatedFiles, topLevel, features, files);
     }
   }
 

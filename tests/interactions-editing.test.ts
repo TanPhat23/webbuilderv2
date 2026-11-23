@@ -79,6 +79,8 @@ test("autocomplete after {{", () => {
   assert.deepEqual(suggest("{{ steps.signup.", 16, ctx)!.items.map((i) => i.label), ["ok", "status", "data", "error"]);
   assert.deepEqual(suggest("{{ el.Em", 8, ctx)!.items, [{ label: "Email field", insert: "el.e1.", detail: "e1" }]);
   assert.deepEqual(suggest("{{ el.e1.v", 10, ctx)!.items.map((i) => i.label), ["value", "visible"]);
+  assert.deepEqual(suggest("{{ el['e1'].v", 14, ctx)!.items.map((i) => i.label), ["value", "visible"]);
+  assert.equal(suggest("{{ el['e1'].s", 14, ctx), null);
 });
 
 test("pick mode hands the picked id to the waiting field once", () => {

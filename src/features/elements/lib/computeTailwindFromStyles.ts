@@ -1,260 +1,227 @@
 import type { CSSProperties } from "react";
-import { get, isUndefined, isNull, isString, isNumber, includes } from 'lodash-es';
+import { get, isNull, isNumber, isUndefined, includes } from "lodash-es";
 import type { ResponsiveStyles } from "@/types/elements";
+
+const SPACING_ENTRIES: ReadonlyArray<readonly [string, string]> = [
+  ["padding", "p"],
+  ["paddingTop", "pt"],
+  ["paddingBottom", "pb"],
+  ["paddingLeft", "pl"],
+  ["paddingRight", "pr"],
+  ["margin", "m"],
+  ["marginTop", "mt"],
+  ["marginBottom", "mb"],
+  ["marginLeft", "ml"],
+  ["marginRight", "mr"],
+];
+
+const GAP_ENTRIES: ReadonlyArray<readonly [string, string]> = [
+  ["gap", "gap"],
+  ["rowGap", "row-gap"],
+  ["columnGap", "col-gap"],
+];
+
+const OFFSET_PROPS = ["top", "bottom", "left", "right"] as const;
+
+function pushArbitrary(
+  classes: string[],
+  prefix: string,
+  raw: unknown,
+): void {
+  if (isEmptyValue(raw)) return;
+  const normalized = isNumber(raw) ? `${raw}px` : String(raw);
+  const safe = sanitizeForArbitrary(normalized);
+  if (safe) classes.push(`${prefix}-[${safe}]`);
+}
+
+function lookupClass(
+  map: Readonly<Record<string, string>>,
+  key: string | number,
+): string | undefined {
+  const strKey = String(key);
+  return Object.hasOwn(map, strKey) ? map[strKey] : undefined;
+}
+
+function pushRawArbitrary(
+  classes: string[],
+  prefix: string,
+  raw: unknown,
+): void {
+  if (isEmptyValue(raw)) return;
+  const safe = sanitizeForArbitrary(String(raw));
+  if (safe) classes.push(`${prefix}-[${safe}]`);
+}
+
+function getMappedClass(
+  value: unknown,
+  map: Readonly<Record<string, string>>,
+  prefix: string,
+): string | undefined {
+  if (isEmptyValue(value)) return undefined;
+  const strValue = String(value).trim();
+  const mappedClass = lookupClass(map, strValue);
+  if (mappedClass) return mappedClass;
+  if (!prefix) return undefined;
+  const safe = sanitizeForArbitrary(strValue);
+  return safe ? `${prefix}-[${safe}]` : undefined;
+}
+
+function pushDimensionClass(
+  classes: string[],
+  value: unknown,
+  prefix: "w" | "h",
+  autoClass: "w-auto" | "h-auto",
+): void {
+  if (isEmptyValue(value)) return;
+  if (value === "auto") classes.push(autoClass);
+  else pushArbitrary(classes, prefix, value);
+}
+
+function pushPrefixedEntries(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+  entries: ReadonlyArray<readonly [string, string]>,
+): void {
+  for (const [prop, prefix] of entries) {
+    const value = get(styles, prop);
+    if (!isEmptyValue(value)) pushArbitrary(classes, prefix, value);
+  }
+}
+
+function pushOpacityClass(classes: string[], opacity: unknown): void {
+  if (isEmptyValue(opacity)) return;
+  let normalized: string;
+  if (isNumber(opacity)) {
+    normalized =
+      opacity > 1 && opacity <= 100 ? String(opacity / 100) : String(opacity);
+  } else {
+    normalized = String(opacity);
+  }
+  pushRawArbitrary(classes, "opacity", normalized);
+}
+
+function pushBoxAndColorStyles(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+): void {
+  pushDimensionClass(classes, get(styles, "width"), "w", "w-auto");
+  pushDimensionClass(classes, get(styles, "height"), "h", "h-auto");
+  pushRawArbitrary(classes, "bg", get(styles, "backgroundColor"));
+  pushRawArbitrary(classes, "text", get(styles, "color"));
+  pushArbitrary(classes, "rounded", get(styles, "borderRadius"));
+  pushArbitrary(classes, "border", get(styles, "borderWidth"));
+  pushRawArbitrary(classes, "border", get(styles, "borderColor"));
+  pushOpacityClass(classes, get(styles, "opacity"));
+  pushPrefixedEntries(classes, styles, SPACING_ENTRIES);
+}
+
+function pushMappedProp(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+  prop: keyof CSSProperties,
+  map: Readonly<Record<string, string>>,
+  prefix: string,
+): void {
+  const value = get(styles, prop);
+  if (!value) return;
+  const cls = getMappedClass(value, map, prefix);
+  if (cls) classes.push(cls);
+}
+
+function pushLayoutStyles(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+): void {
+  const display = get(styles, "display");
+  if (display) {
+    classes.push(lookupClass(DISPLAY_MAP, String(display).trim()) ?? "block");
+  }
+  pushMappedProp(classes, styles, "flexDirection", FLEX_DIRECTION_MAP, "flex");
+  pushMappedProp(classes, styles, "justifyContent", JUSTIFY_CONTENT_MAP, "justify");
+  pushMappedProp(classes, styles, "alignItems", ALIGN_ITEMS_MAP, "items");
+  pushPrefixedEntries(classes, styles, GAP_ENTRIES);
+}
+
+function pushFontWeightClass(classes: string[], fontWeight: unknown): void {
+  if (isEmptyValue(fontWeight)) return;
+  if (isNumber(fontWeight)) {
+    const weightClass = lookupClass(FONT_WEIGHT_MAP, fontWeight);
+    weightClass
+      ? classes.push(weightClass)
+      : pushRawArbitrary(classes, "font", fontWeight);
+    return;
+  }
+  const weightStr = String(fontWeight).trim();
+  if (includes(["normal", "400"], weightStr)) classes.push("font-normal");
+  else if (includes(["bold", "700"], weightStr)) classes.push("font-bold");
+  else pushRawArbitrary(classes, "font", weightStr);
+}
+
+function pushFontFamilyClass(classes: string[], fontFamily: unknown): void {
+  if (!fontFamily) return;
+  const ffRaw = String(fontFamily).trim();
+  if (isCssVar(ffRaw)) {
+    pushRawArbitrary(classes, "font", ffRaw);
+  } else if (/sans/i.test(ffRaw)) {
+    classes.push("sans");
+  } else if (/serif/i.test(ffRaw)) {
+    classes.push("serif");
+  } else if (/monospace/i.test(ffRaw)) {
+    classes.push("mono");
+  } else {
+    pushRawArbitrary(classes, "font", ffRaw);
+  }
+}
+
+function pushTextStyleClasses(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+): void {
+  pushMappedProp(classes, styles, "textAlign", TEXT_ALIGN_MAP, "text");
+  pushMappedProp(classes, styles, "textTransform", TEXT_TRANSFORM_MAP, "");
+  pushMappedProp(classes, styles, "textDecoration", TEXT_DECORATION_MAP, "");
+
+  const fontStyle = get(styles, "fontStyle");
+  if (fontStyle && includes(["italic", "oblique"], String(fontStyle).trim())) {
+    classes.push("italic");
+  }
+
+  pushFontFamilyClass(classes, get(styles, "fontFamily"));
+}
+
+function pushTypographyStyles(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+): void {
+  pushArbitrary(classes, "text", get(styles, "fontSize"));
+  pushFontWeightClass(classes, get(styles, "fontWeight"));
+  pushArbitrary(classes, "leading", get(styles, "lineHeight"));
+  pushArbitrary(classes, "tracking", get(styles, "letterSpacing"));
+  pushTextStyleClasses(classes, styles);
+}
+
+function pushPositionStyles(
+  classes: string[],
+  styles: Partial<CSSProperties>,
+): void {
+  const zIndex = get(styles, "zIndex");
+  if (!isEmptyValue(zIndex)) {
+    classes.push(`z-[${String(zIndex)}]`);
+  }
+  for (const prop of OFFSET_PROPS) {
+    pushArbitrary(classes, prop, get(styles, prop));
+  }
+}
 
 function computeTailwindFromStylesSingle(
   styles: Partial<CSSProperties> | undefined,
 ): string {
   if (!styles) return "";
-
   const classes: string[] = [];
-
-  const pushArbitrary = (prefix: string, raw: unknown) => {
-    if (isEmptyValue(raw)) return;
-
-    let normalized: string;
-    if (isNumber(raw)) {
-      normalized = `${raw}px`;
-    } else {
-      normalized = String(raw);
-    }
-
-    const safe = sanitizeForArbitrary(normalized);
-    if (!safe) return;
-    classes.push(`${prefix}-[${safe}]`);
-  };
-
-  const getMappedClass = (
-    value: unknown,
-    map: Record<string, string>,
-    prefix: string,
-  ): string | undefined => {
-    if (isEmptyValue(value)) return undefined;
-
-    const strValue = String(value).trim();
-    const mappedClass = get(map, strValue);
-
-    return (
-      mappedClass ||
-      (prefix ? `${prefix}-[${sanitizeForArbitrary(strValue)}]` : undefined)
-    );
-  };
-
-  const width = get(styles, "width");
-  if (!isEmptyValue(width)) {
-    width === "auto" ? classes.push("w-auto") : pushArbitrary("w", width);
-  }
-
-  const height = get(styles, "height");
-  if (!isEmptyValue(height)) {
-    height === "auto" ? classes.push("h-auto") : pushArbitrary("h", height);
-  }
-
-  const bgColor = get(styles, "backgroundColor");
-  if (bgColor) {
-    pushIf(classes, `bg-[${sanitizeForArbitrary(bgColor)}]`);
-  }
-
-  const color = get(styles, "color");
-  if (color) {
-    pushIf(classes, `text-[${sanitizeForArbitrary(color)}]`);
-  }
-
-  const borderRadius = get(styles, "borderRadius");
-  if (!isEmptyValue(borderRadius)) {
-    const val = isNumber(borderRadius)
-      ? `${borderRadius}px`
-      : String(borderRadius);
-    pushIf(classes, `rounded-[${sanitizeForArbitrary(val)}]`);
-  }
-
-  const borderWidth = get(styles, "borderWidth");
-  if (!isEmptyValue(borderWidth)) {
-    const val = isNumber(borderWidth)
-      ? `${borderWidth}px`
-      : String(borderWidth);
-    pushIf(classes, `border-[${sanitizeForArbitrary(val)}]`);
-  }
-
-  const borderColor = get(styles, "borderColor");
-  if (borderColor) {
-    pushIf(classes, `border-[${sanitizeForArbitrary(borderColor)}]`);
-  }
-
-  const opacity = get(styles, "opacity");
-  if (!isEmptyValue(opacity)) {
-    let normalized: string;
-    if (isNumber(opacity)) {
-      normalized =
-        opacity > 1 && opacity <= 100 ? String(opacity / 100) : String(opacity);
-    } else {
-      normalized = String(opacity);
-    }
-    pushIf(classes, `opacity-[${sanitizeForArbitrary(normalized)}]`);
-  }
-
-  const spacingProps = [
-    "padding",
-    "paddingTop",
-    "paddingBottom",
-    "paddingLeft",
-    "paddingRight",
-    "margin",
-    "marginTop",
-    "marginBottom",
-    "marginLeft",
-    "marginRight",
-  ];
-
-  const spacingPrefixes = {
-    padding: "p",
-    paddingTop: "pt",
-    paddingBottom: "pb",
-    paddingLeft: "pl",
-    paddingRight: "pr",
-    margin: "m",
-    marginTop: "mt",
-    marginBottom: "mb",
-    marginLeft: "ml",
-    marginRight: "mr",
-  };
-
-  spacingProps.forEach((prop) => {
-    const value = get(styles, prop);
-    if (!isEmptyValue(value)) {
-      const prefix = get(spacingPrefixes, prop);
-      pushArbitrary(prefix, value);
-    }
-  });
-
-  const display = get(styles, "display");
-  if (display) {
-    const displayClass = get(DISPLAY_MAP, String(display).trim());
-    displayClass ? classes.push(displayClass) : pushIf(classes, "block");
-  }
-
-  const flexDirection = get(styles, "flexDirection");
-  if (flexDirection) {
-    const flexClass = getMappedClass(flexDirection, FLEX_DIRECTION_MAP, "flex");
-    if (flexClass) classes.push(flexClass);
-  }
-
-  const justifyContent = get(styles, "justifyContent");
-  if (justifyContent) {
-    const justifyClass = getMappedClass(
-      justifyContent,
-      JUSTIFY_CONTENT_MAP,
-      "justify",
-    );
-    if (justifyClass) classes.push(justifyClass);
-  }
-
-  const alignItems = get(styles, "alignItems");
-  if (alignItems) {
-    const alignClass = getMappedClass(alignItems, ALIGN_ITEMS_MAP, "items");
-    if (alignClass) classes.push(alignClass);
-  }
-
-  const gapProps = ["gap", "rowGap", "columnGap"];
-  const gapPrefixes = { gap: "gap", rowGap: "row-gap", columnGap: "col-gap" };
-
-  gapProps.forEach((prop) => {
-    const value = get(styles, prop);
-    if (!isEmptyValue(value)) {
-      const prefix = get(gapPrefixes, prop);
-      pushArbitrary(prefix, value);
-    }
-  });
-
-  const fontSize = get(styles, "fontSize");
-  if (!isEmptyValue(fontSize)) {
-    pushArbitrary("text", fontSize);
-  }
-
-  // Font weight
-  const fontWeight = get(styles, "fontWeight");
-  if (!isEmptyValue(fontWeight)) {
-    if (isNumber(fontWeight)) {
-      const weightClass = get(FONT_WEIGHT_MAP, fontWeight);
-      weightClass
-        ? classes.push(weightClass)
-        : pushIf(classes, `font-[${sanitizeForArbitrary(String(fontWeight))}]`);
-    } else {
-      const weightStr = String(fontWeight).trim();
-      if (includes(["normal", "400"], weightStr)) classes.push("font-normal");
-      else if (includes(["bold", "700"], weightStr)) classes.push("font-bold");
-      else pushIf(classes, `font-[${sanitizeForArbitrary(weightStr)}]`);
-    }
-  }
-
-  const lineHeight = get(styles, "lineHeight");
-  if (!isEmptyValue(lineHeight)) {
-    pushArbitrary("leading", lineHeight);
-  }
-
-  const letterSpacing = get(styles, "letterSpacing");
-  if (!isEmptyValue(letterSpacing)) {
-    pushArbitrary("tracking", letterSpacing);
-  }
-
-  const textAlign = get(styles, "textAlign");
-  if (textAlign) {
-    const alignClass = getMappedClass(textAlign, TEXT_ALIGN_MAP, "text");
-    if (alignClass) classes.push(alignClass);
-  }
-
-  const textTransform = get(styles, "textTransform");
-  if (textTransform) {
-    const transformClass = getMappedClass(
-      textTransform,
-      TEXT_TRANSFORM_MAP,
-      "",
-    );
-    if (transformClass) classes.push(transformClass);
-  }
-
-  const textDecoration = get(styles, "textDecoration");
-  if (textDecoration) {
-    const decorationClass = getMappedClass(
-      textDecoration,
-      TEXT_DECORATION_MAP,
-      "",
-    );
-    if (decorationClass) classes.push(decorationClass);
-  }
-
-  const fontStyle = get(styles, "fontStyle");
-  if (fontStyle) {
-    const styleStr = String(fontStyle).trim();
-    if (includes(["italic", "oblique"], styleStr)) classes.push("italic");
-  }
-
-  const fontFamily = get(styles, "fontFamily");
-  if (fontFamily) {
-    const ffRaw = String(fontFamily).trim();
-    if (isCssVar(ffRaw)) {
-      pushIf(classes, `font-[${sanitizeForArbitrary(ffRaw)}]`);
-    } else {
-      if (/serif/i.test(ffRaw)) classes.push("serif");
-      else if (/sans/i.test(ffRaw)) classes.push("sans");
-      else if (/monospace/i.test(ffRaw)) classes.push("mono");
-      else pushIf(classes, `font-[${sanitizeForArbitrary(ffRaw)}]`);
-    }
-  }
-
-  const zIndex = get(styles, "zIndex");
-  if (!isEmptyValue(zIndex)) {
-    classes.push(`z-[${String(zIndex)}]`);
-  }
-
-  const offsetProps = ["top", "bottom", "left", "right"];
-  offsetProps.forEach((prop) => {
-    const value = get(styles, prop);
-    if (!isEmptyValue(value)) {
-      pushArbitrary(prop, value);
-    }
-  });
-
+  pushBoxAndColorStyles(classes, styles);
+  pushLayoutStyles(classes, styles);
+  pushTypographyStyles(classes, styles);
+  pushPositionStyles(classes, styles);
   return classes.join(" ").trim();
 }
 
@@ -275,32 +242,18 @@ const isEmptyValue = (val: unknown): boolean =>
 function sanitizeForArbitrary(raw: string | number): string {
   const asStr = String(raw);
   let cleaned = basicClean(asStr);
-
-  // Normalize spaces after commas so values like `var(--bg, #fff)` become `var(--bg,#fff)`
-  // This avoids unnecessary quoting when the only whitespace is after commas.
   cleaned = cleaned.replace(/,\s+/g, ",");
 
   if (cleaned.length === 0) return "";
-
   if (isCssVar(cleaned)) return cleaned;
 
-  const containsWhitespace = /\s/.test(cleaned);
-  const containsSingleQuote = /'/.test(cleaned);
-  const containsDoubleQuote = /"/.test(cleaned);
-
-  if (containsWhitespace || containsSingleQuote || containsDoubleQuote) {
-    const escaped = cleaned.replace(/'/g, "\\'");
-    return `'${escaped}'`;
+  const needsQuotes = /[\s'"]/.test(cleaned);
+  if (needsQuotes) {
+    return `'${cleaned.replace(/'/g, "\\'")}'`;
   }
 
   return cleaned;
 }
-
-const pushIf = (arr: string[], cls?: string | false | null) => {
-  if (!cls) return;
-  const n = String(cls).trim();
-  if (n.length) arr.push(n);
-};
 
 const DISPLAY_MAP = {
   flex: "flex",
@@ -361,7 +314,7 @@ const TEXT_DECORATION_MAP = {
   none: "no-underline",
 } as const;
 
-const FONT_WEIGHT_MAP = {
+const FONT_WEIGHT_MAP: Readonly<Record<string, string>> = {
   100: "font-thin",
   200: "font-extralight",
   300: "font-light",
@@ -371,7 +324,7 @@ const FONT_WEIGHT_MAP = {
   700: "font-bold",
   800: "font-extrabold",
   900: "font-black",
-} as const;
+};
 
 export function computeTailwindFromStyles(
   styles: ResponsiveStyles | undefined,

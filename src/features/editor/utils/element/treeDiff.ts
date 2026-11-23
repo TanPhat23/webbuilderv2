@@ -107,6 +107,135 @@ function index(tree: EditorElement[]): Index {
   return out;
 }
 
+function detachFromParent(
+  kids: Map<string, string[]>,
+  parent: Map<string, string>,
+  id: string,
+): void {
+  const list = kids.get(parent.get(id) ?? ROOT);
+  const at = list?.indexOf(id) ?? -1;
+  if (list && at >= 0) list.splice(at, 1);
+}
+
+function appendDeleteOps(
+  b: Index,
+  a: Index,
+  kids: Map<string, string[]>,
+  parent: Map<string, string>,
+  ops: TreeOp[],
+): void {
+  for (const id of b.byId.keys()) {
+    if (a.byId.has(id)) continue;
+    const up = b.parent.get(id) ?? ROOT;
+    if (up !== ROOT && !a.byId.has(up)) continue;
+    ops.push({ type: "delete", id });
+    detachFromParent(kids, parent, id);
+  }
+}
+
+function appendDetachComponentOps(b: Index, a: Index, ops: TreeOp[]): Set<string> {
+  const detached = new Set<string>();
+  for (const [id, next] of a.byId) {
+    const prev = b.byId.get(id);
+    if (!prev || !componentSetting(prev) || componentSetting(next)) continue;
+    const patch = elementPatch(prev, next);
+    if (patch) ops.push({ type: "update", id, patch });
+    detached.add(id);
+  }
+  return detached;
+}
+
+function registerSubtree(
+  a: Index,
+  kids: Map<string, string[]>,
+  parent: Map<string, string>,
+  pid: string,
+): void {
+  kids.set(pid, [...(a.kids.get(pid) ?? [])]);
+  for (const child of a.kids.get(pid) ?? []) {
+    parent.set(child, pid);
+    registerSubtree(a, kids, parent, child);
+  }
+}
+
+function appendCreateOps(
+  b: Index,
+  a: Index,
+  kids: Map<string, string[]>,
+  parent: Map<string, string>,
+  ops: TreeOp[],
+): void {
+  const added = [...a.byId.keys()]
+    .filter((id) => {
+      if (b.byId.has(id)) return false;
+      const up = a.parent.get(id) ?? ROOT;
+      return up === ROOT || b.byId.has(up);
+    })
+    .sort((x, y) => {
+      const px = a.parent.get(x) ?? ROOT;
+      const py = a.parent.get(y) ?? ROOT;
+      if (px !== py) return px < py ? -1 : 1;
+      return (a.kids.get(px)?.indexOf(x) ?? 0) - (a.kids.get(py)?.indexOf(y) ?? 0);
+    });
+
+  for (const id of added) {
+    const element = a.byId.get(id);
+    if (!element) continue;
+    const up = a.parent.get(id) ?? ROOT;
+    const list = kids.get(up) ?? [];
+    const at = Math.min(a.kids.get(up)?.indexOf(id) ?? list.length, list.length);
+    list.splice(at, 0, id);
+    kids.set(up, list);
+    parent.set(id, up);
+    registerSubtree(a, kids, parent, id);
+    ops.push({ type: "create", element });
+  }
+}
+
+function appendMoveOps(
+  a: Index,
+  kids: Map<string, string[]>,
+  parent: Map<string, string>,
+  ops: TreeOp[],
+): void {
+  const queue = [ROOT];
+  while (queue.length) {
+    const pid = queue.shift();
+    if (pid === undefined) continue;
+    const want = a.kids.get(pid) ?? [];
+    const list = kids.get(pid) ?? [];
+    kids.set(pid, list);
+    want.forEach((id, i) => {
+      if (list[i] !== id) {
+        detachFromParent(kids, parent, id);
+        list.splice(i, 0, id);
+        parent.set(id, pid);
+        ops.push({
+          type: "move",
+          id,
+          newParentId: pid === ROOT ? null : pid,
+          newPosition: i,
+        });
+      }
+    });
+    queue.push(...want);
+  }
+}
+
+function appendFieldUpdateOps(
+  b: Index,
+  a: Index,
+  detached: ReadonlySet<string>,
+  ops: TreeOp[],
+): void {
+  for (const [id, next] of a.byId) {
+    const prev = b.byId.get(id);
+    if (!prev || detached.has(id)) continue;
+    const patch = elementPatch(prev, next);
+    if (patch) ops.push({ type: "update", id, patch });
+  }
+}
+
 /**
  * Operations that turn `before` into `after`, in an order that is valid to
  * apply one after another: deletes, creates, moves, then field updates.
@@ -120,100 +249,14 @@ export function diffTrees(
   const a = index(after);
   const ops: TreeOp[] = [];
 
-  // The server's tree as the operations are applied.
   const kids = new Map<string, string[]>();
   for (const [k, v] of b.kids) kids.set(k, [...v]);
   const parent = new Map(b.parent);
-  const detach = (id: string) => {
-    const list = kids.get(parent.get(id) ?? ROOT);
-    const at = list?.indexOf(id) ?? -1;
-    if (list && at >= 0) list.splice(at, 1);
-  };
 
-  // Deletes: only the top of each removed subtree, its children go with it.
-  for (const id of b.byId.keys()) {
-    if (a.byId.has(id)) continue;
-    const up = b.parent.get(id) ?? ROOT;
-    if (up !== ROOT && !a.byId.has(up)) continue;
-    ops.push({ type: "delete", id });
-    detach(id);
-  }
-
-  // Clearing a component link turns the root back into a normal container.
-  // Send that update before creating the detached children.
-  const detached = new Set<string>();
-  for (const [id, next] of a.byId) {
-    const prev = b.byId.get(id);
-    if (!prev || !componentSetting(prev) || componentSetting(next)) continue;
-    const patch = elementPatch(prev, next);
-    if (patch) ops.push({ type: "update", id, patch });
-    detached.add(id);
-  }
-
-  // Creates: the top of each added subtree, lowest position first so each
-  // insert lands where the final order expects it.
-  const added = [...a.byId.keys()]
-    .filter((id) => {
-      if (b.byId.has(id)) return false;
-      const up = a.parent.get(id) ?? ROOT;
-      return up === ROOT || b.byId.has(up);
-    })
-    .sort((x, y) => {
-      const px = a.parent.get(x) ?? ROOT;
-      const py = a.parent.get(y) ?? ROOT;
-      if (px !== py) return px < py ? -1 : 1;
-      return (a.kids.get(px)?.indexOf(x) ?? 0) - (a.kids.get(py)?.indexOf(y) ?? 0);
-    });
-  for (const id of added) {
-    const up = a.parent.get(id) ?? ROOT;
-    const list = kids.get(up) ?? [];
-    const at = Math.min(a.kids.get(up)?.indexOf(id) ?? list.length, list.length);
-    list.splice(at, 0, id);
-    kids.set(up, list);
-    parent.set(id, up);
-    // Register the created subtree so later moves can target it.
-    const register = (pid: string) => {
-      kids.set(pid, [...(a.kids.get(pid) ?? [])]);
-      for (const child of a.kids.get(pid) ?? []) {
-        parent.set(child, pid);
-        register(child);
-      }
-    };
-    register(id);
-    ops.push({ type: "create", element: a.byId.get(id)! });
-  }
-
-  // Moves: walk the final tree parent by parent and fix any position that
-  // doesn't match yet.
-  const queue = [ROOT];
-  while (queue.length) {
-    const pid = queue.shift()!;
-    const want = a.kids.get(pid) ?? [];
-    const list = kids.get(pid) ?? [];
-    kids.set(pid, list);
-    want.forEach((id, i) => {
-      if (list[i] !== id) {
-        detach(id);
-        list.splice(i, 0, id);
-        parent.set(id, pid);
-        ops.push({
-          type: "move",
-          id,
-          newParentId: pid === ROOT ? null : pid,
-          newPosition: i,
-        });
-      }
-    });
-    queue.push(...want);
-  }
-
-  // Field changes of elements that exist on both sides. Created elements
-  // already carry their final fields.
-  for (const [id, next] of a.byId) {
-    const prev = b.byId.get(id);
-    if (!prev || detached.has(id)) continue;
-    const patch = elementPatch(prev, next);
-    if (patch) ops.push({ type: "update", id, patch });
-  }
+  appendDeleteOps(b, a, kids, parent, ops);
+  const detached = appendDetachComponentOps(b, a, ops);
+  appendCreateOps(b, a, kids, parent, ops);
+  appendMoveOps(a, kids, parent, ops);
+  appendFieldUpdateOps(b, a, detached, ops);
   return ops;
 }

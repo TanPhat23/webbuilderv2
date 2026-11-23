@@ -1,4 +1,3 @@
-// src/features/interactions/runtime/executors.ts
 /**
  * What each verb does to the page. DOM access goes through a small Platform
  * port so the executors can be tested without a browser, and so the editor
@@ -174,41 +173,50 @@ export function createExecutors(p: Platform): Executors {
   };
 }
 
+function buildApiRequestInit(
+  s: CallStep,
+  value: (t: string) => unknown,
+): { headers: Record<string, string>; body: string | undefined } {
+  const headers: Record<string, string> = Object.create(null);
+  for (const [k, v] of Object.entries(s.headers ?? {})) headers[k] = toText(value(v));
+  if (s.body === undefined || s.method === "GET") {
+    return { headers, body: undefined };
+  }
+  const v = value(s.body);
+  const body = typeof v === "string" ? v : JSON.stringify(v ?? null);
+  const hasType = Object.keys(headers).some((h) => h.toLowerCase() === "content-type");
+  if (typeof v !== "string" && !hasType) headers["Content-Type"] = "application/json";
+  return { headers, body };
+}
+
+function parseApiPayload(text: string): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
 async function callApi(
   p: Platform,
   s: CallStep,
   value: (t: string) => unknown,
 ): Promise<CallResult> {
-  let controller: AbortController | undefined;
+  const controller = new AbortController();
   try {
-    const headers: Record<string, string> = Object.create(null);
-    for (const [k, v] of Object.entries(s.headers ?? {})) headers[k] = toText(value(v));
-    let body: string | undefined;
-    if (s.body !== undefined && s.method !== "GET") {
-      const v = value(s.body);
-      body = typeof v === "string" ? v : JSON.stringify(v ?? null);
-      const hasType = Object.keys(headers).some((h) => h.toLowerCase() === "content-type");
-      if (typeof v !== "string" && !hasType) headers["Content-Type"] = "application/json";
-    }
-    controller = new AbortController();
-    const signalController = controller;
-    p.later(() => signalController.abort(), s.timeout ?? 15_000);
+    const { headers, body } = buildApiRequestInit(s, value);
+    p.later(() => controller.abort(), s.timeout ?? 15_000);
     const res = await p.fetch(webUrl(value(s.url)), {
       method: s.method,
       headers,
       body,
       signal: controller.signal,
     });
-    const text = await res.text();
-    let data: unknown = text;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      // Not JSON: keep the text.
-    }
+    const data = parseApiPayload(await res.text());
     return { ok: res.ok, status: res.status, data, error: res.ok ? null : `HTTP ${res.status}` };
   } catch (e) {
-    const error = controller?.signal.aborted
+    const error = controller.signal.aborted
       ? "timed out"
       : e instanceof Error
         ? e.message

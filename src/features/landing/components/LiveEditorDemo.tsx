@@ -68,6 +68,14 @@ function buildCode(s: PageState): CodeLine[] {
 
 const TOKEN = /(<\/?[A-Za-z0-9]+)|("[^"]*")|(\b(?:export|default|const|return)\b)|(\s[a-zA-Z]+=)/g;
 
+function tokenTone(match: RegExpExecArray): string {
+  const [, tag, str, keyword, attr] = match;
+  if (tag) return "text-[var(--landing-signal)]";
+  if (str) return "text-emerald-700 dark:text-emerald-300";
+  if (keyword) return "text-muted-foreground italic";
+  return attr ? "text-foreground/70" : "";
+}
+
 /** Colour tags, strings and keywords. Plain text lines are left alone. */
 function highlight(line: string): ReactNode[] {
   const isMarkup = line.trimStart().startsWith("<");
@@ -80,18 +88,9 @@ function highlight(line: string): ReactNode[] {
   TOKEN.lastIndex = 0;
   while ((match = TOKEN.exec(line)) !== null) {
     if (match.index > last) parts.push(line.slice(last, match.index));
-    const [token, tag, str, keyword, attr] = match;
-    const tone = tag
-      ? "text-[var(--landing-signal)]"
-      : str
-        ? "text-emerald-700 dark:text-emerald-300"
-        : keyword
-          ? "text-muted-foreground italic"
-          : attr
-            ? "text-foreground/70"
-            : "";
+    const token = match[0];
     parts.push(
-      <span key={match.index} className={tone}>
+      <span key={match.index} className={tokenTone(match)}>
         {token}
       </span>,
     );
@@ -285,14 +284,12 @@ export default function LiveEditorDemo() {
   const code = useMemo(() => buildCode(page), [page]);
   const centered = page.align === "center";
 
-
   return (
     <section id="try" className="relative scroll-mt-16 border-t border-border">
       <div className="container mx-auto px-4 py-20 lg:px-6 lg:py-32">
         <h2 data-cursor="h2 · Heading" className="font-display max-w-3xl text-[clamp(2.5rem,6vw,5rem)] leading-[1]">
           Don’t take our word for it. <span className="text-[var(--landing-signal)]">Edit this page.</span>
         </h2>
-        {/* The product, live. */}
         <div
           role="group"
           aria-label="Interactive editor demo"
@@ -357,7 +354,6 @@ export default function LiveEditorDemo() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
-            {/* Canvas */}
             <div className="blueprint relative min-h-[22rem] border-b border-border p-6 lg:border-b-0 lg:border-r lg:p-10">
               <span className="font-label absolute left-4 top-3 text-muted-foreground">Canvas</span>
               <Cursor
@@ -444,7 +440,6 @@ export default function LiveEditorDemo() {
               </div>
             </div>
 
-            {/* Export */}
             <div className="min-w-0 bg-background">
               <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
                 <span className="font-label text-muted-foreground">Hero.tsx</span>

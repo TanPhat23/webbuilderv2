@@ -1,4 +1,3 @@
-// src/features/interactions/codegen/interactions.ts
 /**
  * Turns a page's interactions, variables and flows into one readable
  * TypeScript module (spec §3 "Codegen").
@@ -282,142 +281,182 @@ export function hasInteractionCode(input: CodegenInput): boolean {
   );
 }
 
-export function toCode(input: CodegenInput): string {
-  const { variables, flows } = input;
-  const variableNames = new Set(Object.keys(variables));
-  const hasVariables = variableNames.size > 0;
-  const used = new Set<string>(Object.keys(HELPERS));
-  const flowFns = new Map<string, string>();
-  for (const name of Object.keys(flows)) flowFns.set(name, uniqueName(`flow${pascal(name)}`, used));
-  let usesToast = false;
+interface EmitContext {
+  variableNames: ReadonlySet<string>;
+  flowFns: ReadonlyMap<string, string>;
+  onToast: () => void;
+}
 
-  /** Statements for a list of steps. `at` is the step path, for messages. */
-  function emitSteps(steps: Step[], at: string): string[] {
-    return steps.flatMap((step, i) => emitStep(step, `${at}[${i}]`));
+const templateExpr = (field: unknown) => compileTemplate(String(field));
+const stringExpr = (field: unknown) => {
+  const code = templateExpr(field);
+  return code.startsWith('"') || code.startsWith("`") ? code : `text(${code})`;
+};
+const recordResult = (stepId: unknown, expr: string) =>
+  typeof stepId === "string" ? `ctx.steps[${lit(stepId)}] = ${expr};` : `${expr};`;
+const formatCallStep = (stepId: unknown, expr: string) => [recordResult(stepId, expr)];
+const formatOptionsArg = (o: Record<string, unknown>) => {
+  const parts = Object.entries(o)
+    .filter(([, v]) => v !== undefined)
+    .map(([k, v]) => `${k}: ${lit(v)}`);
+  return parts.length ? `, { ${parts.join(", ")} }` : "";
+};
+
+function emitIfStep(
+  step: Extract<Step, { if: string }>,
+  stepId: unknown,
+  at: string,
+  emitStepsList: (steps: Step[], path: string) => string[],
+): string[] {
+  const then = pad(emitStepsList(step.then, `${at}.then`), "  ");
+  const otherwise = step.else ? pad(emitStepsList(step.else, `${at}.else`), "  ") : null;
+  const branches = (test: string) => [
+    `if (${test}) {`,
+    ...then,
+    ...(otherwise ? ["} else {", ...otherwise] : []),
+    "}",
+  ];
+  if (typeof stepId !== "string") return branches(templateExpr(step.if));
+  return [
+    "{",
+    `  const taken = Boolean(${templateExpr(step.if)});`,
+    `  ctx.steps[${lit(stepId)}] = taken;`,
+    ...pad(branches("taken"), "  "),
+    "}",
+  ];
+}
+
+function emitCallStep(s: Record<string, unknown>, stepId: unknown): string[] {
+  const headers = Object.entries((s.headers ?? {}) as Record<string, string>)
+    .filter(([k]) => k !== "__proto__")
+    .map(([k, v]) => `${lit(k)}: ${stringExpr(v)}`);
+  const hasBody = s.body !== undefined && s.method !== "GET";
+  const init = [
+    `method: ${lit(s.method)}`,
+    headers.length ? `headers: { ${headers.join(", ")} }` : "",
+    hasBody ? `hasBody: true, body: ${templateExpr(s.body)}` : "",
+    s.timeout !== undefined ? `timeout: ${lit(s.timeout)}` : "",
+  ].filter(Boolean);
+  return formatCallStep(stepId, `await callApi(${templateExpr(s.url)}, { ${init.join(", ")} })`);
+}
+
+type SimpleStepEmitter = (
+  s: Record<string, unknown>,
+  at: string,
+  ctx: EmitContext,
+) => string[];
+
+const emitVisibilityStep =
+  (verb: "show" | "hide" | "toggle"): SimpleStepEmitter =>
+  (s) =>
+    formatCallStep(s.id, `setVisible(${templateExpr(s[verb])}, ${lit(verb)})`);
+
+const SIMPLE_STEP_EMITTERS: Record<string, SimpleStepEmitter> = {
+  navigate: (s) => [
+    `go(${templateExpr(s.navigate)}${formatOptionsArg({ newTab: s.newTab || undefined, replace: s.replace || undefined })});`,
+  ],
+  show: emitVisibilityStep("show"),
+  hide: emitVisibilityStep("hide"),
+  toggle: emitVisibilityStep("toggle"),
+  scroll: (s) => {
+    const target = typeof s.scroll === "string" ? templateExpr(s.scroll) : lit(s.scroll);
+    return [`scrollToTarget(${target}${formatOptionsArg({ smooth: s.smooth, offset: s.offset })});`];
+  },
+  modal: (s) => [
+    `setModal(${s.target === undefined ? "ctx.elementId" : templateExpr(s.target)}, ${s.modal === "open"});`,
+  ],
+  toast: (s, _at, ctx) => {
+    ctx.onToast();
+    const kind = isToastKind(s.kind) ? s.kind : "info";
+    return [`toast.${kind}(${stringExpr(s.toast)}${s.duration ? `, { duration: ${lit(s.duration)} }` : ""});`];
+  },
+  copy: (s) => [`await navigator.clipboard.writeText(${stringExpr(s.copy)});`],
+  download: (s) => [
+    `downloadFile(${templateExpr(s.download)}${s.filename !== undefined ? `, ${templateExpr(s.filename)}` : ""});`,
+  ],
+  animate: (s) => [
+    `animateElement(${templateExpr(s.animate)}, ${lit(s.preset)}${s.duration ? `, ${lit(s.duration)}` : ""});`,
+  ],
+  class: (s) => [`classify(${templateExpr(s.target)}, ${lit(s.class)}, ${templateExpr(s.name)});`],
+  submit: (s) => [`formById(${templateExpr(s.submit)})?.requestSubmit();`],
+  reset: (s) => [`formById(${templateExpr(s.reset)})?.reset();`],
+  wait: (s) => [`await sleep(${Number(s.wait)});`],
+  set: (s, at, ctx) => {
+    const name = String(s.set);
+    if (!ctx.variableNames.has(name)) return [`// ${comment(at)}: no variable named ${comment(name)}, skipped`];
+    const assign = `setVar(${lit(name)}, ${templateExpr(s.to)} as Variables[${lit(name)}]);`;
+    return typeof s.id === "string" ? [assign, `ctx.steps[${lit(s.id)}] = getVar(${lit(name)});`] : [assign];
+  },
+  run: (s, at, ctx) => {
+    const fn = ctx.flowFns.get(String(s.run));
+    if (!fn) return [`// ${comment(at)}: no flow named ${comment(String(s.run))}, skipped`];
+    return typeof s.id === "string"
+      ? [`await ${fn}(ctx, depth + 1);`, `ctx.steps[${lit(s.id)}] = true;`]
+      : [`await ${fn}(ctx, depth + 1);`];
+  },
+  code: (s) => [
+    "// Custom code step: runs as written, with `scope` in reach.",
+    ...formatCallStep(s.id, `new Function("scope", ${lit(s.code)})(scope)`),
+  ],
+};
+
+function emitSimpleStep(
+  verb: string,
+  s: Record<string, unknown>,
+  at: string,
+  ctx: EmitContext,
+): string[] | null {
+  if (!Object.hasOwn(SIMPLE_STEP_EMITTERS, verb)) return null;
+  return SIMPLE_STEP_EMITTERS[verb](s, at, ctx);
+}
+
+function emitSteps(steps: Step[], at: string, ctx: EmitContext): string[] {
+  return steps.flatMap((step, i) => emitStep(step, `${at}[${i}]`, ctx));
+}
+
+function emitStep(step: Step, at: string, ctx: EmitContext): string[] {
+  const verb = verbOf(step);
+  if (!verb) return [`fail(${lit(`${at}: not a valid step`)});`];
+  if (!VERB_SCHEMAS[verb].safeParse(step).success) return [`// ${comment(at)}: incomplete ${verb} step, skipped`];
+  const s = step as Step & Record<string, unknown>;
+  if (verb === "call") return emitCallStep(s, s.id);
+  if (verb === "if") {
+    return emitIfStep(step as Extract<Step, { if: string }>, s.id, at, (nested, path) =>
+      emitSteps(nested, path, ctx),
+    );
   }
+  return emitSimpleStep(verb, s, at, ctx) ?? [];
+}
 
-  function emitStep(step: Step, at: string): string[] {
-    const verb = verbOf(step);
-    const s = step as Step & Record<string, unknown>;
-    if (!verb) return [`fail(${lit(`${at}: not a valid step`)});`];
-    // A draft step (a required field still empty) does nothing until it's filled in.
-    if (!VERB_SCHEMAS[verb].safeParse(step).success) return [`// ${comment(at)}: incomplete ${verb} step, skipped`];
-    const t = (field: unknown) => compileTemplate(String(field));
-    /** A string for the verbs that need one; literals and template strings need no conversion. */
-    const str = (field: unknown) => {
-      const code = t(field);
-      return code.startsWith('"') || code.startsWith("`") ? code : `text(${code})`;
-    };
-    const record = (expr: string) => (typeof s.id === "string" ? `ctx.steps[${lit(s.id)}] = ${expr};` : expr + ";");
-    const call = (expr: string) => (typeof s.id === "string" ? [record(expr)] : [`${expr};`]);
-    const opts = (o: Record<string, unknown>) => {
-      const parts = Object.entries(o).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}: ${lit(v)}`);
-      return parts.length ? `{ ${parts.join(", ")} }` : "";
-    };
-    const optArg = (o: Record<string, unknown>) => (opts(o) ? `, ${opts(o)}` : "");
+const usesCtx = (body: string[]) => body.some((l) => /\bctx\b/.test(l)) || body.some((l) => /\bscope\b/.test(l));
+const scopeLine = (body: string[]) => (body.some((l) => /\bscope\b/.test(l)) ? ["  const scope = scopeOf(ctx);"] : []);
+const functionBody = (steps: Step[], at: string, ctx: EmitContext) => {
+  const lines = emitSteps(steps, at, ctx);
+  return lines.length ? pad(lines, "  ") : ["  // No steps yet."];
+};
 
-    switch (verb) {
-      case "navigate":
-        return [`go(${t(s.navigate)}${optArg({ newTab: s.newTab || undefined, replace: s.replace || undefined })});`];
-      case "show":
-      case "hide":
-      case "toggle":
-        return call(`setVisible(${t(s[verb])}, ${lit(verb)})`);
-      case "scroll": {
-        const target = typeof s.scroll === "string" ? t(s.scroll) : lit(s.scroll);
-        return [`scrollToTarget(${target}${optArg({ smooth: s.smooth, offset: s.offset })});`];
-      }
-      case "modal":
-        return [`setModal(${s.target === undefined ? "ctx.elementId" : t(s.target)}, ${s.modal === "open"});`];
-      case "toast": {
-        usesToast = true;
-        const kind = isToastKind(s.kind) ? s.kind : "info";
-        return [`toast.${kind}(${str(s.toast)}${s.duration ? `, { duration: ${lit(s.duration)} }` : ""});`];
-      }
-      case "copy":
-        return [`await navigator.clipboard.writeText(${str(s.copy)});`];
-      case "download":
-        return [`downloadFile(${t(s.download)}${s.filename !== undefined ? `, ${t(s.filename)}` : ""});`];
-      case "animate":
-        return [`animateElement(${t(s.animate)}, ${lit(s.preset)}${s.duration ? `, ${lit(s.duration)}` : ""});`];
-      case "class":
-        return [`classify(${t(s.target)}, ${lit(s.class)}, ${t(s.name)});`];
-      case "submit":
-        return [`formById(${t(s.submit)})?.requestSubmit();`];
-      case "reset":
-        return [`formById(${t(s.reset)})?.reset();`];
-      case "wait":
-        return [`await sleep(${Number(s.wait)});`];
-      case "set": {
-        const name = String(s.set);
-        if (!variableNames.has(name)) return [`// ${comment(at)}: no variable named ${comment(name)}, skipped`];
-        const assign = `setVar(${lit(name)}, ${t(s.to)} as Variables[${lit(name)}]);`;
-        return typeof s.id === "string" ? [assign, `ctx.steps[${lit(s.id)}] = getVar(${lit(name)});`] : [assign];
-      }
-      case "call": {
-        const headers = Object.entries((s.headers ?? {}) as Record<string, string>)
-          .filter(([k]) => k !== "__proto__")
-          .map(([k, v]) => `${lit(k)}: ${str(v)}`);
-        const hasBody = s.body !== undefined && s.method !== "GET";
-        const init = [
-          `method: ${lit(s.method)}`,
-          headers.length ? `headers: { ${headers.join(", ")} }` : "",
-          hasBody ? `hasBody: true, body: ${t(s.body)}` : "",
-          s.timeout !== undefined ? `timeout: ${lit(s.timeout)}` : "",
-        ].filter(Boolean);
-        return call(`await callApi(${t(s.url)}, { ${init.join(", ")} })`);
-      }
-      case "if": {
-        const ifStep = step as Extract<Step, { if: string }>;
-        const then = pad(emitSteps(ifStep.then, `${at}.then`), "  ");
-        const otherwise = ifStep.else ? pad(emitSteps(ifStep.else, `${at}.else`), "  ") : null;
-        const branches = (test: string) => [
-          `if (${test}) {`,
-          ...then,
-          ...(otherwise ? ["} else {", ...otherwise] : []),
-          "}",
-        ];
-        if (typeof s.id !== "string") return branches(t(ifStep.if));
-        return ["{", `  const taken = Boolean(${t(ifStep.if)});`, `  ctx.steps[${lit(s.id)}] = taken;`, ...pad(branches("taken"), "  "), "}"];
-      }
-      case "run": {
-        const fn = flowFns.get(String(s.run));
-        if (!fn) return [`// ${comment(at)}: no flow named ${comment(String(s.run))}, skipped`];
-        return typeof s.id === "string"
-          ? [`await ${fn}(ctx, depth + 1);`, `ctx.steps[${lit(s.id)}] = true;`]
-          : [`await ${fn}(ctx, depth + 1);`];
-      }
-      case "code":
-        return [
-          "// Custom code step: runs as written, with `scope` in reach.",
-          ...call(`new Function("scope", ${lit(s.code)})(scope)`),
-        ];
-    }
-  }
-
-  const functionBody = (steps: Step[], at: string) => {
-    const lines = emitSteps(steps, at);
-    return lines.length ? pad(lines, "  ") : ["  // No steps yet."];
-  };
-
-  /** `scope` is declared only when a step reads it (an unused local would not compile under noUnusedLocals). */
-  const usesCtx = (body: string[]) => body.some((l) => /\bctx\b/.test(l)) || body.some((l) => /\bscope\b/.test(l));
-  const scopeLine = (body: string[]) => (body.some((l) => /\bscope\b/.test(l)) ? ["  const scope = scopeOf(ctx);"] : []);
-
-  // Flows.
-  const flowBlocks = Object.entries(flows).map(([name, flow]) => {
-    const body = functionBody(flow.do, `flow:${name}.do`);
+function emitFlowBlocks(
+  flows: Record<string, { do: Step[] }>,
+  ctx: EmitContext,
+): string[] {
+  return Object.entries(flows).map(([name, flow]) => {
+    const body = functionBody(flow.do, `flow:${name}.do`, ctx);
     return [
       `/** Flow "${comment(name)}". */`,
-      `export async function ${flowFns.get(name)}(${usesCtx(body) ? "ctx" : "_ctx"}: Ctx, depth = 0): Promise<void> {`,
+      `export async function ${ctx.flowFns.get(name)}(${usesCtx(body) ? "ctx" : "_ctx"}: Ctx, depth = 0): Promise<void> {`,
       `  if (depth > ${MAX_FLOW_DEPTH}) throw new Error("flows nested more than ${MAX_FLOW_DEPTH} deep");`,
       ...scopeLine(body),
       ...body,
       "}",
     ].join("\n");
   });
+}
 
-  // Interactions.
+function emitInteractionBlocks(
+  elements: CodegenElement[],
+  used: Set<string>,
+  ctx: EmitContext,
+): { blocks: string[]; bindings: string[]; skippedSubmit: boolean } {
   interface Bound {
     fn: string;
     elementId: string;
@@ -425,9 +464,10 @@ export function toCode(input: CodegenInput): string {
     ix: Interaction;
   }
   const bound: Bound[] = [];
-  const interactionBlocks: string[] = [];
+  const blocks: string[] = [];
   let skippedSubmit = false;
-  for (const el of collectElements(input.elements)) {
+
+  for (const el of collectElements(elements)) {
     for (const [ixId, ix] of Object.entries(el.interactions)) {
       if (!isPlainObject(ix) || ix.enabled === false || !Array.isArray(ix.do) || !isEvent(ix.on)) continue;
       if (el.customSubmit && ix.on === "submit") {
@@ -436,9 +476,9 @@ export function toCode(input: CodegenInput): string {
       }
       const fn = uniqueName(`on${pascal(el.name) || pascal(el.id)}${pascal(ix.on)}`, used);
       bound.push({ fn, elementId: el.id, on: ix.on, ix });
-      const body = functionBody(ix.do, `${ixId}.do`);
+      const body = functionBody(ix.do, `${ixId}.do`, ctx);
       const usesDepth = body.some((line) => line.includes("depth + 1"));
-      interactionBlocks.push([
+      blocks.push([
         `/** Element "${comment(el.name)}" (${comment(el.id)}), interaction ${comment(ixId)}: on ${comment(ix.on)}. */`,
         `async function ${fn}(${usesCtx(body) ? "ctx" : "_ctx"}: Ctx${usesDepth ? ", depth = 0" : ""}): Promise<void> {`,
         ...scopeLine(body),
@@ -452,7 +492,6 @@ export function toCode(input: CodegenInput): string {
     const options: Record<string, unknown> = {
       key: ix.key,
       once: on === "visible" && ix.once === false ? false : undefined,
-      // A submit event refreshes the page unless the interaction says otherwise.
       preventDefault: ix.preventDefault ?? (on === "submit" ? true : undefined),
       stopPropagation: ix.stopPropagation || undefined,
     };
@@ -460,88 +499,80 @@ export function toCode(input: CodegenInput): string {
     return `  bind(${lit(elementId)}, ${lit(on)}, ${fn}${o.length ? `, { ${o.join(", ")} }` : ""});`;
   });
 
-  // Variables.
-  const variableBlock = hasVariables
-    ? [
-        "export interface Variables {",
-        ...Object.entries(variables).map(([n, d]) => `  ${lit(n)}: ${Object.hasOwn(TS_TYPES, d.type) ? TS_TYPES[d.type] : "unknown"};`),
-        "}",
-        "",
-        `type Lifetime = "page" | "session" | "local";`,
-        `const NAMESPACE = ${lit(input.namespace ?? "app")};`,
-        "const definitions: { [K in keyof Variables]: { default: Variables[K]; lifetime: Lifetime } } = {",
-        ...Object.entries(variables).map(
-          ([n, d]) => `  ${lit(n)}: { default: ${lit(d.default ?? null)}, lifetime: ${lit(d.lifetime ?? "page")} },`,
-        ),
-        "};",
-        "",
-        "// Storage can be missing or throw (private mode, blocked site data): fall back to memory.",
-        "const storageFor = (lifetime: Lifetime): Storage | null => {",
-        "  try {",
-        `    const storage = lifetime === "session" ? window.sessionStorage : lifetime === "local" ? window.localStorage : null;`,
-        `    storage?.getItem("wb:probe");`,
-        "    return storage;",
-        "  } catch {",
-        "    return null;",
-        "  }",
-        "};",
-        "",
-        "const values: Record<string, unknown> = Object.create(null);",
-        "const listeners = new Set<() => void>();",
-        "for (const [name, def] of Object.entries(definitions)) {",
-        "  let value: unknown = JSON.parse(JSON.stringify(def.default));",
-        "  try {",
-        "    const stored = storageFor(def.lifetime)?.getItem(`wb:${NAMESPACE}:${name}`);",
-        "    if (stored != null) value = JSON.parse(stored);",
-        "  } catch {",
-        "    // Unreadable or corrupt: keep the default.",
-        "  }",
-        "  values[name] = value;",
-        "}",
-        "",
-        "export const getVar = <K extends keyof Variables>(name: K): Variables[K] => values[name] as Variables[K];",
-        "export const getVars = (): Variables => ({ ...values }) as unknown as Variables;",
-        "export const setVar = <K extends keyof Variables>(name: K, value: Variables[K]): void => {",
-        "  values[name] = value;",
-        "  try {",
-        "    storageFor(definitions[name].lifetime)?.setItem(`wb:${NAMESPACE}:${name}`, JSON.stringify(value));",
-        "  } catch {",
-        "    // Quota or blocked: the value still lives in memory.",
-        "  }",
-        "  for (const listener of listeners) listener();",
-        "};",
-        "/** For React: `useSyncExternalStore(subscribe, getVars)`. */",
-        "export const subscribe = (listener: () => void) => {",
-        "  listeners.add(listener);",
-        "  return () => {",
-        "    listeners.delete(listener);",
-        "  };",
-        "};",
-      ].join("\n")
-    : "";
+  return { blocks, bindings, skippedSubmit };
+}
 
-  const blocks = [...flowBlocks, ...interactionBlocks];
-  const ctxBlock = `export interface Ctx {
-  /** The element whose interaction is running. */
-  elementId: string;
-  event: unknown;
-  form: Record<string, unknown>;
-  /** Results of steps that have an \`id\`. */
-  steps: Record<string, unknown>;
+function emitVariablesBlock(
+  variables: Record<string, VariableDef>,
+  namespace: string | undefined,
+): string {
+  if (Object.keys(variables).length === 0) return "";
+  return [
+    "export interface Variables {",
+    ...Object.entries(variables).map(([n, d]) => `  ${lit(n)}: ${Object.hasOwn(TS_TYPES, d.type) ? TS_TYPES[d.type] : "unknown"};`),
+    "}",
+    "",
+    `type Lifetime = "page" | "session" | "local";`,
+    `const NAMESPACE = ${lit(namespace ?? "app")};`,
+    "const definitions: { [K in keyof Variables]: { default: Variables[K]; lifetime: Lifetime } } = {",
+    ...Object.entries(variables).map(
+      ([n, d]) => `  ${lit(n)}: { default: ${lit(d.default ?? null)}, lifetime: ${lit(d.lifetime ?? "page")} },`,
+    ),
+    "};",
+    "",
+    "// Storage can be missing or throw (private mode, blocked site data): fall back to memory.",
+    "const storageFor = (lifetime: Lifetime): Storage | null => {",
+    "  try {",
+    `    const storage = lifetime === "session" ? window.sessionStorage : lifetime === "local" ? window.localStorage : null;`,
+    `    storage?.getItem("wb:probe");`,
+    "    return storage;",
+    "  } catch {",
+    "    return null;",
+    "  }",
+    "};",
+    "",
+    "const values: Record<string, unknown> = Object.create(null);",
+    "const listeners = new Set<() => void>();",
+    "for (const [name, def] of Object.entries(definitions)) {",
+    "  let value: unknown = JSON.parse(JSON.stringify(def.default));",
+    "  try {",
+    "    const stored = storageFor(def.lifetime)?.getItem(`wb:${NAMESPACE}:${name}`);",
+    "    if (stored != null) value = JSON.parse(stored);",
+    "  } catch {",
+    "    // Unreadable or corrupt: keep the default.",
+    "  }",
+    "  values[name] = value;",
+    "}",
+    "",
+    "export const getVar = <K extends keyof Variables>(name: K): Variables[K] => values[name] as Variables[K];",
+    "export const getVars = (): Variables => ({ ...values }) as unknown as Variables;",
+    "export const setVar = <K extends keyof Variables>(name: K, value: Variables[K]): void => {",
+    "  values[name] = value;",
+    "  try {",
+    "    storageFor(definitions[name].lifetime)?.setItem(`wb:${NAMESPACE}:${name}`, JSON.stringify(value));",
+    "  } catch {",
+    "    // Quota or blocked: the value still lives in memory.",
+    "  }",
+    "  for (const listener of listeners) listener();",
+    "};",
+    "/** For React: `useSyncExternalStore(subscribe, getVars)`. */",
+    "export const subscribe = (listener: () => void) => {",
+    "  listeners.add(listener);",
+    "  return () => {",
+    "    listeners.delete(listener);",
+    "  };",
+    "};",
+  ].join("\n");
+}
+
+function emitBinderBlock(bindings: string[]): string {
+  if (!bindings.length) {
+    return `/** Attach every interaction to its element. There are none yet. */
+export function bindInteractions(_root: ParentNode = document): () => void {
+  return () => {};
 }`;
-  const scopeBlock = `const scopeOf = (ctx: Ctx) => ({
-  get vars() {
-    return ${hasVariables ? "getVars()" : "{}"};
-  },
-  event: ctx.event,
-  form: ctx.form,
-  el: ${/read\(scope, "el"\)/.test(blocks.join("\n")) ? "elementScope()" : "{}"},
-  steps: ctx.steps,
-});`;
-
-  // The binder: wires each interaction to its element.
-  const binder = bindings.length
-    ? `type Handler = (ctx: Ctx) => Promise<void>;
+  }
+  return `type Handler = (ctx: Ctx) => Promise<void>;
 interface BindOptions {
   /** keydown/keyup: run only for this key (case-insensitive). */
   key?: string;
@@ -610,25 +641,13 @@ export function bindInteractions(root: ParentNode = document): () => void {
     }
   };
 
-${bindings.length ? bindings.join("\n") : "  // No interactions yet."}
+${bindings.join("\n")}
 
   return () => cleanups.forEach((cleanup) => cleanup());
-}`
-    : `/** Attach every interaction to its element. There are none yet. */
-export function bindInteractions(_root: ParentNode = document): () => void {
-  return () => {};
 }`;
+}
 
-  // Assemble, then pull in exactly the helpers the body uses.
-  const body = [
-    variableBlock,
-    blocks.length || bindings.length ? ctxBlock : "",
-    blocks.some((b) => b.includes("scopeOf(ctx)")) ? scopeBlock : "",
-    ...blocks,
-    binder,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+function collectUsedHelperCode(body: string): string {
   const needed = new Set<string>();
   const visit = (name: string) => {
     if (needed.has(name)) return;
@@ -636,15 +655,16 @@ export function bindInteractions(_root: ParentNode = document): () => void {
     HELPERS[name].uses?.forEach(visit);
   };
   for (const name of Object.keys(HELPERS)) {
-    // A call to the helper itself, not a method of the same name (e.g. `listeners.add(`).
     if (new RegExp(`(?<![.\\w$])${name}\\(`).test(body)) visit(name);
   }
-  const helperBlock = Object.keys(HELPERS)
+  return Object.keys(HELPERS)
     .filter((n) => needed.has(n))
     .map((n) => HELPERS[n].code)
     .join("\n");
+}
 
-  const header = [
+function buildModuleHeader(skippedSubmit: boolean, usesToast: boolean): string {
+  return [
     "/**",
     " * Interactions generated from the editor: variables, flows and the handlers",
     " * for each element. Call `bindInteractions()` once the page has rendered.",
@@ -652,6 +672,60 @@ export function bindInteractions(_root: ParentNode = document): () => void {
     ...(usesToast ? [' * Toasts use "sonner".'] : []),
     " */",
   ].join("\n");
+}
+
+export function toCode(input: CodegenInput): string {
+  const { variables, flows } = input;
+  const variableNames = new Set(Object.keys(variables));
+  const hasVariables = variableNames.size > 0;
+  const used = new Set<string>(Object.keys(HELPERS));
+  const flowFns = new Map<string, string>();
+  for (const name of Object.keys(flows)) flowFns.set(name, uniqueName(`flow${pascal(name)}`, used));
+
+  let usesToast = false;
+  const ctx: EmitContext = {
+    variableNames,
+    flowFns,
+    onToast: () => {
+      usesToast = true;
+    },
+  };
+
+  const flowBlocks = emitFlowBlocks(flows, ctx);
+  const { blocks: interactionBlocks, bindings, skippedSubmit } = emitInteractionBlocks(input.elements, used, ctx);
+  const variableBlock = emitVariablesBlock(variables, input.namespace);
+  const blocks = [...flowBlocks, ...interactionBlocks];
+
+  const ctxBlock = `export interface Ctx {
+  /** The element whose interaction is running. */
+  elementId: string;
+  event: unknown;
+  form: Record<string, unknown>;
+  /** Results of steps that have an \`id\`. */
+  steps: Record<string, unknown>;
+}`;
+  const scopeBlock = `const scopeOf = (ctx: Ctx) => ({
+  get vars() {
+    return ${hasVariables ? "getVars()" : "{}"};
+  },
+  event: ctx.event,
+  form: ctx.form,
+  el: ${/read\(scope, "el"\)/.test(blocks.join("\n")) ? "elementScope()" : "{}"},
+  steps: ctx.steps,
+});`;
+
+  const body = [
+    variableBlock,
+    blocks.length || bindings.length ? ctxBlock : "",
+    blocks.some((b) => b.includes("scopeOf(ctx)")) ? scopeBlock : "",
+    ...blocks,
+    emitBinderBlock(bindings),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  const helperBlock = collectUsedHelperCode(body);
+  const header = buildModuleHeader(skippedSubmit, usesToast);
 
   return [header, usesToast ? `import { toast } from "sonner";` : "", helperBlock, body]
     .filter(Boolean)

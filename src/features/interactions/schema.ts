@@ -1,4 +1,3 @@
-// src/features/interactions/schema.ts
 /**
  * The interaction format: what an element does when an event fires.
  *
@@ -242,6 +241,29 @@ function validateStep(step: unknown, path: string, out: Issue[], depth: number) 
   }
 }
 
+function validateInteractionEntry(
+  ixId: string,
+  ix: unknown,
+  path: string,
+  out: Issue[],
+): void {
+  if (!IX_ID_RE.test(ixId)) {
+    out.push({ path, message: "interaction ids look like ix_ab12cd34", level: "error" });
+  }
+  if (!isPlainObject(ix)) {
+    out.push({ path, message: "must be an interaction object", level: "error" });
+    return;
+  }
+  zodIssues(InteractionHead, ix, path, out);
+  if (ix.key !== undefined && !KEY_EVENTS.has(String(ix.on))) {
+    out.push({ path: `${path}.key`, message: "key only applies to keydown and keyup", level: "error" });
+  }
+  if (ix.once !== undefined && ix.on !== "visible") {
+    out.push({ path: `${path}.once`, message: "once only applies to visible", level: "error" });
+  }
+  if (Array.isArray(ix.do)) validateSteps(ix.do, `${path}.do`, out, 0);
+}
+
 /** Every structural and syntax issue in an interactions map. */
 export function validateInteractionMap(value: unknown, at = "interactions"): Issue[] {
   if (value === undefined) return [];
@@ -251,22 +273,7 @@ export function validateInteractionMap(value: unknown, at = "interactions"): Iss
     return out;
   }
   for (const [ixId, ix] of Object.entries(value)) {
-    const path = `${at}.${ixId}`;
-    if (!IX_ID_RE.test(ixId)) {
-      out.push({ path, message: "interaction ids look like ix_ab12cd34", level: "error" });
-    }
-    if (!isPlainObject(ix)) {
-      out.push({ path, message: "must be an interaction object", level: "error" });
-      continue;
-    }
-    zodIssues(InteractionHead, ix, path, out);
-    if (ix.key !== undefined && !KEY_EVENTS.has(String(ix.on))) {
-      out.push({ path: `${path}.key`, message: "key only applies to keydown and keyup", level: "error" });
-    }
-    if (ix.once !== undefined && ix.on !== "visible") {
-      out.push({ path: `${path}.once`, message: "once only applies to visible", level: "error" });
-    }
-    if (Array.isArray(ix.do)) validateSteps(ix.do, `${path}.do`, out, 0);
+    validateInteractionEntry(ixId, ix, `${at}.${ixId}`, out);
   }
   return out;
 }

@@ -34,6 +34,18 @@ function pruneStaleLoadHistory(
   }
 }
 
+function resolveNativeTargetIds(
+  eventTarget: EventTarget | null,
+  root: Element,
+  selfOnly: boolean,
+): string[] {
+  const targetElement = asOwnerElement(eventTarget, root.ownerDocument);
+  const chain = chainIds(targetElement, root);
+  if (!selfOnly) return chain;
+  const directId = targetElement?.getAttribute("data-element-id");
+  return directId && chain[0] === directId ? [directId] : [];
+}
+
 function handleNativeEvent(
   event: Event,
   root: Element,
@@ -43,14 +55,9 @@ function handleNativeEvent(
   const on = NATIVE_EVENTS[event.type];
   if (!on) return;
   const self = SELF_ONLY.has(on);
-  const targetElement = asOwnerElement(event.target, root.ownerDocument);
-  const chain = chainIds(targetElement, root);
-  const directId = targetElement?.getAttribute("data-element-id");
-  const targetIds = self ? (directId && chain[0] === directId ? [directId] : []) : chain;
-  const result = plan(index, targetIds, on, {
-    bubble: !self,
-    key: "key" in event && typeof event.key === "string" ? event.key : undefined,
-  });
+  const targetIds = resolveNativeTargetIds(event.target, root, self);
+  const key = "key" in event && typeof event.key === "string" ? event.key : undefined;
+  const result = plan(index, targetIds, on, { bubble: !self, key });
   if (result.preventDefault) event.preventDefault();
   if (result.stopPropagation) event.stopPropagation();
   if (result.runs.length) {
