@@ -1,13 +1,13 @@
 
 import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { render, cleanup, byLabel, maybeByLabel, byText, click, type, keyDown, blur, focus, $q, $$q, React, flush, win, act } from './support/sidebar-dom-harness';
+import { render, cleanup, byLabel, maybeByLabel, click, type, keyDown, blur, focus, $q, $$q, React, win, act } from './support/sidebar-dom-harness';
 import { makeSp } from './support/sidebar-fixtures';
 import { ColorRow } from '../src/features/editor/components/sidebar/style/ColorRow';
 import { PropInput, StyleField } from '../src/features/editor/components/sidebar/style/PropInput';
 import { Section } from '../src/features/editor/components/sidebar/style/SectionHeader';
 import { AlignmentControl } from '../src/features/editor/components/sidebar/style/AlignmentControl';
-import { MoreToggle, Segmented } from '../src/features/editor/components/sidebar/style/controls';
+import { MoreToggle, Segmented, StyleSelect } from '../src/features/editor/components/sidebar/style/controls';
 
 after(cleanup);
 beforeEach(cleanup);
@@ -238,4 +238,31 @@ test('Segmented reports selection, ignores deselect, honours disabled', async ()
   assert.deepEqual(picked, ['b']);
   const d = await render(h(Segmented, { value: undefined, options: opts, onChange: (v: string) => picked.push(v), disabled: true }));
   assert.equal(byLabel<HTMLButtonElement>(d.container, 'Opt A').disabled, true);
+});
+
+test('StyleSelect renders options, custom values, inherited placeholder, and breakpoint clear', async () => {
+  const { sp, calls } = makeSp({
+    values: { display: 'custom-grid' },
+    inherited: { display: 'block' },
+    breakpoint: 'md',
+  });
+  const opts = [{ value: 'block', label: 'Block' }, { value: 'flex', label: 'Flex' }];
+  const r = await render(h(StyleSelect, { sp, k: 'display', label: 'Display', options: opts }));
+
+  assert.ok(r.container.textContent?.includes('custom-grid'));
+  const clearBtn = byLabel(r.container, 'Clear Display override');
+  await click(clearBtn);
+  assert.deepEqual(calls.pop(), ['clear', ['display']]);
+
+  const { sp: spBase, calls: baseCalls } = makeSp({ inherited: { display: 'flex' } });
+  const r2 = await render(h(StyleSelect, { sp: spBase, k: 'display', label: 'Display', options: opts }));
+  assert.ok(r2.container.textContent?.includes('flex'));
+  const trigger = byLabel(r2.container, 'Display');
+  await keyDown(trigger, 'Enter');
+  const flexOpt = Array.from(document.body.querySelectorAll<HTMLElement>('[role="option"]')).find(
+    (o) => (o.textContent ?? '').trim() === 'Block',
+  );
+  assert.ok(flexOpt);
+  await click(flexOpt);
+  assert.deepEqual(baseCalls.pop(), ['set', 'display', 'block']);
 });

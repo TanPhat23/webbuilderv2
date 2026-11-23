@@ -251,7 +251,7 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   Input: (
     <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center gap-2 px-3">
       <Type className="w-4 h-4 text-gray-400" />
-      <div className="flex-1 h-2 bg-gray-100 rounded"></div>
+      <div className="flex-1 h-2 bg-gray-100 rounded" />
     </div>
   ),
   Select: (
@@ -276,9 +276,9 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
         <ChevronRight className="w-4 h-4 text-white/70" />
       </div>
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-        <div className="w-2 h-2 rounded-full bg-white"></div>
-        <div className="w-2 h-2 rounded-full bg-white/50"></div>
-        <div className="w-2 h-2 rounded-full bg-white/30"></div>
+        <div className="w-2 h-2 rounded-full bg-white" />
+        <div className="w-2 h-2 rounded-full bg-white/50" />
+        <div className="w-2 h-2 rounded-full bg-white/30" />
       </div>
     </div>
   ),
@@ -293,16 +293,16 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
           key={i}
           className="flex items-center gap-2 p-2 bg-gray-100 rounded"
         >
-          <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-          <div className="h-2 bg-gray-400 rounded flex-1"></div>
+          <div className="w-2 h-2 bg-gray-600 rounded-full" />
+          <div className="h-2 bg-gray-400 rounded flex-1" />
         </div>
       ))}
     </div>
   ),
   Form: (
     <div className="w-full space-y-2 p-3 border-2 border-gray-300 rounded-lg bg-white">
-      <div className="h-2 bg-gray-300 rounded w-1/3"></div>
-      <div className="h-8 bg-gray-100 border border-gray-300 rounded"></div>
+      <div className="h-2 bg-gray-300 rounded w-1/3" />
+      <div className="h-8 bg-gray-100 border border-gray-300 rounded" />
       <div className="h-7 bg-blue-600 rounded w-24 flex items-center justify-center gap-1">
         <Send className="w-3 h-3 text-white" />
         <span className="text-xs text-white font-medium">Submit</span>
@@ -351,11 +351,11 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   Audio: (
     <div className="w-full h-16 bg-gray-900 rounded-lg flex items-center justify-center border border-gray-700">
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-gray-700 rounded-full"></div>
+        <div className="w-6 h-6 bg-gray-700 rounded-full" />
         <div className="flex gap-0.5">
-          <div className="w-1 h-8 bg-gray-500 rounded-full"></div>
-          <div className="w-1 h-6 bg-gray-500 rounded-full"></div>
-          <div className="w-1 h-10 bg-gray-500 rounded-full"></div>
+          <div className="w-1 h-8 bg-gray-500 rounded-full" />
+          <div className="w-1 h-6 bg-gray-500 rounded-full" />
+          <div className="w-1 h-10 bg-gray-500 rounded-full" />
         </div>
       </div>
     </div>
@@ -368,15 +368,15 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   Textarea: (
     <div className="w-full h-20 bg-white rounded-lg border border-gray-300 flex items-center px-3">
       <div className="flex-1 space-y-1">
-        <div className="h-2 bg-gray-200 rounded w-full"></div>
-        <div className="h-2 bg-gray-200 rounded w-4/5"></div>
+        <div className="h-2 bg-gray-200 rounded w-full" />
+        <div className="h-2 bg-gray-200 rounded w-4/5" />
       </div>
     </div>
   ),
   Checkbox: (
     <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center gap-2 px-3">
       <div className="w-4 h-4 border-2 border-gray-400 rounded flex items-center justify-center">
-        <div className="w-2 h-2 bg-gray-600 rounded-sm"></div>
+        <div className="w-2 h-2 bg-gray-600 rounded-sm" />
       </div>
       <span className="text-xs text-gray-600">Checkbox</span>
     </div>
@@ -384,14 +384,14 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   Radio: (
     <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center gap-2 px-3">
       <div className="w-4 h-4 border-2 border-gray-400 rounded-full flex items-center justify-center">
-        <div className="w-1.5 h-1.5 bg-gray-600 rounded-full"></div>
+        <div className="w-1.5 h-1.5 bg-gray-600 rounded-full" />
       </div>
       <span className="text-xs text-gray-600">Radio</span>
     </div>
   ),
   Separator: (
     <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex items-center justify-center">
-      <div className="w-3/4 h-px bg-gray-400"></div>
+      <div className="w-3/4 h-px bg-gray-400" />
     </div>
   ),
   Icon: (
@@ -404,7 +404,7 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   Progress: (
     <div className="w-full h-16 bg-white rounded-lg border border-gray-300 flex flex-col items-center justify-center gap-2 px-3">
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-        <div className="w-2/3 h-full bg-blue-600"></div>
+        <div className="w-2/3 h-full bg-blue-600" />
       </div>
       <span className="text-xs text-gray-500">65%</span>
     </div>
@@ -427,8 +427,8 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   ),
   Nav: (
     <div className="w-full h-16 bg-gray-200 rounded-lg border border-gray-400 flex items-center px-3 gap-2">
-      <div className="h-2 bg-gray-400 rounded w-16"></div>
-      <div className="h-2 bg-gray-400 rounded w-12"></div>
+      <div className="h-2 bg-gray-400 rounded w-16" />
+      <div className="h-2 bg-gray-400 rounded w-12" />
     </div>
   ),
   Header: (
@@ -443,8 +443,8 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
   ),
   Article: (
     <div className="w-full h-20 bg-white rounded-lg border border-gray-300 flex flex-col px-3 py-2 gap-1">
-      <div className="h-2 bg-gray-300 rounded w-2/3"></div>
-      <div className="h-1.5 bg-gray-200 rounded w-full"></div>
+      <div className="h-2 bg-gray-300 rounded w-2/3" />
+      <div className="h-1.5 bg-gray-200 rounded w-full" />
     </div>
   ),
   Aside: (
@@ -466,10 +466,10 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
           key={i}
           className="flex gap-2 p-2 border border-purple-300 rounded bg-purple-50"
         >
-          <div className="w-10 h-10 bg-purple-200 rounded shrink-0"></div>
+          <div className="w-10 h-10 bg-purple-200 rounded shrink-0" />
           <div className="flex-1 space-y-1">
-            <div className="h-2 bg-purple-300 rounded w-3/4"></div>
-            <div className="h-1.5 bg-purple-200 rounded w-1/2"></div>
+            <div className="h-2 bg-purple-300 rounded w-3/4" />
+            <div className="h-1.5 bg-purple-200 rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -483,10 +483,10 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
           Content Item
         </span>
       </div>
-      <div className="w-full h-16 bg-purple-200 rounded mb-2"></div>
+      <div className="w-full h-16 bg-purple-200 rounded mb-2" />
       <div className="space-y-1">
-        <div className="h-2 bg-purple-300 rounded w-full"></div>
-        <div className="h-2 bg-purple-300 rounded w-4/5"></div>
+        <div className="h-2 bg-purple-300 rounded w-full" />
+        <div className="h-2 bg-purple-300 rounded w-4/5" />
       </div>
     </div>
   ),
@@ -504,7 +504,7 @@ const customPreviews: Partial<Record<ElementType, React.ReactElement>> = {
             key={i}
             className="aspect-square border-2 border-purple-300 rounded bg-purple-50 flex items-center justify-center"
           >
-            <div className="w-8 h-8 bg-purple-300 rounded"></div>
+            <div className="w-8 h-8 bg-purple-300 rounded" />
           </div>
         ))}
       </div>

@@ -18,7 +18,7 @@ export default function ProfileHero({
       transition={{ duration: 0.5 }}
     >
       <Card className="relative overflow-hidden bg-linear-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 hover:shadow-lg transition-all duration-300">
-        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent" />
         <CardContent className="p-4 sm:p-6 lg:p-8 relative">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
             <motion.div

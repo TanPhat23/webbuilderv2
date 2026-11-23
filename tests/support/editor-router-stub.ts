@@ -3,6 +3,7 @@
  * params/search, a recording `useNavigate`, and a `Link` that renders a plain anchor.
  */
 import { createElement, type ReactNode } from 'react';
+export * from '@tanstack/react-router';
 
 export const routerState: {
   params: Record<string, string>;

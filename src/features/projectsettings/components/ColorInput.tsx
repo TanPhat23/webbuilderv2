@@ -35,7 +35,7 @@ export function ColorInput({
                 }
               : {}
           }
-        ></div>
+         />
         {label}
       </Label>
       <div className="relative mx-auto w-fit">

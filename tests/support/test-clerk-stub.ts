@@ -6,7 +6,7 @@ export interface StubAuth {
 export const authState: StubAuth = { userId: null, isLoaded: true };
 export const userState: { user: unknown; isLoaded: boolean } = { user: null, isLoaded: true };
 
-export const useAuth = () => ({ ...authState });
+export const useAuth = () => ({ ...authState, getToken: async () => 'tok-test' });
 export const useUser = () => ({ ...userState });
 export const ClerkProvider = ({ children }: { children?: unknown }) => children as never;
 export const SignIn = () => null;

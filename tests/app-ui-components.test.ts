@@ -13,6 +13,7 @@ import * as contextMenu from '../src/components/ui/context-menu';
 import * as dropdownMenu from '../src/components/ui/dropdown-menu';
 import * as empty from '../src/components/ui/empty';
 import * as form from '../src/components/ui/form';
+import * as inputMod from '../src/components/ui/input';
 import * as popover from '../src/components/ui/popover';
 import * as radioGroup from '../src/components/ui/radio-group';
 import * as resizable from '../src/components/ui/resizable';
@@ -23,6 +24,7 @@ import * as sidebar from '../src/components/ui/sidebar';
 import * as skeleton from '../src/components/ui/skeleton';
 import * as slider from '../src/components/ui/slider';
 import * as spinner from '../src/components/ui/spinner';
+import * as switchMod from '../src/components/ui/switch';
 import * as tabs from '../src/components/ui/tabs';
 import * as textarea from '../src/components/ui/textarea';
 import * as toggle from '../src/components/ui/toggle';
@@ -77,7 +79,7 @@ test('every stateless ui wrapper stamps a data-slot and forwards className', () 
   let checked = 0;
   for (const [modName, mod] of Object.entries(STATELESS)) {
     for (const [name, fn] of Object.entries(mod)) {
-      if (typeof fn !== 'function' || /Variants$/.test(name) || name === 'ToggleGroupItem') continue;
+      if (typeof fn !== 'function' || name.endsWith('Variants') || name === 'ToggleGroupItem') continue;
       const tree = call(fn, { children: 'kid', className: 'x-custom' });
       const all = propsIn(tree);
       const slots = all.map((p) => p['data-slot']);
@@ -731,4 +733,26 @@ test('Toaster renders a themed sonner region', async () => {
   assert.match(section.getAttribute('aria-label')!, /Notifications/);
   await m.render(E(NextThemes, { attribute: 'class', defaultTheme: 'dark', enableSystem: false }, E(Toaster)));
   assert.ok(q('section[aria-label*="Notifications"]'));
+});
+
+test('Input and Switch render data-slot, sizes, and toggle state', async () => {
+  const inputHtml = renderToStaticMarkup(E(inputMod.Input, { type: 'email', placeholder: 'you@example.com', className: 'extra' }));
+  assert.match(inputHtml, /data-slot="input"/);
+  assert.match(inputHtml, /type="email"/);
+
+  let state = false;
+  const m = await mountTracked(
+    E(switchMod.Switch, {
+      'aria-label': 'Active toggle',
+      size: 'sm',
+      checked: state,
+      onCheckedChange: (next: boolean) => { state = next; },
+    }),
+  );
+  const sw = q<HTMLButtonElement>('[aria-label="Active toggle"]')!;
+  assert.equal(sw.getAttribute('data-slot'), 'switch');
+  assert.equal(sw.getAttribute('data-size'), 'sm');
+  await click(sw);
+  assert.equal(state, true);
+  void m;
 });

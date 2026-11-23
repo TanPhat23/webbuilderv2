@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react"],
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    ".output/**",
+    "coverage/**",
+    "dist/**",
+    "build/**",
+    "src/routeTree.gen.ts"
+  ],
+  "rules": {
+    "react/self-closing-comp": "error",
+    "typescript/no-explicit-any": "warn"
+  }
+}
