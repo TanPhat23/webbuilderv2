@@ -3,33 +3,32 @@ import { MessageDispatcher } from "./MessageDispatcher";
 import { MessageSender } from "./MessageSender";
 import { AwarenessController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
-import { handleServerError } from "./connectionErrors";
 import { ElementOperations } from "./ElementOperations";
-import { LogicChannel } from "./LogicChannel";
-import { AgentChannel } from "./AgentChannel";
-import { WS_MESSAGE } from "@/features/collaboration/interfaces/websocket/ws-collab.interface";
+import { ProviderLogicClient } from "./ProviderLogicClient";
+import {
+  bindProviderTransport,
+  createServerErrorReporter,
+} from "./providerTransport";
 import type {
   ElementOperationResult,
   YjsProviderV2Options,
-  UserInfo,
   UpdateType,
   StatusListener,
   SyncedListener,
-  EventType,
   ErrorMessage,
-  WSEnvelope,
   PresenceBroadcastPayload,
+  PresencePayload,
   RemotePresence,
   LogicScope,
   LogicChangedPayload,
   LogicSyncPayload,
-  LogicUpdatePayload,
   CustomYjsProviderV2 as ICustomYjsProviderV2,
 } from "../../interfaces/websocket";
 import type { EditorElement } from "@/types/global.type";
 
+const PRESENCE_PRUNE_INTERVAL_MS = 60_000;
+
 export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
-  public connected = false;
   public isSynced = false;
 
   private connection: ConnectionManager;
@@ -38,15 +37,13 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private awarenessController: AwarenessController;
   private messageHandler: ElementMessageHandler;
   private elementOps: ElementOperations;
-  private logicChannel: LogicChannel;
-  private agentChannel?: AgentChannel;
+  private logicClient: ProviderLogicClient;
 
   private readonly projectId: string;
   private readonly pageId: string;
   private readonly userId: string;
   private readonly userName: string;
 
-  private readonly onSyncUsers?: (users: Record<string, UserInfo>) => void;
   private readonly onError?: (error: ErrorMessage) => void;
   private readonly onPresence?: (data: PresenceBroadcastPayload) => void;
 
@@ -54,7 +51,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private readonly syncedListeners = new Set<SyncedListener>();
   private lastStatus: string | null = null;
   private overflowReported = false;
-  private lastRejoinAt = 0;
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: YjsProviderV2Options) {
@@ -65,7 +61,6 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     this.pageId = options.pageId;
     this.userId = options.userId;
     this.userName = options.userName ?? options.userId;
-    this.onSyncUsers = options.onSyncUsers;
     this.onError = options.onError;
     this.onPresence = options.onPresence;
 
@@ -92,36 +87,30 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       (envelope) => this.messageHandler.recordLocal(envelope),
       (envelope) => this.messageHandler.rejectLocal(envelope),
     );
-    this.awarenessController = new AwarenessController(
-      this.userId,
-      this.userName,
-    );
+    this.awarenessController = new AwarenessController(this.userId);
+
+    const reportServerError = createServerErrorReporter({
+      connection: this.connection,
+      isSynced: () => this.isSynced,
+      emitStatus: (status) => this.emitStatus(status),
+      onError: this.onError,
+    });
 
     this.messageHandler = new ElementMessageHandler({
       getElementState: options.getElementState,
       onPendingChange: () => options.onPendingChange?.(this.pendingUpdates),
       requestSnapshot: () => {
         if (!this.connection.connected) return;
-        const envelope = this.dispatcher.createEnvelope("sync:page", this.projectId, this.pageId, {}, { userId: this.userId });
+        const envelope = this.dispatcher.createEnvelope(
+          "sync:page",
+          this.projectId,
+          this.pageId,
+          {},
+          { userId: this.userId },
+        );
         this.connection.send(JSON.stringify(envelope));
       },
-      onError: (payload) => {
-        const handling = handleServerError(payload.code, payload.message);
-        if (handling.rejoin && Date.now() - this.lastRejoinAt > 5_000) {
-          // The server lost our join (e.g. it restarted); join again quietly,
-          // but not in a loop if it keeps refusing.
-          this.lastRejoinAt = Date.now();
-          if (this.connection.rejoin()) return;
-        }
-        // The transport can be open while the server failed to load the page.
-        if (!this.isSynced || handling.blocking) this.emitStatus("error");
-        this.onError?.({
-          type: "error",
-          message: handling.message,
-          code: payload.code,
-          requestId: payload.requestId,
-        });
-      },
+      onError: reportServerError,
       onPresence: this.onPresence,
       onSynced: (synced) => {
         this.isSynced = synced;
@@ -144,98 +133,57 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       this.sender,
     );
 
-    this.logicChannel = new LogicChannel({
-      resolvePendingRequest: (requestId, ok, data) =>
-        this.dispatcher.resolvePendingRequest(requestId, ok, data),
-      onSync: (payload) => options.onLogicSync?.(payload),
-      onChanged: (payload, own) => options.onLogicChanged?.(payload, own),
+    this.logicClient = new ProviderLogicClient({
+      projectId: this.projectId,
+      pageId: this.pageId,
+      userId: this.userId,
+      connection: this.connection,
+      dispatcher: this.dispatcher,
+      sender: this.sender,
+      onLogicSync: options.onLogicSync,
+      onLogicChanged: options.onLogicChanged,
+      onAgentRequest: options.onAgentRequest,
     });
 
-    if (options.onAgentRequest) {
-      this.agentChannel = new AgentChannel({
-        onRequest: options.onAgentRequest,
-        send: (requestId, outcome) => {
-          const payload = outcome.ok ? { ok: true, result: outcome.result } : { ok: false, error: outcome.error };
-          const envelope = this.dispatcher.createEnvelope(WS_MESSAGE.AGENT_RESPONSE, this.projectId, this.pageId, payload, { userId: this.userId, requestId });
-          this.connection.send(JSON.stringify(envelope));
-        },
-      });
+    if (options.onSyncUsers) {
+      this.awarenessController.on("change", (data) =>
+        options.onSyncUsers?.(data.users),
+      );
     }
 
-    this.setupEventForwarding();
-    void this.connection.connect();
+    bindProviderTransport({
+      connection: this.connection,
+      onOpen: () => this.emitStatus("connected"),
+      onClose: () => {
+        this.messageHandler.suspend();
+        this.isSynced = false;
+        this.emitStatus("disconnected");
+      },
+      onFatal: (message) => {
+        this.messageHandler.suspend();
+        this.isSynced = false;
+        this.emitStatus("error");
+        this.onError?.({ type: "error", message, code: "PROCESS_ERROR" });
+      },
+      onTransportError: (message) => {
+        this.emitStatus("error");
+        this.onError?.({ type: "error", message, code: "PROCESS_ERROR" });
+      },
+      onEnvelope: (envelope) => {
+        if (this.logicClient.handleIncoming(envelope)) return;
+        this.messageHandler.handle(envelope);
+      },
+    });
 
+    void this.connection.connect();
     this.pruneInterval = setInterval(() => {
       this.awarenessController.pruneStale();
-    }, 60_000);
+    }, PRESENCE_PRUNE_INTERVAL_MS);
   }
 
-  // Event wiring
-
-  private setupEventForwarding(): void {
-    this.connection.on("open", () => {
-      this.connected = true;
-      this.emitStatus("connected");
-    });
-
-    this.connection.on("close", () => {
-      this.messageHandler.suspend();
-      this.connected = false;
-      this.isSynced = false;
-      this.emitStatus("disconnected");
-    });
-
-    this.connection.on("fatal", (info) => {
-      this.messageHandler.suspend();
-      this.connected = false;
-      this.isSynced = false;
-      this.emitStatus("error");
-      this.onError?.({ type: "error", message: info.message, code: "PROCESS_ERROR" });
-    });
-    this.connection.on("error", this.handleConnectionError);
-    this.connection.on("message", this.handleMessage);
-
-    this.awarenessController.on("change", (...args: unknown[]) => {
-      const [data] = args;
-      const users =
-        data &&
-        typeof data === "object" &&
-        "users" in data &&
-        data.users &&
-        typeof data.users === "object"
-          ? (data.users as Record<string, UserInfo>)
-          : {};
-
-      this.onSyncUsers?.(users);
-    });
+  public get connected(): boolean {
+    return this.connection.connected;
   }
-
-  private readonly handleConnectionError = (error: Error): void => {
-    const message = error instanceof Error ? error.message : "WebSocket error";
-    this.emitStatus("error");
-    this.onError?.({ type: "error", message, code: "PROCESS_ERROR" });
-  };
-
-  private readonly handleMessage = (data: unknown): void => {
-    if (typeof data !== "string") {
-      console.error(
-        "[CustomYjsProviderV2] Received non-string message payload:",
-        data,
-      );
-      return;
-    }
-
-    try {
-      const envelope = JSON.parse(data) as WSEnvelope<unknown>;
-      if (this.logicChannel.handle(envelope)) return;
-      if (this.agentChannel?.handle(envelope)) return;
-      this.messageHandler.handle(envelope);
-    } catch (error) {
-      console.error("[CustomYjsProviderV2] Failed to parse message:", error);
-    }
-  };
-
-  // Element operations (outbound)
 
   public async createElement(
     element: EditorElement,
@@ -273,122 +221,83 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     return this.elementOps.moveElement(elementId, newParentId, newPosition);
   }
 
-  // Logic (variables and flows)
-
   public async updateLogic(
     scope: LogicScope,
     patch: Record<string, unknown>,
     nullPaths?: string[][],
   ): Promise<LogicChangedPayload> {
-    const requestId = this.dispatcher.generateRequestId();
-    const envelope = this.dispatcher.createEnvelope<LogicUpdatePayload>(
-      "logic:update",
-      this.projectId,
-      this.pageId,
-      { scope, patch, ...(nullPaths?.length ? { nullPaths } : {}) },
-      { userId: this.userId, requestId },
-    );
-    this.logicChannel.track(requestId);
-    try {
-      return await this.sender.sendRequest<LogicChangedPayload>(envelope, requestId);
-    } finally {
-      this.logicChannel.forget(requestId);
-    }
+    return this.logicClient.updateLogic(scope, patch, nullPaths);
   }
 
   public requestLogicSync(): void {
-    if (!this.connection.connected) return;
-    const envelope = this.dispatcher.createEnvelope(
-      "logic:sync",
-      this.projectId,
-      this.pageId,
-      {},
-      { userId: this.userId, requestId: this.dispatcher.generateRequestId() },
-    );
-    this.connection.send(JSON.stringify(envelope));
+    this.logicClient.requestLogicSync();
   }
 
-  public async moveLogic(kind: "variable" | "flow", name: string, to: LogicScope): Promise<LogicSyncPayload> {
-    const requestId = this.dispatcher.generateRequestId();
-    const envelope = this.dispatcher.createEnvelope(
-      "logic:move", this.projectId, this.pageId, { kind, name, to }, { userId: this.userId, requestId },
-    );
-    this.logicChannel.track(requestId);
-    try {
-      return await this.sender.sendRequest<LogicSyncPayload>(envelope, requestId);
-    } finally {
-      this.logicChannel.forget(requestId);
-    }
+  public async moveLogic(
+    kind: "variable" | "flow",
+    name: string,
+    to: LogicScope,
+  ): Promise<LogicSyncPayload> {
+    return this.logicClient.moveLogic(kind, name, to);
   }
-
-  // Presence
 
   public sendPresence(
     cursorX: number,
     cursorY: number,
     elementId?: string | null,
   ): void {
-    this.awarenessController.updateLocalCursor({ x: cursorX, y: cursorY });
     if (elementId !== undefined) {
       this.awarenessController.updateLocalSelection(elementId);
     }
+    const payload: PresencePayload = {
+      userId: this.userId,
+      userName: this.userName,
+      cursorX,
+      cursorY,
+      elementId:
+        elementId ?? this.awarenessController.getLocalSelectedElement(),
+    };
     const envelope = this.dispatcher.createEnvelope(
       "presence",
       this.projectId,
       this.pageId,
-      {
-        userId: this.userId,
-        userName: this.userName,
-        cursorX,
-        cursorY,
-        elementId:
-          elementId ?? this.awarenessController.getLocalSelectedElement(),
-      } satisfies import("../../interfaces/websocket").PresencePayload,
+      payload,
       { userId: this.userId },
     );
     this.sender.sendOrQueue(envelope);
   }
 
-  // Event subscription & control
-
-  public on(event: EventType, callback: StatusListener | SyncedListener): void {
-    if (event === "status") {
-      this.statusListeners.add(callback as StatusListener);
-      const currentStatus = this.connected ? "connected" : "connecting";
-      (callback as StatusListener)({ status: currentStatus });
-    } else if (event === "synced") {
-      this.syncedListeners.add(callback as SyncedListener);
+  public on(...args: ["status", StatusListener] | ["synced", SyncedListener]): void {
+    if (args[0] === "status") {
+      const listener = args[1];
+      this.statusListeners.add(listener);
+      const currentStatus =
+        this.lastStatus ?? (this.connected ? "connected" : "connecting");
+      listener({ status: currentStatus });
+      return;
     }
+    this.syncedListeners.add(args[1]);
   }
 
-  public off(
-    event: EventType,
-    callback: StatusListener | SyncedListener,
-  ): void {
-    if (event === "status") {
-      this.statusListeners.delete(callback as StatusListener);
-    } else if (event === "synced") {
-      this.syncedListeners.delete(callback as SyncedListener);
+  public off(...args: ["status", StatusListener] | ["synced", SyncedListener]): void {
+    if (args[0] === "status") {
+      this.statusListeners.delete(args[1]);
+      return;
     }
+    this.syncedListeners.delete(args[1]);
   }
 
   public get pendingUpdates(): number {
-    return Math.max(this.dispatcher.pendingCount, this.messageHandler.pendingCount);
+    return Math.max(
+      this.dispatcher.pendingCount,
+      this.messageHandler.pendingCount,
+    );
   }
 
   public onPresenceChange(
     callback: (presences: Map<string, RemotePresence>) => void,
   ): () => void {
-    try {
-      callback(this.awarenessController.remotePresences);
-    } catch (err) {
-      console.error(
-        "[CustomYjsProviderV2] onPresenceChange callback error:",
-        err,
-      );
-    }
-
-    const handler = () => {
+    const invoke = () => {
       try {
         callback(this.awarenessController.remotePresences);
       } catch (err) {
@@ -398,21 +307,21 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         );
       }
     };
-
-    this.awarenessController.on("change", handler);
-    return () => this.awarenessController.off("change", handler);
+    invoke();
+    this.awarenessController.on("change", invoke);
+    return () => this.awarenessController.off("change", invoke);
   }
 
   public async reconnect(): Promise<void> {
-    this.messageHandler.suspend();
-    this.connection.disconnect();
-    this.isSynced = false;
+    this.disconnect();
     await this.connection.connect();
   }
 
   public disconnect(): void {
     this.messageHandler.suspend();
+    this.isSynced = false;
     this.connection.disconnect();
+    this.emitStatus("disconnected");
   }
 
   public isConnected(): boolean {
@@ -424,6 +333,8 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       clearInterval(this.pruneInterval);
       this.pruneInterval = null;
     }
+    this.isSynced = false;
+    this.lastStatus = "disconnected";
     this.connection.destroy();
     this.messageHandler.dispose();
     this.sender.destroy();

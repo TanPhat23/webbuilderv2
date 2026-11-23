@@ -28,7 +28,6 @@ export type {
   RateLimiter,
   StatusListener,
   SyncedListener,
-  EventType,
   ConnectionOptions,
 
   // Yjs provider public API and options

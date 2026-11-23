@@ -114,11 +114,11 @@ export class MessageDispatcher extends EventEmitter {
    * @param requestId  The client-generated request ID
    * @param timeoutMs  How long to wait before timing out (default: 10s)
    */
-  public createPendingRequest<T>(
+  public createPendingRequest(
     requestId: string,
     timeoutMs: number = 10_000,
-  ): Promise<T> {
-    return new Promise((resolve, reject) => {
+  ): Promise<unknown> {
+    return new Promise<unknown>((resolve, reject) => {
       const timeout = setTimeout(() => {
         if (this.pendingRequests.has(requestId)) {
           this.pendingRequests.delete(requestId);

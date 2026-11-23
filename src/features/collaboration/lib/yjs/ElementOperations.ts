@@ -13,6 +13,21 @@ import type {
 import type { MessageDispatcher } from "./MessageDispatcher";
 import type { MessageSender } from "./MessageSender";
 
+function isElementOperationResult(value: unknown): value is ElementOperationResult {
+  if (typeof value !== "object" || value === null || !("operationType" in value)) {
+    return false;
+  }
+  const op = value.operationType;
+  return op === "create" || op === "update" || op === "delete" || op === "move";
+}
+
+function parseElementOperationResult(data: unknown): ElementOperationResult {
+  if (!isElementOperationResult(data)) {
+    throw new Error("Unexpected element operation response payload");
+  }
+  return data;
+}
+
 export class ElementOperations {
   constructor(
     private readonly projectId: string,
@@ -46,8 +61,8 @@ export class ElementOperations {
     };
   }
 
-  private sendRequest<T>(envelope: WSEnvelope<unknown>, requestId: string): Promise<T> {
-    return this.sender.sendRequest<T>(envelope, requestId);
+  private sendRequest(envelope: WSEnvelope<unknown>, requestId: string): Promise<ElementOperationResult> {
+    return this.sender.sendRequest(envelope, requestId, parseElementOperationResult);
   }
 
   async createElement(
@@ -63,7 +78,7 @@ export class ElementOperations {
       { element: this.toPayloadNode(element, parentId, position), ...(position !== undefined ? { position } : {}) },
       { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
-    return this.sendRequest<ElementOperationResult>(envelope, requestId);
+    return this.sendRequest(envelope, requestId);
   }
 
   async updateElement(
@@ -89,7 +104,7 @@ export class ElementOperations {
       },
       { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
-    return this.sendRequest<ElementOperationResult>(envelope, requestId);
+    return this.sendRequest(envelope, requestId);
   }
 
   async deleteElement(
@@ -105,7 +120,7 @@ export class ElementOperations {
       { id: elementId },
       { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
-    return this.sendRequest<ElementOperationResult>(envelope, requestId);
+    return this.sendRequest(envelope, requestId);
   }
 
   async moveElement(
@@ -121,6 +136,6 @@ export class ElementOperations {
       { id: elementId, parentId: newParentId, order: newPosition ?? 0 },
       { userId: this.userId, requestId, clientOpId: uuidv4() },
     );
-    return this.sendRequest<ElementOperationResult>(envelope, requestId);
+    return this.sendRequest(envelope, requestId);
   }
 }

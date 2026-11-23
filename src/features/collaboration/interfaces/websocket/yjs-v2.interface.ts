@@ -136,7 +136,7 @@ export interface ConflictMessage {
 export type V2Message = WSEnvelope<unknown>;
 
 export interface PendingRequest {
-  resolve: (value: any) => void;
+  resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timeout: NodeJS.Timeout;
 }
@@ -144,14 +144,12 @@ export interface PendingRequest {
 export interface RateLimiter {
   tokens: number;
   maxTokens: number;
-  /** Tokens replenished per second */
   refillRate: number;
   lastRefill: number;
 }
 
 export type StatusListener = (data: { status: string }) => void;
 export type SyncedListener = (synced: boolean) => void;
-export type EventType = "status" | "synced";
 
 export interface ConnectionOptions {
   /** Helper socket that must not replace the editor's own connection (server: ?conn=writer). */
@@ -169,8 +167,8 @@ export interface CustomYjsProviderV2 {
   connected: boolean;
   isSynced: boolean;
 
-  on(event: EventType, callback: StatusListener | SyncedListener): void;
-  off(event: EventType, callback: StatusListener | SyncedListener): void;
+  on(...args: ["status", StatusListener] | ["synced", SyncedListener]): void;
+  off(...args: ["status", StatusListener] | ["synced", SyncedListener]): void;
   disconnect(): void;
   reconnect(): Promise<void>;
   destroy(): void;

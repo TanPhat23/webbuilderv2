@@ -61,6 +61,7 @@ export class MessageSender extends EventEmitter {
   public async sendRequest<T>(
     envelope: WSEnvelope<unknown>,
     requestId: string,
+    parse: (data: unknown) => T,
   ): Promise<T> {
     this.onRequest?.(envelope);
     if (!this.dispatcher.checkRateLimit()) {
@@ -68,10 +69,10 @@ export class MessageSender extends EventEmitter {
       throw new Error("Rate limit exceeded. Please slow down.");
     }
 
-    const promise = this.dispatcher.createPendingRequest<T>(requestId);
+    const promise = this.dispatcher.createPendingRequest(requestId);
     this.sendOrQueue(envelope);
     try {
-      return await promise;
+      return parse(await promise);
     } catch (error) {
       // Only roll back if the operation is still queued and definitely unsent.
       if (this.dispatcher.removeQueuedRequest(requestId)) this.onRejected?.(envelope);
