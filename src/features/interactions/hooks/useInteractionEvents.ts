@@ -81,6 +81,25 @@ export function handleHoverEvent(
   if (result.runs.length) runner.fireSequence(result.runs, event);
 }
 
+function shouldSkipImageError(
+  target: Element,
+  event: Event | null,
+  imageErrors: WeakMap<Element, ImageErrorState>,
+): boolean {
+  const key = resolveImageErrorKey(target);
+  if (!key) return false;
+  const previous = imageErrors.get(target);
+  if (previous?.key === key) {
+    if (!event) return true;
+    if (previous.pendingNative) {
+      previous.pendingNative = false;
+      return true;
+    }
+  }
+  imageErrors.set(target, { key, pendingNative: !event });
+  return false;
+}
+
 export function dispatchImageError(
   target: Element | null,
   event: Event | null,
@@ -95,18 +114,7 @@ export function dispatchImageError(
   if (!result.runs.length) return;
   if (result.preventDefault) event?.preventDefault();
   if (result.stopPropagation) event?.stopPropagation();
-  const key = resolveImageErrorKey(target);
-  if (key) {
-    const previous = imageErrors.get(target);
-    if (previous?.key === key) {
-      if (!event) return;
-      if (previous.pendingNative) {
-        previous.pendingNative = false;
-        return;
-      }
-    }
-    imageErrors.set(target, { key, pendingNative: !event });
-  }
+  if (shouldSkipImageError(target, event, imageErrors)) return;
   runner.fireSequence(result.runs, event);
 }
 

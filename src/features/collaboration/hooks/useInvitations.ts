@@ -1,10 +1,11 @@
 import { projectScopedKeys } from "./projectScopedKeys";
-
+import { useScopedMutation } from "./useScopedMutation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invitationService } from "../services/invitation.service";
 import type {
   CreateInvitationRequest,
   AcceptInvitationRequest,
+  Invitation,
 } from "../interfaces/collaboration.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
@@ -14,19 +15,24 @@ import {
 
 export const invitationKeys = projectScopedKeys("invitations");
 
+export function resolveInvitationScopeKey(projectId?: string) {
+  return projectId ? invitationKeys.byProject(projectId) : invitationKeys.all;
+}
+
+export async function fetchProjectInvitations(
+  projectId: string | null,
+): Promise<Invitation[]> {
+  if (!projectId) throw new Error("Project ID is required");
+  return (await invitationService.getPendingInvitationsByProject(projectId)) || [];
+}
+
 export function useProjectInvitations(
   projectId: string | null,
   enabled = true,
 ) {
   return useQuery({
     queryKey: invitationKeys.byProject(projectId || ""),
-    queryFn: async () => {
-      if (!projectId) throw new Error("Project ID is required");
-      return (
-        (await invitationService.getPendingInvitationsByProject(projectId)) ||
-        []
-      );
-    },
+    queryFn: () => fetchProjectInvitations(projectId),
     enabled: !!projectId && enabled,
     ...QUERY_CONFIG.SHORT,
     refetchOnWindowFocus: false,
@@ -67,9 +73,7 @@ export function useAcceptInvitation() {
 }
 
 export function useUpdateInvitationStatus(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useScopedMutation({
     mutationFn: ({
       invitationId,
       status,
@@ -77,52 +81,29 @@ export function useUpdateInvitationStatus(projectId?: string) {
       invitationId: string;
       status: string;
     }) => invitationService.updateInvitationStatus(invitationId, status),
-    onSuccess: (updatedInvitation) => {
-      queryClient.invalidateQueries({
-        queryKey: projectId
-          ? invitationKeys.byProject(projectId)
-          : invitationKeys.all,
-      });
-      onMutationSuccess(
-        `Invitation status updated to ${updatedInvitation.status}!`,
-      )();
-    },
-    onError: onMutationError("Failed to update invitation status"),
+    invalidateKey: resolveInvitationScopeKey(projectId),
+    successMessage: (updatedInvitation) =>
+      `Invitation status updated to ${updatedInvitation.status}!`,
+    errorMessage: "Failed to update invitation status",
   });
 }
 
 export function useCancelInvitation(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useScopedMutation({
     mutationFn: (invitationId: string) =>
       invitationService.cancelInvitation(invitationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: projectId
-          ? invitationKeys.byProject(projectId)
-          : invitationKeys.all,
-      });
-      onMutationSuccess("Invitation cancelled successfully!")();
-    },
-    onError: onMutationError("Failed to cancel invitation"),
+    invalidateKey: resolveInvitationScopeKey(projectId),
+    successMessage: "Invitation cancelled successfully!",
+    errorMessage: "Failed to cancel invitation",
   });
 }
 
 export function useDeleteInvitation(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useScopedMutation({
     mutationFn: (invitationId: string) =>
       invitationService.deleteInvitation(invitationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: projectId
-          ? invitationKeys.byProject(projectId)
-          : invitationKeys.all,
-      });
-      onMutationSuccess("Invitation deleted successfully!")();
-    },
-    onError: onMutationError("Failed to delete invitation"),
+    invalidateKey: resolveInvitationScopeKey(projectId),
+    successMessage: "Invitation deleted successfully!",
+    errorMessage: "Failed to delete invitation",
   });
 }

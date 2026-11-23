@@ -1,5 +1,5 @@
 import { projectScopedKeys } from "./projectScopedKeys";
-
+import { useScopedMutation } from "./useScopedMutation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { collaboratorService } from "../services/collaborator.service";
 import type { UpdateCollaboratorRoleRequest } from "../interfaces/collaboration.interface";
@@ -10,6 +10,12 @@ import {
 } from "@/hooks/utils/mutationUtils";
 
 export const collaboratorKeys = projectScopedKeys("collaborators");
+
+export function resolveCollaboratorScopeKey(projectId?: string) {
+  return projectId
+    ? collaboratorKeys.byProject(projectId)
+    : collaboratorKeys.all;
+}
 
 export function useProjectCollaborators(
   projectId: string | null,
@@ -29,9 +35,7 @@ export function useProjectCollaborators(
 }
 
 export function useUpdateCollaboratorRole(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useScopedMutation({
     mutationFn: ({
       collaboratorId,
       role,
@@ -39,33 +43,19 @@ export function useUpdateCollaboratorRole(projectId?: string) {
       collaboratorId: string;
       role: UpdateCollaboratorRoleRequest;
     }) => collaboratorService.updateCollaboratorRole(collaboratorId, role),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: projectId
-          ? collaboratorKeys.byProject(projectId)
-          : collaboratorKeys.all,
-      });
-      onMutationSuccess("Collaborator role updated successfully!")();
-    },
-    onError: onMutationError("Failed to update collaborator role"),
+    invalidateKey: resolveCollaboratorScopeKey(projectId),
+    successMessage: "Collaborator role updated successfully!",
+    errorMessage: "Failed to update collaborator role",
   });
 }
 
 export function useRemoveCollaborator(projectId?: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
+  return useScopedMutation({
     mutationFn: (collaboratorId: string) =>
       collaboratorService.removeCollaborator(collaboratorId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: projectId
-          ? collaboratorKeys.byProject(projectId)
-          : collaboratorKeys.all,
-      });
-      onMutationSuccess("Collaborator removed successfully!")();
-    },
-    onError: onMutationError("Failed to remove collaborator"),
+    invalidateKey: resolveCollaboratorScopeKey(projectId),
+    successMessage: "Collaborator removed successfully!",
+    errorMessage: "Failed to remove collaborator",
   });
 }
 
