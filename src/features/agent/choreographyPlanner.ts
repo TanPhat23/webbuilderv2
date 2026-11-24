@@ -16,12 +16,12 @@ export interface ChoreographyStep {
   readonly delayMs: number;
 }
 
-const MIN_STEP_DELAY_MS = 90;
-const MAX_SINGLE_STEP_DELAY_MS = 260;
-const MIN_BATCH_STEP_DELAY_MS = 100;
-const MAX_BATCH_STEP_DELAY_MS = 150;
-const TARGET_SINGLE_DURATION_MS = 3000;
-const TARGET_BATCH_DURATION_MS = 4200;
+const MIN_STEP_DELAY_MS = 180;
+const MAX_SINGLE_STEP_DELAY_MS = 520;
+const MIN_BATCH_STEP_DELAY_MS = 200;
+const MAX_BATCH_STEP_DELAY_MS = 300;
+const TARGET_SINGLE_DURATION_MS = 6000;
+const TARGET_BATCH_DURATION_MS = 8400;
 const MAX_VISUAL_STEPS = 32;
 const MAX_LABEL_NAME_LEN = 28;
 
@@ -37,18 +37,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function indexTree(tree: readonly EditorElement[]): Map<string, EditorElement> {
+interface IndexedTree {
+  readonly byId: Map<string, EditorElement>;
+  readonly orderById: Map<string, number>;
+  readonly parentById: Map<string, string | undefined>;
+}
+
+function indexTree(tree: readonly EditorElement[]): IndexedTree {
   const byId = new Map<string, EditorElement>();
-  const visit = (list: readonly EditorElement[]): void => {
-    for (const el of list) {
+  const orderById = new Map<string, number>();
+  const parentById = new Map<string, string | undefined>();
+  const visit = (
+    list: readonly EditorElement[],
+    parentId: string | undefined,
+  ): void => {
+    list.forEach((el, idx) => {
       byId.set(el.id, el);
+      orderById.set(el.id, idx);
+      parentById.set(el.id, parentId);
       if (isContainer(el)) {
-        visit(el.elements);
+        visit(el.elements, el.id);
       }
-    }
+    });
   };
-  visit(tree);
-  return byId;
+  visit(tree, undefined);
+  return { byId, orderById, parentById };
 }
 
 function expandCreateSubtree(
@@ -155,19 +168,25 @@ export function planChoreographySteps(
   const moves: TreeOp[] = [];
   const updates: TreeOp[] = [];
 
+  const beforeIndexed = indexTree(beforeTree);
+  const afterIndexed = indexTree(afterTree);
+
   for (const op of rawOps) {
     switch (op.type) {
       case "delete":
         deletes.push(op);
         break;
-      case "create":
-        expandCreateSubtree(
-          op.element,
-          op.element.parentId ?? undefined,
-          typeof op.element.order === "number" ? op.element.order : 0,
-          creates,
-        );
+      case "create": {
+        const parentId =
+          afterIndexed.parentById.get(op.element.id) ??
+          op.element.parentId ??
+          undefined;
+        const order =
+          afterIndexed.orderById.get(op.element.id) ??
+          (typeof op.element.order === "number" ? op.element.order : 0);
+        expandCreateSubtree(op.element, parentId, order, creates);
         break;
+      }
       case "move":
         moves.push(op);
         break;
@@ -180,8 +199,8 @@ export function planChoreographySteps(
   const orderedOps: TreeOp[] = [...deletes, ...creates, ...moves, ...updates];
   if (orderedOps.length === 0) return [];
 
-  const beforeById = indexTree(beforeTree);
-  const afterById = indexTree(afterTree);
+  const beforeById = beforeIndexed.byId;
+  const afterById = afterIndexed.byId;
 
   let groupedOps: TreeOp[][];
   let delayMs: number;

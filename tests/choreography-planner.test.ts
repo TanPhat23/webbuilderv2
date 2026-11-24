@@ -94,7 +94,7 @@ describe("planChoreographySteps", () => {
     assert.ok(createIds.indexOf("sec-1") < createIds.indexOf("child-1"));
   });
 
-  it("keeps total planned duration within adaptive 2-5s budget for 120 ops", () => {
+  it("keeps total planned duration within adaptive 4-10s budget for 120 ops", () => {
     const children: EditorElement[] = Array.from({ length: 119 }, (_, idx) =>
       makeText(`item-${idx}`, {
         name: `Item ${idx}`,
@@ -107,8 +107,8 @@ describe("planChoreographySteps", () => {
     const steps = planChoreographySteps([], [root]);
     assert.ok(steps.length <= 32);
     const totalMs = steps.reduce((sum, s) => sum + s.delayMs, 0);
-    assert.ok(totalMs >= 1500, `expected totalMs >= 1500, got ${totalMs}`);
-    assert.ok(totalMs <= 5200, `expected totalMs <= 5200, got ${totalMs}`);
+    assert.ok(totalMs >= 3000, `expected totalMs >= 3000, got ${totalMs}`);
+    assert.ok(totalMs <= 10400, `expected totalMs <= 10400, got ${totalMs}`);
   });
 
   it("reaches exact afterTree structure when applying planned steps sequentially", () => {
@@ -162,5 +162,29 @@ describe("planChoreographySteps", () => {
     assert.equal(root.elements[0]?.content, "After");
     assert.equal(root.elements[0]?.styles?.default?.fontSize, "24px");
     assert.equal(root.elements[0]?.styles?.default?.color, undefined);
+  });
+
+  it("inserts sibling sections top-to-bottom even when afterTree elements share order 0", () => {
+    const after: EditorElement[] = [
+      makeSection("sec-header", [], { name: "Header", order: 0 }),
+      makeSection("sec-hero", [], { name: "Hero", order: 0 }),
+      makeSection("sec-footer", [], { name: "Footer", order: 0 }),
+    ];
+
+    const steps = planChoreographySteps([], after);
+    assert.equal(steps.length, 3);
+
+    let current: EditorElement[] = [];
+    const intermediateOrders: string[][] = [];
+    for (const step of steps) {
+      current = applyTreeOpsLocally(current, step.ops);
+      intermediateOrders.push(current.map((el) => el.id));
+    }
+
+    assert.deepEqual(intermediateOrders, [
+      ["sec-header"],
+      ["sec-header", "sec-hero"],
+      ["sec-header", "sec-hero", "sec-footer"],
+    ]);
   });
 });

@@ -65,7 +65,7 @@ interface ActiveSession {
   timerId: ReturnType<typeof setTimeout> | null;
 }
 
-const DELETE_BEAT_MS = 110;
+const DELETE_BEAT_MS = 220;
 
 function defaultPrefersReducedMotion(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {

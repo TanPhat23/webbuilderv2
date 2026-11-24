@@ -143,7 +143,7 @@ export function AgentCanvasOverlay({
   useEffect(() => {
     if (touchedIds.length === 0) return;
     const timer = window.setInterval(() => {
-      pruneTouched(500);
+      pruneTouched(900);
     }, 200);
     return () => {
       window.clearInterval(timer);
@@ -252,7 +252,7 @@ export function AgentCanvasOverlay({
               className="absolute top-0 left-0 z-10 flex items-start gap-1 will-change-transform"
               style={{
                 transform: `translate3d(${point.x}px, ${point.y}px, 0)`,
-                transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                transition: "transform 360ms cubic-bezier(0.22, 1, 0.36, 1)",
               }}
             >
               <MousePointer2 className="text-primary fill-primary size-4 shrink-0 drop-shadow-sm" />

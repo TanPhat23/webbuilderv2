@@ -317,7 +317,7 @@ describe("LiveEditPlayer", () => {
     }
     assert.equal(harness.getElements().length, 1);
 
-    harness.clock.advanceBy(110);
+    harness.clock.advanceBy(220);
     assert.equal(harness.getElements().length, 0);
 
     harness.clock.runAll();
