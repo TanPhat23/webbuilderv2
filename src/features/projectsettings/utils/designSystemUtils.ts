@@ -1,20 +1,4 @@
-export interface ColorScheme {
-  primary: string;
-  primaryForeground: string;
-  secondary: string;
-  secondaryForeground: string;
-  accent: string;
-  accentForeground: string;
-  background: string;
-  foreground: string;
-  card: string;
-  cardForeground: string;
-  muted: string;
-  mutedForeground: string;
-  border: string;
-  destructive: string;
-  destructiveForeground: string;
-}
+export type { ColorScheme } from "@/features/projects/lib/theme-tokens";
 
 export interface SimpleColorScheme {
   primary: string;

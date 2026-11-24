@@ -48,17 +48,20 @@ export function sanitizeChrome(value: unknown): ChromeLayout {
 }
 
 interface EditorChromeState extends ChromeLayout {
+  settingsOpen: boolean;
   /** Opens `id`; re-selecting the open panel collapses it. */
   selectPanel: (id: RailId) => void;
   togglePanel: () => void;
   closePanel: () => void;
   toggleInspector: () => void;
+  setSettingsOpen: (open: boolean) => void;
 }
 
 export const useEditorChromeStore = create<EditorChromeState>()(
   persist(
     (set) => ({
       ...DEFAULT_CHROME,
+      settingsOpen: false,
       selectPanel: (id) =>
         set((s) =>
           s.activePanel === id && s.panelOpen
@@ -68,6 +71,7 @@ export const useEditorChromeStore = create<EditorChromeState>()(
       togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
       closePanel: () => set({ panelOpen: false }),
       toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),
+      setSettingsOpen: (open) => set({ settingsOpen: open }),
     }),
     {
       name: "editor-chrome",

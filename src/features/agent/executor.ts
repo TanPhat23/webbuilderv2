@@ -10,6 +10,11 @@ import { parseCode } from "@/features/editor/lib/code/parseCode";
 import type { Preamble } from "@/features/editor/lib/code/customCode";
 import { applyEdits } from "./editOps";
 import { sanitizeProjectCss } from "@/features/projects/lib/project-css";
+import {
+  findColorPreset,
+  PRESET_COLORS,
+  validateThemePatchObject,
+} from "@/features/projects/lib/theme-tokens";
 import type { AgentOutcome, AgentRequest } from "./protocol";
 import {
   componentRoots, componentSetting, detach, usageCount, visitComponentTree,
@@ -101,18 +106,41 @@ export function createExecutor(host: AgentHost) {
     // set_project_style
     if (!host.canEditProject()) return error("forbidden", "The user cannot change this project's settings.");
     const patch: ProjectStylePatch = {};
+    let mergedTheme: Record<string, unknown> | undefined;
+
     if (args.css !== undefined) {
       if (typeof args.css !== "string") return error("invalid_edit", "Nothing was applied.", [{ path: "css", message: "must be a string" }]);
       if (args.css.length > MAX_CSS) return error("invalid_edit", "Nothing was applied.", [{ path: "css", message: `longer than ${MAX_CSS} characters` }]);
       patch.css = sanitizeProjectCss(args.css);
     }
+
+    if (args.preset !== undefined) {
+      if (typeof args.preset !== "string") {
+        return error("invalid_edit", "Nothing was applied.", [{ path: "preset", message: "must be a preset name string" }]);
+      }
+      const preset = findColorPreset(args.preset);
+      if (!preset) {
+        const available = PRESET_COLORS.map((p) => p.name).join(", ");
+        return error("invalid_edit", "Nothing was applied.", [{ path: "preset", message: `unknown preset "${args.preset}". Available: ${available}` }]);
+      }
+      mergedTheme = { ...preset.colors };
+    }
+
     if (args.theme !== undefined) {
       const t = args.theme;
       if (typeof t !== "object" || t === null || Array.isArray(t)) return error("invalid_edit", "Nothing was applied.", [{ path: "theme", message: "must be an object" }]);
       if (JSON.stringify(t).length > MAX_THEME_JSON) return error("invalid_edit", "Nothing was applied.", [{ path: "theme", message: "too large" }]);
-      patch.theme = t as Record<string, unknown>;
+      const themeRecord = t as Record<string, unknown>;
+      const issues = validateThemePatchObject(themeRecord, "theme");
+      if (issues.length > 0) return error("invalid_edit", "Nothing was applied.", issues);
+      mergedTheme = { ...(mergedTheme ?? {}), ...themeRecord };
     }
-    if (patch.css === undefined && patch.theme === undefined) return error("invalid_edit", "Nothing was applied.", [{ path: "css", message: "send css, theme or both" }]);
+
+    if (mergedTheme !== undefined) {
+      patch.theme = mergedTheme;
+    }
+
+    if (patch.css === undefined && patch.theme === undefined) return error("invalid_edit", "Nothing was applied.", [{ path: "css", message: "send css, theme, preset or a combination" }]);
     const before = await host.setProjectStyle(patch);
     const summary = [patch.css !== undefined && "custom CSS", patch.theme && "theme"].filter(Boolean).join(" and ") + " updated";
     host.notifyProjectChanged(summary, () => void host.setProjectStyle(before));

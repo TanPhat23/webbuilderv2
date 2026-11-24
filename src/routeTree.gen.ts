@@ -28,7 +28,6 @@ import { Route as ProtectedDashboardIndexRouteImport } from './app/_protected/da
 import { Route as ProtectedEditorIdRouteImport } from './app/_protected/editor.$id'
 import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protected/notifications/index'
 import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
-import { Route as ProtectedProjectsettingsIdRouteImport } from './app/_protected/projectsettings.$id'
 import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
 import { Route as ApiNotificationsProfileUpdateRouteImport } from './app/api/notifications/profile-update'
 import { Route as ProtectedEditorIdIndexRouteImport } from './app/_protected/editor.$id/index'
@@ -129,12 +128,6 @@ const ProtectedProfileIndexRoute = ProtectedProfileIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProtectedProfileRoute,
 } as any)
-const ProtectedProjectsettingsIdRoute =
-  ProtectedProjectsettingsIdRouteImport.update({
-    id: '/projectsettings/$id',
-    path: '/projectsettings/$id',
-    getParentRoute: () => ProtectedRoute,
-  } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
   id: '/api/notifications/',
   path: '/api/notifications/',
@@ -168,7 +161,6 @@ export interface FileRoutesByFullPath {
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/editor/$id': typeof ProtectedEditorIdRouteWithChildren
-  '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
   '/notifications/': typeof ProtectedNotificationsIndexRoute
@@ -188,7 +180,6 @@ export interface FileRoutesByTo {
   '/sign-up/$': typeof SignUpSplatRoute
   '/sign-in': typeof SignInIndexRoute
   '/sign-up': typeof SignUpIndexRoute
-  '/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
@@ -214,7 +205,6 @@ export interface FileRoutesById {
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/_protected/editor/$id': typeof ProtectedEditorIdRouteWithChildren
-  '/_protected/projectsettings/$id': typeof ProtectedProjectsettingsIdRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
@@ -240,7 +230,6 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/editor/$id'
-    | '/projectsettings/$id'
     | '/api/notifications/profile-update'
     | '/dashboard/'
     | '/notifications/'
@@ -260,7 +249,6 @@ export interface FileRouteTypes {
     | '/sign-up/$'
     | '/sign-in'
     | '/sign-up'
-    | '/projectsettings/$id'
     | '/api/notifications/profile-update'
     | '/dashboard'
     | '/notifications'
@@ -285,7 +273,6 @@ export interface FileRouteTypes {
     | '/sign-in/'
     | '/sign-up/'
     | '/_protected/editor/$id'
-    | '/_protected/projectsettings/$id'
     | '/api/notifications/profile-update'
     | '/_protected/dashboard/'
     | '/_protected/notifications/'
@@ -444,13 +431,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedProfileIndexRouteImport
       parentRoute: typeof ProtectedProfileRoute
     }
-    '/_protected/projectsettings/$id': {
-      id: '/_protected/projectsettings/$id'
-      path: '/projectsettings/$id'
-      fullPath: '/projectsettings/$id'
-      preLoaderRoute: typeof ProtectedProjectsettingsIdRouteImport
-      parentRoute: typeof ProtectedRoute
-    }
     '/api/notifications/': {
       id: '/api/notifications/'
       path: '/api/notifications'
@@ -529,7 +509,6 @@ interface ProtectedRouteChildren {
   ProtectedNotificationsRoute: typeof ProtectedNotificationsRouteWithChildren
   ProtectedProfileRoute: typeof ProtectedProfileRouteWithChildren
   ProtectedEditorIdRoute: typeof ProtectedEditorIdRouteWithChildren
-  ProtectedProjectsettingsIdRoute: typeof ProtectedProjectsettingsIdRoute
 }
 
 const ProtectedRouteChildren: ProtectedRouteChildren = {
@@ -539,7 +518,6 @@ const ProtectedRouteChildren: ProtectedRouteChildren = {
   ProtectedNotificationsRoute: ProtectedNotificationsRouteWithChildren,
   ProtectedProfileRoute: ProtectedProfileRouteWithChildren,
   ProtectedEditorIdRoute: ProtectedEditorIdRouteWithChildren,
-  ProtectedProjectsettingsIdRoute: ProtectedProjectsettingsIdRoute,
 }
 
 const ProtectedRouteWithChildren = ProtectedRoute._addFileChildren(

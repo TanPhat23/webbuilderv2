@@ -1,13 +1,16 @@
+import type { ChangeEvent, ReactElement } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 interface ColorInputProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  bgClass?: string;
-  id: string;
+  readonly label: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly placeholder: string;
+  readonly bgClass?: string;
+  readonly id: string;
+  readonly disabled?: boolean;
 }
 
 export function ColorInput({
@@ -15,51 +18,56 @@ export function ColorInput({
   value,
   onChange,
   placeholder,
-  bgClass = "",
   id,
-}: ColorInputProps) {
+  disabled = false,
+}: ColorInputProps): ReactElement {
+  const handleValueChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    onChange(event.target.value);
+  };
+
   return (
-    <div className="text-center space-y-3">
-      <Label
-        className="text-sm font-bold text-foreground flex items-center justify-center gap-2"
-        style={{
-          letterSpacing: "var(--tracking-normal)",
-        }}
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-lg border border-border bg-background/60 p-2.5 transition-colors hover:border-ring/50",
+        disabled && "opacity-60",
+      )}
+    >
+      <label
+        htmlFor={id}
+        className={cn(
+          "relative size-9 shrink-0 overflow-hidden rounded-md border border-border shadow-xs",
+          disabled ? "cursor-not-allowed" : "cursor-pointer",
+        )}
+        style={{ backgroundColor: value }}
+        title={`Pick ${label} color`}
       >
-        <div
-          className={`w-3 h-3 rounded-full ${bgClass}`}
-          style={
-            !bgClass
-              ? {
-                  backgroundColor: value,
-                }
-              : {}
-          }
-         />
-        {label}
-      </Label>
-      <div className="relative mx-auto w-fit">
         <input
           type="color"
           id={id}
           value={value}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            onChange(e.target.value)
-          }
-          className="w-16 h-16 rounded-[var(--radius-lg)] border-2 border-border shadow-[var(--shadow-md)] cursor-pointer mx-auto"
+          disabled={disabled}
+          onChange={handleValueChange}
+          aria-label={`${label} color picker`}
+          className="absolute inset-0 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+        />
+      </label>
+
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <Label
+          htmlFor={`${id}-hex`}
+          className="truncate text-xs font-medium text-foreground"
+        >
+          {label}
+        </Label>
+        <Input
+          id={`${id}-hex`}
+          value={value}
+          disabled={disabled}
+          onChange={handleValueChange}
+          className="h-7 bg-card px-2 font-mono text-xs"
+          placeholder={placeholder}
         />
       </div>
-      <Input
-        value={value}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          onChange(e.target.value)
-        }
-        className="font-mono text-xs border-2 border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-[var(--radius)] bg-card text-center"
-        style={{
-          letterSpacing: "var(--tracking-normal)",
-        }}
-        placeholder={placeholder}
-      />
     </div>
   );
 }

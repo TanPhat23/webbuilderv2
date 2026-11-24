@@ -89,28 +89,78 @@ export function extractProjectSettings(
   };
 }
 
+export interface ProjectUpdatePermissions {
+  readonly canPublish?: boolean;
+  readonly canManageSettings?: boolean;
+}
+
+export interface BuiltProjectUpdatePayload<
+  THeader extends object = NonNullable<ProjectUpdateFields["header"]>,
+> {
+  readonly id: string;
+  readonly name: string;
+  readonly description: string | null;
+  readonly published?: boolean;
+  readonly subdomain?: string | null;
+  readonly header: Partial<THeader> & { cssStyles: string };
+  readonly styles: JsonRecord;
+}
+
+function normalizeSubdomain(subdomain: string): string | null {
+  const trimmed = subdomain.trim().toLowerCase();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+export function areProjectSettingsEqual(
+  a: Readonly<ProjectSettingsState>,
+  b: Readonly<ProjectSettingsState>,
+): boolean {
+  if (
+    a.projectName !== b.projectName ||
+    a.projectDescription !== b.projectDescription ||
+    a.isPublished !== b.isPublished ||
+    a.subdomain !== b.subdomain ||
+    a.customCSS !== b.customCSS ||
+    a.fontFamily !== b.fontFamily ||
+    a.letterTracking !== b.letterTracking ||
+    a.borderRadius !== b.borderRadius ||
+    a.spacing !== b.spacing ||
+    a.shadowStyle !== b.shadowStyle
+  ) {
+    return false;
+  }
+
+  for (const field of COLOR_FIELDS) {
+    if (a.selectedColors[field.key] !== b.selectedColors[field.key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function buildProjectUpdatePayload<
   THeader extends object = NonNullable<ProjectUpdateFields["header"]>,
 >({
   projectId,
   existingHeader,
   state,
+  permissions,
 }: {
   projectId: string;
   existingHeader?: THeader | null;
   state: ProjectSettingsState;
-}): ProjectUpdateFields & {
-  id: string;
-  header: Partial<THeader> & { cssStyles: string };
-  styles: JsonRecord;
-} {
+  permissions?: ProjectUpdatePermissions;
+}): BuiltProjectUpdatePayload<THeader> {
   const baseHeader: Partial<THeader> = existingHeader ?? {};
+  const includePublished = permissions === undefined || permissions.canPublish === true;
+  const includeSubdomain = permissions === undefined || permissions.canManageSettings === true;
+
   return {
     id: projectId,
-    name: state.projectName,
+    name: state.projectName.trim(),
     description: state.projectDescription || null,
-    published: state.isPublished,
-    subdomain: state.subdomain || null,
+    ...(includePublished ? { published: state.isPublished } : {}),
+    ...(includeSubdomain ? { subdomain: normalizeSubdomain(state.subdomain) } : {}),
     header: {
       ...baseHeader,
       cssStyles: sanitizeProjectCss(state.customCSS),

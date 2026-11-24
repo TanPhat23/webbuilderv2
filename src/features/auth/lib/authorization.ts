@@ -92,6 +92,12 @@ export async function authorizeUserAnyPermission(
   };
 }
 
+type HttpStatusError = Error & { status: number };
+
+function withHttpStatus(message: string, status: number): HttpStatusError {
+  return Object.assign(new Error(message), { status });
+}
+
 /**
  * Middleware-friendly authorization check
  * Throws an error if authorization fails
@@ -101,19 +107,16 @@ export async function requirePermission(
   projectId: string,
   permission: Permission,
 ): Promise<UserProjectAccess> {
-  const result = await authorizeUserAction(userId, projectId, permission);
-
-  if (!result.authorized) {
-    const error = new Error(result.reason || "Unauthorized");
-    (error as any).status = 403;
-    throw error;
-  }
-
   const access = await getUserProjectAccess(userId, projectId);
   if (!access) {
-    const error = new Error("Failed to get user access information");
-    (error as any).status = 500;
-    throw error;
+    throw withHttpStatus("User does not have access to this project", 403);
+  }
+
+  if (!hasPermission(access.role, permission)) {
+    throw withHttpStatus(
+      `User role '${access.role}' does not have permission '${permission}'`,
+      403,
+    );
   }
 
   return access;

@@ -10,8 +10,14 @@ export function useCMSContext(): CMSContextValue {
   return ctx;
 }
 
-export function CMSProvider({ children }: { children: React.ReactNode }) {
-  const manager = useCMSManager();
+export function CMSProvider({
+  children,
+  projectId,
+}: {
+  children: React.ReactNode;
+  projectId?: string;
+}): React.ReactElement {
+  const manager = useCMSManager(projectId);
 
   const value: CMSContextValue = {
     ...manager,

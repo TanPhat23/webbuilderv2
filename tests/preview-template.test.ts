@@ -63,3 +63,13 @@ test("generatePreviewHTML includes design tokens and zero spacing/radius values"
   assert.match(html, /0px<\/div><div class="stat-label">Border Radius/);
   assert.doesNotMatch(html, /<script/);
 });
+
+test("generatePreviewHTML injects sanitized customCSS and strips unsafe markup", () => {
+  const html = generatePreviewHTML(
+    {},
+    undefined,
+    ".hero h1 { color: #123456; } <script>alert(1)</script>",
+  );
+  assert.match(html, /\.hero h1 \{ color: #123456; \}/);
+  assert.doesNotMatch(html, /<script/);
+});

@@ -1,4 +1,5 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useContext } from "react";
+import { EditorContext } from "@/features/editor/context/EditorContext";
 import { Badge } from "@/components/ui/badge";
 import {
   useSelectedElement,
@@ -20,6 +21,8 @@ import {
 } from "./CMSListSections";
 
 const CMSConfiguration: React.FC = () => {
+  const editorContext = useContext(EditorContext);
+  const projectId = editorContext?.projectId ?? undefined;
   const selectedElement = useSelectedElement();
   const updateElement = useUpdateElement();
 
@@ -38,7 +41,7 @@ const CMSConfiguration: React.FC = () => {
   const isGrid = cmsElement?.type === "CMSContentGrid";
 
   const { data: contentTypes = [], isLoading: isLoadingTypes } =
-    useCMSContentTypes();
+    useCMSContentTypes(projectId);
   const { contentItems, isFetching: isLoadingItems } = useCMSContent({
     contentTypeId: settings.contentTypeId,
     enabled: !!settings.contentTypeId && isItem,

@@ -1,5 +1,8 @@
 
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import ConnectCliPanel from '@/features/agent/components/ConnectCliPanel';
+import { ProjectSettingsDialog } from '@/features/projectsettings';
 import {
   MoreHorizontal,
   Eye,
@@ -35,6 +38,7 @@ export function ProjectCard({
   onPublish,
 }: ProjectCardProps) {
   const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const handleNavigate = (path: string) => (e: React.MouseEvent) => {
     e.stopPropagation();
     navigate({ to: path });
@@ -101,7 +105,10 @@ export function ProjectCard({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  onClick={handleNavigate(`/projectsettings/${project.id}`)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettingsOpen(true);
+                  }}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Project Settings
@@ -150,6 +157,12 @@ export function ProjectCard({
           </div>
         </CardContent>
       </Card>
+      <ProjectSettingsDialog
+        projectId={project.id ?? ""}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        mcpConnectPanel={<ConnectCliPanel />}
+      />
     </>
   );
 }

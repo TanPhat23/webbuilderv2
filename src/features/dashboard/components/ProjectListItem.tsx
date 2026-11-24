@@ -19,7 +19,10 @@ import {
   Globe,
   EyeOff,
 } from "lucide-react";
+import { useState } from "react";
 import type { Project } from "@/features/projects";
+import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
+import { ProjectSettingsDialog } from "@/features/projectsettings";
 import { useNavigate } from '@tanstack/react-router';
 
 interface ProjectListItemProps {
@@ -34,6 +37,7 @@ export function ProjectListItem({
   onPublish,
 }: ProjectListItemProps) {
   const navigate = useNavigate();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const handleClick = () => {
     navigate({ to: `/editor/${project.id}` });
@@ -45,7 +49,8 @@ export function ProjectListItem({
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow duration-200">
+    <>
+      <Card className="hover:shadow-md transition-shadow duration-200">
       <CardContent className="p-4">
         <div className="flex items-center space-x-4">
           <img
@@ -96,7 +101,7 @@ export function ProjectListItem({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate({ to: `/projectsettings/${project.id}` });
+                  setSettingsOpen(true);
                 }}
               >
                 <Settings className="mr-2 h-4 w-4" />
@@ -136,5 +141,12 @@ export function ProjectListItem({
         </div>
       </CardContent>
     </Card>
+      <ProjectSettingsDialog
+        projectId={project.id ?? ""}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        mcpConnectPanel={<ConnectCliPanel />}
+      />
+    </>
   );
 }

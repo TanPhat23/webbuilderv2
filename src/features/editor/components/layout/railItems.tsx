@@ -70,7 +70,7 @@ export const RAIL_ITEMS: RailItem[] = [
   { id: "cms", label: "CMS", icon: Database, group: "main", render: () => <CmsPanel /> },
   { id: "logic", label: "Logic", icon: Braces, group: "tools", width: 280, render: () => <LogicPanel /> },
   { id: "history", label: "History", icon: History, group: "tools", render: () => <SnapshotManager /> },
-  { id: "ai", label: "AI assistant", icon: Sparkles, group: "tools", width: 360, bare: true, render: () => <CloseableAIChat /> },
+  { id: "ai", label: "AI assistant", icon: Sparkles, group: "tools", width: 380, bare: true, selfScroll: true, render: () => <CloseableAIChat /> },
 ];
 
 export const railItem = (id: RailId): RailItem =>

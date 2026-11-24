@@ -1,24 +1,52 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactElement } from "react";
+import { Monitor, Smartphone, Tablet } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cn } from "@/lib/utils";
 import type {
   DesignSystem,
   SimpleColorScheme,
 } from "../utils/designSystemUtils";
 import { generatePreviewHTML } from "../utils/previewTemplate";
-import { ProjectPreviewOverlay } from "./ProjectPreviewOverlay";
+import {
+  buildOverlaySwatches,
+} from "./ProjectPreviewOverlay";
+
+type PreviewViewport = "desktop" | "tablet" | "mobile";
+
+interface ViewportConfig {
+  readonly label: string;
+  readonly widthClass: string;
+  readonly widthLabel: string;
+}
+
+const VIEWPORT_CONFIGS: Readonly<Record<PreviewViewport, ViewportConfig>> = {
+  desktop: { label: "Desktop", widthClass: "w-full", widthLabel: "100%" },
+  tablet: { label: "Tablet", widthClass: "w-full max-w-[768px]", widthLabel: "768px" },
+  mobile: { label: "Mobile", widthClass: "w-full max-w-[390px]", widthLabel: "390px" },
+};
 
 interface ProjectPreviewProps {
-  projectId: string;
-  className?: string;
-  colors?: SimpleColorScheme;
-  designSystem?: DesignSystem;
+  readonly projectId: string;
+  readonly className?: string;
+  readonly colors?: SimpleColorScheme;
+  readonly designSystem?: DesignSystem;
+  readonly customCSS?: string;
+}
+
+function isPreviewViewport(value: string): value is PreviewViewport {
+  return value === "desktop" || value === "tablet" || value === "mobile";
 }
 
 function ProjectPreviewFrame({
   className = "",
   colors,
   designSystem,
-}: Omit<ProjectPreviewProps, "projectId">) {
+  customCSS,
+}: Omit<ProjectPreviewProps, "projectId">): ReactElement {
   const [isLoading, setIsLoading] = useState(true);
+  const [viewport, setViewport] = useState<PreviewViewport>("desktop");
 
   const hasDesignSystem = designSystem !== undefined;
   const primary = colors?.primary;
@@ -60,7 +88,7 @@ function ProjectPreviewFrame({
           shadowStyle,
         }
       : { colors: resolvedColors };
-    return generatePreviewHTML(system, resolvedColors);
+    return generatePreviewHTML(system, resolvedColors, customCSS);
   }, [
     primary,
     secondary,
@@ -74,33 +102,114 @@ function ProjectPreviewFrame({
     spacing,
     shadowStyle,
     hasDesignSystem,
+    customCSS,
   ]);
+
+  const swatches = buildOverlaySwatches(designSystem?.colors ?? colors);
+  const activeViewport = VIEWPORT_CONFIGS[viewport];
+  const hasCustomCss = Boolean(customCSS && customCSS.trim().length > 0);
 
   return (
     <div
-      className={`relative ${className} rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200`}
-    >
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm z-10">
-          <div className="flex flex-col items-center space-y-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent" />
-            <p className="text-sm font-medium text-gray-700">
-              Loading preview...
-            </p>
-          </div>
-        </div>
+      className={cn(
+        "flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm",
+        className,
       )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs font-semibold text-foreground">
+              Live Preview
+            </span>
+          </div>
 
-      <div className="relative w-full h-full">
-        <iframe
-          srcDoc={previewHtml}
-          className="w-full h-full border-0 bg-white"
-          title="Website Preview"
-          onLoad={() => setIsLoading(false)}
-          sandbox="allow-same-origin"
-        />
+          {swatches.length > 0 && (
+            <div className="flex items-center gap-1 border-l border-border pl-2.5">
+              {swatches.map((swatch) => (
+                <span
+                  key={swatch.label}
+                  className="size-3.5 rounded-full border border-border"
+                  style={{ backgroundColor: swatch.color }}
+                  title={`${swatch.label}: ${swatch.color}`}
+                />
+              ))}
+            </div>
+          )}
 
-        <ProjectPreviewOverlay colors={colors} designSystem={designSystem} />
+          {fontFamily && (
+            <Badge variant="secondary" className="font-mono text-[11px]">
+              {fontFamily}
+            </Badge>
+          )}
+          {spacing !== undefined && borderRadius !== undefined && (
+            <Badge variant="outline" className="hidden font-mono text-[11px] sm:inline-flex">
+              {spacing}px / r:{borderRadius}px
+            </Badge>
+          )}
+          {shadowStyle && (
+            <Badge variant="outline" className="hidden font-mono text-[11px] uppercase md:inline-flex">
+              {shadowStyle}
+            </Badge>
+          )}
+        </div>
+
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          size="sm"
+          value={viewport}
+          onValueChange={(nextValue) => {
+            if (isPreviewViewport(nextValue)) {
+              setViewport(nextValue);
+            }
+          }}
+          aria-label="Preview viewport size"
+        >
+          <ToggleGroupItem value="desktop" aria-label="Desktop view" title="Desktop">
+            <Monitor />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="tablet" aria-label="Tablet view" title="Tablet (768px)">
+            <Tablet />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="mobile" aria-label="Mobile view" title="Mobile (390px)">
+            <Smartphone />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      <div className="relative flex flex-1 justify-center overflow-hidden bg-muted/30 p-3 sm:p-4">
+        {isLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-xs">
+            <div className="flex flex-col items-center gap-2.5">
+              <Spinner className="size-6 text-primary" />
+              <p className="text-xs font-medium text-muted-foreground">
+                Loading preview...
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "h-full overflow-hidden rounded-lg border border-border bg-background shadow-md transition-[max-width] duration-200",
+            activeViewport.widthClass,
+          )}
+        >
+          <iframe
+            srcDoc={previewHtml}
+            className="size-full border-0 bg-background"
+            title="Website Preview"
+            onLoad={() => setIsLoading(false)}
+            sandbox="allow-same-origin"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between border-t border-border bg-muted/30 px-4 py-1.5 text-[11px] text-muted-foreground">
+        <span>{activeViewport.label} ({activeViewport.widthLabel})</span>
+        <span>{hasCustomCss ? "Custom CSS applied" : "Design system tokens"}</span>
       </div>
     </div>
   );
@@ -109,6 +218,6 @@ function ProjectPreviewFrame({
 export function ProjectPreview({
   projectId,
   ...rest
-}: ProjectPreviewProps) {
+}: ProjectPreviewProps): ReactElement {
   return <ProjectPreviewFrame key={projectId} {...rest} />;
 }

@@ -21,6 +21,43 @@ export function codexCommand(mcpUrl: string, token: string): string {
   return `export WEBBUILDER_TOKEN=${checkToken(token)} && codex mcp add webbuilder --url ${checkUrl(mcpUrl)} --bearer-token-env-var WEBBUILDER_TOKEN`;
 }
 
+export function antigravityConfig(mcpUrl: string, token: string): string {
+  return JSON.stringify(
+    {
+      mcpServers: {
+        webbuilder: {
+          url: checkUrl(mcpUrl),
+          headers: {
+            Authorization: `Bearer ${checkToken(token)}`,
+          },
+        },
+      },
+    },
+    null,
+    2,
+  );
+}
+
+export function openCodeConfig(mcpUrl: string, token: string): string {
+  return JSON.stringify(
+    {
+      $schema: "https://opencode.ai/config.json",
+      mcp: {
+        webbuilder: {
+          type: "remote",
+          url: checkUrl(mcpUrl),
+          enabled: true,
+          headers: {
+            Authorization: `Bearer ${checkToken(token)}`,
+          },
+        },
+      },
+    },
+    null,
+    2,
+  );
+}
+
 export function connectionStatus(
   editing: boolean,
   lastAt: number | null,

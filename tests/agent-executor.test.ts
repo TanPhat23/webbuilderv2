@@ -173,6 +173,31 @@ test("set_project_style needs project edit rights and something to set", async (
   assert.equal(calls.styles.length, 0);
 });
 
+test("set_project_style validates theme tokens and merges presets cleanly", async () => {
+  const { h, calls } = host();
+  const run = createExecutor(h);
+
+  const badPreset = await run(req("set_project_style", { preset: "Neon" }, { pageId: undefined }));
+  assert.ok(!badPreset.ok && badPreset.error.code === "invalid_edit");
+  assert.equal(badPreset.error.issues?.[0]?.path, "preset");
+
+  const badToken = await run(req("set_project_style", { theme: { shadowStyle: "huge" } }, { pageId: undefined }));
+  assert.ok(!badToken.ok && badToken.error.code === "invalid_edit");
+  assert.equal(badToken.error.issues?.[0]?.path, "theme.shadowStyle");
+  assert.equal(calls.styles.length, 0);
+
+  const presetRes = await run(req("set_project_style", {
+    preset: "green forest",
+    theme: { fontFamily: "Lora", borderRadius: 12 },
+  }, { pageId: undefined }));
+  assert.equal(presetRes.ok, true);
+  assert.equal(calls.styles.length, 1);
+  const applied = (calls.styles[0] as { theme: Record<string, unknown> }).theme;
+  assert.equal(applied.primary, "#10b981");
+  assert.equal(applied.fontFamily, "Lora");
+  assert.equal(applied.borderRadius, 12);
+});
+
 test("create_page makes an empty page and can open it", async () => {
   const { h, calls } = host({ getPageId: () => undefined });
   const run = createExecutor(h);

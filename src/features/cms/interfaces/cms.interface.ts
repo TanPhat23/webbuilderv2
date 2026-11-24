@@ -1,5 +1,6 @@
 export interface ContentType {
   id: string;
+  projectId?: string | null;
   name: string;
   description?: string;
   fields?: ContentField[];

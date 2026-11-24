@@ -51,6 +51,10 @@ export const API_ENDPOINTS = {
     CONTENT_TYPES: {
       GET: "/api/v1/content-types",
       CREATE: "/api/v1/content-types",
+      GET_BY_PROJECT: (projectId: string): string =>
+        `/api/v1/projects/${projectId}/content-types`,
+      CREATE_BY_PROJECT: (projectId: string): string =>
+        `/api/v1/projects/${projectId}/content-types`,
       GET_BY_ID: (id: string) => `/api/v1/content-types/${id}`,
       UPDATE: (id: string) => `/api/v1/content-types/${id}`,
       DELETE: (id: string) => `/api/v1/content-types/${id}`,

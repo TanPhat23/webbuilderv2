@@ -1,3 +1,4 @@
+import { projectCssToStyleTag } from "@/features/projects/lib/project-css";
 import {
   generateDesignSystemCSS,
   resolveDesignSystemTokens,
@@ -439,6 +440,7 @@ function renderPreviewItems(
 export function generatePreviewHTML(
   system: DesignSystem,
   fallbackColors?: SimpleColorScheme,
+  customCSS?: string,
 ): string {
   const tokens = resolveDesignSystemTokens(system, fallbackColors);
   const safeFont = escapeHtml(tokens.fontFamily);
@@ -447,6 +449,7 @@ export function generatePreviewHTML(
       ? "default"
       : `${tokens.letterTracking.toFixed(3)}em`;
   const cssVariables = generateDesignSystemCSS(tokens);
+  const customStyleTag = projectCssToStyleTag(customCSS);
 
   const statsHtml = renderPreviewItems(
     [
@@ -534,6 +537,7 @@ export function generatePreviewHTML(
     ${cssVariables}
     ${PREVIEW_STATIC_CSS}
   </style>
+  ${customStyleTag}
 </head>
 <body>
   <div class="container">

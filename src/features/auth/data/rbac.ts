@@ -14,6 +14,7 @@ interface ProjectAccessResponse {
   role: string;
   isOwner: boolean;
   isCollaborator: boolean;
+  permissions?: Permission[];
 }
 
 /**
@@ -25,6 +26,7 @@ export interface UserProjectAccess {
   role: CollaboratorRole;
   isOwner: boolean;
   isCollaborator: boolean;
+  permissions?: Permission[];
 }
 
 const ROLES = new Set<string>(Object.values(CollaboratorRole));
@@ -59,6 +61,7 @@ export async function getUserProjectAccess(
       role: access.role as CollaboratorRole,
       isOwner: access.isOwner,
       isCollaborator: access.isCollaborator,
+      permissions: access.permissions,
     };
   } catch (error) {
     // 404 (no access) and transport errors both deny.
@@ -76,6 +79,9 @@ export async function getUserPermissions(
 ): Promise<Permission[]> {
   const access = await getUserProjectAccess(userId, projectId);
   if (!access) return [];
+  if (access.permissions && access.permissions.length > 0) {
+    return [...access.permissions];
+  }
 
   return ROLE_PERMISSIONS[access.role];
 }

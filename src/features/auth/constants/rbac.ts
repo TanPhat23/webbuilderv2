@@ -16,6 +16,7 @@ export enum Permission {
   PROJECT_DELETE = "project:delete",
   PROJECT_PUBLISH = "project:publish",
   PROJECT_SETTINGS = "project:settings",
+  PROJECT_TRANSFER = "project:transfer",
 
   // Element permissions
   ELEMENT_VIEW = "element:view",
@@ -59,6 +60,9 @@ export enum Permission {
   CMS_VIEW = "cms:view",
   CMS_EDIT = "cms:edit",
   CMS_PUBLISH = "cms:publish",
+
+  // Logic / workflow permissions
+  LOGIC_EDIT = "logic:edit",
 }
 
 /**
@@ -72,6 +76,7 @@ export const ROLE_PERMISSIONS: Record<CollaboratorRole, Permission[]> = {
     Permission.PROJECT_DELETE,
     Permission.PROJECT_PUBLISH,
     Permission.PROJECT_SETTINGS,
+    Permission.PROJECT_TRANSFER,
     Permission.ELEMENT_VIEW,
     Permission.ELEMENT_CREATE,
     Permission.ELEMENT_EDIT,
@@ -101,6 +106,7 @@ export const ROLE_PERMISSIONS: Record<CollaboratorRole, Permission[]> = {
     Permission.CMS_VIEW,
     Permission.CMS_EDIT,
     Permission.CMS_PUBLISH,
+    Permission.LOGIC_EDIT,
   ],
 
   [CollaboratorRole.EDITOR]: [
@@ -127,6 +133,7 @@ export const ROLE_PERMISSIONS: Record<CollaboratorRole, Permission[]> = {
     Permission.EXPORT_CODE,
     Permission.CMS_VIEW,
     Permission.CMS_EDIT,
+    Permission.LOGIC_EDIT,
   ],
 
   [CollaboratorRole.VIEWER]: [

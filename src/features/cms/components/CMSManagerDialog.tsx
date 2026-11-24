@@ -12,7 +12,11 @@ import { TypesSidebar } from "./TypesSidebar";
 import { CMSTable } from "./CMSTable";
 import { CMSProvider } from "../provider/CMSProvider";
 
-function CMSManagerDialog() {
+function CMSManagerDialog({
+  projectId,
+}: {
+  projectId?: string;
+}): React.ReactElement {
   const [open, setOpen] = useState(false);
 
   return (
@@ -36,7 +40,7 @@ function CMSManagerDialog() {
             </DialogTitle>
           </DialogHeader>
 
-          <CMSProvider>
+          <CMSProvider projectId={projectId}>
             <div className="flex flex-1 min-h-0 overflow-hidden">
               <div className="w-52 shrink-0 overflow-hidden">
                 <TypesSidebar />

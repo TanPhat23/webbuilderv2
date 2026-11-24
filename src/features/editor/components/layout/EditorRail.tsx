@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +42,8 @@ function RailButton({ item }: { item: RailItem }) {
 
 export default function EditorRail() {
   const { projectId } = useEditorContext();
+  const settingsOpen = useEditorChromeStore((s) => s.settingsOpen);
+  const setSettingsOpen = useEditorChromeStore((s) => s.setSettingsOpen);
   const main = RAIL_ITEMS.filter((i) => i.group === "main");
   const tools = RAIL_ITEMS.filter((i) => i.group === "tools");
 
@@ -63,18 +64,19 @@ export default function EditorRail() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              asChild
+              type="button"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label="Project settings"
+              aria-pressed={settingsOpen}
+              onClick={() => setSettingsOpen(true)}
+              className={cn(
+                "relative h-8 w-8 text-muted-foreground hover:text-foreground",
+                settingsOpen &&
+                  "bg-accent text-foreground before:absolute before:-left-[7px] before:top-1.5 before:bottom-1.5 before:w-0.5 before:rounded-full before:bg-foreground",
+              )}
             >
-              <Link
-                to="/projectsettings/$id"
-                params={{ id: projectId }}
-                aria-label="Project settings"
-              >
-                <Settings className="h-4 w-4" />
-              </Link>
+              <Settings className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="right">Project settings</TooltipContent>

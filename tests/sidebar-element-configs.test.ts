@@ -49,9 +49,11 @@ function makeClient() {
   client.setQueryData(projectKeys.pages('proj-1'), [
     { Id: 'page-home', Name: 'Home', Type: 'sp', ProjectId: 'proj-1', DeletedAt: null },
   ]);
-  client.setQueryData(cmsKeys.contentTypes(), [
+  const contentTypes = [
     { id: 'ct-1', name: 'Posts', description: '', createdAt: new Date(0), updatedAt: new Date(0) },
-  ]);
+  ];
+  client.setQueryData(cmsKeys.contentTypes(), contentTypes);
+  client.setQueryData(cmsKeys.contentTypes('proj-1'), contentTypes);
   client.setQueryData(cmsKeys.publicContentList('ct-1'), [
     { id: 'item-1', contentTypeId: 'ct-1', title: 'Hello World', slug: 'hello-world', published: true, createdAt: new Date(0), updatedAt: new Date(0) },
   ]);

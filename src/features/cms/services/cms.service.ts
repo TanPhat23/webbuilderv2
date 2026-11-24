@@ -23,10 +23,14 @@ function normalizeListResponse<T>(response: T[] | { data?: T[] }): T[] {
 }
 
 export const cmsService = {
-  getContentTypes: async (token: string): Promise<ContentType[]> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.GET)
-      .build();
+  getContentTypes: async (
+    token: string,
+    projectId?: string,
+  ): Promise<ContentType[]> => {
+    const path = projectId
+      ? API_ENDPOINTS.CMS.CONTENT_TYPES.GET_BY_PROJECT(projectId)
+      : API_ENDPOINTS.CMS.CONTENT_TYPES.GET;
+    const url = new URLBuilder("api").setPath(path).build();
 
     const response = await apiClient.get<ContentTypeListResponse>(
       url,
@@ -41,9 +45,10 @@ export const cmsService = {
     data: Partial<ContentType>,
     token: string,
   ): Promise<ContentType> => {
-    const url = new URLBuilder("api")
-      .setPath(API_ENDPOINTS.CMS.CONTENT_TYPES.CREATE)
-      .build();
+    const path = data.projectId
+      ? API_ENDPOINTS.CMS.CONTENT_TYPES.CREATE_BY_PROJECT(data.projectId)
+      : API_ENDPOINTS.CMS.CONTENT_TYPES.CREATE;
+    const url = new URLBuilder("api").setPath(path).build();
 
     return apiClient.post<ContentType>(url, data, undefined, token);
   },

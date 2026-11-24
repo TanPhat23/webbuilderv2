@@ -56,7 +56,15 @@ const ContentItemMutationSchema = ContentItemFormSchema.extend({
   fieldValues: z.array(ContentFieldValueInputSchema).optional(),
 });
 
-const CreateContentTypeRequestSchema = ContentTypeFormSchema;
+const ContentTypesQuerySchema = z
+  .object({
+    projectId: z.string().min(1).optional(),
+  })
+  .optional();
+
+const CreateContentTypeRequestSchema = ContentTypeFormSchema.extend({
+  projectId: z.string().min(1).optional(),
+});
 
 const UpdateContentTypeRequestSchema = z.object({
   id: z.string().min(1, "Content type ID is required"),
@@ -111,12 +119,14 @@ function normalizeFieldValues(
   }));
 }
 
-export const getContentTypes = createServerFn({ method: "GET" }).handler(
-  async (): Promise<ContentType[]> => {
+export const getContentTypes = createServerFn({ method: "GET" })
+  .validator((data?: { projectId?: string }) =>
+    ContentTypesQuerySchema.parse(data),
+  )
+  .handler(async ({ data }): Promise<ContentType[]> => {
     const { token } = await getAuthToken();
-    return cmsService.getContentTypes(token);
-  },
-);
+    return cmsService.getContentTypes(token, data?.projectId);
+  });
 
 export const getContentTypeById = createServerFn({ method: "GET" })
   .validator((data: ContentTypeRecordIdInput) =>

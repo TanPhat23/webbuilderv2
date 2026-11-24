@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   DEFAULT_COLORS,
+  DEFAULT_THEME_TOKENS,
   PRESET_COLORS,
   RADIUS_SCALES,
   SPACING_MULTIPLIERS,
+  parseImportedThemeJson,
 } from "../src/features/projectsettings/constants/themePresets";
 import {
+  areProjectSettingsEqual,
   buildProjectUpdatePayload,
   extractProjectSettings,
   extractUpdateErrorMessage,
@@ -101,4 +104,75 @@ test("theme presets and scale tables match expected structure", () => {
   );
   assert.equal(RADIUS_SCALES[0].compute(2), 0);
   assert.equal(RADIUS_SCALES[3].compute(8), 12);
+});
+
+test("buildProjectUpdatePayload omits owner-only fields when permissions disallow them", () => {
+  const baseState = {
+    projectName: "  Client Site  ",
+    projectDescription: "Landing page",
+    isPublished: true,
+    subdomain: "  Client-Site  ",
+    customCSS: "",
+    selectedColors: DEFAULT_COLORS,
+    fontFamily: "Inter",
+    letterTracking: 0,
+    borderRadius: 8,
+    spacing: 4,
+    shadowStyle: "md",
+  };
+
+  const editorPayload = buildProjectUpdatePayload({
+    projectId: "proj-2",
+    state: baseState,
+    permissions: { canPublish: false, canManageSettings: false },
+  });
+  assert.equal(editorPayload.name, "Client Site");
+  assert.equal("published" in editorPayload, false);
+  assert.equal("subdomain" in editorPayload, false);
+
+  const ownerPayload = buildProjectUpdatePayload({
+    projectId: "proj-2",
+    state: baseState,
+    permissions: { canPublish: true, canManageSettings: true },
+  });
+  assert.equal(ownerPayload.published, true);
+  assert.equal(ownerPayload.subdomain, "client-site");
+});
+
+test("areProjectSettingsEqual detects scalar and color changes", () => {
+  const baseline = extractProjectSettings({ name: "Demo", styles: {} });
+  const identical = extractProjectSettings({ name: "Demo", styles: {} });
+  assert.equal(areProjectSettingsEqual(baseline, identical), true);
+
+  assert.equal(
+    areProjectSettingsEqual(baseline, { ...identical, projectName: "Updated" }),
+    false,
+  );
+  assert.equal(
+    areProjectSettingsEqual(baseline, {
+      ...identical,
+      selectedColors: { ...identical.selectedColors, primary: "#000000" },
+    }),
+    false,
+  );
+});
+
+test("parseImportedThemeJson validates fields and preserves unspecified tokens", () => {
+  const ok = parseImportedThemeJson(
+    '{"primary":"#6366f1","fontFamily":"Lora","borderRadius":12}',
+    DEFAULT_THEME_TOKENS,
+  );
+  assert.equal(ok.ok, true);
+  if (ok.ok) {
+    assert.equal(ok.value.colors.primary, "#6366f1");
+    assert.equal(ok.value.colors.secondary, DEFAULT_COLORS.secondary);
+    assert.equal(ok.value.fontFamily, "Lora");
+    assert.equal(ok.value.borderRadius, 12);
+    assert.equal(ok.value.shadowStyle, "md");
+  }
+
+  const badShadow = parseImportedThemeJson('{"shadowStyle":"ultra"}', DEFAULT_THEME_TOKENS);
+  assert.equal(badShadow.ok, false);
+  const badJson = parseImportedThemeJson("{oops", DEFAULT_THEME_TOKENS);
+  assert.equal(badJson.ok, false);
 });

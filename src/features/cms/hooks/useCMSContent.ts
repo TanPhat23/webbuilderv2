@@ -150,10 +150,11 @@ export const getFieldValues = (
 /**
  * Hook for fetching content types.
  */
-export const useCMSContentTypes = () => {
+export const useCMSContentTypes = (projectId?: string) => {
   return useQuery<ContentType[], Error>({
-    queryKey: cmsKeys.contentTypes(),
-    queryFn: () => getContentTypes(),
+    queryKey: cmsKeys.contentTypes(projectId),
+    queryFn: () =>
+      getContentTypes({ data: projectId ? { projectId } : undefined }),
     ...QUERY_CONFIG.LONG,
   });
 };

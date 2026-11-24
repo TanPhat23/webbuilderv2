@@ -8,7 +8,10 @@ import {
 import { useSearch } from "@tanstack/react-router";
 import CollaborationProvider from "./collaborationprovider";
 import EditorLayout from "@/features/editor/components/layout/EditorLayout";
+import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { AgentHost } from "@/features/agent/AgentHost";
+import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
+import { ProjectSettingsDialog } from "@/features/projectsettings";
 import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerInteractionsBridge";
 import { toast } from "sonner";
 import AIChatProvider from "./aiprovider";
@@ -34,6 +37,8 @@ export default function EditorProvider({
   const pageId = search.page || "";
   const [mode, setMode] = useState<"editor" | "wireframe">("editor");
   const [editingMode, setEditingMode] = useState<"visual" | "code">("visual");
+  const settingsOpen = useEditorChromeStore((s) => s.settingsOpen);
+  const setSettingsOpen = useEditorChromeStore((s) => s.setSettingsOpen);
 
   const collabEnabled = !!userId;
 
@@ -81,6 +86,14 @@ export default function EditorProvider({
       >
         <AIChatProvider>
           <EditorLayout>{children}</EditorLayout>
+          {projectId && (
+            <ProjectSettingsDialog
+              projectId={projectId}
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              mcpConnectPanel={<ConnectCliPanel />}
+            />
+          )}
           <AgentHost />
         </AIChatProvider>
       </CollaborationProvider>

@@ -100,21 +100,46 @@ function invalidateContentTypeDependencies(queryClient: QueryClient, contentType
   invalidatePublicContent(queryClient);
 }
 
-function useContentTypeMutations(queryClient: QueryClient, onDelete: (id: string) => void) {
-  const createTypeMutation = useMutation<ContentType, Error, ContentTypeFormValues>({
-    mutationFn: (data) => createContentType({ data }),
-    onSuccess: (type) => appendCachedItem(queryClient, cmsKeys.contentTypes(), type),
+function useContentTypeMutations(
+  queryClient: QueryClient,
+  projectId: string | undefined,
+  onDelete: (id: string) => void,
+) {
+  const createTypeMutation = useMutation<
+    ContentType,
+    Error,
+    ContentTypeFormValues
+  >({
+    mutationFn: (data) =>
+      createContentType({
+        data: projectId ? { ...data, projectId } : data,
+      }),
+    onSuccess: (type) =>
+      appendCachedItem(queryClient, cmsKeys.contentTypes(projectId), type),
   });
 
-  const updateTypeMutation = useMutation<ContentType, Error, UpdateContentTypeVariables>({
+  const updateTypeMutation = useMutation<
+    ContentType,
+    Error,
+    UpdateContentTypeVariables
+  >({
     mutationFn: ({ id, data }) => updateContentType({ data: { id, data } }),
-    onSuccess: (type, { id }) => replaceCachedItem(queryClient, cmsKeys.contentTypes(), id, type),
+    onSuccess: (type, { id }) =>
+      replaceCachedItem(queryClient, cmsKeys.contentTypes(projectId), id, type),
   });
 
-  const deleteTypeMutation = useMutation<{ success: true }, Error, DeleteContentTypeVariables>({
+  const deleteTypeMutation = useMutation<
+    { success: true },
+    Error,
+    DeleteContentTypeVariables
+  >({
     mutationFn: ({ id }) => deleteContentType({ data: { id } }),
     onSuccess: (_, { id }) => {
-      removeCachedItem<ContentType>(queryClient, cmsKeys.contentTypes(), id);
+      removeCachedItem<ContentType>(
+        queryClient,
+        cmsKeys.contentTypes(projectId),
+        id,
+      );
       queryClient.removeQueries({ queryKey: cmsKeys.contentFields(id), exact: true });
       queryClient.removeQueries({ queryKey: cmsKeys.contentItems(id), exact: true });
       invalidatePublicContent(queryClient);
@@ -177,14 +202,15 @@ function useContentItemMutations(queryClient: QueryClient) {
   return { createItemMutation, updateItemMutation, deleteItemMutation };
 }
 
-export const useCMSManager = () => {
+export const useCMSManager = (projectId?: string) => {
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
 
   const queryClient = useQueryClient();
 
   const contentTypesQuery = useQuery<ContentType[], Error>({
-    queryKey: cmsKeys.contentTypes(),
-    queryFn: () => getContentTypes(),
+    queryKey: cmsKeys.contentTypes(projectId),
+    queryFn: () =>
+      getContentTypes({ data: projectId ? { projectId } : undefined }),
   });
 
   const contentFieldsQuery = useQuery<ContentField[], Error>({
@@ -205,9 +231,13 @@ export const useCMSManager = () => {
     enabled: selectedTypeId.length > 0,
   });
 
-  const typeMutations = useContentTypeMutations(queryClient, (id) => {
-    if (selectedTypeId === id) setSelectedTypeId("");
-  });
+  const typeMutations = useContentTypeMutations(
+    queryClient,
+    projectId,
+    (id) => {
+      if (selectedTypeId === id) setSelectedTypeId("");
+    },
+  );
   const fieldMutations = useContentFieldMutations(queryClient);
   const itemMutations = useContentItemMutations(queryClient);
   const { createTypeMutation } = typeMutations;

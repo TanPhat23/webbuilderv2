@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  antigravityConfig,
   claudeCodeCommand,
   codexCommand,
   connectionStatus,
+  openCodeConfig,
 } from "../src/features/agent/connectCommands";
 
 test("the Claude Code command registers an HTTP server with a bearer header", () => {
@@ -20,6 +22,41 @@ test("the Codex command exports the token and registers the server on one line",
   );
 });
 
+test("the Antigravity config generates a valid mcpServers Streamable HTTP entry", () => {
+  const parsed: unknown = JSON.parse(
+    antigravityConfig("https://api.example.com/mcp", "wbk_abc"),
+  );
+  assert.deepEqual(parsed, {
+    mcpServers: {
+      webbuilder: {
+        url: "https://api.example.com/mcp",
+        headers: {
+          Authorization: "Bearer wbk_abc",
+        },
+      },
+    },
+  });
+});
+
+test("the OpenCode config generates a valid remote mcp entry with bearer auth", () => {
+  const parsed: unknown = JSON.parse(
+    openCodeConfig("https://api.example.com/mcp", "wbk_abc"),
+  );
+  assert.deepEqual(parsed, {
+    $schema: "https://opencode.ai/config.json",
+    mcp: {
+      webbuilder: {
+        type: "remote",
+        url: "https://api.example.com/mcp",
+        enabled: true,
+        headers: {
+          Authorization: "Bearer wbk_abc",
+        },
+      },
+    },
+  });
+});
+
 test("a url or token with shell metacharacters is rejected, not quoted into a command", () => {
   assert.throws(() => claudeCodeCommand("https://x/mcp; rm -rf ~", "wbk_abc"));
   assert.throws(() => claudeCodeCommand("https://x/mcp", 'wbk_abc" && echo pwned'));
@@ -29,6 +66,8 @@ test("a url or token with shell metacharacters is rejected, not quoted into a co
   for (const bad of ["https://x/mcp?a=1&rm", "https://x/mcp&&id", "https://x/mcp|id", "https://x/mcp#(id)", "https://x/mcp*", "https://x/mcp!"]) {
     assert.throws(() => claudeCodeCommand(bad, "wbk_abc"), Error, bad);
     assert.throws(() => codexCommand(bad, "wbk_abc"), Error, bad);
+    assert.throws(() => antigravityConfig(bad, "wbk_abc"), Error, bad);
+    assert.throws(() => openCodeConfig(bad, "wbk_abc"), Error, bad);
   }
   assert.ok(claudeCodeCommand("http://localhost:8090/mcp", "wbk_abc").includes("http://localhost:8090/mcp"));
 });

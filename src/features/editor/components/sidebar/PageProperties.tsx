@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
 import { MousePointerClick, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import {
   useCurrentPage,
   useCurrentProject,
@@ -23,6 +23,7 @@ function Row({ label, value }: { label: string; value: string }) {
 export default function PageProperties() {
   const page = useCurrentPage();
   const { data: project } = useCurrentProject();
+  const setSettingsOpen = useEditorChromeStore((s) => s.setSettingsOpen);
 
   if (!page) {
     return <p className="text-xs text-muted-foreground">No page loaded.</p>;
@@ -57,11 +58,15 @@ export default function PageProperties() {
       </div>
 
       {project && (
-        <Button asChild variant="outline" size="sm" className="gap-2 text-xs">
-          <Link to="/projectsettings/$id" params={{ id: project.id }}>
-            <Settings className="h-3.5 w-3.5" />
-            Project settings
-          </Link>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setSettingsOpen(true)}
+          className="gap-2 text-xs"
+        >
+          <Settings className="h-3.5 w-3.5" />
+          Project settings
         </Button>
       )}
     </div>
