@@ -11,11 +11,11 @@ export type SketchSource = {
 };
 
 export type SketchNode =
-  | { kind: "box"; dir: "row" | "col"; cols?: number; children: SketchNode[] }
-  | { kind: "heading"; width: number }
-  | { kind: "text"; lines: 1 | 2 | 3 }
-  | { kind: "button" | "link" | "media" | "field" | "icon" | "rule" | "plain" }
-  | { kind: "more"; count?: number };
+  | { kind: "box"; dir: "row" | "col"; cols?: number; span?: number; children: SketchNode[] }
+  | { kind: "heading"; width: number; span?: number }
+  | { kind: "text"; lines: 1 | 2 | 3; span?: number }
+  | { kind: "button" | "link" | "media" | "field" | "icon" | "rule" | "plain"; span?: number }
+  | { kind: "more"; count?: number; span?: number };
 
 export const MAX_DEPTH = 4;
 export const MAX_CHILDREN = 6;
@@ -28,6 +28,41 @@ const CONTAINER = new Set([
   "Frame", "Form", "List", "Section", "CMSContentList", "CMSContentItem", "CMSContentGrid",
   "Table", "Nav", "Header", "Footer", "Article", "Aside",
 ]);
+
+function tailwindTokens(tw?: string): string[] {
+  return (tw ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((t) => t.slice(t.lastIndexOf(":") + 1));
+}
+
+function colSpanOf(el: SketchSource): number | undefined {
+  const s = el.styles?.default ?? {};
+  if (typeof s.gridColumn === "string") {
+    const m = /span\s+(\d+)/.exec(s.gridColumn);
+    if (m) return Number(m[1]);
+  }
+  const spans = tailwindTokens(el.tailwindStyles)
+    .map((t) => /^col-span-(\d+)$/.exec(t))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map((m) => Number(m[1]));
+  return spans.length > 0 ? Math.max(...spans) : undefined;
+}
+
+function isHeadingStyledText(el: SketchSource): boolean {
+  const content = (el.content ?? "").trim();
+  if (/^<h[1-3]\b/i.test(content)) return true;
+  const tokens = tailwindTokens(el.tailwindStyles);
+  return tokens.some((t) => {
+    if (/^text-(2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/.test(t)) return true;
+    const px = /^text-\[(\d+)px\]$/.exec(t);
+    return px !== null && Number(px[1]) >= 24;
+  });
+}
+
+function withSpan<T extends SketchNode>(node: T, span: number | undefined): T {
+  return span !== undefined ? { ...node, span } : node;
+}
 
 function layoutOf(el: SketchSource): { dir: "row" | "col"; cols?: number } {
   const s = el.styles?.default ?? {};
@@ -46,7 +81,7 @@ function layoutOf(el: SketchSource): { dir: "row" | "col"; cols?: number } {
 
   // Templates often carry layout only as Tailwind classes; read every
   // breakpoint variant, since the board sketches the widest layout.
-  const tokens = (el.tailwindStyles ?? "").split(/\s+/).map((t) => t.slice(t.lastIndexOf(":") + 1));
+  const tokens = tailwindTokens(el.tailwindStyles);
   const gridCols = tokens
     .map((t) => /^grid-cols-(\d+)$/.exec(t))
     .filter((m): m is RegExpExecArray => m !== null)
@@ -62,25 +97,42 @@ function layoutOf(el: SketchSource): { dir: "row" | "col"; cols?: number } {
 }
 
 export function toSketch(el: SketchSource, depth = 0): SketchNode {
-  const len = (el.content ?? "").length;
-  if (el.type === "Heading") return { kind: "heading", width: Math.max(30, Math.min(90, 30 + len * 2)) };
-  if (TEXT.has(el.type)) return { kind: "text", lines: len <= 40 ? 1 : len <= 120 ? 2 : 3 };
-  if (el.type === "Button") return { kind: "button" };
-  if (el.type === "Link") return { kind: "link" };
-  if (MEDIA.has(el.type)) return { kind: "media" };
-  if (FIELD.has(el.type)) return { kind: "field" };
-  if (el.type === "Icon") return { kind: "icon" };
-  if (RULE.has(el.type)) return { kind: "rule" };
+  const span = colSpanOf(el);
+  const plainText = (el.content ?? "").replace(/<[^>]+>/g, "").trim();
+  const len = plainText.length;
+
+  if (el.type === "Heading") {
+    return withSpan({ kind: "heading", width: Math.max(30, Math.min(90, 30 + len * 2)) }, span);
+  }
+  if (TEXT.has(el.type)) {
+    if (isHeadingStyledText(el)) {
+      return withSpan({ kind: "heading", width: Math.max(36, Math.min(90, 30 + len * 2)) }, span);
+    }
+    return withSpan({ kind: "text", lines: len <= 40 ? 1 : len <= 120 ? 2 : 3 }, span);
+  }
+  if (el.type === "Button") return withSpan({ kind: "button" }, span);
+  if (el.type === "Link") return withSpan({ kind: "link" }, span);
+  if (MEDIA.has(el.type)) return withSpan({ kind: "media" }, span);
+  if (FIELD.has(el.type)) return withSpan({ kind: "field" }, span);
+  if (el.type === "Icon") return withSpan({ kind: "icon" }, span);
+  if (RULE.has(el.type)) return withSpan({ kind: "rule" }, span);
 
   if (CONTAINER.has(el.type) || Array.isArray(el.elements)) {
-    if (depth >= MAX_DEPTH) return { kind: "more" };
     const kids = el.elements ?? [];
+    if (depth >= MAX_DEPTH) {
+      if (kids.length === 1 && MEDIA.has(kids[0].type)) {
+        return withSpan({ kind: "media" }, span);
+      }
+      return withSpan({ kind: "more" }, span);
+    }
     const children = kids.slice(0, MAX_CHILDREN).map((k) => toSketch(k, depth + 1));
     if (kids.length > MAX_CHILDREN) children.push({ kind: "more", count: kids.length - MAX_CHILDREN });
     const { dir, cols } = layoutOf(el);
-    return cols === undefined ? { kind: "box", dir, children } : { kind: "box", dir, cols, children };
+    return cols === undefined
+      ? withSpan({ kind: "box", dir, children }, span)
+      : withSpan({ kind: "box", dir, cols, children }, span);
   }
-  return { kind: "plain" };
+  return withSpan({ kind: "plain" }, span);
 }
 
 export type PageItem = {

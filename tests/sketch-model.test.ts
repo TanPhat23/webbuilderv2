@@ -124,3 +124,67 @@ test('dropTarget: gap index to store move, no-ops return null', () => {
   assert.equal(dropTarget(ids, 'x', 1), null);
   assert.equal(dropTarget(['a'], 'a', 0), null);
 });
+
+test('col-span classes and heading-styled text map cleanly for 12-col grids', () => {
+  const hero = toSketch({
+    type: 'Frame',
+    tailwindStyles: 'grid grid-cols-1 lg:grid-cols-12 gap-10',
+    elements: [
+      {
+        type: 'Frame',
+        tailwindStyles: 'lg:col-span-6 flex flex-col gap-4',
+        elements: [
+          { type: 'Text', content: 'Slow mornings', tailwindStyles: 'font-serif text-5xl' },
+        ],
+      },
+      {
+        type: 'Frame',
+        tailwindStyles: 'lg:col-span-6 flex flex-col gap-4',
+        elements: [{ type: 'Image' }],
+      },
+    ],
+  });
+  assert.equal(hero.kind, 'box');
+  if (hero.kind === 'box') {
+    assert.equal(hero.cols, 12);
+    assert.equal(hero.children[0].span, 6);
+    assert.equal(hero.children[1].span, 6);
+    assert.equal(hero.children[0].kind, 'box');
+    if (hero.children[0].kind === 'box') {
+      assert.equal(hero.children[0].children[0].kind, 'heading');
+    }
+  }
+});
+
+test('media wrapper at MAX_DEPTH renders as media instead of ellipsis', () => {
+  const deepMedia = toSketch({
+    type: 'Section',
+    elements: [
+      {
+        type: 'Frame',
+        elements: [
+          {
+            type: 'Frame',
+            elements: [
+              {
+                type: 'Frame',
+                elements: [
+                  {
+                    type: 'Frame',
+                    elements: [{ type: 'Image' }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  let cursor = deepMedia;
+  for (let i = 0; i < 4; i++) {
+    assert.equal(cursor.kind, 'box');
+    if (cursor.kind === 'box') cursor = cursor.children[0];
+  }
+  assert.deepEqual(cursor, { kind: 'media' });
+});
