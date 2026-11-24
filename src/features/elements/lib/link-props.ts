@@ -1,15 +1,26 @@
+import type React from "react";
 import type { ButtonElement, LinkElement } from "@/types/elements";
+import type { SiteNavigationContextValue } from "@/features/elements/context/SiteNavigationContext";
+import { resolveSiteHref } from "@/lib/site-routing";
 
 const protocols = new Set(["http:", "https:", "mailto:", "tel:"]);
 const targets = new Set(["_self", "_blank", "_parent", "_top"]);
 
+export interface PreviewLinkProps {
+  readonly href: string;
+  readonly target: string | undefined;
+  readonly rel: string | undefined;
+  readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+}
+
 export function previewLinkProps(
   element: LinkElement | ButtonElement,
-): { href: string; target: string | undefined; rel: string | undefined } | undefined {
-  const href = typeof element.href === "string" ? element.href.trim() : "";
-  if (!href) return undefined;
+  siteNav?: SiteNavigationContextValue | null,
+): PreviewLinkProps | undefined {
+  const rawHref = typeof element.href === "string" ? element.href.trim() : "";
+  if (!rawHref) return undefined;
   try {
-    if (!protocols.has(new URL(href, "https://preview.invalid/").protocol)) return undefined;
+    if (!protocols.has(new URL(rawHref, "https://preview.invalid/").protocol)) return undefined;
   } catch {
     return undefined;
   }
@@ -25,5 +36,43 @@ export function previewLinkProps(
     rel.delete("opener");
     rel.add("noopener");
   }
-  return { href, target, rel: [...rel].join(" ") || undefined };
+  const relValue = [...rel].join(" ") || undefined;
+
+  if (!siteNav) {
+    return { href: rawHref, target, rel: relValue };
+  }
+
+  const resolved = resolveSiteHref(rawHref, {
+    mode: siteNav.mode,
+    pages: siteNav.pages,
+  });
+  if (!resolved) {
+    return { href: rawHref, target, rel: relValue };
+  }
+
+  const canSpaNavigate =
+    resolved.kind === "internal" && (!target || target === "_self");
+
+  if (!canSpaNavigate) {
+    return { href: resolved.href, target, rel: relValue };
+  }
+
+  return {
+    href: resolved.href,
+    target,
+    rel: relValue,
+    onClick: (event: React.MouseEvent<HTMLAnchorElement>): void => {
+      if (
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey ||
+        event.button !== 0
+      ) {
+        return;
+      }
+      event.preventDefault();
+      siteNav.navigate(rawHref);
+    },
+  };
 }

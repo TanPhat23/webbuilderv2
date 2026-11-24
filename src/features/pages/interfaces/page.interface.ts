@@ -8,6 +8,7 @@ import type {
 export interface Page {
   Id: string;
   Name: string;
+  Slug?: string;
   Type: PageType;
   Styles: JsonRecord | null;
   ProjectId: string;

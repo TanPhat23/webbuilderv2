@@ -3,6 +3,7 @@ import {
 } from "@/components/ui/select";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
+import { pageRoutePath } from "@/lib/site-routing";
 import { ConfigField } from "./ConfigField";
 
 export function PageLinkField({
@@ -16,6 +17,7 @@ export function PageLinkField({
   const { data: pages } = useProjectRoutePages(projectId);
   const destinations = (pages ?? []).filter((page) => !page.DeletedAt).map((page) => ({
     name: page.Name || "Home",
+    routePath: pageRoutePath({ name: page.Name, slug: page.Slug }),
     href: `?page=${encodeURIComponent(page.Id)}`,
   }));
   if (!destinations.length) return null;
@@ -34,7 +36,12 @@ export function PageLinkField({
         <SelectContent>
           <SelectGroup>
             {destinations.map((page) => (
-              <SelectItem key={page.href} value={page.href}>{page.name}</SelectItem>
+              <SelectItem key={page.href} value={page.href}>
+                <span>{page.name}</span>
+                <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                  {page.routePath}
+                </span>
+              </SelectItem>
             ))}
           </SelectGroup>
         </SelectContent>

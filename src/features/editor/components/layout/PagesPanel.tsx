@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { FileText, Database, Plus, Search, Trash2 } from "lucide-react";
+import { FileText, Database, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
@@ -9,8 +9,10 @@ import { useEditorContext } from "@/features/editor/context/EditorContext";
 import {
   CreatePageDialog,
   DeletePageDialog,
+  EditPageDialog,
   useDeletePage,
 } from "../ProjectPageCommand";
+import { pageRoutePath } from "@/lib/site-routing";
 import PanelIntro from "@/components/PanelIntro";
 
 export default function PagesPanel() {
@@ -63,6 +65,7 @@ export default function PagesPanel() {
           {visible.map((page) => {
             const current = page.Id === pageId;
             const Icon = page.Type === "dp" ? Database : FileText;
+            const routePath = pageRoutePath({ name: page.Name, slug: page.Slug });
             return (
               <li key={page.Id} className="group relative">
                 <button
@@ -74,34 +77,54 @@ export default function PagesPanel() {
                     }
                   }}
                   className={cn(
-                    "flex h-8 w-full items-center gap-2 rounded-md px-2 pr-8 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
+                    "flex h-8 w-full items-center gap-2 rounded-md px-2 pr-14 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground",
                     current && "bg-accent text-foreground font-medium",
                   )}
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{page.Name}</span>
+                  <span className="truncate">{page.Name || "Home"}</span>
+                  <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground/70">
+                    {routePath}
+                  </span>
                   {page.Type === "dp" && (
-                    <span className="ml-auto shrink-0 rounded bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
+                    <span className="shrink-0 rounded bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
                       CMS
                     </span>
                   )}
                 </button>
-                {permissions.canDeletePages && pages.length > 1 && (
-                  <DeletePageDialog
-                    page={page}
-                    onDelete={deletePage}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Delete ${page.Name}`}
-                        className="absolute right-1 top-1/2 h-6 w-6 -translate-y-1/2 text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    }
-                  />
-                )}
+                <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                  {permissions.canEditPages && (
+                    <EditPageDialog
+                      page={page}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Edit ${page.Name || "Home"}`}
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                      }
+                    />
+                  )}
+                  {permissions.canDeletePages && pages.length > 1 && (
+                    <DeletePageDialog
+                      page={page}
+                      onDelete={deletePage}
+                      trigger={
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Delete ${page.Name || "Home"}`}
+                          className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      }
+                    />
+                  )}
+                </div>
               </li>
             );
           })}

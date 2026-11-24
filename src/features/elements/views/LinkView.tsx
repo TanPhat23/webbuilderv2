@@ -1,5 +1,6 @@
 import React from "react";
 import type { LinkElement } from "@/types/elements";
+import { useSiteNavigationOptional } from "@/features/elements/context/SiteNavigationContext";
 import { resolveContent } from "../lib/resolveContent";
 import { previewLinkProps } from "../lib/link-props";
 import { sanitizeTextContent } from "./TextView";
@@ -9,8 +10,9 @@ interface LinkViewProps extends ViewProps<LinkElement> {
   labelProps?: React.HTMLAttributes<HTMLElement>;
 }
 
-export default function LinkView({ element, rootProps, children, data, labelProps }: LinkViewProps) {
-  const link = previewLinkProps(element);
+export default function LinkView({ element, rootProps, children, data, labelProps, mode }: LinkViewProps) {
+  const siteNav = useSiteNavigationOptional();
+  const link = previewLinkProps(element, mode === "preview" ? siteNav : null);
   const Tag = link ? "a" : "div";
   const html = { __html: sanitizeTextContent(resolveContent(element, data, false)) };
 

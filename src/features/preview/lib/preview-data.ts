@@ -3,12 +3,27 @@ import type { Project } from "@/features/projects";
 import type { EditorElement } from "@/types/global.type";
 import { resolveElements } from "@/features/projects/lib/resolve-elements";
 import { ApiError, isApiError } from "@/utils/errors/api-error";
+import { resolveRoutePage } from "@/lib/site-routing";
 
 interface PreviewReads {
   draftToken: () => Promise<string | null | undefined>;
   project: (id: string, token?: string) => Promise<Project>;
   pages: (id: string, token?: string) => Promise<ApiPage[]>;
   elements: (id: string, token?: string) => Promise<EditorElement[]>;
+}
+
+interface SubdomainSiteReads {
+  projectBySubdomain: (subdomain: string) => Promise<Project>;
+  pages: (id: string) => Promise<ApiPage[]>;
+  elements: (id: string) => Promise<EditorElement[]>;
+}
+
+export interface LoadedSitePageData {
+  readonly project: Project;
+  readonly page: ApiPage;
+  readonly pages: ApiPage[];
+  readonly elements: EditorElement[];
+  readonly itemSlug?: string;
 }
 
 async function readProjectWithDraftFallback(
@@ -52,24 +67,59 @@ function collectComponentIds(
   return componentIds;
 }
 
-export async function loadPreviewData(id: string, reads: PreviewReads, pageId?: string) {
-  const { project, token } = await readProjectWithDraftFallback(id, reads);
-  const allPages = await reads.pages(id, token);
+function resolvePageTree(
+  project: Project,
+  allPages: ApiPage[],
+  projectElements: EditorElement[],
+  hasToken: boolean,
+  target?: string,
+): LoadedSitePageData {
   const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
-  const page = pageId === undefined
-    ? pages.find((p) => p.name === "") ?? pages[0]
-    : pages.find((p) => p.id === pageId);
-  if (!page) throw new ApiError("Page not found", 404, "not_found");
+  const matched = resolveRoutePage(pages, target);
+  if (!matched) throw new ApiError("Page not found", 404, "not_found");
 
-  const projectElements = await reads.elements(id, token);
+  const { page, itemSlug } = matched;
   const pageElements = projectElements.filter((element) => element.pageId === page.id);
   const routeIds = new Set(pages.map(({ id: routeId }) => routeId));
-  const componentIds = collectComponentIds(allPages, projectElements, Boolean(token));
+  const componentIds = collectComponentIds(allPages, projectElements, hasToken);
   const elements = resolveElements({
     page: pageElements,
     project: projectElements,
     pageIds: routeIds,
     componentIds,
   });
-  return { project, page, elements };
+  return { project, page, pages, elements, ...(itemSlug ? { itemSlug } : {}) };
+}
+
+export async function loadPreviewData(
+  id: string,
+  reads: PreviewReads,
+  pageTarget?: string,
+): Promise<LoadedSitePageData> {
+  const { project, token } = await readProjectWithDraftFallback(id, reads);
+  const allPages = await reads.pages(id, token);
+  const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
+  const matched = resolveRoutePage(pages, pageTarget);
+  if (!matched) throw new ApiError("Page not found", 404, "not_found");
+
+  const projectElements = await reads.elements(id, token);
+  return resolvePageTree(project, allPages, projectElements, Boolean(token), pageTarget);
+}
+
+export async function loadSubdomainSiteData(
+  subdomain: string,
+  reads: SubdomainSiteReads,
+  pathname?: string,
+): Promise<LoadedSitePageData> {
+  const project = await reads.projectBySubdomain(subdomain);
+  const projectId = project.id;
+  if (!projectId) throw new ApiError("Project not found", 404, "not_found");
+
+  const allPages = await reads.pages(projectId);
+  const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
+  const matched = resolveRoutePage(pages, pathname);
+  if (!matched) throw new ApiError("Page not found", 404, "not_found");
+
+  const projectElements = await reads.elements(projectId);
+  return resolvePageTree(project, allPages, projectElements, false, pathname);
 }

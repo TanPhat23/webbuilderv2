@@ -15,6 +15,7 @@ export type PageType = z.infer<typeof PageTypeSchema>;
 const pageShape = {
   Id: z.string().optional(),
   Name: z.string(),
+  Slug: z.string().optional(),
   Type: PageTypeSchema,
   Styles: flatJsonRecordSchema.nullable(),
   ProjectId: z.string(),
@@ -26,6 +27,7 @@ const pageShape = {
 const createPageShape = {
   Id: z.string().optional(),
   Name: z.string().min(1),
+  Slug: z.string().max(255).optional(),
   Type: PageTypeSchema.default("sp"),
   Styles: flatJsonRecordSchema.nullable().default(null),
   ProjectId: z.string(),

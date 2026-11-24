@@ -5,23 +5,26 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 
 export default function RootProviders({
   children,
+  skipAuth = false,
 }: {
   children: React.ReactNode;
+  skipAuth?: boolean;
 }) {
-  return (
-    <ClerkProvider>
-      <QueryProvider>
-        <SidebarProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </SidebarProvider>
-      </QueryProvider>
-    </ClerkProvider>
+  const content = (
+    <QueryProvider>
+      <SidebarProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </SidebarProvider>
+    </QueryProvider>
   );
+
+  if (skipAuth) return content;
+  return <ClerkProvider>{content}</ClerkProvider>;
 }

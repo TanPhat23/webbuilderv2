@@ -18,7 +18,9 @@ import {
   Settings,
   Globe,
   EyeOff,
+  ExternalLink,
 } from "lucide-react";
+import { buildPublicSiteUrl } from "@/lib/site-routing";
 import { useState } from "react";
 import type { Project } from "@/features/projects";
 import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
@@ -107,6 +109,19 @@ export function ProjectListItem({
                 <Settings className="mr-2 h-4 w-4" />
                 Project Settings
               </DropdownMenuItem>
+              {project.published && project.subdomain && (
+                <DropdownMenuItem asChild>
+                  <a
+                    href={buildPublicSiteUrl(project.subdomain)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Visit Live Site
+                  </a>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={(e) => {

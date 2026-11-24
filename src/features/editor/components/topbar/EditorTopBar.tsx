@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { HelpCircle, Play } from "lucide-react";
+import { ExternalLink, HelpCircle, Play } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +17,12 @@ import CollaboratorIndicator from "../editor/CollaboratorIndicator";
 import CollaborationButton from "../editor/CollaborationButton";
 import ModeSwitch from "./ModeSwitch";
 import CommentsToggle from "./CommentsToggle";
-import { useCurrentPage } from "@/features/projects/hooks/useProjects";
+import { useCurrentPage, useProject } from "@/features/projects/hooks/useProjects";
+import {
+  buildPublicSiteUrl,
+  effectivePageSlug,
+  pageRoutePath,
+} from "@/lib/site-routing";
 import PublishButton from "./PublishButton";
 
 interface EditorTopBarProps {
@@ -29,8 +34,22 @@ export default function EditorTopBar({
   projectId,
   onShowShortcuts,
 }: EditorTopBarProps) {
-  const { editor, pageId } = useEditorContext();
-  const isMaster = useCurrentPage()?.Type === "cp";
+  const { editor } = useEditorContext();
+  const currentPage = useCurrentPage();
+  const { data: project } = useProject(projectId);
+  const isMaster = currentPage?.Type === "cp";
+  const currentSlug = currentPage
+    ? effectivePageSlug({ name: currentPage.Name, slug: currentPage.Slug })
+    : "";
+  const liveSiteUrl =
+    project?.published && project.subdomain
+      ? buildPublicSiteUrl(
+          project.subdomain,
+          currentPage
+            ? pageRoutePath({ name: currentPage.Name, slug: currentPage.Slug })
+            : "/",
+        )
+      : null;
   const [navOpen, setNavOpen] = useState(false);
 
   // Cmd/Ctrl+K opens page navigation.
@@ -83,17 +102,49 @@ export default function EditorTopBar({
 
         <CollaboratorIndicator projectId={projectId} />
         <CollaborationButton projectId={projectId} />
-        {!isMaster && <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5 px-2.5 text-xs font-medium"
-        >
-          <Link to="/preview/$id" params={{ id: projectId }} search={{ page: pageId || undefined }} target="_blank" rel="noreferrer">
-            <Play className="h-3 w-3" />
-            Preview
-          </Link>
-        </Button>}
+        {!isMaster && (
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5 px-2.5 text-xs font-medium"
+          >
+            {currentSlug ? (
+              <Link
+                to="/preview/$id/$"
+                params={{ id: projectId, _splat: currentSlug }}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Play className="h-3 w-3" />
+                Preview
+              </Link>
+            ) : (
+              <Link
+                to="/preview/$id"
+                params={{ id: projectId }}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Play className="h-3 w-3" />
+                Preview
+              </Link>
+            )}
+          </Button>
+        )}
+        {!isMaster && liveSiteUrl && (
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-7 gap-1 px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <a href={liveSiteUrl} target="_blank" rel="noreferrer">
+              Live
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </Button>
+        )}
         <PublishButton projectId={projectId} />
       </div>
 

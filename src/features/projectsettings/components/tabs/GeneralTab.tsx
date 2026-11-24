@@ -1,6 +1,11 @@
-import type { ChangeEvent, ReactElement } from "react";
-import { Globe, Info, Lock } from "lucide-react";
+import { useState, type ChangeEvent, type ReactElement } from "react";
+import { Check, Copy, ExternalLink, Globe, Info, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  buildPublicSiteUrl,
+  isValidSubdomainLabel,
+} from "@/lib/site-routing";
 import {
   Card,
   CardContent,
@@ -41,8 +46,21 @@ export function GeneralTab({
   onPublishedChange,
   onSubdomainChange,
 }: GeneralTabProps): ReactElement {
+  const [copied, setCopied] = useState(false);
   const isNameInvalid = projectName.trim().length === 0;
   const isPublishingLocked = !canPublish && !canManageSubdomain;
+  const cleanSubdomain = subdomain.trim().toLowerCase();
+  const isSubdomainValid = cleanSubdomain.length === 0 || isValidSubdomainLabel(cleanSubdomain);
+  const previewUrl = buildPublicSiteUrl(cleanSubdomain || "my-site");
+  const canOpenLive = isPublished && cleanSubdomain.length > 0 && isValidSubdomainLabel(cleanSubdomain);
+
+  const handleCopyUrl = (): void => {
+    if (typeof navigator === "undefined" || !cleanSubdomain) return;
+    void navigator.clipboard.writeText(previewUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    });
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -136,25 +154,56 @@ export function GeneralTab({
           <Separator />
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="project-subdomain">Subdomain</Label>
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="project-subdomain">Subdomain</Label>
+              {!isSubdomainValid && (
+                <span className="text-xs font-medium text-destructive">
+                  Must be 3–63 chars (a-z, 0-9, single -)
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Input
                 id="project-subdomain"
                 value={subdomain}
                 disabled={!canManageSubdomain}
+                aria-invalid={!isSubdomainValid}
                 onChange={(event: ChangeEvent<HTMLInputElement>) =>
                   onSubdomainChange(event.target.value)
                 }
                 placeholder="my-site"
                 className="font-mono text-sm"
               />
-              <span className="shrink-0 rounded-md border border-border bg-muted px-2.5 py-2 font-mono text-xs text-muted-foreground">
-                .webbuilder
-              </span>
+              {cleanSubdomain && isSubdomainValid && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Copy site URL"
+                  onClick={handleCopyUrl}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                </Button>
+              )}
+              {canOpenLive && (
+                <Button
+                  asChild
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                >
+                  <a href={previewUrl} target="_blank" rel="noreferrer">
+                    Open
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                </Button>
+              )}
             </div>
             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Info className="size-3.5 shrink-0" />
-              Lowercase letters, numbers, and hyphens only.
+              <span className="truncate font-mono">{previewUrl}</span>
             </p>
           </div>
         </CardContent>

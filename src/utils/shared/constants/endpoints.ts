@@ -36,6 +36,8 @@ export const API_ENDPOINTS = {
     DELETE_PAGE: (projectId: string, pageId: string) =>
       `/api/v1/pages/${projectId}/${pageId}`,
     GET_PUBLIC_BY_ID: (id: string) => `/api/v1/projects/public/${id}`,
+    GET_PUBLIC_BY_SUBDOMAIN: (subdomain: string) =>
+      `/api/v1/projects/public/by-subdomain/${encodeURIComponent(subdomain)}`,
     ACCESS: (id: string) => `/api/v1/projects/${id}/access`,
   },
   PAGES: {

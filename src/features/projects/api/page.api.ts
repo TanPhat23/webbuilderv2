@@ -23,12 +23,38 @@ export const createPage = createServerFn({ method: "POST" })
       {
         id: data.Id ?? newEntityId(),
         name: data.Name,
+        ...(data.Slug !== undefined ? { slug: data.Slug } : {}),
         type: data.Type,
         styles: (data.Styles ?? {}) as JsonRecord,
       },
       token,
     );
     return toPage(created);
+  });
+
+const updatePageSchema = z.object({
+  projectId: z.string().min(1),
+  pageId: z.string().min(1),
+  name: z.string().trim().min(1).max(255).optional(),
+  slug: z.string().trim().max(200).optional(),
+});
+
+export const updateProjectPage = createServerFn({ method: "POST" })
+  .validator((data: { projectId: string; pageId: string; name?: string; slug?: string }) =>
+    updatePageSchema.parse(data),
+  )
+  .handler(async ({ data }): Promise<Page> => {
+    const { token } = await getAuthToken();
+    const updated = await projectService.updatePage(
+      data.projectId,
+      data.pageId,
+      {
+        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.slug !== undefined ? { slug: data.slug } : {}),
+      },
+      token,
+    );
+    return toPage(updated);
   });
 
 export const deleteProjectPage = createServerFn({ method: "POST" })

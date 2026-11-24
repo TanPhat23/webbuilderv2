@@ -33,7 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -46,10 +46,18 @@ import {
 } from "@/components/ui/select";
 import { CreatePageSchema } from "@/features/pages/schema/page";
 import { Page } from "@/features/pages";
-import { createPage } from "@/features/projects/api/page.api";
+import { createPage, updateProjectPage } from "@/features/projects/api/page.api";
+import {
+  normalizeRoutePath,
+  pageRoutePath,
+  slugifyPageName,
+} from "@/lib/site-routing";
+import { extractUpdateErrorMessage } from "@/features/projectsettings/utils/projectSettingsState";
+import { showSuccessToast } from "@/utils/errors/errorToast";
 
 const createPageSchema = z.object({
   name: z.string().min(1, "Page name is required"),
+  slug: z.string().max(200).optional(),
   type: PageTypeSchema.exclude(["cp"]),
 });
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
@@ -63,14 +71,23 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
     resolver: zodResolver(createPageSchema),
     defaultValues: {
       name: "",
+      slug: "",
       type: "sp",
     },
   });
 
+  const watchedName = useWatch({ control: form.control, name: "name" });
+  const suggestedSlug = slugifyPageName(watchedName || "");
+
   const onSubmit = async (data: CreatePageFormValues) => {
+    const cleanSlug =
+      data.slug && data.slug.trim().length > 0
+        ? normalizeRoutePath(data.slug)
+        : undefined;
     const newPage = CreatePageSchema.safeParse({
       Id: newEntityId(),
       Name: data.name,
+      ...(cleanSlug !== undefined ? { Slug: cleanSlug } : {}),
       ProjectId: id as string,
       Styles: {},
       Type: data.type,
@@ -81,13 +98,17 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
       return;
     }
 
-    const response = (await createPage({ data: newPage.data })) as Page;
-    if (id) {
-      await queryClient.cancelQueries({ queryKey: projectKeys.pages(id), exact: true });
+    try {
+      const response = (await createPage({ data: newPage.data })) as Page;
+      if (id) {
+        await queryClient.cancelQueries({ queryKey: projectKeys.pages(id), exact: true });
+      }
+      if (id) queryClient.setQueryData<Page[]>(projectKeys.pages(id), (pages) => [...(pages ?? []), response]);
+      setOpen(false);
+      form.reset();
+    } catch (error) {
+      showErrorToast(extractUpdateErrorMessage(error));
     }
-    if (id) queryClient.setQueryData<Page[]>(projectKeys.pages(id), (pages) => [...(pages ?? []), response]);
-    setOpen(false);
-    form.reset();
   };
 
   return (
@@ -124,6 +145,26 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter page name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL Path (optional)</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono text-muted-foreground">/</span>
+                      <Input
+                        placeholder={suggestedSlug || "home"}
+                        className="font-mono text-sm"
+                        {...field}
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,6 +293,137 @@ export function useDeletePage(id: string | undefined, pages: Page[]) {
   return deleteAndNavigate;
 }
 
+const editPageSchema = z.object({
+  name: z.string().trim().min(1, "Page name is required").max(255),
+  slug: z.string().trim().max(200),
+});
+type EditPageFormValues = z.infer<typeof editPageSchema>;
+
+export function EditPageDialog({
+  page,
+  trigger,
+}: {
+  page: Page;
+  trigger?: React.ReactNode;
+}) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const initialSlug = page.Slug ?? slugifyPageName(page.Name);
+
+  const form = useForm<EditPageFormValues>({
+    resolver: zodResolver(editPageSchema),
+    defaultValues: {
+      name: page.Name || "Home",
+      slug: initialSlug,
+    },
+  });
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) {
+      form.reset({
+        name: page.Name || "Home",
+        slug: page.Slug ?? slugifyPageName(page.Name),
+      });
+    }
+  };
+
+  const onSubmit = async (values: EditPageFormValues) => {
+    const cleanSlug = normalizeRoutePath(values.slug);
+    try {
+      const updated = await updateProjectPage({
+        data: {
+          projectId: page.ProjectId,
+          pageId: page.Id,
+          name: values.name,
+          slug: cleanSlug,
+        },
+      });
+      queryClient.setQueryData<Page[]>(
+        projectKeys.pages(page.ProjectId),
+        (pages) =>
+          (pages ?? []).map((existing) =>
+            existing.Id === updated.Id ? { ...existing, ...updated } : existing,
+          ),
+      );
+      showSuccessToast("Page route updated");
+      setOpen(false);
+    } catch (error) {
+      showErrorToast(extractUpdateErrorMessage(error));
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>
+        {trigger ?? (
+          <Button
+            variant="ghost"
+            className="text-xs h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            Edit
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Page Settings</DialogTitle>
+          <DialogDescription>
+            Update the display name and URL path for this page.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Page name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="slug"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>URL Path</FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-mono text-muted-foreground">/</span>
+                      <Input
+                        placeholder="leave empty for root /"
+                        className="font-mono text-sm"
+                        {...field}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // Main component using the dialogs
 export function ProjectPageCommand() {
   const { id } = useParams({ strict: false });
@@ -265,14 +437,14 @@ export function ProjectPageCommand() {
         <CommandEmpty>No results found.</CommandEmpty>
         {pages.map((page) => (
           <CommandItem key={page.Id} className="group justify-between">
-            <span>{page.Name}</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="truncate">{page.Name || "Home"}</span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {pageRoutePath({ name: page.Name, slug: page.Slug })}
+              </span>
+            </div>
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                className="text-xs h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                Edit
-              </Button>
+              <EditPageDialog page={page} />
               <DeletePageDialog page={page} onDelete={deleteAndNavigate} />
             </div>
           </CommandItem>

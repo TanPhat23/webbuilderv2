@@ -12,7 +12,9 @@ import {
   Settings,
   Globe,
   EyeOff,
+  ExternalLink,
 } from "lucide-react";
+import { buildPublicSiteUrl } from "@/lib/site-routing";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -113,6 +115,20 @@ export function ProjectCard({
                   <Settings className="mr-2 h-4 w-4" />
                   Project Settings
                 </DropdownMenuItem>
+
+                {project.published && project.subdomain && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={buildPublicSiteUrl(project.subdomain)}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Visit Live Site
+                    </a>
+                  </DropdownMenuItem>
+                )}
 
                 <DropdownMenuSeparator />
 

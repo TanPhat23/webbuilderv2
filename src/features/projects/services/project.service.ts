@@ -17,6 +17,7 @@ export interface ApiPage {
   id: string;
   projectId: string;
   name: string;
+  slug?: string;
   type: Page["Type"];
   styles?: Page["Styles"];
   /** Interaction logic (variables and flows); absent until the page has some. */
@@ -31,6 +32,7 @@ export function toPage(page: ApiPage): Page {
   return {
     Id: page.id,
     Name: page.name,
+    Slug: page.slug,
     Type: page.type,
     Styles: page.styles ?? null,
     ProjectId: page.projectId,
@@ -71,6 +73,13 @@ export const projectService = {
   getProjectPublic: (id: string): Promise<Project> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id))
+      .build();
+    return apiClient.getPublic<Project>(url);
+  },
+
+  getProjectPublicBySubdomain: (subdomain: string): Promise<Project> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_SUBDOMAIN(subdomain))
       .build();
     return apiClient.getPublic<Project>(url);
   },
@@ -157,7 +166,7 @@ export const projectService = {
   /** Create a page; the API requires owner or editor role on the project. */
   createPage: (
     projectId: string,
-    page: { id?: string; name: string; type: Page["Type"]; styles?: unknown },
+    page: { id?: string; name: string; slug?: string; type: Page["Type"]; styles?: unknown },
     token: string,
   ): Promise<ApiPage> => {
     const url = new URLBuilder("api")
@@ -171,6 +180,18 @@ export const projectService = {
       .setPath(API_ENDPOINTS.PROJECTS.UPDATE_PAGE(projectId, pageId))
       .build();
     await apiClient.patch(url, { name }, undefined, token);
+  },
+
+  updatePage: (
+    projectId: string,
+    pageId: string,
+    updates: { name?: string; slug?: string },
+    token: string,
+  ): Promise<ApiPage> => {
+    const url = new URLBuilder("api")
+      .setPath(API_ENDPOINTS.PROJECTS.UPDATE_PAGE(projectId, pageId))
+      .build();
+    return apiClient.patch<ApiPage>(url, updates, undefined, token);
   },
 
   deleteProjectPage: (

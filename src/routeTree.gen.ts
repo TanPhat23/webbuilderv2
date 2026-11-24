@@ -19,7 +19,6 @@ import { Route as ProtectedNotificationsRouteImport } from './app/_protected/not
 import { Route as ProtectedProfileRouteImport } from './app/_protected/profile'
 import { Route as ApiGenerateCodeRouteImport } from './app/api/generate-code'
 import { Route as ApiGettokenRouteImport } from './app/api/gettoken'
-import { Route as PreviewIdRouteImport } from './app/preview/$id'
 import { Route as SignInIndexRouteImport } from './app/sign-in/index'
 import { Route as SignInSplatRouteImport } from './app/sign-in/$'
 import { Route as SignUpIndexRouteImport } from './app/sign-up/index'
@@ -30,6 +29,10 @@ import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protecte
 import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
 import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
 import { Route as ApiNotificationsProfileUpdateRouteImport } from './app/api/notifications/profile-update'
+import { Route as PreviewIdIndexRouteImport } from './app/preview/$id/index'
+import { Route as PreviewIdSplatRouteImport } from './app/preview/$id/$'
+import { Route as SitesSubdomainIndexRouteImport } from './app/sites/$subdomain/index'
+import { Route as SitesSubdomainSplatRouteImport } from './app/sites/$subdomain/$'
 import { Route as ProtectedEditorIdIndexRouteImport } from './app/_protected/editor.$id/index'
 
 const IndexRoute = IndexRouteImport.update({
@@ -80,11 +83,6 @@ const ApiGenerateCodeRoute = ApiGenerateCodeRouteImport.update({
 const ApiGettokenRoute = ApiGettokenRouteImport.update({
   id: '/api/gettoken',
   path: '/api/gettoken',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PreviewIdRoute = PreviewIdRouteImport.update({
-  id: '/preview/$id',
-  path: '/preview/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInIndexRoute = SignInIndexRouteImport.update({
@@ -139,6 +137,26 @@ const ApiNotificationsProfileUpdateRoute =
     path: '/api/notifications/profile-update',
     getParentRoute: () => rootRouteImport,
   } as any)
+const PreviewIdIndexRoute = PreviewIdIndexRouteImport.update({
+  id: '/preview/$id/',
+  path: '/preview/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewIdSplatRoute = PreviewIdSplatRouteImport.update({
+  id: '/preview/$id/$',
+  path: '/preview/$id/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitesSubdomainIndexRoute = SitesSubdomainIndexRouteImport.update({
+  id: '/sites/$subdomain/',
+  path: '/sites/$subdomain/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitesSubdomainSplatRoute = SitesSubdomainSplatRouteImport.update({
+  id: '/sites/$subdomain/$',
+  path: '/sites/$subdomain/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProtectedEditorIdIndexRoute = ProtectedEditorIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -155,17 +173,20 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProtectedProfileRouteWithChildren
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
-  '/preview/$id': typeof PreviewIdRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
+  '/preview/$id/$': typeof PreviewIdSplatRoute
+  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
   '/notifications/': typeof ProtectedNotificationsIndexRoute
   '/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/preview/$id/': typeof PreviewIdIndexRoute
+  '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/editor/$id/': typeof ProtectedEditorIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -175,16 +196,19 @@ export interface FileRoutesByTo {
   '/help': typeof ProtectedHelpRoute
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
-  '/preview/$id': typeof PreviewIdRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/sign-in': typeof SignInIndexRoute
   '/sign-up': typeof SignUpIndexRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
+  '/preview/$id/$': typeof PreviewIdSplatRoute
+  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
   '/profile': typeof ProtectedProfileIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/preview/$id': typeof PreviewIdIndexRoute
+  '/sites/$subdomain': typeof SitesSubdomainIndexRoute
   '/editor/$id': typeof ProtectedEditorIdIndexRoute
 }
 export interface FileRoutesById {
@@ -199,17 +223,20 @@ export interface FileRoutesById {
   '/_protected/profile': typeof ProtectedProfileRouteWithChildren
   '/api/generate-code': typeof ApiGenerateCodeRoute
   '/api/gettoken': typeof ApiGettokenRoute
-  '/preview/$id': typeof PreviewIdRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/sign-up/$': typeof SignUpSplatRoute
   '/sign-in/': typeof SignInIndexRoute
   '/sign-up/': typeof SignUpIndexRoute
   '/_protected/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
+  '/preview/$id/$': typeof PreviewIdSplatRoute
+  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
   '/_protected/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/preview/$id/': typeof PreviewIdIndexRoute
+  '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/_protected/editor/$id/': typeof ProtectedEditorIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -224,17 +251,20 @@ export interface FileRouteTypes {
     | '/profile'
     | '/api/generate-code'
     | '/api/gettoken'
-    | '/preview/$id'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/sign-in/'
     | '/sign-up/'
     | '/editor/$id'
     | '/api/notifications/profile-update'
+    | '/preview/$id/$'
+    | '/sites/$subdomain/$'
     | '/dashboard/'
     | '/notifications/'
     | '/profile/'
     | '/api/notifications/'
+    | '/preview/$id/'
+    | '/sites/$subdomain/'
     | '/editor/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,16 +274,19 @@ export interface FileRouteTypes {
     | '/help'
     | '/api/generate-code'
     | '/api/gettoken'
-    | '/preview/$id'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/sign-in'
     | '/sign-up'
     | '/api/notifications/profile-update'
+    | '/preview/$id/$'
+    | '/sites/$subdomain/$'
     | '/dashboard'
     | '/notifications'
     | '/profile'
     | '/api/notifications'
+    | '/preview/$id'
+    | '/sites/$subdomain'
     | '/editor/$id'
   id:
     | '__root__'
@@ -267,17 +300,20 @@ export interface FileRouteTypes {
     | '/_protected/profile'
     | '/api/generate-code'
     | '/api/gettoken'
-    | '/preview/$id'
     | '/sign-in/$'
     | '/sign-up/$'
     | '/sign-in/'
     | '/sign-up/'
     | '/_protected/editor/$id'
     | '/api/notifications/profile-update'
+    | '/preview/$id/$'
+    | '/sites/$subdomain/$'
     | '/_protected/dashboard/'
     | '/_protected/notifications/'
     | '/_protected/profile/'
     | '/api/notifications/'
+    | '/preview/$id/'
+    | '/sites/$subdomain/'
     | '/_protected/editor/$id/'
   fileRoutesById: FileRoutesById
 }
@@ -287,13 +323,16 @@ export interface RootRouteChildren {
   HelppageRoute: typeof HelppageRoute
   ApiGenerateCodeRoute: typeof ApiGenerateCodeRoute
   ApiGettokenRoute: typeof ApiGettokenRoute
-  PreviewIdRoute: typeof PreviewIdRoute
   SignInSplatRoute: typeof SignInSplatRoute
   SignUpSplatRoute: typeof SignUpSplatRoute
   SignInIndexRoute: typeof SignInIndexRoute
   SignUpIndexRoute: typeof SignUpIndexRoute
   ApiNotificationsProfileUpdateRoute: typeof ApiNotificationsProfileUpdateRoute
+  PreviewIdSplatRoute: typeof PreviewIdSplatRoute
+  SitesSubdomainSplatRoute: typeof SitesSubdomainSplatRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  PreviewIdIndexRoute: typeof PreviewIdIndexRoute
+  SitesSubdomainIndexRoute: typeof SitesSubdomainIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -368,13 +407,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGettokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/preview/$id': {
-      id: '/preview/$id'
-      path: '/preview/$id'
-      fullPath: '/preview/$id'
-      preLoaderRoute: typeof PreviewIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sign-in/': {
       id: '/sign-in/'
       path: '/sign-in'
@@ -443,6 +475,34 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications/profile-update'
       fullPath: '/api/notifications/profile-update'
       preLoaderRoute: typeof ApiNotificationsProfileUpdateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/$id/': {
+      id: '/preview/$id/'
+      path: '/preview/$id'
+      fullPath: '/preview/$id/'
+      preLoaderRoute: typeof PreviewIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview/$id/$': {
+      id: '/preview/$id/$'
+      path: '/preview/$id/$'
+      fullPath: '/preview/$id/$'
+      preLoaderRoute: typeof PreviewIdSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sites/$subdomain/': {
+      id: '/sites/$subdomain/'
+      path: '/sites/$subdomain'
+      fullPath: '/sites/$subdomain/'
+      preLoaderRoute: typeof SitesSubdomainIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sites/$subdomain/$': {
+      id: '/sites/$subdomain/$'
+      path: '/sites/$subdomain/$'
+      fullPath: '/sites/$subdomain/$'
+      preLoaderRoute: typeof SitesSubdomainSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protected/editor/$id/': {
@@ -530,13 +590,16 @@ const rootRouteChildren: RootRouteChildren = {
   HelppageRoute: HelppageRoute,
   ApiGenerateCodeRoute: ApiGenerateCodeRoute,
   ApiGettokenRoute: ApiGettokenRoute,
-  PreviewIdRoute: PreviewIdRoute,
   SignInSplatRoute: SignInSplatRoute,
   SignUpSplatRoute: SignUpSplatRoute,
   SignInIndexRoute: SignInIndexRoute,
   SignUpIndexRoute: SignUpIndexRoute,
   ApiNotificationsProfileUpdateRoute: ApiNotificationsProfileUpdateRoute,
+  PreviewIdSplatRoute: PreviewIdSplatRoute,
+  SitesSubdomainSplatRoute: SitesSubdomainSplatRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  PreviewIdIndexRoute: PreviewIdIndexRoute,
+  SitesSubdomainIndexRoute: SitesSubdomainIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
