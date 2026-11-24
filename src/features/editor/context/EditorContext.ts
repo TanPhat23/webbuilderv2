@@ -41,6 +41,8 @@ export interface EditorContextType {
   setEditingMode: (mode: "visual" | "code") => void;
   pageId: string;
   renderAiPanel?: (onClose: () => void) => ReactNode;
+  renderAgentCanvasOverlay?: (root: HTMLElement) => ReactNode;
+  renderAgentPlaybackHud?: () => ReactNode;
 }
 
 export const EditorContext = createContext<EditorContextType | undefined>(

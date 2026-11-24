@@ -17,6 +17,7 @@ import { newEntityId } from "@/lib/entity-id";
 import { projectKeys } from "@/features/projects/hooks/useProjects";
 import { registerAgentHost } from "./runtime";
 import { useAgentActivity } from "./activity";
+import { liveEditPlayer } from "./liveEditPlayer";
 import type { ProjectStylePatch } from "./executor";
 
 type Json = Record<string, unknown>;
@@ -43,6 +44,20 @@ export function AgentHost() {
   const ready = !editor.isLoading && (collab ? collab.isSynced : true);
   const live = useRef({ permissionsLoading: !!permissions?.isLoading, codeMode: editingMode === "code", locked: !!editor.isLocked, canEdit, ready, logic, projectId, canEditProject: !!permissions?.canEditProject, canCreatePages: !!permissions?.canCreatePages });
   live.current = { permissionsLoading: !!permissions?.isLoading, codeMode: editingMode === "code", locked: !!editor.isLocked, canEdit, ready, logic, projectId, canEditProject: !!permissions?.canEditProject, canCreatePages: !!permissions?.canCreatePages };
+
+  useEffect(() => {
+    const broadcaster = collab?.sendAgentPresence ?? null;
+    liveEditPlayer.setPresenceBroadcaster(broadcaster);
+    return () => {
+      liveEditPlayer.setPresenceBroadcaster(null);
+    };
+  }, [collab?.sendAgentPresence]);
+
+  useEffect(() => {
+    return () => {
+      liveEditPlayer.flush();
+    };
+  }, [logic.pageId]);
 
   useEffect(() => {
     const pageOf = () => live.current.logic.pageId ?? undefined;
@@ -138,6 +153,28 @@ export function AgentHost() {
         useAgentActivity.getState().mark(true);
         ElementStore.getState().replaceTree(next);
       },
+      playTreeChange: (before, next, summary) => {
+        useAgentActivity.getState().mark(true);
+        liveEditPlayer.play({
+          beforeTree: before,
+          afterTree: next,
+          agentName: "MCP Agent",
+          summary,
+          onComplete: () => {
+            useAgentActivity.getState().mark(false);
+            toast("Your CLI changed the page", {
+              description: summary,
+              action: {
+                label: "Undo",
+                onClick: () => ElementStore.getState().undo(),
+              },
+            });
+          },
+        });
+      },
+      flushPlayback: () => {
+        liveEditPlayer.flush();
+      },
       getSelectedId: () => useSelectionStore.getState().selectedElementId,
       generateCode: async () => {
         const { variables, flows, pageId } = live.current.logic;
@@ -154,7 +191,10 @@ export function AgentHost() {
         });
       },
     });
-    return () => registerAgentHost(null);
+    return () => {
+      liveEditPlayer.flush();
+      registerAgentHost(null);
+    };
   }, [navigate, queryClient]);
 
   return null;

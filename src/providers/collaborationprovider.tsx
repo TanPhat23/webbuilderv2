@@ -7,6 +7,7 @@ import {
 } from "@/features/collaboration/context/CollaborationContext";
 import { useCanvasCursorBroadcast } from "@/features/collaboration/hooks/useCanvasCursorBroadcast";
 import type {
+  AgentPresence,
   CollaborationContextValue,
   WSCollaborationConfig,
 } from "@/features/collaboration/interfaces/websocket";
@@ -36,7 +37,7 @@ export default function CollaborationProvider({
     setCanvasElementState(element);
   }, []);
 
-  const { state, providerRef } = useCollabRoom({
+  const { state, providerRef, remoteAgents } = useCollabRoom({
     config,
     wsUrl,
     enabled,
@@ -87,6 +88,13 @@ export default function CollaborationProvider({
     [providerRef],
   );
 
+  const sendAgentPresence = useCallback(
+    (agent: AgentPresence | null): void => {
+      providerRef.current?.sendAgentPresence(agent);
+    },
+    [providerRef],
+  );
+
   const reconnect = useCallback(async () => {
     await providerRef.current?.reconnect();
   }, [providerRef]);
@@ -105,6 +113,8 @@ export default function CollaborationProvider({
       updateElement,
       deleteElement,
       moveElement,
+      sendAgentPresence,
+      remoteAgents,
       reconnect,
     }),
     [
@@ -117,6 +127,8 @@ export default function CollaborationProvider({
       updateElement,
       deleteElement,
       moveElement,
+      sendAgentPresence,
+      remoteAgents,
       reconnect,
     ],
   );

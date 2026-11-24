@@ -5,6 +5,18 @@ export const API_ENDPOINTS = {
     CREATE: "/api/v1/agent-tokens",
     REVOKE: (id: string) => `/api/v1/agent-tokens/${id}`,
   },
+  WEBHOOKS: {
+    LIST: (projectId: string): string => `/api/v1/projects/${projectId}/webhooks`,
+    CREATE: (projectId: string): string => `/api/v1/projects/${projectId}/webhooks`,
+    UPDATE: (projectId: string, webhookId: string): string =>
+      `/api/v1/projects/${projectId}/webhooks/${webhookId}`,
+    DELETE: (projectId: string, webhookId: string): string =>
+      `/api/v1/projects/${projectId}/webhooks/${webhookId}`,
+    DELIVERIES: (projectId: string, webhookId: string): string =>
+      `/api/v1/projects/${projectId}/webhooks/${webhookId}/deliveries`,
+    TEST: (projectId: string, webhookId: string): string =>
+      `/api/v1/projects/${projectId}/webhooks/${webhookId}/test`,
+  },
   ELEMENTS: {
     GET: (projectId: string) => `/api/v1/elements/${projectId}`,
     GET_PUBLIC: (projectId: string) => `/api/v1/elements/public/${projectId}`,

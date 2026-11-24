@@ -277,6 +277,12 @@ export interface FormSettings {
   customSubmit?: boolean;
   /** Extra props written in the code view, as source text, e.g. `onSubmit={handleSubmit(save)}`. */
   codeProps?: string[];
+  /** Target CMS collection ID or slug for managed form submissions. */
+  collectionId?: string;
+  /** Project ID owning the target collection (falls back to element.projectId). */
+  projectId?: string;
+  /** Message displayed after a successful managed form submission. */
+  successMessage?: string;
 }
 
 export interface FormElement extends Element<"Form", FormSettings> {

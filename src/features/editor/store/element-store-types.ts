@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { DropPosition } from "@/features/elements/lib/element-tree-helper";
+import type { TreeOp } from "@/features/editor/utils/element/treeDiff";
 import type { MoveData } from "@/types/elements";
 import type { EditorElement } from "@/types/global.type";
 
@@ -60,6 +61,11 @@ export type ElementStore = {
   ) => ElementStore;
   /** Replace the whole page tree as one undoable step, syncing what changed. */
   replaceTree: (next: EditorElement[]) => ElementStore;
+  /** Apply one progressive step without pushing an extra undo snapshot. */
+  applyProgressiveStep: (
+    next: EditorElement[],
+    ops: readonly TreeOp[],
+  ) => ElementStore;
   rememberTree: (previous: EditorElement[]) => void;
   undo: () => ElementStore;
   redo: () => ElementStore;

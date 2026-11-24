@@ -41,7 +41,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   iframeRef,
 }) => {
   const collab = useCollaborationOptional();
-  const { editor } = useEditorContext();
+  const { editor, renderAgentPlaybackHud } = useEditorContext();
   const elements = useElements();
   const isMaster = useElementStore((state) => state.isComponentPage);
   // Elements arrive over the collab socket after the REST queries finish, so
@@ -126,6 +126,8 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           disabled={isReadOnly || isLocked}
         />
       )}
+
+      {renderAgentPlaybackHud?.()}
     </div>
   );
 };

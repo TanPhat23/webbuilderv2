@@ -49,6 +49,7 @@ interface AiChatThreadProps {
   readonly onSelectStarter: (prompt: string, scope: AiPromptScope) => void;
   readonly onRetryMessage: (assistantMessageId: string) => void;
   readonly onOpenAgentTab: () => void;
+  readonly onApplyHtml?: (html: string) => void;
 }
 
 function StarterIcon({
@@ -109,6 +110,7 @@ export function AiChatThread({
   onSelectStarter,
   onRetryMessage,
   onOpenAgentTab,
+  onApplyHtml,
 }: AiChatThreadProps): ReactElement {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -385,26 +387,40 @@ export function AiChatThread({
 
                     {message.html && (
                       <div className="border-border bg-background overflow-hidden rounded-lg border">
-                        <div className="border-border bg-muted/40 flex items-center justify-between border-b px-2.5 py-1">
+                        <div className="border-border bg-muted/40 flex items-center justify-between gap-2 border-b px-2.5 py-1">
                           <span className="text-muted-foreground font-mono text-[10px]">
                             HTML snippet
                           </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              void handleCopy(`${message.id}-html`, message.html ?? "")
-                            }
-                            className="h-6 px-1.5 text-[10px]"
-                          >
-                            {copiedId === `${message.id}-html` ? (
-                              <Check data-icon="inline-start" />
-                            ) : (
-                              <Copy data-icon="inline-start" />
+                          <div className="flex items-center gap-1">
+                            {onApplyHtml && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => onApplyHtml(message.html ?? "")}
+                                className="h-6 gap-1 px-2 text-[10px]"
+                              >
+                                <Sparkles className="size-3" />
+                                Apply to Canvas
+                              </Button>
                             )}
-                            Copy HTML
-                          </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                void handleCopy(`${message.id}-html`, message.html ?? "")
+                              }
+                              className="h-6 px-1.5 text-[10px]"
+                            >
+                              {copiedId === `${message.id}-html` ? (
+                                <Check data-icon="inline-start" />
+                              ) : (
+                                <Copy data-icon="inline-start" />
+                              )}
+                              Copy HTML
+                            </Button>
+                          </div>
                         </div>
                         <pre className="max-h-40 overflow-x-auto p-2.5 font-mono text-[11px] leading-snug">
                           <code>{message.html}</code>

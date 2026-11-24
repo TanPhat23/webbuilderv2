@@ -55,6 +55,14 @@ export interface AgentHost {
   notifyProjectChanged(summary: string, undo?: () => void): void;
   /** One call is one undo step. */
   replaceTree(next: EditorElement[]): void;
+  /** Play a gradual tree change (1 undo step) and notify on completion. */
+  playTreeChange?(
+    before: EditorElement[],
+    next: EditorElement[],
+    summary: string,
+  ): void;
+  /** Synchronously flush any in-flight gradual playback before reading or mutating. */
+  flushPlayback?(): void;
   getSelectedId(): string | undefined;
   generateCode(): Promise<string>;
   getPreamble(): Preamble;
@@ -162,6 +170,7 @@ export function createExecutor(host: AgentHost) {
   }
 
   async function run(req: AgentRequest): Promise<AgentOutcome> {
+    host.flushPlayback?.();
     if (req.tool === "open_page" || req.tool === "set_project_style" || req.tool === "create_page") return runProjectTool(req);
     const args = (req.args ?? {}) as Record<string, unknown>;
     if (req.tool === "list_components") {
@@ -219,8 +228,13 @@ export function createExecutor(host: AgentHost) {
         const element = typeof id === "string" && elementHelper.findById(tree, id);
         if (!element || !componentSetting(element)) return error("invalid_edit", "Select a component instance.", [{ path: "elementId", message: "must identify a component instance" }]);
         const local = detach(element, source.elements, source.pageIds);
-        host.replaceTree(elementHelper.mapUpdateById(tree, element.id, () => local));
-        host.notifyChanged("Component detached");
+        const next = elementHelper.mapUpdateById(tree, element.id, () => local);
+        if (host.playTreeChange) {
+          host.playTreeChange(tree, next, "Component detached");
+        } else {
+          host.replaceTree(next);
+          host.notifyChanged("Component detached");
+        }
         return { ok: true, result: { elementId: local.id } };
       }
       case "get_code":
@@ -229,16 +243,22 @@ export function createExecutor(host: AgentHost) {
         const source = await host.getComponents();
         if (host.getPageId() !== pageId || !host.isReady()) return error("page_not_open", "The open page changed.");
         if (!host.canEdit()) return error("forbidden", "The open page is no longer editable.");
-        const result = applyEdits(host.getElements(), args.operations, pageId, source);
+        const before = host.getElements();
+        const result = applyEdits(before, args.operations, pageId, source);
         if (!result.ok) return error("invalid_edit", "Nothing was applied.", result.issues);
-        host.replaceTree(result.elements);
         const summary = `${result.changes} change${result.changes === 1 ? "" : "s"}`;
-        host.notifyChanged(summary);
+        if (host.playTreeChange) {
+          host.playTreeChange(before, result.elements, summary);
+        } else {
+          host.replaceTree(result.elements);
+          host.notifyChanged(summary);
+        }
         return { ok: true, result: { summary, created: result.created } };
       }
       case "set_code": {
         if (typeof args.code !== "string" || !args.code) return error("invalid_edit", "Nothing was applied.", [{ path: "code", message: "the code is empty" }]);
-        const parsed = parseCode(args.code, host.getElements(), pageId);
+        const before = host.getElements();
+        const parsed = parseCode(args.code, before, pageId);
         if (!parsed.ok) {
           const d = parsed.diagnostic;
           return error("invalid_edit", "Nothing was applied.", [{ path: `code:${d.line}:${d.column}`, message: d.message }]);
@@ -246,9 +266,13 @@ export function createExecutor(host: AgentHost) {
         if (host.isComponentPage?.() && parsed.elements.length > 1) {
           return error("invalid_edit", "Nothing was applied.", [{ path: "code", message: "a component page can have only one root" }]);
         }
-        host.replaceTree(parsed.elements);
         if (!isEqual(parsed.preamble, host.getPreamble())) host.setPreamble(parsed.preamble);
-        host.notifyChanged("code updated");
+        if (host.playTreeChange) {
+          host.playTreeChange(before, parsed.elements, "code updated");
+        } else {
+          host.replaceTree(parsed.elements);
+          host.notifyChanged("code updated");
+        }
         return { ok: true, result: { summary: "code applied" } };
       }
       default:

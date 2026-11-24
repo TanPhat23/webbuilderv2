@@ -2,7 +2,12 @@ export interface ContentType {
   id: string;
   projectId?: string | null;
   name: string;
+  slug?: string;
   description?: string;
+  publicRead?: boolean;
+  publicCreate?: boolean;
+  defaultPublished?: boolean;
+  rateLimitPerMin?: number;
   fields?: ContentField[];
   items?: ContentItem[];
   createdAt: Date;

@@ -2,6 +2,9 @@ import type { EditorElement } from "@/types/global.type";
 import type { Page } from "@/features/pages";
 import type React from "react";
 import type {
+  AgentPresence,
+  AgentPresenceAction,
+  RemoteAgentPresence,
   WSEnvelope,
   WSMessageType,
   WSErrorCode,
@@ -28,6 +31,9 @@ import type {
 } from "./ws-collab.interface";
 
 export type {
+  AgentPresence,
+  AgentPresenceAction,
+  RemoteAgentPresence,
   WSEnvelope,
   WSMessageType,
   WSErrorCode,
@@ -199,6 +205,8 @@ export interface CustomYjsProviderV2 {
     cursorY: number,
     elementId?: string | null,
   ): void;
+
+  sendAgentPresence(agent: AgentPresence | null): void;
 
   /** Sends a logic patch; resolves with the committed document or rejects with the server's reason. */
   updateLogic(scope: LogicScope, patch: Record<string, unknown>, nullPaths?: string[][]): Promise<LogicChangedPayload>;

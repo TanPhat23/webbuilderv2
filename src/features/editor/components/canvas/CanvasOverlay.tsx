@@ -12,6 +12,7 @@ import {
   getResizeHandles,
 } from "@/features/editor";
 import { useEditorFlags } from "@/features/editor/components/context/EditorFlagsContext";
+import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 import { useAltKey } from "@/features/editor/hooks/useAltKey";
 import { ElementCommentButton } from "@/features/editor/components/comments/ElementCommentButton";
@@ -227,6 +228,7 @@ export function CanvasOverlay({
   isDragging: boolean;
 }) {
   const instances = useContext(ResolvedInstancesContext);
+  const { renderAgentCanvasOverlay } = useEditorContext();
   const selectedElement = useSelectedElement();
   const hoveredId = useHoveredElementId();
   if (!root) return null;
@@ -249,6 +251,7 @@ export function CanvasOverlay({
       )}
       {Array.from(instances, ([id, element]) => !isMissingComponent(element) && <ComponentBadge key={id} root={root} id={id} />)}
       {drop && <DropIndicator root={root} drop={drop} />}
+      {renderAgentCanvasOverlay?.(root)}
     </div>
   );
 }

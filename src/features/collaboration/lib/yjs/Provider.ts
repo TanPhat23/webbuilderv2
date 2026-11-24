@@ -10,6 +10,7 @@ import {
   createServerErrorReporter,
 } from "./providerTransport";
 import type {
+  AgentPresence,
   ElementOperationResult,
   YjsProviderV2Options,
   UpdateType,
@@ -50,6 +51,9 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private readonly statusListeners = new Set<StatusListener>();
   private readonly syncedListeners = new Set<SyncedListener>();
   private lastStatus: string | null = null;
+  private lastCursorX = -1;
+  private lastCursorY = -1;
+  private localAgentPresence: AgentPresence | null = null;
   private overflowReported = false;
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -246,6 +250,8 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
     cursorY: number,
     elementId?: string | null,
   ): void {
+    this.lastCursorX = cursorX;
+    this.lastCursorY = cursorY;
     if (elementId !== undefined) {
       this.awarenessController.updateLocalSelection(elementId);
     }
@@ -256,6 +262,33 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       cursorY,
       elementId:
         elementId ?? this.awarenessController.getLocalSelectedElement(),
+      ...(this.localAgentPresence ? { agent: this.localAgentPresence } : {}),
+    };
+    const envelope = this.dispatcher.createEnvelope(
+      "presence",
+      this.projectId,
+      this.pageId,
+      payload,
+      { userId: this.userId },
+    );
+    this.sender.sendOrQueue(envelope);
+  }
+
+  public sendAgentPresence(agent: AgentPresence | null): void {
+    this.localAgentPresence = agent?.active ? agent : null;
+    const payload: PresencePayload = {
+      userId: this.userId,
+      userName: this.userName,
+      cursorX: this.lastCursorX,
+      cursorY: this.lastCursorY,
+      elementId: this.awarenessController.getLocalSelectedElement(),
+      agent: agent ?? {
+        active: false,
+        name: "",
+        status: "",
+        elementId: null,
+        action: null,
+      },
     };
     const envelope = this.dispatcher.createEnvelope(
       "presence",

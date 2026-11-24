@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import type { EditorElement } from "@/types/global.type";
 import { runAgentRequest } from "@/features/agent/runtime";
 import type {
+  RemoteAgentPresence,
   WSCollabState,
   WSCollaborationConfig,
   WSRoomState,
@@ -50,10 +51,12 @@ export function useCollabRoom({
 }): {
   state: WSCollabState;
   providerRef: React.RefObject<CustomYjsProviderV2 | null>;
+  remoteAgents: readonly RemoteAgentPresence[];
 } {
   const { projectId, pageId, onSync, onError, onDisconnect, onReconnect } = config;
   const loadElements = useElementStore((s) => s.loadElements);
   const [state, setState] = useState<WSCollabState>(INITIAL_STATE);
+  const [remoteAgents, setRemoteAgents] = useState<readonly RemoteAgentPresence[]>([]);
 
   const providerRef = useRef<CustomYjsProviderV2 | null>(null);
   const pendingMovesRef = useRef<Set<string>>(new Set());
@@ -160,6 +163,18 @@ export function useCollabRoom({
       mouseStore.setRemoteUsers(patch.remoteUsers);
       mouseStore.setSelectedByUser(patch.selectedByUser);
       mouseStore.setUsers(patch.users);
+
+      const activeAgents: RemoteAgentPresence[] = [];
+      presences.forEach((presence) => {
+        if (presence.agent?.active) {
+          activeAgents.push({
+            userId: presence.userId,
+            userName: presence.userName,
+            agent: presence.agent,
+          });
+        }
+      });
+      setRemoteAgents(activeAgents);
     });
 
     const store = ElementStore.getState();
@@ -215,9 +230,10 @@ export function useCollabRoom({
       cleanupStore.setElementsChangeCallback(null);
       provider.destroy();
       providerRef.current = null;
+      setRemoteAgents([]);
       setState((prev) => ({ ...prev, isSynced: false }));
     };
   }, [pageId, projectId, wsUrl, enabled, userId, isLoaded, loadElements]);
 
-  return { state, providerRef };
+  return { state, providerRef, remoteAgents };
 }

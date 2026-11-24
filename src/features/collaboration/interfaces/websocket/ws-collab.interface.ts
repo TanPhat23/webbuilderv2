@@ -42,6 +42,22 @@ export interface JoinPayload {
   pageId: string;
 }
 
+export type AgentPresenceAction = "create" | "update" | "move" | "delete";
+
+export interface AgentPresence {
+  readonly active: boolean;
+  readonly name: string;
+  readonly status: string;
+  readonly elementId?: string | null;
+  readonly action?: AgentPresenceAction | null;
+}
+
+export interface RemoteAgentPresence {
+  readonly userId: string;
+  readonly userName: string;
+  readonly agent: AgentPresence;
+}
+
 export interface PresencePayload {
   userId: string;
   userName: string;
@@ -49,6 +65,7 @@ export interface PresencePayload {
   cursorY: number;
   elementId?: string | null;
   meta?: Record<string, unknown>;
+  agent?: AgentPresence | null;
 }
 
 export interface ElementCreatePayloadNode {
@@ -134,6 +151,7 @@ export interface SyncUser {
     cursorX: number;
     cursorY: number;
     elementId?: string | null;
+    agent?: AgentPresence | null;
   };
 }
 
@@ -176,6 +194,7 @@ export interface PresenceBroadcastPayload {
   cursorY: number;
   elementId?: string | null;
   meta?: Record<string, unknown>;
+  agent?: AgentPresence | null;
 }
 
 export type WSClientMessage =
@@ -222,6 +241,7 @@ export interface RemotePresence {
   elementId?: string | null;
   lastUpdated: number;
   meta?: Record<string, unknown>;
+  agent?: AgentPresence | null;
 }
 
 export interface WSCollabState {
@@ -266,5 +286,7 @@ export interface CollaborationContextValue {
     newParentId?: string | null,
     newPosition?: number,
   ) => Promise<void>;
+  sendAgentPresence?: (agent: AgentPresence | null) => void;
+  remoteAgents?: readonly RemoteAgentPresence[];
   reconnect: () => Promise<void>;
 }

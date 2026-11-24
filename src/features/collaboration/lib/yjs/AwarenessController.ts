@@ -1,8 +1,10 @@
 import { EventEmitter } from "./EventEmitter";
 import type {
+  AgentPresence,
   UserInfo,
   MousePosition,
   PresenceBroadcastPayload,
+  RemoteAgentPresence,
   RemotePresence,
 } from "../../interfaces/websocket";
 
@@ -43,6 +45,7 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
       elementId: data.elementId,
       lastUpdated: Date.now(),
       meta: data.meta,
+      agent: data.agent ?? null,
     });
 
     this.emitNormalizedChange();
@@ -56,6 +59,7 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
         cursorX: number;
         cursorY: number;
         elementId?: string | null;
+        agent?: AgentPresence | null;
       };
     }>,
   ): void {
@@ -71,6 +75,7 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
         cursorY: user.presence.cursorY,
         elementId: user.presence.elementId,
         lastUpdated: Date.now(),
+        agent: user.presence.agent ?? null,
       });
     }
 
@@ -79,6 +84,20 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
 
   public get remotePresences(): Map<string, RemotePresence> {
     return new Map(this._remotePresences);
+  }
+
+  public getRemoteAgents(): readonly RemoteAgentPresence[] {
+    const activeAgents: RemoteAgentPresence[] = [];
+    for (const presence of this._remotePresences.values()) {
+      if (presence.agent?.active) {
+        activeAgents.push({
+          userId: presence.userId,
+          userName: presence.userName,
+          agent: presence.agent,
+        });
+      }
+    }
+    return activeAgents;
   }
 
   private emitNormalizedChange(): void {

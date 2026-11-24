@@ -13,10 +13,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAgentActivity } from "@/features/agent/activity";
 import { connectionStatus } from "@/features/agent/connectCommands";
+import { liveEditPlayer } from "@/features/agent/liveEditPlayer";
 import { useAiChat } from "@/features/ai/context/AiChatContext";
 import { aiContentService } from "@/features/ai/services/aicontent.service";
 import { useElements, useSelectedElementWithSetter } from "@/features/editor";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
+import { parseCode } from "@/features/editor/lib/code/parseCode";
+import { ElementStore } from "@/features/editor/store/element-store";
+import { elementHelper } from "@/features/elements/lib/elementhelper";
+import type { EditorElement } from "@/types/global.type";
 import { cn } from "@/lib/utils";
 import type {
   AiAttachment,
@@ -308,6 +313,72 @@ export default function AiChatPanel({
     setAttachments([]);
   }, []);
 
+  const handleApplyHtml = useCallback(
+    (html: string): void => {
+      const trimmed = html.trim();
+      if (!trimmed) return;
+
+      liveEditPlayer.flush();
+      const store = ElementStore.getState();
+      const beforeTree = store.elements;
+      const pageId = store.activePage?.pageId ?? "";
+
+      const parsed = parseCode(trimmed, beforeTree, pageId);
+      if (!parsed.ok) {
+        toast.error(parsed.diagnostic.message);
+        return;
+      }
+      if (parsed.elements.length === 0) {
+        toast.error("No canvas elements were found in that HTML snippet.");
+        return;
+      }
+
+      let afterTree: EditorElement[];
+      if (beforeTree.length === 0) {
+        afterTree = parsed.elements;
+      } else if (
+        effectiveScope === "element" &&
+        selectedElement &&
+        parsed.elements.length === 1
+      ) {
+        const replacement = parsed.elements[0];
+        if (!replacement) return;
+        afterTree = elementHelper.mapUpdateById(
+          beforeTree,
+          selectedElement.id,
+          () => ({
+            ...replacement,
+            parentId: selectedElement.parentId,
+            order: selectedElement.order,
+          }),
+        );
+      } else {
+        const appended: EditorElement[] = parsed.elements.map((el, idx) => ({
+          ...el,
+          parentId: undefined,
+          order: beforeTree.length + idx,
+        }));
+        afterTree = [...beforeTree, ...appended];
+      }
+
+      liveEditPlayer.play({
+        beforeTree,
+        afterTree,
+        agentName: "Canvas Copilot",
+        summary: "Copilot updated the page",
+        onComplete: () => {
+          toast("Canvas Copilot updated the page", {
+            action: {
+              label: "Undo",
+              onClick: () => ElementStore.getState().undo(),
+            },
+          });
+        },
+      });
+    },
+    [effectiveScope, selectedElement],
+  );
+
   const handleClose = useCallback((): void => {
     closeChat();
     onClose?.();
@@ -411,6 +482,7 @@ export default function AiChatPanel({
             }}
             onRetryMessage={handleRetryMessage}
             onOpenAgentTab={() => setActiveTab("agent")}
+            onApplyHtml={handleApplyHtml}
           />
           <AiComposer
             value={draft}

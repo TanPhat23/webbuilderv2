@@ -1,12 +1,15 @@
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
 import { Accordion } from "@/components/ui/accordion";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EditorContext } from "@/features/editor/context/EditorContext";
+import { useCMSContentTypes } from "@/features/cms/hooks/useCMSContent";
 import { ConfigSelectInput, ConfigSwitch, ConfigTextInput } from "./_shared/ConfigInputs";
 import { useUpdateElement } from "@/features/editor";
 import { useSelectedElement } from "@/features/editor";
@@ -29,6 +32,7 @@ import {
   ExternalLink,
   ArrowRight,
   CheckCircle2,
+  Database,
   Lock,
 } from "lucide-react";
 
@@ -68,6 +72,9 @@ const ENCODING_OPTIONS = [
 ];
 
 export const FormConfigurationAccordion = () => {
+  const editorContext = useContext(EditorContext);
+  const projectId = editorContext?.projectId ?? undefined;
+  const { data: contentTypes = [] } = useCMSContentTypes(projectId);
   const updateElement = useUpdateElement();
   const selectedElement = useSelectedElement();
 
@@ -111,6 +118,60 @@ export const FormConfigurationAccordion = () => {
           icon={<Globe />}
           nested
         >
+          {/* Managed CMS Collection Binding */}
+          <ConfigField
+            label="Submit to Collection"
+            htmlFor="form-collectionId"
+            hint="Automatically save submissions into a project CMS collection (enable Public Form Submissions in CMS Manager)."
+          >
+            <Select
+              value={settings.collectionId || "__none__"}
+              onValueChange={(value) => {
+                const nextId = value === "__none__" ? "" : value;
+                updateSetting("collectionId", nextId);
+                if (nextId && projectId) {
+                  updateSetting("projectId", projectId);
+                }
+              }}
+            >
+              <SelectTrigger
+                id="form-collectionId"
+                className="h-7 w-[150px] px-2 text-[11px] rounded-md"
+              >
+                <SelectValue placeholder="None (custom URL)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="__none__">None (custom URL)</SelectItem>
+                  {contentTypes.map((ct) => (
+                    <SelectItem key={ct.id} value={ct.id}>
+                      <div className="flex items-center gap-1.5">
+                        <Database className="size-3 text-muted-foreground" />
+                        <span>{ct.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+
+          {settings.collectionId && (
+            <ConfigTextInput
+              label="Success Message"
+              hint="Shown inline after a visitor submits this form."
+              vertical
+              id="form-successMessage"
+              name="successMessage"
+              value={settings.successMessage || ""}
+              onValueChange={(value) => updateSetting("successMessage", value)}
+              placeholder="Thanks! Your submission was received."
+              className="h-7 w-full px-2 text-[11px] rounded-md"
+            />
+          )}
+
+          <SectionDivider />
+
           {/* Action URL */}
           <ConfigTextInput
             label="Action URL"

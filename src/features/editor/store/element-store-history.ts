@@ -59,7 +59,7 @@ export function createElementHistory(
 
   const actions: Pick<
     ElementStore,
-    "replaceTree" | "rememberTree" | "undo" | "redo"
+    "replaceTree" | "applyProgressiveStep" | "rememberTree" | "undo" | "redo"
   > = {
     replaceTree: (next) => {
       if (!allowsRootCount(next)) return get();
@@ -67,6 +67,13 @@ export function createElementHistory(
       if (ops.length === 0) return get();
       commitLocalTree(next);
       emitTreeOps(ops, emit);
+      return get();
+    },
+
+    applyProgressiveStep: (next, ops) => {
+      if (!allowsRootCount(next)) return get();
+      publishTree(next);
+      emitTreeOps([...ops], emit);
       return get();
     },
 

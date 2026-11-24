@@ -10,6 +10,8 @@ import CollaborationProvider from "./collaborationprovider";
 import EditorLayout from "@/features/editor/components/layout/EditorLayout";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { AgentHost } from "@/features/agent/AgentHost";
+import { AgentCanvasOverlay } from "@/features/agent/components/AgentCanvasOverlay";
+import { AgentPlaybackHud } from "@/features/agent/components/AgentPlaybackHud";
 import ConnectCliPanel from "@/features/agent/components/ConnectCliPanel";
 import { ProjectSettingsDialog } from "@/features/projectsettings";
 import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerInteractionsBridge";
@@ -55,6 +57,10 @@ export default function EditorProvider({
       setEditingMode,
       pageId,
       renderAiPanel: (onClose: () => void) => <AiChatPanel onClose={onClose} />,
+      renderAgentCanvasOverlay: (root: HTMLElement) => (
+        <AgentCanvasOverlay root={root} />
+      ),
+      renderAgentPlaybackHud: () => <AgentPlaybackHud />,
     }),
     [projectId, userId, editorData, mode, editingMode, pageId],
   );
