@@ -78,7 +78,7 @@ async function connect(user: string, pageId: string): Promise<Client> {
   const logicChanges: any[] = [];
   const provider = new CustomYjsProviderV2({
     url: SERVER, projectId: PROJECT, pageId, userId: user,
-    getToken: async () => user,
+    getTicket: async () => user,
     getElementState: () => store.getState() as any,
     onError: (e: any) => errors.push(e),
     onLogicSync: (payload: any) => logicSyncs.push(payload),

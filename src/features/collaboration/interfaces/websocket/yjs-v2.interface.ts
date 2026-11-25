@@ -163,7 +163,8 @@ export interface ConnectionOptions {
   url: string;
   projectId: string;
   pageId: string;
-  getToken: () => Promise<string | null>;
+  /** Single-use WebSocket ticket minting callback; connects with `?ticket=<opaque>`. */
+  getTicket: () => Promise<string | null>;
   reconnectBaseInterval?: number;
   reconnectMultiplier?: number;
   maxReconnectInterval?: number;
@@ -234,7 +235,8 @@ export interface YjsProviderV2Options {
   projectId: string;
   userId: string;
   userName?: string;
-  getToken: () => Promise<string | null>;
+  /** Single-use WebSocket ticket minting callback; connects with `?ticket=<opaque>`. */
+  getTicket: () => Promise<string | null>;
   getElementState: () => RemoteElementState;
   onPendingChange?: (count: number) => void;
   onSyncUsers?: (users: Record<string, UserInfo>) => void;

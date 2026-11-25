@@ -208,7 +208,13 @@ test('useElementComments and useProjectComments manage comments, counts, and mut
 });
 
 test('useCollabRoom initializes provider lifecycle, status updates, and cleanup', async () => {
-  globalThis.fetch = (async () => Response.json([])) as typeof fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    if (url.endsWith('/ws-ticket')) {
+      return Response.json({ ticket: 'ticket-1', expiresIn: 30 }, { status: 201 });
+    }
+    return Response.json([]);
+  }) as typeof fetch;
   const roomApiRef: { current: ReturnType<typeof useCollabRoom> | undefined } = { current: undefined };
   let syncCount = 0;
 

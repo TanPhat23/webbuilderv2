@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
 test('API /ws joins a page using its fixed DEV_MODE identity', async () => {
-  const url = `${process.env.IT_WS_URL}/ws/proj1?token=ignored`;
+  const url = `${process.env.IT_WS_URL}/ws/proj1?ticket=ignored`;
   const socket = new WebSocket(url);
   try {
     const seen = await new Promise<Record<string, unknown>>((resolve, reject) => {

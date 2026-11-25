@@ -34,7 +34,7 @@ async function setup() {
   const state: any = { elements: [], loadElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new CustomYjsProviderV2({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u',
-    getToken: async () => 't', getElementState: () => state,
+    getTicket: async () => 'ticket-1', getElementState: () => state,
     onError: (e: any) => errors.push(e),
   });
   await new Promise((r) => setTimeout(r, 0));

@@ -44,7 +44,7 @@ test("CustomYjsProviderV2 options and element state injection", async () => {
     pageId: "page-1",
     projectId: "project-1",
     userId: "user-1",
-    getToken: async () => "mock-token",
+    getTicket: async () => "mock-ticket",
     getElementState: () => {
       getterCalled = true;
       return mockState;

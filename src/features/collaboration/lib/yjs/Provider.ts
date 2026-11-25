@@ -72,7 +72,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
       url: options.url,
       projectId: options.projectId,
       pageId: options.pageId,
-      getToken: options.getToken,
+      getTicket: options.getTicket,
       writer: options.writer,
     });
     this.dispatcher = new MessageDispatcher(() => {

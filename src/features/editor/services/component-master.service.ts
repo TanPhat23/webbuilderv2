@@ -2,6 +2,7 @@ import type { Page } from "@/features/pages";
 import { createPage, deleteProjectPage } from "@/features/projects/api/page.api";
 import { cloneComponentTree } from "@/features/projects/lib/components";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
+import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/yjs/wsTicket";
 import { newEntityId } from "@/lib/entity-id";
 import type { EditorElement } from "@/types/global.type";
 import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
@@ -18,19 +19,21 @@ async function writeRoot(projectId: string, root: EditorElement, session: Sessio
     remoteMove() {},
     remoteDelete() {},
   };
+  const wsUrl = import.meta.env.VITE_COLLAB_WS_URL || "ws://localhost:8080";
+  const apiBaseUrl = resolveApiBaseUrl(wsUrl);
   let provider: CustomYjsProviderV2 | undefined;
   let timeout: ReturnType<typeof setTimeout> | undefined;
   try {
     await new Promise<void>((resolve, reject) => {
       timeout = setTimeout(() => reject(new Error("Timed out connecting to the master page.")), 10_000);
       provider = new CustomYjsProviderV2({
-        url: import.meta.env.VITE_COLLAB_WS_URL || "ws://localhost:8080",
+        url: wsUrl,
         projectId,
         pageId: root.pageId,
         userId: session.userId,
         // The editor keeps its own socket; the API replaces a second normal one.
         writer: true,
-        getToken: session.getToken,
+        getTicket: () => fetchWsTicket(projectId, apiBaseUrl, session.getToken),
         getElementState: () => local,
         onError: (error) => reject(new Error("message" in error ? error.message : error.payload?.message ?? "Could not connect to the master page.")),
       });

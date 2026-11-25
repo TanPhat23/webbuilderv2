@@ -15,6 +15,7 @@ import {
   extractProviderErrorMessage,
 } from "@/features/collaboration/lib/presenceSync";
 import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
+import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/yjs/wsTicket";
 import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
 import { ElementStore, useElementStore } from "@/features/editor/store/element-store";
 import { useMouseStore } from "@/features/editor/store/mouse-store";
@@ -92,6 +93,7 @@ export function useCollabRoom({
       isCurrentPage: () => latest.current.pageId === pageId,
     });
 
+    const apiBaseUrl = resolveApiBaseUrl(wsUrl);
     const provider = new CustomYjsProviderV2({
       url: wsUrl,
       pageId,
@@ -99,7 +101,8 @@ export function useCollabRoom({
       userId: activeUserId,
       userName: activeUserId,
       onAgentRequest: (req) => runAgentRequest(req),
-      getToken: () => latest.current.getToken(),
+      getTicket: () =>
+        fetchWsTicket(projectId, apiBaseUrl, () => latest.current.getToken()),
       getElementState: () => ElementStore.getState(),
       onPendingChange: (pendingUpdates) => {
         setState((prev) => ({ ...prev, pendingUpdates }));

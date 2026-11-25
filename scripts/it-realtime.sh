@@ -32,8 +32,8 @@ PGPASSWORD=test psql -h 127.0.0.1 -p "$PG_PORT" -U postgres wb -q <<'SQL'
 INSERT INTO "User"("Id","Email","CreatedAt","UpdatedAt") VALUES ('u1','u1@x.test',now(),now()), ('u2','u2@x.test',now(),now());
 INSERT INTO "Project"("Id","Name","OwnerId","CreatedAt","UpdatedAt") VALUES ('proj1','it','u1',now(),now());
 INSERT INTO "Collaborator"("Id","UserId","ProjectId","Role","UpdatedAt") VALUES ('collab-u2','u2','proj1','editor',now());
-INSERT INTO "Page"("Id","Name","Type","Styles","ProjectId","CreatedAt","UpdatedAt")
-  SELECT 'p'||g, 'P'||g, 'page', '{}', 'proj1', now(), now() FROM generate_series(1, 30) g;
+INSERT INTO "Page"("Id","Name","Slug","Type","Styles","ProjectId","CreatedAt","UpdatedAt")
+  SELECT 'p'||g, 'P'||g, 'p'||g, 'page', '{}', 'proj1', now(), now() FROM generate_series(1, 30) g;
 SQL
 
 # Select an unused loopback port; the API's PORT accepts a port number only.

@@ -6,8 +6,8 @@ import { classifyClose } from "./connectionErrors";
 /**
  * Manages the WebSocket connection lifecycle for the Yjs-backed provider.
  *
- * Updated to match the new WebSocket API spec:
- *   - URL pattern: `ws://<host>/ws/:project?token=<jwt>`
+ * Updated to match the WebSocket API spec:
+ *   - URL pattern: `ws://<host>/ws/:project?ticket=<opaque>`
  *   - Exponential backoff with jitter (base 500ms, multiplier 1.5×, max 30s)
  *   - Auto-sends `join` message after connection opens
  *
@@ -53,8 +53,8 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
     this.disconnect();
 
     try {
-      const token = await this.getAuthToken();
-      const wsUrl = this.buildUrl(token);
+      const ticket = await this.getAuthTicket();
+      const wsUrl = this.buildUrl(ticket);
 
       if (this.isDestroyed) return;
 
@@ -125,28 +125,28 @@ export class ConnectionManager extends EventEmitter<ConnectionEvents> {
 
   // Internal — Auth & URL
 
-  private async getAuthToken(): Promise<string> {
-    const token = await this.options.getToken();
-    if (!token) {
-      const error = new Error("No authentication token available");
+  private async getAuthTicket(): Promise<string> {
+    const ticket = await this.options.getTicket();
+    if (!ticket) {
+      const error = new Error("No WebSocket ticket available");
       this.emit("error", error);
       throw error;
     }
-    return token;
+    return ticket;
   }
 
   /**
-   * Build the WebSocket URL following the new spec:
-   *   `ws://<host>/ws/:project?token=<jwt>`
+   * Build the WebSocket URL:
+   *   `ws://<host>/ws/:project?ticket=<opaque>`
    *
    * Browser WebSocket API cannot set custom headers on the handshake,
-   * so the token is passed as a query parameter.
+   * so the single-use ticket is passed as a query parameter.
    */
-  private buildUrl(token: string): string {
+  private buildUrl(ticket: string): string {
     const projectId = encodeURIComponent(this.options.projectId);
     const url = new URLBuilder(this.options.url)
       .setPath(`/ws/${projectId}`)
-      .addQueryParam("token", token);
+      .addQueryParam("ticket", ticket);
     // A helper socket must not replace the editor's own connection.
     if (this.options.writer) url.addQueryParam("conn", "writer");
     return url.build();

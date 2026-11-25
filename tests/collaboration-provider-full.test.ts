@@ -39,7 +39,7 @@ async function setup(extra: Record<string, unknown> = {}) {
   const events: Record<string, unknown[]> = { sync: [], changed: [], users: [], errors: [] };
   const provider = new CustomYjsProviderV2({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u', userName: 'Una',
-    getToken: async () => 't', getElementState: () => state,
+    getTicket: async () => 'ticket-1', getElementState: () => state,
     onError: (e: unknown) => events.errors.push(e),
     onLogicSync: (p: unknown) => events.sync.push(p),
     onLogicChanged: (p: unknown, own: boolean) => events.changed.push({ p, own }),

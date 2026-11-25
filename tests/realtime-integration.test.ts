@@ -38,7 +38,7 @@ test('provider joins, handles remote messages, and resolves an acknowledged oper
   };
   const provider = new CustomYjsProviderV2({
     url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user',
-    getToken: async () => 'test-token', getElementState: () => state,
+    getTicket: async () => 'test-ticket', getElementState: () => state,
   });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -75,7 +75,7 @@ test('ordered server echoes confirm optimistic changes without duplicating them'
   };
   const provider = new CustomYjsProviderV2({
     url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user',
-    getToken: async () => 'test-token', getElementState: () => state,
+    getTicket: async () => 'test-ticket', getElementState: () => state,
   });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -104,7 +104,7 @@ test('rejected local edits roll back without removing later pending edits', asyn
   const first = { id: 'first', type: 'Text', pageId: 'page', content: 'original' };
   const second = { id: 'second', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!;
@@ -133,7 +133,7 @@ test('broadcasts received during initial join wait for the page snapshot', async
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd(element: unknown) { state.elements = [...state.elements, element]; }, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!;
@@ -151,7 +151,7 @@ test('once sequencing is active an unsequenced mutation requests a snapshot', as
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd(element: unknown) { state.elements = [...state.elements, element]; }, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!;
@@ -169,7 +169,7 @@ test('a locally rate-limited operation is rolled back without being sent', async
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!;
@@ -190,7 +190,7 @@ test('reconnect rebases an uncertain local edit without automatically resending 
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const firstSocket = FakeWebSocket.instances.at(-1)!;
@@ -218,7 +218,7 @@ test('an edit queued before join is sent after join and rebased on the first sna
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const element = { id: 'item', type: 'Text', pageId: 'page', content: 'local' } as const;
   const state: any = { elements: [element], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!;
@@ -240,7 +240,7 @@ test('an unsent queued edit rejected on disconnect is not sent after reconnect',
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const first = FakeWebSocket.instances.at(-1)!;
@@ -267,7 +267,7 @@ test('provider reports pending operation counts as edits are acknowledged', asyn
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const counts: number[] = [];
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state, onPendingChange: (count: number) => counts.push(count) } as any);
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state, onPendingChange: (count: number) => counts.push(count) } as any);
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!; socket.open();
@@ -290,7 +290,7 @@ test('tracking a batch of optimistic creates keeps every local element intact', 
   const first = { id: 'first', type: 'Text', pageId: 'page', content: '' } as const;
   const second = { id: 'second', type: 'Text', pageId: 'page', content: '' } as const;
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!; socket.open();
@@ -314,7 +314,7 @@ test('a missing sequence requests a snapshot and then applies buffered changes',
   const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'initial' };
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
     await new Promise(resolve => setTimeout(resolve, 0));
     const socket = FakeWebSocket.instances.at(-1)!; socket.open();
@@ -335,7 +335,7 @@ test('a rejected page join reports an error state and recovers on a valid snapsh
   const state: any = { elements: [], loadElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const errors: string[] = [];
   const statuses: string[] = [];
-  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getToken: async () => 'token', getElementState: () => state, onError: error => errors.push(("message" in error ? error.message : error.payload?.message) ?? "Unknown error") });
+  const provider = new CustomYjsProviderV2({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state, onError: error => errors.push(("message" in error ? error.message : error.payload?.message) ?? "Unknown error") });
   provider.on('status', ({status}: {status: string}) => statuses.push(status));
   try {
     await new Promise(resolve => setTimeout(resolve, 0));

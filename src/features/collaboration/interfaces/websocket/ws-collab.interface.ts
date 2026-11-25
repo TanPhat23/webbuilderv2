@@ -226,7 +226,7 @@ export type WSRoomState = "connecting" | "connected" | "disconnected" | "error";
 export interface WSConnectionOptions {
   url: string;
   projectId: string;
-  getToken: () => Promise<string | null>;
+  getTicket: () => Promise<string | null>;
   reconnectBaseInterval?: number;
   reconnectMultiplier?: number;
   maxReconnectInterval?: number;

@@ -42,7 +42,7 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
     pageId: 'page-1',
     projectId: 'project-1',
     userId: 'user-1',
-    getToken: async () => 'mock-token',
+    getTicket: async () => 'mock-ticket',
     getElementState: () => {
       getterCalled = true;
       return mockState;
@@ -75,7 +75,7 @@ test('provider rejects a missing element state adapter before starting a connect
     assert.throws(() => {
       provider = new CustomYjsProviderV2({
         url: 'ws://localhost:1234', pageId: 'p', projectId: 'p', userId: 'u',
-        getToken: async () => null,
+        getTicket: async () => null,
       } as any);
     }, /getElementState/);
   } finally {
