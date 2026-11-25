@@ -98,6 +98,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
         isDraggingOver ? "bg-primary/10" : ""
       }`}
       onDrop={handleDrop}
+      onDragEnter={handleDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       id="canvas"

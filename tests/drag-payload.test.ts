@@ -64,3 +64,11 @@ test('component and snapshot drags carry only their library IDs', () => {
     assert.equal(dt.effectAllowed, 'copy');
   }
 });
+
+test('palette drags survive when only text/plain MIME data crosses the iframe boundary', () => {
+  const source = fakeDataTransfer();
+  setElementTypeDrag(source, 'Heading');
+  const plainOnly = fakeDataTransfer();
+  plainOnly.setData('text/plain', source.getData('text/plain'));
+  assert.deepEqual(readDropPayload(plainOnly), { kind: 'create', elementType: 'Heading' });
+});

@@ -2,7 +2,10 @@ import type { EditorElement } from "@/types/global.type";
 import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectionStore } from "@/features/editor/store/selection-store";
-import { DRAG_KEYS } from "@/features/editor/utils/element/dragPayload";
+import {
+  DRAG_KEYS,
+  getActiveDragPayload,
+} from "@/features/editor/utils/element/dragPayload";
 import type { DropIndicatorState } from "./CanvasOverlay";
 import { findElementNode } from "./useElementRect";
 
@@ -59,7 +62,9 @@ export function hasElementDragPayload(dt: Pick<DataTransfer, "types">): boolean 
   return (
     types.includes(DRAG_KEYS.elementId.toLowerCase()) ||
     types.includes(DRAG_KEYS.elementType.toLowerCase()) ||
-    types.includes(DRAG_KEYS.template.toLowerCase())
+    types.includes(DRAG_KEYS.template.toLowerCase()) ||
+    types.includes(DRAG_KEYS.payload) ||
+    (types.includes(DRAG_KEYS.text) && getActiveDragPayload() !== null)
   );
 }
 

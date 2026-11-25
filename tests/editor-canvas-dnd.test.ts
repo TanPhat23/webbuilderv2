@@ -206,6 +206,17 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
     const afterFallback = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
     assert.ok(afterFallback?.elements?.some((el) => el.type === 'Button'));
     assert.equal(getActiveDragPayload(), null);
+
+    // Persisted elements synced from Go can carry pageId: ""; drop must fall back to activePage.pageId.
+    const emptyPageFrame: FrameElement = { ...makeFrame('el-parent', []), pageId: '' };
+    useElementStore.getState().setElements([emptyPageFrame], true);
+    dt.setData('elementType', 'Section');
+    await act(() => {
+      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
+      dndRef.current?.handleDrop(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
+    });
+    const afterEmptyPageId = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
+    assert.ok(afterEmptyPageId?.elements?.some((el) => el.type === 'Section' && el.pageId === 'page-1'));
   } finally {
     (globalThis as Record<string, unknown>).CSS = prevCss;
     await cleanup();

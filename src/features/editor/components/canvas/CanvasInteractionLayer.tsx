@@ -30,7 +30,7 @@ export function CanvasInteractionLayer({
   const { canEdit, canCreate, isReadOnly, isLocked, permissionsRole } =
     useEditorFlags();
   const queryClient = useQueryClient();
-  const { projectId, userId } = useEditorContext();
+  const { projectId, pageId, userId } = useEditorContext();
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const draggingId = useSelectionStore((s) => s.draggingElementId);
 
@@ -43,6 +43,7 @@ export function CanvasInteractionLayer({
       canCreate,
       queryClient,
       projectId,
+      pageId,
       userId,
     });
 
@@ -101,6 +102,7 @@ export function CanvasInteractionLayer({
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
       onDragStart={handleDragStart}
+      onDragEnter={handleDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}

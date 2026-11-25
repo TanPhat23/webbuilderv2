@@ -33,6 +33,7 @@ interface UseCanvasDragDropOptions {
   canCreate: boolean;
   queryClient: QueryClient;
   projectId: string | null;
+  pageId?: string | null;
   userId: string | null;
 }
 
@@ -66,6 +67,7 @@ export function useCanvasDragDrop({
   canCreate,
   queryClient,
   projectId,
+  pageId: contextPageId = null,
   userId,
 }: UseCanvasDragDropOptions): {
   drop: DropIndicatorState | null;
@@ -196,7 +198,10 @@ export function useCanvasDragDrop({
         return;
       }
       const pageId =
-        findElement(target.targetId)?.pageId ?? store.activePage?.pageId ?? "";
+        findElement(target.targetId)?.pageId ||
+        store.activePage?.pageId ||
+        contextPageId ||
+        "";
       const newElement = resolveInsertedElement(
         payload,
         pageId,
