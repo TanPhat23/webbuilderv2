@@ -61,6 +61,7 @@ export default function EditorProvider({
         <AgentCanvasOverlay root={root} />
       ),
       renderAgentPlaybackHud: () => <AgentPlaybackHud />,
+      renderMcpConnectPanel: () => <ConnectCliPanel />,
     }),
     [projectId, userId, editorData, mode, editingMode, pageId],
   );

@@ -43,6 +43,7 @@ export interface EditorContextType {
   renderAiPanel?: (onClose: () => void) => ReactNode;
   renderAgentCanvasOverlay?: (root: HTMLElement) => ReactNode;
   renderAgentPlaybackHud?: () => ReactNode;
+  renderMcpConnectPanel?: () => ReactNode;
 }
 
 export const EditorContext = createContext<EditorContextType | undefined>(

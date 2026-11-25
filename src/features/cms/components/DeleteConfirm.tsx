@@ -1,5 +1,5 @@
-
 import React from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -12,13 +12,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DeleteConfirmProps {
-  label: string;
-  description: string;
-  onConfirm: () => void;
-  isPending?: boolean;
+  readonly label: string;
+  readonly description: string;
+  readonly onConfirm: () => void;
+  readonly isPending?: boolean;
+  readonly buttonClassName?: string;
+  readonly buttonLabel?: string;
 }
 
 export function DeleteConfirm({
@@ -26,20 +28,30 @@ export function DeleteConfirm({
   description,
   onConfirm,
   isPending,
-}: DeleteConfirmProps) {
+  buttonClassName,
+  buttonLabel,
+}: DeleteConfirmProps): React.ReactElement {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
         <Button
-          size="sm"
+          type="button"
+          size={buttonLabel ? "sm" : "icon-xs"}
           variant="ghost"
-          className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+          className={cn(
+            "text-muted-foreground hover:text-destructive hover:bg-destructive/10",
+            buttonLabel ? "h-8 gap-1.5 px-2.5 text-xs" : "size-7",
+            buttonClassName,
+          )}
           title={`Delete ${label}`}
+          aria-label={`Delete ${label}`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="size-3.5" />
+          {buttonLabel && <span>{buttonLabel}</span>}
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
         <AlertDialogHeader>
           <AlertDialogTitle>Delete {label}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
