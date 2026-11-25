@@ -15,9 +15,9 @@ register("data:text/javascript," + encodeURIComponent(loaderCode));
 import test from "node:test";
 import assert from "node:assert/strict";
 
-test("CustomYjsProviderV2 options and element state injection", async () => {
-  const { CustomYjsProviderV2 } = await import(
-    "../src/features/collaboration/lib/yjs/Provider"
+test("RealtimeProvider options and element state injection", async () => {
+  const { RealtimeProvider } = await import(
+    "../src/features/collaboration/lib/realtime/RealtimeProvider"
   );
   type EditorElement = import("../src/types/global.type").EditorElement;
 
@@ -39,7 +39,7 @@ test("CustomYjsProviderV2 options and element state injection", async () => {
     remoteDelete: () => {},
   };
 
-  const providerWithState = new CustomYjsProviderV2({
+  const providerWithState = new RealtimeProvider({
     url: "ws://localhost:1234",
     pageId: "page-1",
     projectId: "project-1",

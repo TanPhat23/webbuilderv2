@@ -1,6 +1,6 @@
 /**
  * Centralized message sending + offline-queue flush logic used by the
- * Yjs-backed provider.
+ * realtime provider.
  *
  * Responsibilities:
  *  - Decide whether to send an envelope immediately or enqueue it for later

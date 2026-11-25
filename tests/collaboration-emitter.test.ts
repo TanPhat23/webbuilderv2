@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { EventEmitter } from '../src/features/collaboration/lib/yjs/EventEmitter';
+import { EventEmitter } from '../src/features/collaboration/lib/realtime/EventEmitter';
 
 test('collaboration emitter registers, removes, and clears listeners', () => {
   const emitter = new EventEmitter<{ open: [string]; close: [] }>();

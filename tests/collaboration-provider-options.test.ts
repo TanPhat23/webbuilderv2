@@ -15,8 +15,8 @@ register('data:text/javascript,' + encodeURIComponent(loaderCode));
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
-test('CustomYjsProviderV2 accepts injected getElementState without element store dependency', async () => {
-  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
+test('RealtimeProvider accepts injected getElementState without element store dependency', async () => {
+  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
   type EditorElement = import('../src/types/global.type').EditorElement;
 
   const mockElement: EditorElement = {
@@ -37,7 +37,7 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
     remoteDelete: () => {},
   };
 
-  const provider = new CustomYjsProviderV2({
+  const provider = new RealtimeProvider({
     url: 'ws://localhost:1234',
     pageId: 'page-1',
     projectId: 'project-1',
@@ -69,11 +69,11 @@ test('CustomYjsProviderV2 accepts injected getElementState without element store
 });
 
 test('provider rejects a missing element state adapter before starting a connection', async () => {
-  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
-  let provider: InstanceType<typeof CustomYjsProviderV2> | undefined;
+  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  let provider: InstanceType<typeof RealtimeProvider> | undefined;
   try {
     assert.throws(() => {
-      provider = new CustomYjsProviderV2({
+      provider = new RealtimeProvider({
         url: 'ws://localhost:1234', pageId: 'p', projectId: 'p', userId: 'u',
         getTicket: async () => null,
       } as any);

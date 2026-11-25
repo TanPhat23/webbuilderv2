@@ -20,7 +20,7 @@ const { notificationsServer } = await import('../src/features/notifications/serv
 const { subscriptionService } = await import('../src/features/subscription/services/subscription.service');
 const { getPreviewData } = await import('../src/features/preview/api/preview.api');
 const { createPage, deleteProjectPage, renameComponentPage } = await import('../src/features/projects/api/page.api');
-const { sendElementOp } = await import('../src/features/collaboration/lib/yjs/sendElementOp');
+const { sendElementOp } = await import('../src/features/collaboration/lib/realtime/sendElementOp');
 const { useAgentActivity } = await import('../src/features/agent/activity');
 
 let net: ReturnType<typeof installFetch>;

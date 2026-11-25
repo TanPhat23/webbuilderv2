@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { ElementMessageHandler } from '../src/features/collaboration/lib/yjs/ElementMessageHandler';
+import { ElementMessageHandler } from '../src/features/collaboration/lib/realtime/ElementMessageHandler';
 import type { EditorElement } from '../src/types/global.type';
 
 test('remote updates use the injected current element state and merge settings', () => {

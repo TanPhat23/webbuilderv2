@@ -18,7 +18,7 @@ type PresenceCallback = (payload: PresenceBroadcastPayload) => void;
 type SyncedCallback = (synced: boolean) => void;
 type SyncUsersCallback = (users: Record<string, unknown>) => void;
 
-import type { RemoteElementState } from "../../interfaces/websocket/yjs-v2.interface";
+import type { RemoteElementState } from "../../interfaces/websocket/realtime-provider.interface";
 
 export interface ElementMessageHandlerOptions {
   getElementState: () => RemoteElementState;

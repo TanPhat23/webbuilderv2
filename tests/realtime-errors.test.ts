@@ -29,10 +29,10 @@ async function setup() {
   const original = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   FakeWebSocket.instances = [];
-  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
+  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
   const errors: { message?: string; code?: string }[] = [];
   const state: any = { elements: [], loadElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
-  const provider = new CustomYjsProviderV2({
+  const provider = new RealtimeProvider({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u',
     getTicket: async () => 'ticket-1', getElementState: () => state,
     onError: (e: any) => errors.push(e),

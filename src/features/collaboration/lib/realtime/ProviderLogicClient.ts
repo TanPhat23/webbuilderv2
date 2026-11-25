@@ -5,7 +5,7 @@ import {
   type LogicSyncPayload,
   type LogicUpdatePayload,
   type WSEnvelope,
-  type YjsProviderV2Options,
+  type RealtimeProviderOptions,
 } from "../../interfaces/websocket";
 import type { ConnectionManager } from "./ConnectionManager";
 import type { MessageDispatcher } from "./MessageDispatcher";
@@ -56,7 +56,7 @@ export class ProviderLogicClient {
     sender: MessageSender;
     onLogicSync?: (payload: LogicSyncPayload) => void;
     onLogicChanged?: (payload: LogicChangedPayload, own: boolean) => void;
-    onAgentRequest?: YjsProviderV2Options["onAgentRequest"];
+    onAgentRequest?: RealtimeProviderOptions["onAgentRequest"];
   }) {
     this.logicChannel = new LogicChannel({
       resolvePendingRequest: (requestId, ok, data) =>

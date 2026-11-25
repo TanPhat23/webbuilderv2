@@ -1,7 +1,7 @@
 import type { EditorElement } from "@/types/global.type";
 import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
 import type { MoveData } from "@/types/elements";
-import type { CustomYjsProviderV2 } from "./Provider";
+import type { RealtimeProvider } from "./RealtimeProvider";
 
 type Op = "update" | "delete" | "create" | "move";
 
@@ -15,7 +15,7 @@ type Op = "update" | "delete" | "create" | "move";
  */
 export async function sendElementOp(
   provider: Pick<
-    CustomYjsProviderV2,
+    RealtimeProvider,
     "updateElement" | "deleteElement" | "createElement" | "moveElement"
   >,
   getElements: () => EditorElement[],

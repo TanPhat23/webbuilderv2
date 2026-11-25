@@ -1,4 +1,4 @@
-import { RealtimeRequestRejected } from "@/features/collaboration/lib/yjs/MessageDispatcher";
+import { RealtimeRequestRejected } from "@/features/collaboration/lib/realtime/MessageDispatcher";
 
 export class ComponentConversionUnconfirmed extends Error {
   constructor(cause: unknown) {

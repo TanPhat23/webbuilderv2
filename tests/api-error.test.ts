@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   ApiError, errorMessage, isRetryable, networkError, parseErrorResponse,
 } from '../src/utils/errors/api-error';
-import { classifyClose, handleServerError } from '../src/features/collaboration/lib/yjs/connectionErrors';
+import { classifyClose, handleServerError } from '../src/features/collaboration/lib/realtime/connectionErrors';
 
 test('parses the Go error shape', () => {
   const e = parseErrorResponse(403, JSON.stringify({ error: 'Access denied', requestId: 'r1' }));

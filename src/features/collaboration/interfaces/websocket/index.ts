@@ -30,14 +30,12 @@ export type {
   SyncedListener,
   ConnectionOptions,
 
-  // Yjs provider public API and options
-  CustomYjsProviderV2,
-  YjsProviderV2Options,
+  // Realtime provider public API and options
+  RealtimeProviderClient,
+  RealtimeProviderOptions,
   RemoteElementState,
 
   // Hook types
   RoomState,
   CollabState,
-  UseYjsCollabV2Options,
-  UseYjsCollabV2Return,
-} from "./yjs-v2.interface";
+} from "./realtime-provider.interface";

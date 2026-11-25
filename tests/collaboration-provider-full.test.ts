@@ -9,7 +9,7 @@ const loader = `export async function load(url, context, nextLoad) {
 }`;
 register('data:text/javascript,' + encodeURIComponent(loader));
 
-const { AwarenessController } = await import('../src/features/collaboration/lib/yjs/AwarenessController');
+const { AwarenessController } = await import('../src/features/collaboration/lib/realtime/AwarenessController');
 
 class FakeWebSocket {
   static OPEN = 1;
@@ -34,10 +34,10 @@ async function setup(extra: Record<string, unknown> = {}) {
   const original = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   FakeWebSocket.instances = [];
-  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
+  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], loadElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const events: Record<string, unknown[]> = { sync: [], changed: [], users: [], errors: [] };
-  const provider = new CustomYjsProviderV2({
+  const provider = new RealtimeProvider({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u', userName: 'Una',
     getTicket: async () => 'ticket-1', getElementState: () => state,
     onError: (e: unknown) => events.errors.push(e),
@@ -116,8 +116,8 @@ test('pruneStale drops only presences older than the limit', () => {
 // ---------------------------------------------------------------- Provider
 
 test('constructing without getElementState is rejected', async () => {
-  const { CustomYjsProviderV2 } = await import('../src/features/collaboration/lib/yjs/Provider');
-  assert.throws(() => new CustomYjsProviderV2({ url: 'ws://x', projectId: 'p', pageId: 'pg', userId: 'u' } as never), /getElementState is required/);
+  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  assert.throws(() => new RealtimeProvider({ url: 'ws://x', projectId: 'p', pageId: 'pg', userId: 'u' } as never), /getElementState is required/);
 });
 
 test('status listeners get the current status immediately and on change', async () => {

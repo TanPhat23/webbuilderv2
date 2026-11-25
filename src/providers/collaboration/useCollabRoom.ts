@@ -14,9 +14,9 @@ import {
   canStartCollabRoom,
   extractProviderErrorMessage,
 } from "@/features/collaboration/lib/presenceSync";
-import { CustomYjsProviderV2 } from "@/features/collaboration/lib/yjs/Provider";
-import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/yjs/wsTicket";
-import { sendElementOp } from "@/features/collaboration/lib/yjs/sendElementOp";
+import { RealtimeProvider } from "@/features/collaboration/lib/realtime/RealtimeProvider";
+import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/realtime/wsTicket";
+import { sendElementOp } from "@/features/collaboration/lib/realtime/sendElementOp";
 import { ElementStore, useElementStore } from "@/features/editor/store/element-store";
 import { useMouseStore } from "@/features/editor/store/mouse-store";
 import { useLogicStore } from "@/features/interactions/logic-store";
@@ -51,7 +51,7 @@ export function useCollabRoom({
   isLoaded: boolean;
 }): {
   state: WSCollabState;
-  providerRef: React.RefObject<CustomYjsProviderV2 | null>;
+  providerRef: React.RefObject<RealtimeProvider | null>;
   remoteAgents: readonly RemoteAgentPresence[];
 } {
   const { projectId, pageId, onSync, onError, onDisconnect, onReconnect } = config;
@@ -59,7 +59,7 @@ export function useCollabRoom({
   const [state, setState] = useState<WSCollabState>(INITIAL_STATE);
   const [remoteAgents, setRemoteAgents] = useState<readonly RemoteAgentPresence[]>([]);
 
-  const providerRef = useRef<CustomYjsProviderV2 | null>(null);
+  const providerRef = useRef<RealtimeProvider | null>(null);
   const pendingMovesRef = useRef<Set<string>>(new Set());
   const latest = useRef({
     onSync,
@@ -94,7 +94,7 @@ export function useCollabRoom({
     });
 
     const apiBaseUrl = resolveApiBaseUrl(wsUrl);
-    const provider = new CustomYjsProviderV2({
+    const provider = new RealtimeProvider({
       url: wsUrl,
       pageId,
       projectId,

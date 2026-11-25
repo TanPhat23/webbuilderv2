@@ -21,7 +21,7 @@ function isWireEnvelope(value: unknown): value is WSEnvelope<unknown> {
 function parseWireEnvelope(data: unknown): WSEnvelope<unknown> | null {
   if (typeof data !== "string") {
     console.error(
-      "[CustomYjsProviderV2] Received non-string message payload:",
+      "[RealtimeProvider] Received non-string message payload:",
       data,
     );
     return null;
@@ -29,12 +29,12 @@ function parseWireEnvelope(data: unknown): WSEnvelope<unknown> | null {
   try {
     const parsed: unknown = JSON.parse(data);
     if (!isWireEnvelope(parsed)) {
-      console.error("[CustomYjsProviderV2] Invalid message envelope:", parsed);
+      console.error("[RealtimeProvider] Invalid message envelope:", parsed);
       return null;
     }
     return parsed;
   } catch (error) {
-    console.error("[CustomYjsProviderV2] Failed to parse message:", error);
+    console.error("[RealtimeProvider] Failed to parse message:", error);
     return null;
   }
 }

@@ -1,7 +1,7 @@
 import { isEqual } from "lodash-es";
 import { newEntityId } from "@/lib/entity-id";
 import { ComponentConversionUnconfirmed, persistComponentInstance } from "../services/component-conversion";
-import { RealtimeRequestRejected } from "@/features/collaboration/lib/yjs/MessageDispatcher";
+import { RealtimeRequestRejected } from "@/features/collaboration/lib/realtime/MessageDispatcher";
 import { useCallback } from "react";
 import { useAuth } from "@clerk/tanstack-react-start";
 import { useQueryClient } from "@tanstack/react-query";

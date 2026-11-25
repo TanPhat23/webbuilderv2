@@ -12,7 +12,7 @@ import {
 import type {
   AgentPresence,
   ElementOperationResult,
-  YjsProviderV2Options,
+  RealtimeProviderOptions,
   UpdateType,
   StatusListener,
   SyncedListener,
@@ -23,13 +23,13 @@ import type {
   LogicScope,
   LogicChangedPayload,
   LogicSyncPayload,
-  CustomYjsProviderV2 as ICustomYjsProviderV2,
+  RealtimeProviderClient,
 } from "../../interfaces/websocket";
 import type { EditorElement } from "@/types/global.type";
 
 const PRESENCE_PRUNE_INTERVAL_MS = 60_000;
 
-export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
+export class RealtimeProvider implements RealtimeProviderClient {
   public isSynced = false;
 
   private connection: ConnectionManager;
@@ -57,7 +57,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
   private overflowReported = false;
   private pruneInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(options: YjsProviderV2Options) {
+  constructor(options: RealtimeProviderOptions) {
     if (typeof options.getElementState !== "function") {
       throw new Error("getElementState is required for real-time collaboration");
     }
@@ -335,7 +335,7 @@ export class CustomYjsProviderV2 implements ICustomYjsProviderV2 {
         callback(this.awarenessController.remotePresences);
       } catch (err) {
         console.error(
-          "[CustomYjsProviderV2] onPresenceChange callback error:",
+          "[RealtimeProvider] onPresenceChange callback error:",
           err,
         );
       }

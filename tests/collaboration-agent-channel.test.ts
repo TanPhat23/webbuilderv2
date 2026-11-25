@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AgentChannel } from "../src/features/collaboration/lib/yjs/AgentChannel";
+import { AgentChannel } from "../src/features/collaboration/lib/realtime/AgentChannel";
 import type { AgentOutcome, AgentRequest } from "../src/features/agent/protocol";
 
 const env = (type: string, extra: Record<string, unknown> = {}) => ({ type, projectId: "p", pageId: "home", payload: {}, ...extra }) as never;

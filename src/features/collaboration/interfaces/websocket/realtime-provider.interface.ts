@@ -1,6 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
 import type { Page } from "@/features/pages";
-import type React from "react";
 import type {
   AgentPresence,
   AgentPresenceAction,
@@ -170,7 +169,7 @@ export interface ConnectionOptions {
   maxReconnectInterval?: number;
 }
 
-export interface CustomYjsProviderV2 {
+export interface RealtimeProviderClient {
   connected: boolean;
   isSynced: boolean;
 
@@ -225,7 +224,7 @@ export interface RemoteElementState {
   remoteDelete: (id: string) => void;
 }
 
-export interface YjsProviderV2Options {
+export interface RealtimeProviderOptions {
   /** Helper socket that must not replace the editor's own connection (server: ?conn=writer). */
   writer?: boolean;
   /** Runs a CLI tool call in this tab (see features/agent). */
@@ -254,55 +253,4 @@ export interface CollabState {
   error: string | null;
   isSynced: boolean;
   pendingUpdates: number;
-}
-
-export interface UseYjsCollabV2Options {
-  pageId: string;
-  projectId: string;
-  wsUrl?: string;
-  enabled?: boolean;
-  onSync?: () => void;
-  onError?: (error: Error) => void;
-  onDisconnect?: () => void;
-  onReconnect?: () => void;
-  debounceMs?: number;
-  throttleMs?: number;
-  enableDebug?: boolean;
-}
-
-export interface UseYjsCollabV2Return {
-  isConnected: boolean;
-  roomState: RoomState;
-  error: string | null;
-  isSynced: boolean;
-  pendingUpdates: number;
-  provider: CustomYjsProviderV2 | null;
-  canvasRef: React.RefObject<HTMLElement | null>;
-  createElement: (
-    element: EditorElement,
-    parentId?: string | null,
-    position?: number,
-  ) => Promise<ElementOperationResult>;
-  updateElement: (
-    elementId: string,
-    updates: Partial<EditorElement>,
-    updateType?: UpdateType,
-  ) => Promise<ElementOperationResult>;
-  deleteElement: (
-    elementId: string,
-    deleteChildren?: boolean,
-    preserveStructure?: boolean,
-  ) => Promise<ElementOperationResult>;
-  moveElement: (
-    elementId: string,
-    newParentId?: string | null,
-    newPosition?: number,
-  ) => Promise<ElementOperationResult>;
-  createPage: (page: Page) => Promise<PageOperationResult>;
-  updatePage: (
-    pageId: string,
-    updates: Partial<Page>,
-  ) => Promise<PageOperationResult>;
-  deletePage: (pageId: string) => Promise<PageOperationResult>;
-  reconnect: () => Promise<void>;
 }

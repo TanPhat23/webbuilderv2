@@ -4,7 +4,7 @@ import { URLBuilder } from "@/utils/urlbuilder";
 import { classifyClose } from "./connectionErrors";
 
 /**
- * Manages the WebSocket connection lifecycle for the Yjs-backed provider.
+ * Manages the WebSocket connection lifecycle for the realtime provider.
  *
  * Updated to match the WebSocket API spec:
  *   - URL pattern: `ws://<host>/ws/:project?ticket=<opaque>`

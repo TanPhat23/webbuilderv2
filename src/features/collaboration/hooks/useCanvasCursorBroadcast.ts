@@ -1,7 +1,7 @@
 import type React from "react";
 import { useEffect } from "react";
 import type { WSRoomState } from "../interfaces/websocket";
-import type { CustomYjsProviderV2 } from "../lib/yjs/Provider";
+import type { RealtimeProvider } from "../lib/realtime/RealtimeProvider";
 import {
   HIDDEN_CURSOR,
   PRESENCE_SEND_THROTTLE_MS,
@@ -10,7 +10,7 @@ import {
 
 export function useCanvasCursorBroadcast(
   canvas: HTMLElement | null,
-  providerRef: React.RefObject<CustomYjsProviderV2 | null>,
+  providerRef: React.RefObject<RealtimeProvider | null>,
   roomState: WSRoomState,
 ): void {
   useEffect(() => {

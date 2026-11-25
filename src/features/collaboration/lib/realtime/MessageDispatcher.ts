@@ -9,7 +9,7 @@ import type {
 
 /**
  * Handles request tracking, rate limiting, message envelope creation, and
- * offline queuing for the Yjs-backed WebSocket provider.
+ * offline queuing for the WebSocket realtime provider.
  *
  * Updated to use the new standard WSEnvelope message format:
  *   { type, projectId, pageId, userId, requestId, timestamp, payload }

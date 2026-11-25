@@ -68,15 +68,15 @@ const until = async (cond: () => boolean, what: string, ms = 4000) => {
 };
 
 async function connect(user: string, pageId: string): Promise<Client> {
-  const { CustomYjsProviderV2 } = await import('../../src/features/collaboration/lib/yjs/Provider');
-  const { sendElementOp } = await import('../../src/features/collaboration/lib/yjs/sendElementOp');
+  const { RealtimeProvider } = await import('../../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { sendElementOp } = await import('../../src/features/collaboration/lib/realtime/sendElementOp');
   const { createElementStore } = await import('../../src/features/editor/store/element-store');
 
   const store = createElementStore();
   const errors: { code?: string; message?: string }[] = [];
   const logicSyncs: any[] = [];
   const logicChanges: any[] = [];
-  const provider = new CustomYjsProviderV2({
+  const provider = new RealtimeProvider({
     url: SERVER, projectId: PROJECT, pageId, userId: user,
     getTicket: async () => user,
     getElementState: () => store.getState() as any,
@@ -167,7 +167,7 @@ test('editing an element a teammate just deleted is a soft failure', async () =>
   // Bob's edit was already in flight: send it straight to the server.
   await assert.rejects(b.provider.updateElement(uid('inner'), { content: 'late' }));
   await until(() => b.errors.length > 0, 'bob gets an error');
-  const { handleServerError } = await import('../../src/features/collaboration/lib/yjs/connectionErrors');
+  const { handleServerError } = await import('../../src/features/collaboration/lib/realtime/connectionErrors');
   const last = b.errors.at(-1)!;
   assert.equal(last.code, 'NOT_FOUND');
   const handling = handleServerError(last.code!, last.message);
