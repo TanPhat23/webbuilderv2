@@ -11,13 +11,20 @@ export interface DropBox {
 }
 
 /** Largest edge band (px) of a container that still means before/after. */
-const CONTAINER_EDGE_PX = 12;
+const CONTAINER_EDGE_PX = 36;
+const CONTAINER_EDGE_RATIO = 0.28;
+
+export interface ChildDropCandidate {
+  readonly id: string;
+  readonly box: DropBox;
+}
 
 /**
  * Where a drop lands relative to the element under the cursor. Containers
- * take drops inside unless the cursor is in a thin edge band; other elements
- * split in half. `horizontal` is true when siblings flow left-to-right
- * (flex row or multi-column grid parent), so before/after use the x axis.
+ * take drops inside unless the cursor is in a generous edge band; other
+ * elements split in half. `horizontal` is true when siblings flow
+ * left-to-right (flex row or multi-column grid parent), so before/after use
+ * the x axis.
  */
 export function computeDropPosition(
   box: DropBox,
@@ -28,12 +35,41 @@ export function computeDropPosition(
   const size = horizontal ? box.width : box.height;
 
   if (isContainer) {
-    const edge = Math.min(CONTAINER_EDGE_PX, size * 0.25);
+    const edge = Math.min(CONTAINER_EDGE_PX, size * CONTAINER_EDGE_RATIO);
     if (offset < edge) return "before";
     if (offset > size - edge) return "after";
     return "inside";
   }
   return offset < size / 2 ? "before" : "after";
+}
+
+/**
+ * When the pointer lands in the gap or padding of a container that already has
+ * children, snap to the nearest child's `before` or `after` slot along the
+ * container's flow axis so there are no dead zones between siblings.
+ */
+export function resolveNearestChildSlot(
+  children: readonly ChildDropCandidate[],
+  point: { readonly x: number; readonly y: number },
+  horizontal: boolean,
+): { readonly targetId: string; readonly position: "before" | "after" } | null {
+  if (children.length === 0) return null;
+  const cursor = horizontal ? point.x : point.y;
+
+  let best: { targetId: string; position: "before" | "after"; dist: number } | null = null;
+  for (const child of children) {
+    const start = horizontal ? child.box.left : child.box.top;
+    const size = horizontal ? child.box.width : child.box.height;
+    const mid = start + size / 2;
+    const end = start + size;
+    const position: "before" | "after" = cursor < mid ? "before" : "after";
+    const edge = position === "before" ? start : end;
+    const dist = Math.abs(cursor - edge);
+    if (!best || dist < best.dist) {
+      best = { targetId: child.id, position, dist };
+    }
+  }
+  return best ? { targetId: best.targetId, position: best.position } : null;
 }
 
 /** True when children of a parent with this computed style flow horizontally. */

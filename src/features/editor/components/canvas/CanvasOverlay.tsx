@@ -174,8 +174,8 @@ function DropIndicator({
     );
   }
 
-  const LINE = 2;
-  const CAP = 6;
+  const LINE = 4;
+  const CAP = 10;
   const atStart = drop.position === "before";
 
   if (drop.horizontal) {
@@ -190,14 +190,14 @@ function DropIndicator({
           width: LINE,
           height: rect.height,
         }}
-        className="bg-blue-500"
+        className="rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.22)]"
       >
         <span
-          className="absolute left-1/2 -translate-x-1/2 rounded-full border border-white bg-blue-500"
+          className="absolute left-1/2 -translate-x-1/2 rounded-full border-2 border-white bg-blue-500 shadow-xs"
           style={{ top: -CAP / 2, width: CAP, height: CAP }}
         />
         <span
-          className="absolute left-1/2 -translate-x-1/2 rounded-full border border-white bg-blue-500"
+          className="absolute left-1/2 -translate-x-1/2 rounded-full border-2 border-white bg-blue-500 shadow-xs"
           style={{ bottom: -CAP / 2, width: CAP, height: CAP }}
         />
       </div>
@@ -215,14 +215,14 @@ function DropIndicator({
         width: rect.width,
         height: LINE,
       }}
-      className="bg-blue-500"
+      className="rounded-full bg-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.22)]"
     >
       <span
-        className="absolute top-1/2 -translate-y-1/2 rounded-full border border-white bg-blue-500"
+        className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-500 shadow-xs"
         style={{ left: -CAP / 2, width: CAP, height: CAP }}
       />
       <span
-        className="absolute top-1/2 -translate-y-1/2 rounded-full border border-white bg-blue-500"
+        className="absolute top-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-500 shadow-xs"
         style={{ right: -CAP / 2, width: CAP, height: CAP }}
       />
     </div>

@@ -22,6 +22,8 @@ import {
   computeDropPosition,
   isHorizontalFlow,
   isNoOpMove,
+  resolveNearestChildSlot,
+  type ChildDropCandidate,
 } from "@/features/editor/utils/element/dropPosition";
 import type { SizeAxis } from "@/features/editor/utils/element/sizing";
 import type { DropIndicatorState, ManipulationSession } from "./canvasTypes";
@@ -312,11 +314,53 @@ function hitTestDropTarget(
     { isContainer, horizontal },
   );
 
-  if (isNoOpMove(useElementStore.getState().elements, movingId, targetId, position)) {
+  let resolvedTargetId = targetId;
+  let resolvedPosition = position;
+  let resolvedHorizontal = horizontal;
+
+  if (position === "inside" && isContainer) {
+    const childCandidates: ChildDropCandidate[] = [];
+    for (const child of Array.from(candidate.children)) {
+      const childId = child.getAttribute("data-element-id");
+      if (!childId || child === draggedNode || draggedNode.contains(child)) continue;
+      childCandidates.push({ id: childId, box: child.getBoundingClientRect() });
+    }
+    if (childCandidates.length > 0) {
+      const containerStyle = view.getComputedStyle(candidate);
+      const containerHorizontal = isHorizontalFlow({
+        display: containerStyle.display,
+        flexDirection: containerStyle.flexDirection,
+        gridTemplateColumns: containerStyle.gridTemplateColumns,
+      });
+      const slot = resolveNearestChildSlot(
+        childCandidates,
+        { x: clientX, y: clientY },
+        containerHorizontal,
+      );
+      if (slot) {
+        resolvedTargetId = slot.targetId;
+        resolvedPosition = slot.position;
+        resolvedHorizontal = containerHorizontal;
+      }
+    }
+  }
+
+  if (
+    isNoOpMove(
+      useElementStore.getState().elements,
+      movingId,
+      resolvedTargetId,
+      resolvedPosition,
+    )
+  ) {
     return null;
   }
 
-  return { targetId, position, horizontal };
+  return {
+    targetId: resolvedTargetId,
+    position: resolvedPosition,
+    horizontal: resolvedHorizontal,
+  };
 }
 
 export function useCanvasManipulation({

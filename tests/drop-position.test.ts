@@ -4,6 +4,7 @@ import {
   computeDropPosition,
   isHorizontalFlow,
   isNoOpMove,
+  resolveNearestChildSlot,
 } from '../src/features/editor/utils/element/dropPosition';
 import type { FrameElement, TextElement } from '../src/types/elements/elements';
 
@@ -57,4 +58,43 @@ test('isNoOpMove identifies moves that leave the element in its exact current sl
     ),
     'inside',
   );
+  // Generous 28% / 36px edge band makes swapping containers easy
+  assert.equal(
+    computeDropPosition(
+      { left: 0, top: 0, width: 200, height: 200 },
+      { x: 100, y: 28 },
+      { isContainer: true, horizontal: false },
+    ),
+    'before',
+  );
+  assert.equal(
+    computeDropPosition(
+      { left: 0, top: 0, width: 200, height: 200 },
+      { x: 100, y: 172 },
+      { isContainer: true, horizontal: false },
+    ),
+    'after',
+  );
+});
+
+test('resolveNearestChildSlot snaps gap/padding hits to the nearest sibling slot', () => {
+  const verticalChildren = [
+    { id: 'c1', box: { left: 0, top: 20, width: 200, height: 80 } },
+    { id: 'c2', box: { left: 0, top: 120, width: 200, height: 80 } },
+  ];
+  // Cursor in the 20px gap between c1 (bottom 100) and c2 (top 120)
+  const inGap = resolveNearestChildSlot(verticalChildren, { x: 100, y: 112 }, false);
+  assert.deepEqual(inGap, { targetId: 'c2', position: 'before' });
+
+  const afterLast = resolveNearestChildSlot(verticalChildren, { x: 100, y: 230 }, false);
+  assert.deepEqual(afterLast, { targetId: 'c2', position: 'after' });
+
+  const horizontalChildren = [
+    { id: 'h1', box: { left: 0, top: 0, width: 100, height: 80 } },
+    { id: 'h2', box: { left: 130, top: 0, width: 100, height: 80 } },
+  ];
+  const inRowGap = resolveNearestChildSlot(horizontalChildren, { x: 110, y: 40 }, true);
+  assert.deepEqual(inRowGap, { targetId: 'h1', position: 'after' });
+
+  assert.equal(resolveNearestChildSlot([], { x: 10, y: 10 }, false), null);
 });
