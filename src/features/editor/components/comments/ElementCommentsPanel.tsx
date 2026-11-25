@@ -63,7 +63,7 @@ export function ElementCommentsPanel() {
     toggleResolved,
   } = useElementComments({
     elementId: elementId || undefined,
-    autoLoad: !showAllComments,
+    autoLoad: isCommentsVisible && !showAllComments,
   });
 
   // All project comments
@@ -73,7 +73,9 @@ export function ElementCommentsPanel() {
     totalComments,
     unresolvedCount: projectUnresolvedCount,
     isLoading: projectLoading,
-  } = useProjectComments(showAllComments ? project?.id : undefined);
+  } = useProjectComments(
+    isCommentsVisible && showAllComments ? project?.id : undefined,
+  );
 
   const isLoading = showAllComments ? projectLoading : singleLoading;
   const unresolvedCount = showAllComments
