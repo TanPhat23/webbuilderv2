@@ -52,7 +52,6 @@ export function useCanvasElement(
     "data-element-id": element.id,
     "data-element-type": element.type,
     className: element.tailwindStyles,
-    draggable: canEdit && !isEditing,
     contentEditable: isEditing || undefined,
     suppressContentEditableWarning: true,
     onBlur,

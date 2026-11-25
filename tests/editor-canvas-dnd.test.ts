@@ -70,7 +70,7 @@ afterEach(async () => {
 
 after(cleanup);
 
-test('useCanvasDragDrop computes drop indicators, handles move and create drops, and prevents self-drop', async () => {
+test('useCanvasDragDrop computes drop indicators and handles sidebar insert drops', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
   const prevCss = (globalThis as Record<string, unknown>).CSS;
   (globalThis as Record<string, unknown>).CSS = { escape: (s: string) => s };
@@ -86,7 +86,6 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
       const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
       dndRef.current = useCanvasDragDrop({
         root,
-        canEdit: true,
         canCreate: true,
         queryClient: client,
         projectId: 'proj-1',
@@ -100,25 +99,21 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
           {
             'data-element-id': 'el-parent',
             'data-element-type': 'Frame',
-            draggable: true,
           },
           h('div', {
             'data-element-id': 'el-child',
             'data-element-type': 'Text',
-            draggable: true,
           }),
         ),
         h('div', {
           'data-element-id': 'el-sibling',
           'data-element-type': 'Text',
-          draggable: true,
         }),
       );
     }
 
     const r = await render(h(CanvasHost));
     const parentNode = $q<HTMLElement>(r.container, '[data-element-id="el-parent"]');
-    const childNode = $q<HTMLElement>(r.container, '[data-element-id="el-child"]');
     const siblingNode = $q<HTMLElement>(r.container, '[data-element-id="el-sibling"]');
     parentNode.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 100 } as DOMRect);
     siblingNode.getBoundingClientRect = () => ({ left: 0, top: 120, width: 200, height: 40 } as DOMRect);
@@ -149,33 +144,13 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
 
     const getDrop = () => dndRef.current?.drop ?? null;
 
-    await act(() => {
-      dndRef.current?.handleDragStart(dragEvent(parentNode));
-    });
-    assert.equal(parentNode.getAttribute('data-dragging'), 'true');
-
-    await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(childNode));
-    });
-    assert.ok(getDrop() === null);
-
+    dt.setData('elementType', 'Text');
     await act(() => {
       dndRef.current?.handleDragOver(dragEvent(siblingNode));
     });
     assert.equal(getDrop()?.targetId, 'el-sibling');
 
     await act(() => {
-      dndRef.current?.handleDrop(dragEvent(siblingNode));
-      dndRef.current?.resetDrag();
-    });
-    assert.equal(parentNode.getAttribute('data-dragging'), null);
-
-    dt.setData('elementType', 'Text');
-    storeData.delete('elementid');
-    const idx = types.indexOf('elementid');
-    if (idx >= 0) types.splice(idx, 1);
-    await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(siblingNode));
       dndRef.current?.handleDrop(dragEvent(siblingNode));
       dndRef.current?.handleDragLeave(dragEvent(siblingNode, { relatedTarget: document.body }));
     });

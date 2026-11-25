@@ -131,7 +131,7 @@ test('useCanvasElement builds editable rootProps and updates changed text on blu
   );
   assert.equal(propsRef?.isEditing, true);
   assert.equal(propsRef?.eventsActive, false);
-  assert.equal(propsRef?.rootProps.draggable, false);
+  assert.equal(propsRef?.rootProps.contentEditable, true);
   assert.equal(propsRef?.rootProps.style.color, 'red');
 
   const node = document.createElement('div');

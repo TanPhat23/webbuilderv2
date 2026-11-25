@@ -1,24 +1,19 @@
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import type { EditorElement } from "@/types/global.type";
 import { CONTAINER_ELEMENT_TYPES } from "@/types/elements";
 import { resolveInsertedElement } from "@/features/editor/lib/dropElement";
 import { useElementStore } from "@/features/editor/store/element-store";
 import {
   clearActiveDragPayload,
-  DRAG_KEYS,
-  getActiveDragPayload,
   readDropPayload,
-  setMoveDrag,
 } from "@/features/editor/utils/element/dragPayload";
 import {
   computeDropPosition,
   isHorizontalFlow,
 } from "@/features/editor/utils/element/dropPosition";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
-import type { DropIndicatorState } from "./CanvasOverlay";
-import { findElementNode } from "./useElementRect";
+import type { DropIndicatorState } from "./canvasTypes";
 import {
   findElementNodeFromTarget,
   findElement,
@@ -29,7 +24,6 @@ import {
 
 interface UseCanvasDragDropOptions {
   root: HTMLDivElement | null;
-  canEdit: boolean;
   canCreate: boolean;
   queryClient: QueryClient;
   projectId: string | null;
@@ -47,7 +41,13 @@ function computeIndicatorForNode(
   const view = node.ownerDocument.defaultView ?? window;
   const parent = (node.closest("[data-component-instance]") ?? node).parentElement;
   const parentStyle = parent ? view.getComputedStyle(parent) : null;
-  const horizontal = parentStyle ? isHorizontalFlow(parentStyle) : false;
+  const horizontal = parentStyle
+    ? isHorizontalFlow({
+        display: parentStyle.display,
+        flexDirection: parentStyle.flexDirection,
+        gridTemplateColumns: parentStyle.gridTemplateColumns,
+      })
+    : false;
   const elementType = node.dataset.elementType;
   const isContainer =
     !node.closest("[data-component-instance]") &&
@@ -61,9 +61,13 @@ function computeIndicatorForNode(
   return { targetId: node.dataset.elementId!, position, horizontal };
 }
 
+/**
+ * Handles HTML5 Drag-and-Drop for sidebar inserts (`create`, `template`,
+ * `component`, `snapshot`). On-canvas element moves/swaps are handled via
+ * Pointer Events in `useCanvasManipulation`.
+ */
 export function useCanvasDragDrop({
   root,
-  canEdit,
   canCreate,
   queryClient,
   projectId,
@@ -72,14 +76,12 @@ export function useCanvasDragDrop({
 }: UseCanvasDragDropOptions): {
   drop: DropIndicatorState | null;
   resetDrag: () => void;
-  handleDragStart: (event: React.DragEvent) => void;
   handleDragOver: (event: React.DragEvent) => void;
   handleDragLeave: (event: React.DragEvent) => void;
   handleDrop: (event: React.DragEvent) => void;
 } {
   const [drop, setDrop] = useState<DropIndicatorState | null>(null);
   const dropRef = useRef<DropIndicatorState | null>(null);
-  const draggingIdRef = useRef<string | null>(null);
 
   const updateDrop = useCallback((next: DropIndicatorState | null): void => {
     if (isSameDropIndicator(dropRef.current, next)) return;
@@ -88,57 +90,23 @@ export function useCanvasDragDrop({
   }, []);
 
   const resetDrag = useCallback((): void => {
-    if (draggingIdRef.current) {
-      findElementNode(root, draggingIdRef.current)?.removeAttribute("data-dragging");
-    }
-    draggingIdRef.current = null;
     clearActiveDragPayload();
     updateDrop(null);
-    setCanvasSelection({ draggingElementId: undefined });
-  }, [root, updateDrop]);
-
-  const handleDragStart = (event: React.DragEvent): void => {
-    const node = findElementNodeFromTarget(root, event.target);
-    if (!node || !node.draggable) return;
-    event.stopPropagation();
-    if (!canEdit) {
-      event.preventDefault();
-      return;
-    }
-    const id = node.dataset.elementId!;
-    setMoveDrag(event.dataTransfer, id);
-    draggingIdRef.current = id;
-    node.setAttribute("data-dragging", "true");
-    setCanvasSelection({ draggingElementId: id, hoveredElementId: undefined });
-  };
+  }, [updateDrop]);
 
   type DragResolution =
-    | { kind: "invalid" }
-    | { kind: "denied" }
-    | { kind: "self" }
-    | { kind: "ready"; isMove: boolean; target: DropIndicatorState };
+    | { readonly kind: "invalid" }
+    | { readonly kind: "denied" }
+    | { readonly kind: "ready"; readonly target: DropIndicatorState };
 
   const resolveDragTarget = (event: React.DragEvent): DragResolution => {
     const node = findElementNodeFromTarget(root, event.target);
     if (!node || !hasElementDragPayload(event.dataTransfer)) {
       return { kind: "invalid" };
     }
-    const types = Array.from(event.dataTransfer.types).map((t) => t.toLowerCase());
-    const hasMoveKey =
-      types.includes(DRAG_KEYS.elementId.toLowerCase()) ||
-      getActiveDragPayload()?.kind === "move";
-    if (draggingIdRef.current !== null && !hasMoveKey) {
-      findElementNode(root, draggingIdRef.current)?.removeAttribute("data-dragging");
-      draggingIdRef.current = null;
-    }
-    const isMove = draggingIdRef.current !== null;
-    if (isMove ? !canEdit : !canCreate) return { kind: "denied" };
-    if (isMove && findElementNode(root, draggingIdRef.current!)?.contains(node)) {
-      return { kind: "self" };
-    }
+    if (!canCreate) return { kind: "denied" };
     return {
       kind: "ready",
-      isMove,
       target: computeIndicatorForNode(node, event.clientX, event.clientY),
     };
   };
@@ -153,14 +121,7 @@ export function useCanvasDragDrop({
 
     event.preventDefault();
     event.stopPropagation();
-
-    if (resolution.kind === "self") {
-      event.dataTransfer.dropEffect = "none";
-      updateDrop(null);
-      return;
-    }
-
-    event.dataTransfer.dropEffect = resolution.isMove ? "move" : "copy";
+    event.dataTransfer.dropEffect = "copy";
     updateDrop(resolution.target);
   };
 
@@ -181,22 +142,13 @@ export function useCanvasDragDrop({
 
     try {
       const payload = readDropPayload(event.dataTransfer);
-      if (!payload) return;
-      const store = useElementStore.getState();
-
-      if (payload.kind === "move") {
-        if (!canEdit) {
-          showErrorToast(PERMISSION_ERRORS.cannotPerformAction);
-          return;
-        }
-        store.moveElement(payload.elementId, target.targetId, target.position);
-        return;
-      }
+      if (!payload || payload.kind === "move") return;
 
       if (!canCreate) {
         showErrorToast(PERMISSION_ERRORS.cannotAdd);
         return;
       }
+      const store = useElementStore.getState();
       const pageId =
         findElement(target.targetId)?.pageId ||
         store.activePage?.pageId ||
@@ -221,5 +173,5 @@ export function useCanvasDragDrop({
     }
   };
 
-  return { drop, resetDrag, handleDragStart, handleDragOver, handleDragLeave, handleDrop };
+  return { drop, resetDrag, handleDragOver, handleDragLeave, handleDrop };
 }

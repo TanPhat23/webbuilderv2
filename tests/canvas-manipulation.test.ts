@@ -263,6 +263,8 @@ test('startResize previews live DOM styles, reverts on Escape, and commits once 
   rootNode.getBoundingClientRect = () => makeRect(0, 0, 1000, 600);
   boxNode.getBoundingClientRect = () => makeRect(100, 100, 200, 100);
 
+  const getSession = () => apiRef.current?.session;
+
   // 1) Start resize, drag, then press Escape -> inline style restored, store untouched
   await act(() => {
     apiRef.current?.startResize(box, boxNode, 'e', {
@@ -275,12 +277,12 @@ test('startResize previews live DOM styles, reverts on Escape, and commits once 
     window.dispatchEvent(makePointerEvent('pointermove', { clientX: 360, clientY: 150 }));
   });
   assert.equal(boxNode.style.width, '260px');
-  assert.equal(apiRef.current?.session.kind, 'resizing');
+  assert.equal(getSession()?.kind, 'resizing');
 
   await act(() => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
   });
-  assert.equal(apiRef.current?.session.kind, 'idle');
+  assert.equal(getSession()?.kind, 'idle');
   assert.equal(boxNode.style.width, '');
   assert.equal(useElementStore.getState().elements[0]?.styles?.default?.width, undefined);
 
@@ -296,7 +298,7 @@ test('startResize previews live DOM styles, reverts on Escape, and commits once 
     window.dispatchEvent(makePointerEvent('pointermove', { clientX: 380, clientY: 150 }));
     window.dispatchEvent(makePointerEvent('pointerup', { clientX: 380, clientY: 150 }));
   });
-  assert.equal(apiRef.current?.session.kind, 'idle');
+  assert.equal(getSession()?.kind, 'idle');
   assert.equal(useElementStore.getState().elements[0]?.styles?.default?.width, '280px');
 });
 
@@ -345,6 +347,8 @@ test('startSpacing seeds from getComputedStyle, reverts inline "" on Escape, and
   }) as typeof view.getComputedStyle;
 
   try {
+    const getSession = () => apiRef.current?.session;
+
     // 1) Drag padding-top +10px inward (32 -> 42), then Escape -> reverts to ""
     await act(() => {
       apiRef.current?.startSpacing(item, itemNode, 'padding-top', {
@@ -356,16 +360,17 @@ test('startSpacing seeds from getComputedStyle, reverts inline "" on Escape, and
       } as unknown as React.PointerEvent);
       window.dispatchEvent(makePointerEvent('pointermove', { clientX: 50, clientY: 60 }));
     });
-    assert.equal(apiRef.current?.session.kind, 'spacing');
-    if (apiRef.current?.session.kind === 'spacing') {
-      assert.equal(apiRef.current.session.preview.padding.top, 42);
+    const active = getSession();
+    assert.equal(active?.kind, 'spacing');
+    if (active?.kind === 'spacing') {
+      assert.equal(active.preview.padding.top, 42);
     }
     assert.equal(itemNode.style.paddingTop, '42px');
 
     await act(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
-    assert.equal(apiRef.current?.session.kind, 'idle');
+    assert.equal(getSession()?.kind, 'idle');
     assert.equal(itemNode.style.paddingTop, '');
     assert.equal(useElementStore.getState().elements[0]?.styles?.default?.paddingTop, undefined);
 
@@ -381,7 +386,7 @@ test('startSpacing seeds from getComputedStyle, reverts inline "" on Escape, and
       window.dispatchEvent(makePointerEvent('pointermove', { clientX: 50, clientY: 58 }));
       window.dispatchEvent(makePointerEvent('pointerup', { clientX: 50, clientY: 58 }));
     });
-    assert.equal(apiRef.current?.session.kind, 'idle');
+    assert.equal(getSession()?.kind, 'idle');
     assert.equal(useElementStore.getState().elements[0]?.styles?.default?.paddingTop, '40px');
   } finally {
     view.getComputedStyle = origGetComputedStyle;

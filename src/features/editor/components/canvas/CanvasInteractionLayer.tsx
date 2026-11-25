@@ -14,11 +14,11 @@ import {
 } from "./canvasDom";
 import { useCanvasPickMode } from "./useCanvasPickMode";
 import { useCanvasDragDrop } from "./useCanvasDragDrop";
+import { useCanvasManipulation } from "./useCanvasManipulation";
 
 const CANVAS_CSS = `
-[data-canvas-root] [draggable="true"] { cursor: grab; }
 [data-canvas-root] [data-component-instance] iframe { pointer-events: none; }
-[data-canvas-root] [data-dragging="true"] { opacity: 0.5; }
+[data-canvas-root] [data-dragging="true"] { opacity: 0.35; }
 [data-canvas-root][data-picking] *, [data-canvas-root][data-picking] { cursor: crosshair !important; }
 `;
 
@@ -26,20 +26,20 @@ export function CanvasInteractionLayer({
   children,
 }: {
   children: React.ReactNode;
-}) {
+}): React.ReactElement {
   const { canEdit, canCreate, isReadOnly, isLocked, permissionsRole } =
     useEditorFlags();
   const queryClient = useQueryClient();
   const { projectId, pageId, userId } = useEditorContext();
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
-  const draggingId = useSelectionStore((s) => s.draggingElementId);
 
   const { picking, blockPickPointer, handleClickCapture, handleDoubleClickCapture } =
     useCanvasPickMode(root);
-  const { drop, resetDrag, handleDragStart, handleDragOver, handleDragLeave, handleDrop } =
+  const { session, startResize, startSpacing, handleCanvasPointerDown } =
+    useCanvasManipulation({ root, canEdit, picking });
+  const { drop, resetDrag, handleDragOver, handleDragLeave, handleDrop } =
     useCanvasDragDrop({
       root,
-      canEdit,
       canCreate,
       queryClient,
       projectId,
@@ -48,7 +48,7 @@ export function CanvasInteractionLayer({
     });
 
   const handleMouseOver = (event: React.MouseEvent): void => {
-    if (isTypingInCanvas(root)) return;
+    if (session.kind !== "idle" || isTypingInCanvas(root)) return;
     const id = findElementNodeFromTarget(root, event.target)?.dataset.elementId;
     if (useSelectionStore.getState().hoveredElementId !== id) {
       setCanvasSelection({ hoveredElementId: id });
@@ -56,7 +56,7 @@ export function CanvasInteractionLayer({
   };
 
   const handleMouseLeave = (): void => {
-    if (isTypingInCanvas(root)) return;
+    if (session.kind !== "idle" || isTypingInCanvas(root)) return;
     setCanvasSelection({ hoveredElementId: undefined });
   };
 
@@ -97,11 +97,11 @@ export function CanvasInteractionLayer({
       onClickCapture={handleClickCapture}
       onDoubleClickCapture={handleDoubleClickCapture}
       onContextMenuCapture={blockPickPointer}
+      onPointerDown={handleCanvasPointerDown}
       onMouseOver={handleMouseOver}
       onMouseLeave={handleMouseLeave}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenu}
-      onDragStart={handleDragStart}
       onDragEnter={handleDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -112,8 +112,10 @@ export function CanvasInteractionLayer({
       {children}
       <CanvasOverlay
         root={root}
-        drop={drop}
-        isDragging={!!draggingId || drop !== null}
+        session={session}
+        sidebarDrop={drop}
+        onStartResize={startResize}
+        onStartSpacing={startSpacing}
       />
     </div>
   );

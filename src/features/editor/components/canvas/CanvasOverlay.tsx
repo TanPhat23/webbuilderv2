@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useState } from "react";
 import { Component } from "lucide-react";
 import { ResolvedInstancesContext } from "../ComponentInstanceCanvas";
 import { componentSetting, isMissingComponent } from "@/features/projects/lib/components";
@@ -6,46 +6,41 @@ import type { EditorElement } from "@/types/global.type";
 import {
   useHoveredElementId,
   useSelectedElement,
-  useUpdateElement,
   useElementCommentStore,
-  type ResizeDirection,
-  getResizeHandles,
 } from "@/features/editor";
 import { useEditorFlags } from "@/features/editor/components/context/EditorFlagsContext";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
-import { useResizeHandler } from "@/features/editor/hooks/useResizeHandler";
 import { useAltKey } from "@/features/editor/hooks/useAltKey";
 import { ElementCommentButton } from "@/features/editor/components/comments/ElementCommentButton";
-import { ResizeHandle, STANDARD_DIRECTIONS } from "../resizehandler/ResizeHandle";
-import { SpacingOverlay } from "../resizehandler/SpacingOverlay";
+import type { DimensionDirection } from "@/features/editor/utils/element/resizeMath";
+import type { SpacingHandleId } from "@/features/editor/utils/element/spacingMath";
 import { ElementLabel } from "../resizehandler/ElementLabel";
-import { ResizeContext } from "../resizehandler/ResizeContext";
-import type { DropPosition } from "@/features/editor/utils/element/dropPosition";
+import { ResizeChrome } from "../resizehandler/ResizeChrome";
+import { SpacingChrome } from "../resizehandler/SpacingChrome";
+import type { DropIndicatorState, ManipulationSession } from "./canvasTypes";
 import { useElementRect, type ElementRect } from "./useElementRect";
-import { handlesForSize } from "@/features/editor/constants/direction";
 
-export interface DropIndicatorState {
-  targetId: string;
-  position: DropPosition;
-  /** Siblings flow left-to-right, so before/after are vertical bars. */
-  horizontal: boolean;
+export type { DropIndicatorState };
+
+export interface CanvasOverlayProps {
+  readonly root: HTMLElement | null;
+  readonly session: ManipulationSession;
+  readonly sidebarDrop: DropIndicatorState | null;
+  readonly onStartResize: (
+    element: EditorElement,
+    node: HTMLElement,
+    direction: DimensionDirection,
+    event: React.PointerEvent,
+  ) => void;
+  readonly onStartSpacing: (
+    element: EditorElement,
+    node: HTMLElement,
+    handle: SpacingHandleId,
+    event: React.PointerEvent,
+  ) => void;
 }
 
-const FLEX_DISPLAYS = new Set(["flex", "grid", "inline-flex", "inline-grid"]);
-
-const SPACING_HANDLES: ResizeDirection[] = [
-  "margin-n",
-  "margin-s",
-  "margin-e",
-  "margin-w",
-  "padding-n",
-  "padding-s",
-  "padding-e",
-  "padding-w",
-];
-
-/** A box too small to carry the comment button on its corner. */
-function isSmallBox(rect: ElementRect) {
+function isSmallBox(rect: ElementRect): boolean {
   return rect.width < 96 || rect.height < 48;
 }
 
@@ -62,99 +57,94 @@ function boxStyle(rect: ElementRect): React.CSSProperties {
 function SelectionBox({
   root,
   element,
+  session,
+  onStartResize,
+  onStartSpacing,
 }: {
-  root: HTMLElement;
-  element: EditorElement;
-}) {
+  readonly root: HTMLElement;
+  readonly element: EditorElement;
+  readonly session: ManipulationSession;
+  readonly onStartResize: CanvasOverlayProps["onStartResize"];
+  readonly onStartSpacing: CanvasOverlayProps["onStartSpacing"];
+}): React.ReactElement | null {
   const linked = !!componentSetting(element);
   const { node, rect } = useElementRect(root, element.id);
   const { canEdit, iframeRef } = useEditorFlags();
-  const updateElement = useUpdateElement();
-  const targetRef = useMemo(() => ({ current: null as HTMLElement | null }), []);
-  targetRef.current = node;
-
-  const { handleResizeStart, isResizing, currentResizeDirection, pendingStylesRef } =
-    useResizeHandler({ element, updateElement, targetRef, enabled: canEdit });
-
   const [manualSpacingMode, setManualSpacingMode] = useState(false);
   const showCommentButtons = useElementCommentStore((s) => s.showCommentButtons);
   const altKeyPressed = useAltKey(iframeRef);
-  const showSpacing = !linked && (manualSpacingMode || altKeyPressed);
+  const showAllSpacing = !linked && (manualSpacingMode || altKeyPressed);
 
   if (!rect) return null;
 
-  let handles: ResizeDirection[] = [];
-  if (canEdit) {
-    if (isResizing && currentResizeDirection) {
-      handles = [currentResizeDirection];
-    } else if (showSpacing) {
-      handles = [...SPACING_HANDLES];
-      if (FLEX_DISPLAYS.has(element.styles?.default?.display ?? "")) {
-        handles.push("gap");
-      }
-    } else {
-      handles = handlesForSize(
-        getResizeHandles(element.styles?.default).filter((h) =>
-          STANDARD_DIRECTIONS.has(h),
-        ),
-        rect.width,
-        rect.height,
-      );
-    }
-  }
+  const isMovingThis =
+    session.kind === "moving" && session.elementId === element.id;
 
   return (
-    <ResizeContext value={{ pendingStylesRef }}>
-      <div className="group" style={boxStyle(rect)}>
-        {!linked && <ElementLabel
+    <div className="group" style={boxStyle(rect)}>
+      {!linked && !isMovingThis && (
+        <ElementLabel
           element={element}
-          showSpacingInfo={showSpacing}
+          showSpacingInfo={showAllSpacing}
           onToggleSpacing={() => setManualSpacingMode((prev) => !prev)}
-        />}
-        {showCommentButtons && (
-          <div
-            className="pointer-events-auto"
-            // The button hangs off its anchor's top-right corner. On a small
-            // element, move the anchor so it sits beside the box, not on it.
-            style={
-              isSmallBox(rect)
-                ? {
-                    position: "absolute",
-                    left: rect.width + 36,
-                    top: rect.height / 2 - 3,
-                  }
-                : undefined
-            }
-          >
-            <ElementCommentButton element={element} />
-          </div>
-        )}
-        {!linked && <SpacingOverlay element={element} show={showSpacing} />}
-        {handles.map((dir) => (
-          <div key={dir} className="pointer-events-auto">
-            <ResizeHandle
-              direction={dir}
-              onResizeStart={handleResizeStart}
-              element={element}
-              isResizing={isResizing}
-              currentResizeDirection={currentResizeDirection}
-            />
-          </div>
-        ))}
-        {!showSpacing && (
-          <div className="absolute inset-0 rounded-sm border-2 border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.1)]" />
-        )}
-      </div>
-    </ResizeContext>
+        />
+      )}
+      {showCommentButtons && session.kind === "idle" && (
+        <div
+          className="pointer-events-auto"
+          style={
+            isSmallBox(rect)
+              ? {
+                  position: "absolute",
+                  left: rect.width + 36,
+                  top: rect.height / 2 - 3,
+                }
+              : undefined
+          }
+        >
+          <ElementCommentButton element={element} />
+        </div>
+      )}
+      {!linked && (
+        <>
+          <SpacingChrome
+            rect={rect}
+            element={element}
+            node={node}
+            session={session}
+            canEdit={canEdit}
+            showAllSpacing={showAllSpacing}
+            onStartSpacing={onStartSpacing}
+          />
+          <ResizeChrome
+            rect={rect}
+            element={element}
+            node={node}
+            session={session}
+            canEdit={canEdit}
+            onStartResize={onStartResize}
+          />
+        </>
+      )}
+      {!isMovingThis && (
+        <div className="pointer-events-none absolute inset-0 rounded-[2px] border-[1.5px] border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.08)]" />
+      )}
+    </div>
   );
 }
 
-function HoverBox({ root, id }: { root: HTMLElement; id: string }) {
+function HoverBox({
+  root,
+  id,
+}: {
+  readonly root: HTMLElement;
+  readonly id: string;
+}): React.ReactElement | null {
   const { rect } = useElementRect(root, id);
   if (!rect) return null;
   return (
     <div
-      className="rounded-sm border-2 border-blue-400/50"
+      className="rounded-[2px] border border-blue-400/70"
       style={{ ...boxStyle(rect), pointerEvents: "none" }}
     />
   );
@@ -164,50 +154,115 @@ function DropIndicator({
   root,
   drop,
 }: {
-  root: HTMLElement;
-  drop: DropIndicatorState;
-}) {
-  const { rect } = useElementRect(root, drop.targetId);
+  readonly root: HTMLElement;
+  readonly drop: DropIndicatorState;
+}): React.ReactElement | null {
+  const { node, rect } = useElementRect(root, drop.targetId);
   if (!rect) return null;
 
   if (drop.position === "inside") {
+    const label = node?.dataset.elementType ?? "Container";
     return (
       <div
-        className="rounded-sm border-2 border-dashed border-green-600 bg-green-500/5"
+        className="rounded-[2px] border-2 border-dashed border-emerald-500 bg-emerald-500/8"
         style={{ ...boxStyle(rect), pointerEvents: "none" }}
-      />
+      >
+        <span className="absolute top-1 left-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[10px] leading-none font-medium text-white shadow-xs">
+          Inside {label}
+        </span>
+      </div>
     );
   }
 
-  const BAR = 3;
+  const LINE = 2;
+  const CAP = 6;
   const atStart = drop.position === "before";
-  const bar: React.CSSProperties = drop.horizontal
-    ? {
-        left: (atStart ? rect.left : rect.left + rect.width) - BAR / 2,
-        top: rect.top,
-        width: BAR,
-        height: rect.height,
-      }
-    : {
-        left: rect.left,
-        top: (atStart ? rect.top : rect.top + rect.height) - BAR / 2,
-        width: rect.width,
-        height: BAR,
-      };
+
+  if (drop.horizontal) {
+    const x = atStart ? rect.left : rect.left + rect.width;
+    return (
+      <div
+        style={{
+          position: "absolute",
+          pointerEvents: "none",
+          left: x - LINE / 2,
+          top: rect.top,
+          width: LINE,
+          height: rect.height,
+        }}
+        className="bg-blue-500"
+      >
+        <span
+          className="absolute left-1/2 -translate-x-1/2 rounded-full border border-white bg-blue-500"
+          style={{ top: -CAP / 2, width: CAP, height: CAP }}
+        />
+        <span
+          className="absolute left-1/2 -translate-x-1/2 rounded-full border border-white bg-blue-500"
+          style={{ bottom: -CAP / 2, width: CAP, height: CAP }}
+        />
+      </div>
+    );
+  }
+
+  const y = atStart ? rect.top : rect.top + rect.height;
   return (
     <div
-      className="rounded-full bg-blue-500"
-      style={{ position: "absolute", pointerEvents: "none", ...bar }}
-    />
+      style={{
+        position: "absolute",
+        pointerEvents: "none",
+        left: rect.left,
+        top: y - LINE / 2,
+        width: rect.width,
+        height: LINE,
+      }}
+      className="bg-blue-500"
+    >
+      <span
+        className="absolute top-1/2 -translate-y-1/2 rounded-full border border-white bg-blue-500"
+        style={{ left: -CAP / 2, width: CAP, height: CAP }}
+      />
+      <span
+        className="absolute top-1/2 -translate-y-1/2 rounded-full border border-white bg-blue-500"
+        style={{ right: -CAP / 2, width: CAP, height: CAP }}
+      />
+    </div>
   );
 }
 
-function ComponentBadge({ root, id }: { root: HTMLElement; id: string }) {
+function MovingBadge({
+  label,
+  pointer,
+}: {
+  readonly label: string;
+  readonly pointer: { readonly x: number; readonly y: number };
+}): React.ReactElement {
+  return (
+    <div
+      className="pointer-events-none absolute z-50 rounded-full bg-zinc-900/90 px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-white shadow-md"
+      style={{
+        left: pointer.x + 12,
+        top: pointer.y + 12,
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+function ComponentBadge({
+  root,
+  id,
+}: {
+  readonly root: HTMLElement;
+  readonly id: string;
+}): React.ReactElement | null {
   const { rect } = useElementRect(root, id);
   if (!rect) return null;
   return (
-    <div className="absolute rounded-sm border border-border/70 bg-background/90 p-0.5 text-muted-foreground shadow-sm"
-      style={{ left: rect.left + 3, top: rect.top + 3 }}>
+    <div
+      className="absolute rounded-sm border border-border/70 bg-background/90 p-0.5 text-muted-foreground shadow-sm"
+      style={{ left: rect.left + 3, top: rect.top + 3 }}
+    >
       <Component className="size-3" />
     </div>
   );
@@ -220,18 +275,19 @@ function ComponentBadge({ root, id }: { root: HTMLElement; id: string }) {
  */
 export function CanvasOverlay({
   root,
-  drop,
-  isDragging,
-}: {
-  root: HTMLElement | null;
-  drop: DropIndicatorState | null;
-  isDragging: boolean;
-}) {
+  session,
+  sidebarDrop,
+  onStartResize,
+  onStartSpacing,
+}: CanvasOverlayProps): React.ReactElement | null {
   const instances = useContext(ResolvedInstancesContext);
   const { renderAgentCanvasOverlay } = useEditorContext();
   const selectedElement = useSelectedElement();
   const hoveredId = useHoveredElementId();
   if (!root) return null;
+
+  const activeDrop = session.kind === "moving" ? session.target : sidebarDrop;
+  const isManipulating = session.kind !== "idle" || sidebarDrop !== null;
 
   return (
     <div
@@ -240,7 +296,7 @@ export function CanvasOverlay({
       style={{ pointerEvents: "none" }}
       data-canvas-overlay
     >
-      {!isDragging && hoveredId && hoveredId !== selectedElement?.id && (
+      {!isManipulating && hoveredId && hoveredId !== selectedElement?.id && (
         <HoverBox root={root} id={hoveredId} />
       )}
       {selectedElement && (
@@ -248,10 +304,22 @@ export function CanvasOverlay({
           key={`${selectedElement.id}:${instances.get(selectedElement.id)?.type ?? ""}:${isMissingComponent(instances.get(selectedElement.id) ?? selectedElement)}`}
           root={root}
           element={selectedElement}
+          session={session}
+          onStartResize={onStartResize}
+          onStartSpacing={onStartSpacing}
         />
       )}
-      {Array.from(instances, ([id, element]) => !isMissingComponent(element) && <ComponentBadge key={id} root={root} id={id} />)}
-      {drop && <DropIndicator root={root} drop={drop} />}
+      {Array.from(
+        instances,
+        ([id, element]) =>
+          !isMissingComponent(element) && (
+            <ComponentBadge key={id} root={root} id={id} />
+          ),
+      )}
+      {activeDrop && <DropIndicator root={root} drop={activeDrop} />}
+      {session.kind === "moving" && (
+        <MovingBadge label={session.elementLabel} pointer={session.pointer} />
+      )}
       {renderAgentCanvasOverlay?.(root)}
     </div>
   );

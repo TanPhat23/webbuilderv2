@@ -24,30 +24,10 @@ import {
   isNoOpMove,
 } from "@/features/editor/utils/element/dropPosition";
 import type { SizeAxis } from "@/features/editor/utils/element/sizing";
-import type { DropIndicatorState } from "./CanvasOverlay";
+import type { DropIndicatorState, ManipulationSession } from "./canvasTypes";
 import { findElementNodeFromTarget, setCanvasSelection } from "./canvasDom";
 
-export type ManipulationSession =
-  | { readonly kind: "idle" }
-  | {
-      readonly kind: "resizing";
-      readonly elementId: string;
-      readonly direction: DimensionDirection;
-      readonly preview: ResizePreview;
-    }
-  | {
-      readonly kind: "spacing";
-      readonly elementId: string;
-      readonly handle: SpacingHandleId;
-      readonly preview: SpacingPreview;
-    }
-  | {
-      readonly kind: "moving";
-      readonly elementId: string;
-      readonly elementLabel: string;
-      readonly pointer: { readonly x: number; readonly y: number };
-      readonly target: DropIndicatorState | null;
-    };
+export type { ManipulationSession };
 
 export interface UseCanvasManipulationOptions {
   readonly root: HTMLDivElement | null;
