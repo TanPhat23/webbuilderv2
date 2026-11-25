@@ -39,12 +39,12 @@ export const useElementsWithActions = () =>
     })),
   );
 
-/** loadElements action + elements — used by snapshot manager. */
+/** setElements action + elements — used by version history panel. */
 export const useElementsWithLoad = () =>
   useElementStore(
     useShallow((s) => ({
       elements: s.elements,
-      loadElements: s.loadElements,
+      setElements: s.setElements,
     })),
   );
 

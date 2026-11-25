@@ -13,7 +13,7 @@ import { useElements, useReplaceTree, useElementStore } from "@/features/editor"
 import { elementService } from "@/features/editor";
 import { diffTrees } from "@/features/editor/utils/element/treeDiff";
 import { isEqual } from "lodash-es";
-import { loadPreamble, savePreamble, type Preamble } from "@/features/editor/lib/code/customCode";
+import { readStoredPreamble, savePreamble, type Preamble } from "@/features/editor/lib/code/customCode";
 import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
 import { useActiveLogic } from "@/features/interactions/logic-hooks";
 
@@ -43,10 +43,10 @@ export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
   const canEdit = useEditorFlagsOptional()?.canEdit ?? false;
   const pageId = useElementStore((s) => s.activePage?.pageId);
   // Imports and hooks the user wrote around the JSX; kept per page in this browser.
-  const [preamble, setPreamble] = useState<Preamble>(() => loadPreamble(pageId));
+  const [preamble, setPreamble] = useState<Preamble>(() => readStoredPreamble(pageId));
   const preambleRef = useRef(preamble);
   preambleRef.current = preamble;
-  useEffect(() => setPreamble(loadPreamble(pageId)), [pageId]);
+  useEffect(() => setPreamble(readStoredPreamble(pageId)), [pageId]);
   const replaceTree = useReplaceTree();
   const monacoRef = useRef<Monaco | null>(null);
   const applyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -68,7 +68,7 @@ export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
     registerPrettierFormatter(monaco);
   };
 
-  const handleOnMount: OnMount = async (editor, monaco) => {
+  const handleMount: OnMount = async (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
 
@@ -240,7 +240,7 @@ export function useMonacoEditor(initialValue: string = DEFAULT_EDITOR_VALUE) {
     editorRef,
     handleBeforeMount,
     monaco,
-    handleOnMount,
+    handleMount,
     handleValueChange,
     cancelGeneration,
     isFetching,

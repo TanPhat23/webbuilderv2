@@ -14,7 +14,7 @@ import {
   win,
 } from './support/sidebar-dom-harness';
 import LiveEditorDemo from '../src/features/landing/components/LiveEditorDemo';
-import { CollaborationManager } from '../src/features/collaboration/components/CollaborationManager';
+import { CollaborationSettingsPanel } from '../src/features/collaboration/components/CollaborationManager';
 import InvitationCard from '../src/features/collaboration/components/InvitationCard';
 import InviteMemberDialog from '../src/features/collaboration/components/InviteMemberDialog';
 import { CollaboratorRole } from '../src/features/collaboration/interfaces/collaboration.interface';
@@ -131,7 +131,7 @@ test('LiveEditorDemo updates heading size, alignment, block selection, button st
   }
 });
 
-test('CollaborationManager, InviteMemberDialog, and InvitationCard render collaborator views and submit invites', async () => {
+test('CollaborationSettingsPanel, InviteMemberDialog, and InvitationCard render collaborator views and submit invites', async () => {
   const client = makeQueryClient();
   try {
     client.setQueryData(collaboratorKeys.byProject('p1'), [
@@ -173,7 +173,7 @@ test('CollaborationManager, InviteMemberDialog, and InvitationCard render collab
       h(
         QueryClientProvider,
         { client },
-        h(CollaborationManager, { projectId: 'p1', currentUserId: 'owner-1', isOwner: true }),
+        h(CollaborationSettingsPanel, { projectId: 'p1', currentUserId: 'owner-1', isOwner: true }),
       ),
     );
     assert.ok(ownerMount.container.textContent?.includes('Team Members'));
@@ -184,7 +184,7 @@ test('CollaborationManager, InviteMemberDialog, and InvitationCard render collab
       h(
         QueryClientProvider,
         { client },
-        h(CollaborationManager, { projectId: 'p1', currentUserId: 'editor-1', isOwner: false }),
+        h(CollaborationSettingsPanel, { projectId: 'p1', currentUserId: 'editor-1', isOwner: false }),
       ),
     );
     assert.equal(memberMount.container.textContent?.includes('Pending Invitations'), false);

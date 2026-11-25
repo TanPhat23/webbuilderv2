@@ -545,7 +545,7 @@ export function ComponentTooltip({
         <TooltipContent
           side={side}
           sideOffset={sideOffset}
-          className="max-w-70 p-0 overflow-hidden"
+          className="pointer-events-none max-w-70 p-0 overflow-hidden"
         >
           <div className="px-3 py-2 bg-linear-to-r from-gray-50 to-gray-100 border-b">
             <h4 className="font-semibold text-sm text-gray-900">

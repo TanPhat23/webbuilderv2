@@ -3,8 +3,8 @@ import type {
   WSErrorCode,
   WSEnvelope,
 } from "../../interfaces/websocket";
-import type { ConnectionManager } from "./ConnectionManager";
-import { handleServerError } from "./connectionErrors";
+import type { RealtimeSocketConnection } from "./ConnectionManager";
+import { classifyServerError } from "./connectionErrors";
 
 const REJOIN_THROTTLE_MS = 5_000;
 
@@ -45,7 +45,7 @@ export function createServerErrorReporter({
   emitStatus,
   onError,
 }: {
-  connection: ConnectionManager;
+  connection: RealtimeSocketConnection;
   isSynced: () => boolean;
   emitStatus: (status: string) => void;
   onError?: (error: ErrorMessage) => void;
@@ -53,7 +53,7 @@ export function createServerErrorReporter({
   let lastRejoinAt = 0;
 
   return (payload) => {
-    const handling = handleServerError(payload.code, payload.message);
+    const handling = classifyServerError(payload.code, payload.message);
     if (handling.rejoin && Date.now() - lastRejoinAt > REJOIN_THROTTLE_MS) {
       lastRejoinAt = Date.now();
       if (connection.rejoin()) return;
@@ -76,7 +76,7 @@ export function bindProviderTransport({
   onTransportError,
   onEnvelope,
 }: {
-  connection: ConnectionManager;
+  connection: RealtimeSocketConnection;
   onOpen: () => void;
   onClose: () => void;
   onFatal: (message: string) => void;

@@ -32,20 +32,20 @@ function updateList(steps: Step[], listPath: StepPath, fn: (list: Step[]) => Ste
   });
 }
 
-const last = (path: StepPath) => path[path.length - 1] as number;
-const parent = (path: StepPath) => path.slice(0, -1);
+const lastIndexOfPath = (path: StepPath) => path[path.length - 1] as number;
+const parentPath = (path: StepPath) => path.slice(0, -1);
 
 export const getStep = (steps: Step[], path: StepPath): Step | undefined =>
-  listAt(steps, parent(path))?.[last(path)];
+  listAt(steps, parentPath(path))?.[lastIndexOfPath(path)];
 
 export const insertStep = (steps: Step[], listPath: StepPath, index: number, step: Step) =>
   updateList(steps, listPath, (l) => [...l.slice(0, index), step, ...l.slice(index)]);
 
 export const removeStep = (steps: Step[], path: StepPath) =>
-  updateList(steps, parent(path), (l) => l.filter((_, i) => i !== last(path)));
+  updateList(steps, parentPath(path), (l) => l.filter((_, i) => i !== lastIndexOfPath(path)));
 
 export const replaceStep = (steps: Step[], path: StepPath, step: Step) =>
-  updateList(steps, parent(path), (l) => l.map((s, i) => (i === last(path) ? step : s)));
+  updateList(steps, parentPath(path), (l) => l.map((s, i) => (i === lastIndexOfPath(path) ? step : s)));
 
 export const moveStep = (steps: Step[], listPath: StepPath, from: number, to: number) =>
   updateList(steps, listPath, (l) => {
@@ -114,33 +114,33 @@ export function defaultStep(verb: Verb): Step {
 }
 
 const strip = (t: string) => t.replace(/^\s*\{\{\s*|\s*\}\}\s*$/g, "");
-const or = (v: unknown) => (v === undefined || v === "" ? "…" : String(v));
+const fallbackText = (v: unknown) => (v === undefined || v === "" ? "…" : String(v));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** One-line sentence for a step row. */
 export function summarize(step: Step, nameOf: (id: string) => string | undefined): string {
-  const s = step as Record<string, any>;
+  const s = step as unknown as Record<string, unknown>;
   const name = (id: unknown) =>
     typeof id !== "string" || id === "" ? "…" : id.includes("{{") ? id : (nameOf(id) ?? "missing element");
   switch (verbOf(step)) {
-    case "navigate": return `Go to ${or(s.navigate)}`;
+    case "navigate": return `Go to ${fallbackText(s.navigate)}`;
     case "show": return `Show ${name(s.show)}`;
     case "hide": return `Hide ${name(s.hide)}`;
     case "toggle": return `Toggle ${name(s.toggle)}`;
     case "scroll": return typeof s.scroll === "number" ? `Scroll to ${s.scroll}px` : `Scroll to ${name(s.scroll)}`;
-    case "modal": return `${cap(s.modal)} modal ${s.target ? name(s.target) : "(this element)"}`;
-    case "toast": return `Show toast "${or(s.toast)}"`;
-    case "copy": return `Copy "${or(s.copy)}"`;
-    case "download": return `Download ${or(s.download)}`;
-    case "animate": return `Animate ${name(s.animate)} (${s.preset})`;
-    case "class": return `${cap(s.class)} class ${or(s.name)} on ${name(s.target)}`;
-    case "set": return `Set ${or(s.set)} = ${or(s.to)}`;
-    case "call": return `Call API ${s.method} ${or(s.url)}${s.id ? ` → ${s.id}` : ""}`;
+    case "modal": return `${cap(String(s.modal ?? ""))} modal ${s.target ? name(s.target) : "(this element)"}`;
+    case "toast": return `Show toast "${fallbackText(s.toast)}"`;
+    case "copy": return `Copy "${fallbackText(s.copy)}"`;
+    case "download": return `Download ${fallbackText(s.download)}`;
+    case "animate": return `Animate ${name(s.animate)} (${String(s.preset ?? "")})`;
+    case "class": return `${cap(String(s.class ?? ""))} class ${fallbackText(s.name)} on ${name(s.target)}`;
+    case "set": return `Set ${fallbackText(s.set)} = ${fallbackText(s.to)}`;
+    case "call": return `Call API ${String(s.method ?? "")} ${fallbackText(s.url)}${s.id ? ` → ${String(s.id)}` : ""}`;
     case "submit": return `Submit ${name(s.submit)}`;
     case "reset": return `Reset ${name(s.reset)}`;
-    case "wait": return `Wait ${s.wait} ms`;
-    case "if": return `If ${or(strip(s.if ?? ""))}`;
-    case "run": return `Run flow ${or(s.run)}`;
+    case "wait": return `Wait ${String(s.wait ?? "")} ms`;
+    case "if": return `If ${fallbackText(strip(typeof s.if === "string" ? s.if : ""))}`;
+    case "run": return `Run flow ${fallbackText(s.run)}`;
     case "code": return "Run code";
     default: return "Invalid step";
   }

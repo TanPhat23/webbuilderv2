@@ -18,24 +18,24 @@ export interface TreeNode {
 
 type Raw = Record<string, unknown> & { id: string; type: string; elements?: Raw[] };
 
-const text = (v: unknown): string | undefined => (typeof v === "string" && v !== "" ? v : undefined);
+const nonEmptyString = (v: unknown): string | undefined => (typeof v === "string" && v !== "" ? v : undefined);
 
 /** The editor's live tree, so a read after an edit shows the edit and not the last save. */
-export function toTree(list: EditorElement[], names: ReadonlyMap<string, string> = new Map()): TreeNode[] {
+export function buildElementTree(list: EditorElement[], names: ReadonlyMap<string, string> = new Map()): TreeNode[] {
   return (list as unknown as Raw[]).map((e) => {
     const component = componentSetting(e as unknown as EditorElement);
     const rawSettings = e.settings && typeof e.settings === "object" ? e.settings as Record<string, unknown> : {};
     const { component: _link, ...otherSettings } = rawSettings;
     const settings = Object.keys(otherSettings).length > 0 ? otherSettings : undefined;
-    const children = !component && e.elements?.length ? toTree(e.elements as unknown as EditorElement[], names) : undefined;
+    const children = !component && e.elements?.length ? buildElementTree(e.elements as unknown as EditorElement[], names) : undefined;
     return {
       id: e.id,
       type: e.type,
-      ...(text(e.name) && { name: text(e.name) }),
-      ...(text(e.content) && { content: text(e.content) }),
-      ...(text(e.tailwindStyles) && { tailwindStyles: text(e.tailwindStyles) }),
-      ...(text(e.src) && { src: text(e.src) }),
-      ...(text(e.href) && { href: text(e.href) }),
+      ...(nonEmptyString(e.name) && { name: nonEmptyString(e.name) }),
+      ...(nonEmptyString(e.content) && { content: nonEmptyString(e.content) }),
+      ...(nonEmptyString(e.tailwindStyles) && { tailwindStyles: nonEmptyString(e.tailwindStyles) }),
+      ...(nonEmptyString(e.src) && { src: nonEmptyString(e.src) }),
+      ...(nonEmptyString(e.href) && { href: nonEmptyString(e.href) }),
       ...(settings && { settings }),
       ...(children && { children }),
       ...(component && { component: {

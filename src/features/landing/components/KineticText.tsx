@@ -95,20 +95,20 @@ export default function KineticText({
     const wake = () => {
       if (!frame) frame = requestAnimationFrame(tick);
     };
-    const onMove = (event: PointerEvent) => {
+    const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
       pointer = { x: event.clientX, y: event.clientY };
       wake();
     };
-    const onLeave = () => {
+    const handlePointerLeave = () => {
       pointer = null;
       wake();
     };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", handlePointerLeave);
     return () => {
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("pointermove", handlePointerMove);
+      document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [reduce]);

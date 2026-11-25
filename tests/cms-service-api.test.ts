@@ -64,22 +64,22 @@ test('schemas require non-empty names, titles, slugs and types', () => {
 
 test('the cms barrel re-exports the service and api', () => {
   assert.equal(cmsIndex.cmsService, cmsService);
-  assert.equal(cmsIndex.getContentTypes, api.getContentTypes);
-  assert.equal(typeof cmsIndex.useCMSManager, 'function');
+  assert.equal(cmsIndex.listContentTypes, api.listContentTypes);
+  assert.equal(typeof cmsIndex.useCMSWorkspace, 'function');
 });
 
 // ----------------------------------------------------------------- service
 
 test('list endpoints accept bare arrays, {data} envelopes and anything else', async () => {
   respond = () => Response.json([{ id: 'a' }]);
-  assert.deepEqual(await cmsService.getContentTypes('T'), [{ id: 'a' }]);
+  assert.deepEqual(await cmsService.listContentTypes('T'), [{ id: 'a' }]);
   respond = () => Response.json({ data: [{ id: 'b' }] });
-  assert.deepEqual(await cmsService.getContentFieldsByContentType('t1', 'T'), [{ id: 'b' }]);
-  assert.deepEqual(await cmsService.getContentItemsByContentType('t1', 'T'), [{ id: 'b' }]);
+  assert.deepEqual(await cmsService.listContentFieldsByContentType('t1', 'T'), [{ id: 'b' }]);
+  assert.deepEqual(await cmsService.listContentItemsByContentType('t1', 'T'), [{ id: 'b' }]);
   respond = () => Response.json({ data: 'nope' });
-  assert.deepEqual(await cmsService.getContentTypes('T'), []);
+  assert.deepEqual(await cmsService.listContentTypes('T'), []);
   respond = () => Response.json({});
-  assert.deepEqual(await cmsService.getContentItemsByContentType('t1', 'T'), []);
+  assert.deepEqual(await cmsService.listContentItemsByContentType('t1', 'T'), []);
   assert.deepEqual(requests.map(route).slice(0, 3), [
     ['GET', '/api/v1/content-types'],
     ['GET', '/api/v1/content-types/t1/fields'],
@@ -147,35 +147,35 @@ const ITEMS = [
   { id: '5', slug: 'e' },
 ];
 
-test('getPublicContent without a content type returns nothing and does not fetch', async () => {
-  assert.deepEqual(await cmsService.getPublicContent(undefined, 'T'), []);
-  assert.deepEqual(await cmsService.getPublicContent({}, 'T'), []);
+test('listPublicContent without a content type returns nothing and does not fetch', async () => {
+  assert.deepEqual(await cmsService.listPublicContent(undefined, 'T'), []);
+  assert.deepEqual(await cmsService.listPublicContent({}, 'T'), []);
   assert.equal(requests.length, 0);
 });
 
-test('getPublicContent sorts newest first by default and sinks missing values', async () => {
+test('listPublicContent sorts newest first by default and sinks missing values', async () => {
   respond = () => Response.json(ITEMS);
-  const out = await cmsService.getPublicContent({ contentTypeId: 't1' }, 'T');
+  const out = await cmsService.listPublicContent({ contentTypeId: 't1' }, 'T');
   assert.deepEqual(out.map((i) => i.id), ['2', '1', '3', '4', '5']);
   assert.equal(requests[0].url.pathname, '/api/v1/content-types/t1/items');
 });
 
-test('getPublicContent honours sortBy, sortOrder and limit', async () => {
+test('listPublicContent honours sortBy, sortOrder and limit', async () => {
   respond = () => Response.json(ITEMS);
-  const asc = await cmsService.getPublicContent(
+  const asc = await cmsService.listPublicContent(
     { contentTypeId: 't1', sortBy: 'title', sortOrder: 'asc' }, 'T',
   );
   assert.deepEqual(asc.map((i) => i.id).slice(0, 3), ['2', '1', '3']);
-  const desc = await cmsService.getPublicContent(
+  const desc = await cmsService.listPublicContent(
     { contentTypeId: 't1', sortBy: 'title', sortOrder: 'desc', limit: 2 }, 'T',
   );
   assert.deepEqual(desc.map((i) => i.id), ['3', '1']);
 });
 
-test('getPublicContent leaves the fetched array untouched when sorting', async () => {
+test('listPublicContent leaves the fetched array untouched when sorting', async () => {
   const fetched = ITEMS.map((i) => ({ ...i }));
   respond = () => Response.json(fetched);
-  const out = await cmsService.getPublicContent({ contentTypeId: 't1', sortBy: 'title' }, 'T');
+  const out = await cmsService.listPublicContent({ contentTypeId: 't1', sortBy: 'title' }, 'T');
   assert.notEqual(out, fetched);
   assert.equal(out.length, ITEMS.length);
 });
@@ -191,9 +191,9 @@ test('getPublicContentItem finds by slug and throws when missing', async () => {
 
 test('read server functions authenticate and forward to the service', async () => {
   respond = () => Response.json([{ id: 'x' }]);
-  await api.getContentTypes();
-  await api.getContentFieldsByContentType({ data: { contentTypeId: 't1' } });
-  await api.getContentItemsByContentType({ data: { contentTypeId: 't1' } });
+  await api.listContentTypes();
+  await api.listContentFieldsByContentType({ data: { contentTypeId: 't1' } });
+  await api.listContentItemsByContentType({ data: { contentTypeId: 't1' } });
   respond = () => Response.json({ id: 'x' });
   await api.getContentTypeById({ data: { id: 't1' } });
   await api.getContentFieldById({ data: { contentTypeId: 't1', fieldId: 'f1' } });
@@ -257,7 +257,7 @@ test('server function validators reject malformed input before any request', asy
     () => api.getContentFieldById({ data: { contentTypeId: 't', fieldId: '' } }),
     () => api.createContentItem({ data: { contentTypeId: 't', data: { title: '', slug: 's', published: true } } }),
     () => api.getPublicContentItem({ data: { contentTypeId: 't', slug: '' } }),
-    () => api.getPublicContent({ data: { limit: -1 } }),
+    () => api.listPublicContent({ data: { limit: -1 } }),
   ];
   for (const call of bad) await assert.rejects(call);
   assert.equal(requests.length, 0);
@@ -265,16 +265,16 @@ test('server function validators reject malformed input before any request', asy
 
 test('public server functions query by content type and slug', async () => {
   respond = () => Response.json(ITEMS);
-  const list = await api.getPublicContent({ data: { contentTypeId: 't1', sortBy: 'title', sortOrder: 'asc', limit: 1 } });
+  const list = await api.listPublicContent({ data: { contentTypeId: 't1', sortBy: 'title', sortOrder: 'asc', limit: 1 } });
   assert.deepEqual(list.map((i) => i.id), ['2']);
   const item = await api.getPublicContentItem({ data: { contentTypeId: 't1', slug: 'e' } });
   assert.equal(item.id, '5');
-  assert.deepEqual(await api.getPublicContent({ data: {} }), []);
+  assert.deepEqual(await api.listPublicContent({ data: {} }), []);
 });
 
 test('server functions fail when the user is not authenticated', async () => {
   serverAuth.userId = null;
-  await assert.rejects(() => api.getContentTypes(), /not authenticated/);
+  await assert.rejects(() => api.listContentTypes(), /not authenticated/);
   serverAuth.userId = 'user-1';
   serverAuth.token = null;
   await assert.rejects(() => api.deleteContentType({ data: { id: 't1' } }), /auth token/);

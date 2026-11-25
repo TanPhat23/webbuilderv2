@@ -9,8 +9,8 @@ import type {
 } from "../interfaces/collaboration.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
-  onMutationError,
-  onMutationSuccess,
+  createMutationErrorHandler,
+  createMutationSuccessHandler,
 } from "@/hooks/utils/mutationUtils";
 
 export const invitationKeys = projectScopedKeys("invitations");
@@ -19,11 +19,11 @@ export function resolveInvitationScopeKey(projectId?: string) {
   return projectId ? invitationKeys.byProject(projectId) : invitationKeys.all;
 }
 
-export async function fetchProjectInvitations(
+export async function getProjectInvitations(
   projectId: string | null,
 ): Promise<Invitation[]> {
   if (!projectId) throw new Error("Project ID is required");
-  return (await invitationService.getPendingInvitationsByProject(projectId)) || [];
+  return (await invitationService.listPendingInvitationsByProject(projectId)) || [];
 }
 
 export function useProjectInvitations(
@@ -32,7 +32,7 @@ export function useProjectInvitations(
 ) {
   return useQuery({
     queryKey: invitationKeys.byProject(projectId || ""),
-    queryFn: () => fetchProjectInvitations(projectId),
+    queryFn: () => getProjectInvitations(projectId),
     enabled: !!projectId && enabled,
     ...QUERY_CONFIG.SHORT,
     refetchOnWindowFocus: false,
@@ -50,9 +50,9 @@ export function useCreateInvitation() {
       queryClient.invalidateQueries({
         queryKey: invitationKeys.byProject(variables.projectId),
       });
-      onMutationSuccess(`Invitation sent to ${variables.email}!`)();
+      createMutationSuccessHandler(`Invitation sent to ${variables.email}!`)();
     },
-    onError: onMutationError("Failed to send invitation"),
+    onError: createMutationErrorHandler("Failed to send invitation"),
   });
 }
 
@@ -66,9 +66,9 @@ export function useAcceptInvitation() {
       queryClient.invalidateQueries({ queryKey: invitationKeys.all });
       queryClient.invalidateQueries({ queryKey: ["collaborators"] });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      onMutationSuccess("Invitation accepted! You are now a collaborator.")();
+      createMutationSuccessHandler("Invitation accepted! You are now a collaborator.")();
     },
-    onError: onMutationError("Failed to accept invitation"),
+    onError: createMutationErrorHandler("Failed to accept invitation"),
   });
 }
 

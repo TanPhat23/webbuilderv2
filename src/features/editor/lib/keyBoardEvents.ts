@@ -101,7 +101,7 @@ export class ElementKeyboardActions {
     const newElements = [...elements];
     const [removed] = newElements.splice(idx, 1);
     newElements.push(removed);
-    elementState.loadElements(newElements);
+    elementState.setElements(newElements);
   };
 
   public sendToBack = (): void => {
@@ -123,7 +123,7 @@ export class ElementKeyboardActions {
     const newElements = [...elements];
     const [removed] = newElements.splice(idx, 1);
     newElements.unshift(removed);
-    elementState.loadElements(newElements);
+    elementState.setElements(newElements);
   };
 
   public deleteElement = (): void => {

@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getPreviewData } from "@/features/preview/api/preview.api";
+import { getPreviewSite } from "@/features/preview/api/preview.api";
 import { SitePageView } from "@/features/preview/components/SitePageView";
 import { errorMessage } from "@/utils/errors/api-error";
 
 export const Route = createFileRoute("/preview/$id/$")({
   loader: ({ params }) =>
-    getPreviewData({ data: { id: params.id, pageTarget: params._splat } }),
+    getPreviewSite({ data: { id: params.id, pageTarget: params._splat } }),
   headers: () => ({ "Cache-Control": "private, no-store" }),
   pendingComponent: () => (
     <div className="flex items-center justify-center min-h-screen">

@@ -11,7 +11,7 @@ import type {
   PresenceBroadcastPayload,
 } from "../../interfaces/websocket";
 import { OrderedElementSession, mergeServerPatch, type ElementOperation } from "./OrderedElementSession";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 
 type ErrorCallback = (payload: ErrorPayload & { requestId?: string }) => void;
 type PresenceCallback = (payload: PresenceBroadcastPayload) => void;
@@ -43,7 +43,7 @@ export class ElementMessageHandler {
 
   constructor(private readonly options: ElementMessageHandlerOptions) {
     this.session = new OrderedElementSession({
-      render: (elements) => options.getElementState().loadElements(elements, true),
+      render: (elements) => options.getElementState().setElements(elements, true),
       requestSnapshot: () => options.requestSnapshot?.(),
       onCommitted: (operation, pending) => {
         const requestId = pending.requestId ?? operation.requestId;
@@ -59,7 +59,7 @@ export class ElementMessageHandler {
     if (operation.type === "element:create") {
       const payload = operation.payload as { element?: { id?: string } };
       const id = payload.element?.id;
-      const local = id ? ElementTreeHelper.findById(this.options.getElementState().elements, id) : undefined;
+      const local = id ? elementTree.findById(this.options.getElementState().elements, id) : undefined;
       if (local) operation = { ...operation, payload: { ...operation.payload, element: local } };
     }
     this.session.recordLocal(operation);
@@ -78,7 +78,7 @@ export class ElementMessageHandler {
 
   dispose(): void { this.session.dispose(); }
 
-  handle(envelope: WSEnvelope<unknown>): void {
+  routeEnvelope(envelope: WSEnvelope<unknown>): void {
     if (envelope.type === "error") {
       const payload = envelope.payload as ErrorPayload & { clientOpId?: string };
       const id = envelope.clientOpId ?? payload.clientOpId ?? envelope.requestId;
@@ -122,7 +122,7 @@ export class ElementMessageHandler {
     switch (envelope.type) {
       case "sync:page": {
         const payload = envelope.payload as SyncResponsePayload;
-        this.options.getElementState().loadElements(
+        this.options.getElementState().setElements(
           payload.elements as EditorElement[],
           true,
         );
@@ -140,7 +140,7 @@ export class ElementMessageHandler {
       case "element:update": {
         const payload = envelope.payload as ElementUpdateBroadcastPayload;
         const { id, settings, styles, ...rest } = payload;
-        const existing = ElementTreeHelper.findById(
+        const existing = elementTree.findById(
           this.options.getElementState().elements,
           id,
         );

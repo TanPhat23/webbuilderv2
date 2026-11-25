@@ -106,7 +106,7 @@ beforeEach(() => {
   console.warn = () => {};
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   useElementStore.getState().beginPage('proj-1', 'page-1', false);
-  useElementStore.getState().loadElements([], true);
+  useElementStore.getState().setElements([], true);
 });
 
 afterEach(async () => {
@@ -255,7 +255,7 @@ test('useCollabRoom initializes provider lifecycle, status updates, and cleanup'
     assert.equal(syncCount, 1);
 
     await act(async () => {
-      useElementStore.getState().loadElements([makeFrame('f1')], false);
+      useElementStore.getState().setElements([makeFrame('f1')], false);
     });
 
     await r.unmount();
@@ -293,7 +293,7 @@ test('useComponentActions validates permissions and inputs before creating a com
     ]);
 
     const item = makeText('src-el');
-    useElementStore.getState().loadElements([item], true);
+    useElementStore.getState().setElements([item], true);
 
     const compActionsRef: { current: ReturnType<typeof useComponentActions> | undefined } = { current: undefined };
     const canvasRef: React.RefObject<HTMLElement | null> = { current: null };

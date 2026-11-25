@@ -3,7 +3,7 @@ import type { EditorElement } from "@/types/global.type";
 import { isMissingComponent } from "@/features/projects/lib/components";
 import { useEditorFlags } from "./context/EditorFlagsContext";
 import PreviewElementLoader from "@/features/preview/components/PreviewElementLoader";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 
 export const ResolvedInstancesContext = createContext<ReadonlyMap<string, EditorElement>>(new Map());
 
@@ -22,7 +22,7 @@ export function ComponentInstanceCanvas({
       onSubmit={(event) => event.preventDefault()}
     >
       {missing ? (
-        <div data-element-id={element.id} draggable={canEdit} style={elementHelper.getSafeStyles(element)}
+        <div data-element-id={element.id} draggable={canEdit} style={elementUtils.getSafeStyles(element)}
           className="min-h-10 rounded border border-dashed border-border bg-muted px-2 py-1.5 text-xs text-muted-foreground">
           Missing component
         </div>

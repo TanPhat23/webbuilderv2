@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { render, cleanup, byLabel, maybeByLabel, click, type, keyDown, blur, focus, $q, $$q, React, win, act } from './support/sidebar-dom-harness';
 import { makeSp } from './support/sidebar-fixtures';
 import { ColorRow } from '../src/features/editor/components/sidebar/style/ColorRow';
-import { PropInput, StyleField } from '../src/features/editor/components/sidebar/style/PropInput';
+import { StylePropertyInput, StyleField } from '../src/features/editor/components/sidebar/style/PropInput';
 import { Section } from '../src/features/editor/components/sidebar/style/SectionHeader';
 import { AlignmentControl } from '../src/features/editor/components/sidebar/style/AlignmentControl';
 import { MoreToggle, Segmented, StyleSelect } from '../src/features/editor/components/sidebar/style/controls';
@@ -69,10 +69,10 @@ test('ColorRow has no override dot on the default breakpoint and placeholder fal
   assert.equal(byLabel<HTMLInputElement>(r2.container, 'D').disabled, true);
 });
 
-// ---------- PropInput ----------
-test('PropInput commits normalised values on Enter and blur, flags invalid input', async () => {
+// ---------- StylePropertyInput ----------
+test('StylePropertyInput commits normalised values on Enter and blur, flags invalid input', async () => {
   const commits: (string | undefined)[] = [];
-  const r = await render(h(PropInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: string | undefined) => commits.push(v) }));
+  const r = await render(h(StylePropertyInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: string | undefined) => commits.push(v) }));
   const input = byLabel<HTMLInputElement>(r.container, 'Width');
   assert.equal(input.value, '10');
   assert.match(r.container.textContent ?? '', /px/);
@@ -90,9 +90,9 @@ test('PropInput commits normalised values on Enter and blur, flags invalid input
   assert.deepEqual(commits, ['24px', '30px']);
 });
 
-test('PropInput does not recommit an unchanged value and Escape reverts', async () => {
+test('StylePropertyInput does not recommit an unchanged value and Escape reverts', async () => {
   const commits: unknown[] = [];
-  const r = await render(h(PropInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: unknown) => commits.push(v) }));
+  const r = await render(h(StylePropertyInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: unknown) => commits.push(v) }));
   const input = byLabel<HTMLInputElement>(r.container, 'Width');
   await focus(input);
   await keyDown(input, 'Enter');
@@ -104,9 +104,9 @@ test('PropInput does not recommit an unchanged value and Escape reverts', async 
   assert.deepEqual(commits, []);
 });
 
-test('PropInput arrow keys step the value (shift steps by ten) and free inputs pass text through', async () => {
+test('StylePropertyInput arrow keys step the value (shift steps by ten) and free inputs pass text through', async () => {
   const commits: unknown[] = [];
-  const r = await render(h(PropInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: unknown) => commits.push(v) }));
+  const r = await render(h(StylePropertyInput, { value: '10px', prefix: 'W', label: 'Width', onCommit: (v: unknown) => commits.push(v) }));
   const input = byLabel<HTMLInputElement>(r.container, 'Width');
   await keyDown(input, 'ArrowUp');
   await keyDown(input, 'ArrowDown', { shiftKey: true });
@@ -115,7 +115,7 @@ test('PropInput arrow keys step the value (shift steps by ten) and free inputs p
   assert.match(String(commits[1]), /1/);
 
   const free: unknown[] = [];
-  const r2 = await render(h(PropInput, { value: 'repeat(2, 1fr)', free: true, prefix: 'C', label: 'Cols', onCommit: (v: unknown) => free.push(v) }));
+  const r2 = await render(h(StylePropertyInput, { value: 'repeat(2, 1fr)', free: true, prefix: 'C', label: 'Cols', onCommit: (v: unknown) => free.push(v) }));
   const fin = byLabel<HTMLInputElement>(r2.container, 'Cols');
   assert.equal(fin.value, 'repeat(2, 1fr)');
   await focus(fin);
@@ -127,10 +127,10 @@ test('PropInput arrow keys step the value (shift steps by ten) and free inputs p
   assert.deepEqual(free, ['1fr 2fr', undefined]);
 });
 
-test('PropInput scrubs the prefix with the pointer and shows the override dot', async () => {
+test('StylePropertyInput scrubs the prefix with the pointer and shows the override dot', async () => {
   const commits: unknown[] = [];
   let cleared = 0;
-  const r = await render(h(PropInput, {
+  const r = await render(h(StylePropertyInput, {
     value: '10px', prefix: h('i', { 'data-testid': 'pfx' }, 'W'), label: 'Width', overridden: true,
     onClearOverride: () => { cleared++; }, onCommit: (v: unknown) => commits.push(v),
   }));
@@ -148,9 +148,9 @@ test('PropInput scrubs the prefix with the pointer and shows the override dot', 
   assert.equal(commits.length, 3, 'moves after pointerup are ignored');
 });
 
-test('PropInput prefix scrubbing is ignored when disabled or free', async () => {
+test('StylePropertyInput prefix scrubbing is ignored when disabled or free', async () => {
   const commits: unknown[] = [];
-  const r = await render(h(PropInput, { value: '10px', prefix: h('i', null, 'W'), label: 'Width', disabled: true, onCommit: (v: unknown) => commits.push(v) }));
+  const r = await render(h(StylePropertyInput, { value: '10px', prefix: h('i', null, 'W'), label: 'Width', disabled: true, onCommit: (v: unknown) => commits.push(v) }));
   const prefix = $q(r.container, 'i').parentElement as HTMLElement;
   await act(() => { prefix.dispatchEvent(new win.MouseEvent('pointerdown', { bubbles: true, cancelable: true })); });
   await act(() => { prefix.dispatchEvent(new win.MouseEvent('pointermove', { bubbles: true, clientX: 50 })); });

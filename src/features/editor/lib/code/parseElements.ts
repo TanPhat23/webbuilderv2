@@ -152,7 +152,7 @@ function settingsFromAttributes(
   return next;
 }
 
-function collectCustomProps(
+function collectCodeProps(
   node: t.JSXElement,
   type: ElementType,
   tag: string,
@@ -169,14 +169,14 @@ function collectCustomProps(
   return props;
 }
 
-function withCustomProps(
+function applyCodeProps(
   settings: LooseRecord | null | undefined,
   node: t.JSXElement,
   type: ElementType,
   tag: string,
   attrs: ReadonlyMap<string, t.JSXAttribute>,
 ): LooseRecord | null {
-  const props = collectCustomProps(node, type, tag);
+  const props = collectCodeProps(node, type, tag);
   const before = settings ?? null;
   const beforeProps = Array.isArray(before?.codeProps) ? before.codeProps : [];
   let next = before;
@@ -205,7 +205,7 @@ function resolveSettings(
     if (tag === "ol" && !settings?.ordered) settings = { ...settings, ordered: true };
     else if (tag === "ul" && settings?.ordered) settings = { ...settings, ordered: false };
   }
-  return withCustomProps(settings, node, type, tag, attrs);
+  return applyCodeProps(settings, node, type, tag, attrs);
 }
 
 function createTextElement(pageId: string | undefined, parentId: string, content: string, loc?: t.SourceLocation | null): TextElement {

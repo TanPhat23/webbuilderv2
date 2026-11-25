@@ -84,26 +84,26 @@ export function parseErrorResponse(
     /* not JSON */
   }
 
-  const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
+  const readNonEmptyString = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
   const fields = Array.isArray(body.fields)
     ? (body.fields as unknown[]).flatMap((f) => {
         if (!f || typeof f !== "object") return [];
         const o = f as Record<string, unknown>;
-        const message = str(o.message);
+        const message = readNonEmptyString(o.message);
         return message
-          ? [{ field: str(o.field) ?? "", message, tag: str(o.tag) }]
+          ? [{ field: readNonEmptyString(o.field) ?? "", message, tag: readNonEmptyString(o.tag) }]
           : [];
       })
     : undefined;
 
   // 5xx bodies carry internals (`message` holds the raw error), so only
   // show those for client errors; servers get a friendly message.
-  const serverText = kind === "server" ? undefined : str(body.message) ?? str(body.error);
-  const message = serverText ?? (kind === "server" ? FALLBACK.server : str(body.error) ?? FALLBACK[kind]);
+  const serverText = kind === "server" ? undefined : readNonEmptyString(body.message) ?? readNonEmptyString(body.error);
+  const message = serverText ?? (kind === "server" ? FALLBACK.server : readNonEmptyString(body.error) ?? FALLBACK[kind]);
 
   return new ApiError(message, status, kind, {
     fields,
-    requestId: str(body.requestId),
+    requestId: readNonEmptyString(body.requestId),
     method: context.method,
     url: context.url,
   });

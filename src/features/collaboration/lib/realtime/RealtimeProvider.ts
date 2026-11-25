@@ -1,7 +1,7 @@
-import { ConnectionManager } from "./ConnectionManager";
+import { RealtimeSocketConnection } from "./ConnectionManager";
 import { MessageDispatcher } from "./MessageDispatcher";
 import { MessageSender } from "./MessageSender";
-import { AwarenessController } from "./AwarenessController";
+import { PresenceController } from "./AwarenessController";
 import { ElementMessageHandler } from "./ElementMessageHandler";
 import { ElementOperations } from "./ElementOperations";
 import { ProviderLogicClient } from "./ProviderLogicClient";
@@ -32,10 +32,10 @@ const PRESENCE_PRUNE_INTERVAL_MS = 60_000;
 export class RealtimeProvider implements RealtimeProviderClient {
   public isSynced = false;
 
-  private connection: ConnectionManager;
+  private connection: RealtimeSocketConnection;
   private dispatcher: MessageDispatcher;
   private sender: MessageSender;
-  private awarenessController: AwarenessController;
+  private presenceController: PresenceController;
   private messageHandler: ElementMessageHandler;
   private elementOps: ElementOperations;
   private logicClient: ProviderLogicClient;
@@ -68,7 +68,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
     this.onError = options.onError;
     this.onPresence = options.onPresence;
 
-    this.connection = new ConnectionManager({
+    this.connection = new RealtimeSocketConnection({
       url: options.url,
       projectId: options.projectId,
       pageId: options.pageId,
@@ -91,7 +91,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
       (envelope) => this.messageHandler.recordLocal(envelope),
       (envelope) => this.messageHandler.rejectLocal(envelope),
     );
-    this.awarenessController = new AwarenessController(this.userId);
+    this.presenceController = new PresenceController(this.userId);
 
     const reportServerError = createServerErrorReporter({
       connection: this.connection,
@@ -122,9 +122,9 @@ export class RealtimeProvider implements RealtimeProviderClient {
         this.emitSynced(synced);
       },
       handleSyncUsers: (users) =>
-        this.awarenessController.handleSyncUsers(users),
+        this.presenceController.replaceRemotePresences(users),
       handleRemotePresence: (payload) =>
-        this.awarenessController.handleRemotePresence(payload),
+        this.presenceController.applyRemotePresence(payload),
       resolvePendingRequest: (requestId, isSuccess, result) =>
         this.dispatcher.resolvePendingRequest(requestId, isSuccess, result),
     });
@@ -150,7 +150,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
     });
 
     if (options.onSyncUsers) {
-      this.awarenessController.on("change", (data) =>
+      this.presenceController.on("change", (data) =>
         options.onSyncUsers?.(data.users),
       );
     }
@@ -174,14 +174,14 @@ export class RealtimeProvider implements RealtimeProviderClient {
         this.onError?.({ type: "error", message, code: "PROCESS_ERROR" });
       },
       onEnvelope: (envelope) => {
-        if (this.logicClient.handleIncoming(envelope)) return;
-        this.messageHandler.handle(envelope);
+        if (this.logicClient.routeEnvelope(envelope)) return;
+        this.messageHandler.routeEnvelope(envelope);
       },
     });
 
     void this.connection.connect();
     this.pruneInterval = setInterval(() => {
-      this.awarenessController.pruneStale();
+      this.presenceController.pruneStale();
     }, PRESENCE_PRUNE_INTERVAL_MS);
   }
 
@@ -253,7 +253,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
     this.lastCursorX = cursorX;
     this.lastCursorY = cursorY;
     if (elementId !== undefined) {
-      this.awarenessController.updateLocalSelection(elementId);
+      this.presenceController.updateLocalSelection(elementId);
     }
     const payload: PresencePayload = {
       userId: this.userId,
@@ -261,7 +261,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
       cursorX,
       cursorY,
       elementId:
-        elementId ?? this.awarenessController.getLocalSelectedElement(),
+        elementId ?? this.presenceController.getLocalSelectedElement(),
       ...(this.localAgentPresence ? { agent: this.localAgentPresence } : {}),
     };
     const envelope = this.dispatcher.createEnvelope(
@@ -281,7 +281,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
       userName: this.userName,
       cursorX: this.lastCursorX,
       cursorY: this.lastCursorY,
-      elementId: this.awarenessController.getLocalSelectedElement(),
+      elementId: this.presenceController.getLocalSelectedElement(),
       agent: agent ?? {
         active: false,
         name: "",
@@ -332,7 +332,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
   ): () => void {
     const invoke = () => {
       try {
-        callback(this.awarenessController.remotePresences);
+        callback(this.presenceController.remotePresences);
       } catch (err) {
         console.error(
           "[RealtimeProvider] onPresenceChange callback error:",
@@ -341,8 +341,8 @@ export class RealtimeProvider implements RealtimeProviderClient {
       }
     };
     invoke();
-    this.awarenessController.on("change", invoke);
-    return () => this.awarenessController.off("change", invoke);
+    this.presenceController.on("change", invoke);
+    return () => this.presenceController.off("change", invoke);
   }
 
   public async reconnect(): Promise<void> {
@@ -372,7 +372,7 @@ export class RealtimeProvider implements RealtimeProviderClient {
     this.messageHandler.dispose();
     this.sender.destroy();
     this.dispatcher.destroy();
-    this.awarenessController.destroy();
+    this.presenceController.destroy();
     this.statusListeners.clear();
     this.syncedListeners.clear();
   }

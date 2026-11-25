@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { DRAG_KEYS } from "../src/features/editor/utils/element/dragPayload";
 import {
-  hasElementDragData,
+  hasElementDragPayload,
   isSameDropIndicator,
 } from "../src/features/editor/components/canvas/canvasDom";
 import { shouldBlockPickEvent } from "../src/features/editor/components/canvas/useCanvasPickMode";
@@ -36,13 +36,13 @@ test("isSameDropIndicator compares null and indicator fields accurately", () => 
   );
 });
 
-test("hasElementDragData recognizes element, type, and template drag payloads only", () => {
+test("hasElementDragPayload recognizes element, type, and template drag payloads only", () => {
   const makeDt = (types: string[]): Pick<DataTransfer, "types"> => ({ types });
 
-  assert.equal(hasElementDragData(makeDt([DRAG_KEYS.elementId.toLowerCase()])), true);
-  assert.equal(hasElementDragData(makeDt([DRAG_KEYS.elementType.toLowerCase()])), true);
-  assert.equal(hasElementDragData(makeDt([DRAG_KEYS.template.toLowerCase()])), true);
-  assert.equal(hasElementDragData(makeDt(["text/plain", "Files"])), false);
+  assert.equal(hasElementDragPayload(makeDt([DRAG_KEYS.elementId.toLowerCase()])), true);
+  assert.equal(hasElementDragPayload(makeDt([DRAG_KEYS.elementType.toLowerCase()])), true);
+  assert.equal(hasElementDragPayload(makeDt([DRAG_KEYS.template.toLowerCase()])), true);
+  assert.equal(hasElementDragPayload(makeDt(["text/plain", "Files"])), false);
 });
 
 test("shouldBlockPickEvent blocks during active pick or suppressed multi-click", () => {

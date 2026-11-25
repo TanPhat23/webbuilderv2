@@ -64,7 +64,7 @@ function returnedJsx(fn: ComponentFn): { root: t.JSXElement | t.JSXFragment; ret
   return null;
 }
 
-function isComponentFn(node: t.Node): node is ComponentFn {
+function isComponentFunction(node: t.Node): node is ComponentFn {
   return t.isArrowFunctionExpression(node) || t.isFunctionExpression(node) || t.isFunctionDeclaration(node);
 }
 
@@ -83,7 +83,7 @@ function findNamedComponent(body: readonly t.Statement[], targetName?: string): 
 export function locatePage(program: t.Program): LocatedPage | null {
   const defaultExport = program.body.find((s): s is t.ExportDefaultDeclaration => t.isExportDefaultDeclaration(s));
   if (defaultExport) {
-    if (isComponentFn(defaultExport.declaration)) {
+    if (isComponentFunction(defaultExport.declaration)) {
       const jsx = returnedJsx(defaultExport.declaration);
       if (jsx) return { root: jsx.root, statement: defaultExport, fn: defaultExport.declaration, ret: jsx.ret };
       return null;

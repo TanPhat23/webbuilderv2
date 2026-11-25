@@ -7,7 +7,7 @@ export default function EditorCodePanel() {
     value,
     handleValueChange,
     handleBeforeMount,
-    handleOnMount,
+    handleMount,
     // cancelGeneration is exposed by the hook to explicitly cancel in-flight generation requests
     cancelGeneration,
     // isFetching indicates an in-progress generation operation
@@ -77,7 +77,7 @@ export default function EditorCodePanel() {
           value={value}
           onChange={handleValueChange}
           beforeMount={handleBeforeMount}
-          onMount={handleOnMount}
+          onMount={handleMount}
           options={{
             readOnly: !canEdit,
             smoothScrolling: true,

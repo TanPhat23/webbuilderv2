@@ -4,7 +4,7 @@ import "../../src/app/globals.css";
 import { Tabs, TabsList, TabsTrigger } from "../../src/components/ui/tabs";
 import { PositionSection } from "../../src/features/editor/components/sidebar/style/PositionSection";
 import { TooltipProvider } from "../../src/components/ui/tooltip";
-import { PropInput } from "../../src/features/editor/components/sidebar/style/PropInput";
+import { StylePropertyInput } from "../../src/features/editor/components/sidebar/style/PropInput";
 import { LayoutSection } from "../../src/features/editor/components/sidebar/style/LayoutSection";
 import { SpacingSection } from "../../src/features/editor/components/sidebar/style/SpacingSection";
 import { FillSection } from "../../src/features/editor/components/sidebar/style/FillSection";
@@ -95,7 +95,7 @@ function Harness() {
           <ShadowSection sp={sp} />
           <EffectsSection sp={sp} />
           {!visual && (
-            <PropInput
+            <StylePropertyInput
               label="Keyword"
               prefix="K"
               value={values.keyword ?? "auto"}

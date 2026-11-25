@@ -146,7 +146,7 @@ test("small elements get only the handles that fit", () => {
 });
 
 import { isSizeClass } from "../src/features/editor/utils/element/sizing";
-import { elementHelper } from "../src/features/elements/lib/elementhelper";
+import { elementUtils } from "../src/features/elements/lib/elementhelper";
 
 test("isSizeClass matches one axis at one breakpoint", () => {
   assert.equal(isSizeClass("w-full", "width"), true);
@@ -167,12 +167,12 @@ test("removing a style also removes the class generated from it", () => {
     styles: { default: { width: "12%", color: "red" } },
     tailwindStyles: "rounded-lg w-full",
   } as any;
-  elementHelper.updateElementStyle(element, { width: "12%", color: "red" }, "default", update);
+  elementUtils.updateElementStyle(element, { width: "12%", color: "red" }, "default", update);
   const withWidth = { ...element, ...patch };
   assert.match(withWidth.tailwindStyles, /w-\[12%\]/);
 
   // Width removed (Hug on a flex main axis), stale size classes dropped.
-  elementHelper.updateElementStyle(withWidth, { color: "red" }, "default", update, (c) =>
+  elementUtils.updateElementStyle(withWidth, { color: "red" }, "default", update, (c) =>
     isSizeClass(c, "width"),
   );
   assert.doesNotMatch(patch.tailwindStyles, /(^|\s)w-/);

@@ -8,7 +8,7 @@ import type { Snapshot } from "@/types/elements";
 const MAX_PAGE_IDS = 100;
 
 export const elementService = {
-  getElements: async (projectId: string, token?: string): Promise<EditorElement[]> => {
+  listProjectElements: async (projectId: string, token?: string): Promise<EditorElement[]> => {
     return apiClient.get<EditorElement[]>(
       new URLBuilder("api")
         .setPath(API_ENDPOINTS.ELEMENTS.GET(projectId))
@@ -19,11 +19,11 @@ export const elementService = {
   },
 
   /**
-   * Elements of some pages of one project. Much cheaper than getElements when
+   * Elements of some pages of one project. Much cheaper than listProjectElements when
    * only a few pages matter (e.g. the component masters). The API takes at most
    * MAX_PAGE_IDS ids per request, so longer lists are split and fetched together.
    */
-  getElementsByPages: async (projectId: string, pageIds: string[], token?: string): Promise<EditorElement[]> => {
+  listElementsByPages: async (projectId: string, pageIds: string[], token?: string): Promise<EditorElement[]> => {
     const chunks: string[][] = [];
     for (let i = 0; i < pageIds.length; i += MAX_PAGE_IDS) chunks.push(pageIds.slice(i, i + MAX_PAGE_IDS));
     const results = await Promise.all(chunks.map((chunk) =>
@@ -40,7 +40,7 @@ export const elementService = {
     return results.flat();
   },
 
-  getElementsPublic: async (projectId: string, { previewCache = false } = {}): Promise<EditorElement[]> => {
+  listPublicElements: async (projectId: string, { previewCache = false } = {}): Promise<EditorElement[]> => {
     const url = new URLBuilder("api").setPath(API_ENDPOINTS.ELEMENTS.GET_PUBLIC(projectId));
     if (previewCache) url.addQueryParam("previewCache", "1");
     return apiClient.getPublic<EditorElement[]>(url.build());
@@ -63,7 +63,7 @@ export const elementService = {
     }
   },
 
-  getSnapshots: async (projectId: string): Promise<Snapshot[]> => {
+  listSnapshots: async (projectId: string): Promise<Snapshot[]> => {
     return apiClient.get<Snapshot[]>(
       new URLBuilder("api")
         .setPath(API_ENDPOINTS.SNAPSHOTS.GET(projectId))
@@ -71,7 +71,7 @@ export const elementService = {
     );
   },
 
-  loadSnapshot: async (
+  getSnapshotElements: async (
     projectId: string,
     snapshotId: string,
   ): Promise<EditorElement[]> => {

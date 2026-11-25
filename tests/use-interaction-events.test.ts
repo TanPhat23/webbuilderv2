@@ -7,8 +7,8 @@ import type { NodeLike, Platform } from "../src/features/interactions/runtime/ex
 import {
   dispatchImageError,
   dispatchPendingLoads,
-  handleHoverEvent,
-  handleNativeEvent,
+  dispatchHoverEvent,
+  dispatchNativeEvent,
   pruneStaleLoadHistory,
   resolveNativeTargetIds,
   type ImageErrorState,
@@ -128,7 +128,7 @@ test("resolveNativeTargetIds distinguishes bubbling chains, direct self-only tar
   );
 });
 
-test("handleNativeEvent dispatches bubbling click/submit, enforces self-only focus, and matches keydown keys", () => {
+test("dispatchNativeEvent dispatches bubbling click/submit, enforces self-only focus, and matches keydown keys", () => {
   const { root, form, button, iconSpan } = makeDomFixture();
   const index = new Map<string, InteractionMap>([
     [
@@ -152,11 +152,11 @@ test("handleNativeEvent dispatches bubbling click/submit, enforces self-only foc
   const { runner, fired } = makeRunner();
 
   const ignored = makeEvent("pointermove", button);
-  handleNativeEvent(ignored.event, asElement(root), index, runner);
+  dispatchNativeEvent(ignored.event, asElement(root), index, runner);
   assert.equal(fired.length, 0);
 
   const click = makeEvent("click", iconSpan);
-  handleNativeEvent(click.event, asElement(root), index, runner);
+  dispatchNativeEvent(click.event, asElement(root), index, runner);
   assert.equal(click.log.prevented, 1);
   assert.equal(click.log.stopped, 1);
   assert.deepEqual(
@@ -165,18 +165,18 @@ test("handleNativeEvent dispatches bubbling click/submit, enforces self-only foc
   );
 
   const untaggedFocus = makeEvent("focusin", iconSpan);
-  handleNativeEvent(untaggedFocus.event, asElement(root), index, runner);
+  dispatchNativeEvent(untaggedFocus.event, asElement(root), index, runner);
   assert.equal(fired.length, 1);
 
   const buttonFocus = makeEvent("focusin", button);
-  handleNativeEvent(buttonFocus.event, asElement(root), index, runner);
+  dispatchNativeEvent(buttonFocus.event, asElement(root), index, runner);
   assert.deepEqual(
     fired[1].runs.map((r) => r.ixId),
     ["ix_btn_focus"],
   );
 
   const directSubmit = makeEvent("submit", form);
-  handleNativeEvent(directSubmit.event, asElement(root), index, runner);
+  dispatchNativeEvent(directSubmit.event, asElement(root), index, runner);
   assert.equal(directSubmit.log.prevented, 1);
   assert.deepEqual(
     fired[2].runs.map((r) => r.ixId),
@@ -184,18 +184,18 @@ test("handleNativeEvent dispatches bubbling click/submit, enforces self-only foc
   );
 
   const wrongKey = makeEvent("keydown", button, { key: "Escape" });
-  handleNativeEvent(wrongKey.event, asElement(root), index, runner);
+  dispatchNativeEvent(wrongKey.event, asElement(root), index, runner);
   assert.equal(fired.length, 3);
 
   const rightKey = makeEvent("keydown", button, { key: "enter" });
-  handleNativeEvent(rightKey.event, asElement(root), index, runner);
+  dispatchNativeEvent(rightKey.event, asElement(root), index, runner);
   assert.deepEqual(
     fired[3].runs.map((r) => r.ixId),
     ["ix_enter"],
   );
 });
 
-test("handleHoverEvent dispatches mouseenter and mouseleave only for entered or left element IDs", () => {
+test("dispatchHoverEvent dispatches mouseenter and mouseleave only for entered or left element IDs", () => {
   const { root, form, button } = makeDomFixture();
   const index = new Map<string, InteractionMap>([
     ["form-1", { ix_form_enter: { on: "mouseenter", do: [] } }],
@@ -210,14 +210,14 @@ test("handleHoverEvent dispatches mouseenter and mouseleave only for entered or 
   const { runner, fired } = makeRunner();
 
   const over = makeEvent("mouseover", button, { relatedTarget: form });
-  handleHoverEvent(over.event, asElement(root), index, runner);
+  dispatchHoverEvent(over.event, asElement(root), index, runner);
   assert.deepEqual(
     fired[0].runs.map((r) => r.ixId),
     ["ix_btn_enter"],
   );
 
   const out = makeEvent("mouseout", button, { relatedTarget: form });
-  handleHoverEvent(out.event, asElement(root), index, runner);
+  dispatchHoverEvent(out.event, asElement(root), index, runner);
   assert.deepEqual(
     fired[1].runs.map((r) => r.ixId),
     ["ix_btn_leave"],

@@ -1,6 +1,6 @@
 import type React from "react";
 import { useSelectedElement, useUpdateElement } from "@/features/editor";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
 import {
   compactStyles,
@@ -23,7 +23,7 @@ export function useStyleProps(breakpoint: Breakpoint) {
 
   const replace = (next: StyleMap, dropClass?: (cls: string) => boolean) => {
     if (!element || disabled) return;
-    elementHelper.updateElementStyle(
+    elementUtils.updateElementStyle(
       element,
       compactStyles(next) as React.CSSProperties,
       breakpoint,

@@ -7,7 +7,7 @@ import {
   type QueryKey,
   type UseMutationResult,
 } from "@tanstack/react-query";
-import { createContentField, createContentItem, createContentType, deleteContentField, deleteContentItem, deleteContentType, getContentFieldsByContentType, getContentItemsByContentType, getContentTypes, updateContentField, updateContentItem, updateContentType } from "@/features/cms/api/cms.api";
+import { createContentField, createContentItem, createContentType, deleteContentField, deleteContentItem, deleteContentType, listContentFieldsByContentType, listContentItemsByContentType, listContentTypes, updateContentField, updateContentItem, updateContentType } from "@/features/cms/api/cms.api";
 import type { ContentField, ContentFieldValueInput, ContentItem, ContentType } from "@/features/cms/interfaces/cms.interface";
 import {
   ContentFieldFormSchema,
@@ -202,7 +202,7 @@ function useContentItemMutations(queryClient: QueryClient) {
   return { createItemMutation, updateItemMutation, deleteItemMutation };
 }
 
-export const useCMSManager = (projectId?: string) => {
+export const useCMSWorkspace = (projectId?: string) => {
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
 
   const queryClient = useQueryClient();
@@ -210,13 +210,13 @@ export const useCMSManager = (projectId?: string) => {
   const contentTypesQuery = useQuery<ContentType[], Error>({
     queryKey: cmsKeys.contentTypes(projectId),
     queryFn: () =>
-      getContentTypes({ data: projectId ? { projectId } : undefined }),
+      listContentTypes({ data: projectId ? { projectId } : undefined }),
   });
 
   const contentFieldsQuery = useQuery<ContentField[], Error>({
     queryKey: cmsKeys.contentFields(selectedTypeId),
     queryFn: () =>
-      getContentFieldsByContentType({
+      listContentFieldsByContentType({
         data: { contentTypeId: selectedTypeId },
       }),
     enabled: selectedTypeId.length > 0,
@@ -225,7 +225,7 @@ export const useCMSManager = (projectId?: string) => {
   const contentItemsQuery = useQuery<ContentItem[], Error>({
     queryKey: cmsKeys.contentItems(selectedTypeId),
     queryFn: () =>
-      getContentItemsByContentType({
+      listContentItemsByContentType({
         data: { contentTypeId: selectedTypeId },
       }),
     enabled: selectedTypeId.length > 0,
@@ -244,14 +244,14 @@ export const useCMSManager = (projectId?: string) => {
   const { createFieldMutation } = fieldMutations;
   const { createItemMutation } = itemMutations;
 
-  const handleCreateType = useCallback(
+  const createContentType = useCallback(
     (data: ContentTypeFormValues) => {
       createTypeMutation.mutate(data);
     },
     [createTypeMutation],
   );
 
-  const handleCreateField = useCallback(
+  const createContentField = useCallback(
     (data: ContentFieldFormValues) => {
       if (!selectedTypeId) {
         return;
@@ -265,7 +265,7 @@ export const useCMSManager = (projectId?: string) => {
     [createFieldMutation, selectedTypeId],
   );
 
-  const handleCreateItem = useCallback(
+  const createContentItem = useCallback(
     (data: ContentItemMutationInput) => {
       if (!selectedTypeId) {
         return;
@@ -325,14 +325,14 @@ export const useCMSManager = (projectId?: string) => {
     ...fieldMutations,
     ...itemMutations,
 
-    handleCreateType,
-    handleCreateField,
-    handleCreateItem,
+    createContentType,
+    createContentField,
+    createContentItem,
     selectType,
   };
 };
 
-export type CMSManagerResult = ReturnType<typeof useCMSManager>;
+export type CMSWorkspaceResult = ReturnType<typeof useCMSWorkspace>;
 
 export type CMSMutationResult<TData, TVariables> = UseMutationResult<
   TData,

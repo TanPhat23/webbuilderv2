@@ -22,7 +22,7 @@ type ConnectionEvents = {
   error: [error: Error];
 };
 
-export class ConnectionManager extends EventEmitter<ConnectionEvents> {
+export class RealtimeSocketConnection extends EventEmitter<ConnectionEvents> {
   private ws: WebSocket | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempts = 0;

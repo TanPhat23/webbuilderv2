@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { sectionTemplateGroups } from "@/features/editor/lib/customcomponents/customComponents";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { Sketch } from "./Sketch";
-import { setTemplateDragData } from "./dragTypes";
+import { writeTemplateDragPayload } from "./dragTypes";
 import { toSketch, type SketchSource } from "./sketchModel";
 import { useSectionActions } from "./useSectionActions";
 
@@ -43,7 +43,7 @@ export default function SectionsLibrary() {
                 type="button"
                 disabled={!canAdd}
                 draggable={canAdd}
-                onDragStart={(e) => setTemplateDragData(e.dataTransfer, g.id, tile.index)}
+                onDragStart={(e) => writeTemplateDragPayload(e.dataTransfer, g.id, tile.index)}
                 onClick={() => actions.insertTemplateAt(tile.template, actions.sections.length)}
                 title={`Add ${tile.name}`}
                 className="group flex flex-col gap-1.5 rounded-lg border border-border/60 bg-card/50 p-1.5 text-left transition-colors hover:border-primary/40 hover:bg-accent disabled:opacity-50"

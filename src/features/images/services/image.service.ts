@@ -6,7 +6,7 @@ import getToken from "@/services/token";
 
 interface IImageService {
   uploadImage: (file: File, imageName?: string) => Promise<ImageUploadResponse>;
-  getUserImages: () => Promise<Image[]>;
+  listUserImages: () => Promise<Image[]>;
   deleteImage: (id: string) => Promise<boolean>;
 }
 
@@ -39,7 +39,7 @@ export const imageService: IImageService = {
     return response.json();
   },
 
-  getUserImages: async (): Promise<Image[]> => {
+  listUserImages: async (): Promise<Image[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.IMAGES.GET_USER)
       .build();

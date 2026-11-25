@@ -15,12 +15,12 @@ import {
   extractProviderErrorMessage,
 } from "@/features/collaboration/lib/presenceSync";
 import { RealtimeProvider } from "@/features/collaboration/lib/realtime/RealtimeProvider";
-import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/realtime/wsTicket";
-import { sendElementOp } from "@/features/collaboration/lib/realtime/sendElementOp";
+import { requestWebSocketTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/realtime/wsTicket";
+import { sendElementOperation } from "@/features/collaboration/lib/realtime/sendElementOp";
 import { ElementStore, useElementStore } from "@/features/editor/store/element-store";
 import { useMouseStore } from "@/features/editor/store/mouse-store";
 import { useLogicStore } from "@/features/interactions/logic-store";
-import { createCollabDraftManager } from "./collabDrafts";
+import { createOfflineDraftRecovery } from "./collabDrafts";
 
 const INITIAL_STATE: WSCollabState = {
   roomState: "connecting",
@@ -55,7 +55,7 @@ export function useCollabRoom({
   remoteAgents: readonly RemoteAgentPresence[];
 } {
   const { projectId, pageId, onSync, onError, onDisconnect, onReconnect } = config;
-  const loadElements = useElementStore((s) => s.loadElements);
+  const setElements = useElementStore((s) => s.setElements);
   const [state, setState] = useState<WSCollabState>(INITIAL_STATE);
   const [remoteAgents, setRemoteAgents] = useState<readonly RemoteAgentPresence[]>([]);
 
@@ -85,11 +85,11 @@ export function useCollabRoom({
     let latestLocalElements: EditorElement[] | undefined;
     let disposed = false;
 
-    const drafts = createCollabDraftManager({
+    const drafts = createOfflineDraftRecovery({
       projectId,
       pageId,
       userId: activeUserId,
-      loadElements,
+      setElements,
       isCurrentPage: () => latest.current.pageId === pageId,
     });
 
@@ -102,7 +102,7 @@ export function useCollabRoom({
       userName: activeUserId,
       onAgentRequest: (req) => runAgentRequest(req),
       getTicket: () =>
-        fetchWsTicket(projectId, apiBaseUrl, () => latest.current.getToken()),
+        requestWebSocketTicket(projectId, apiBaseUrl, () => latest.current.getToken()),
       getElementState: () => ElementStore.getState(),
       onPendingChange: (pendingUpdates) => {
         setState((prev) => ({ ...prev, pendingUpdates }));
@@ -195,7 +195,7 @@ export function useCollabRoom({
       if (!activeProvider?.isSynced || !activeProvider.isConnected()) return;
 
       try {
-        await sendElementOp(
+        await sendElementOperation(
           activeProvider,
           () => ElementStore.getState().elements,
           pendingMovesRef.current,
@@ -236,7 +236,7 @@ export function useCollabRoom({
       setRemoteAgents([]);
       setState((prev) => ({ ...prev, isSynced: false }));
     };
-  }, [pageId, projectId, wsUrl, enabled, userId, isLoaded, loadElements]);
+  }, [pageId, projectId, wsUrl, enabled, userId, isLoaded, setElements]);
 
   return { state, providerRef, remoteAgents };
 }

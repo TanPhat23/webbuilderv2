@@ -34,7 +34,7 @@ export type ElementStore = {
         data?: CollaborativeData,
       ) => void)
     | null;
-  loadElements: (elements: EditorElement[], skipSave?: boolean) => ElementStore;
+  setElements: (elements: EditorElement[], skipSave?: boolean) => ElementStore;
   updateElement: (
     id: string,
     updatedElement: Partial<EditorElement>,

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-query";
-import { onMutationError, onMutationSuccess } from "@/hooks/utils/mutationUtils";
+import { createMutationErrorHandler, createMutationSuccessHandler } from "@/hooks/utils/mutationUtils";
 
 export function useScopedMutation<TData, TVariables>({
   mutationFn,
@@ -22,8 +22,8 @@ export function useScopedMutation<TData, TVariables>({
         typeof successMessage === "function"
           ? successMessage(data, variables)
           : successMessage;
-      onMutationSuccess(message)();
+      createMutationSuccessHandler(message)();
     },
-    onError: onMutationError(errorMessage),
+    onError: createMutationErrorHandler(errorMessage),
   });
 }

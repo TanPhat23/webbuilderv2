@@ -28,7 +28,7 @@ export default function TailwindClassesEditor({
     if (!disabled) updateElement(element.id, { tailwindStyles: v });
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const next = e.target.value;
     setValue(next);
     if (timer.current) window.clearTimeout(timer.current);
@@ -45,7 +45,7 @@ export default function TailwindClassesEditor({
         aria-label="Tailwind classes"
         value={value}
         disabled={disabled}
-        onChange={onChange}
+        onChange={handleChange}
         onBlur={() => {
           if (timer.current) {
             window.clearTimeout(timer.current);

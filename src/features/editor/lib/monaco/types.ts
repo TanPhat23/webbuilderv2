@@ -4,7 +4,7 @@ import { MONACO_EXTERNAL_LIBS } from "./constants";
 /**
  * Fetches type definitions from a URL.
  */
-async function fetchLibContent(url: string): Promise<string | null> {
+async function fetchTypeDefinition(url: string): Promise<string | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) {
@@ -240,7 +240,7 @@ export async function loadMonacoTypes(monaco: Monaco): Promise<void> {
 
     const results = await Promise.all(
       MONACO_EXTERNAL_LIBS.map(async (lib) => {
-        const content = await fetchLibContent(lib.url);
+        const content = await fetchTypeDefinition(lib.url);
         return { content, path: lib.path };
       }),
     );

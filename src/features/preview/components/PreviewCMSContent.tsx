@@ -3,7 +3,7 @@ import type { EditorElement } from "@/types/global.type";
 import type { CMSContentGridElement, CMSContentItemElement, CMSContentListElement } from "@/types/elements";
 import { getView } from "@/features/elements/registry";
 import type { ViewProps } from "@/features/elements/view-props";
-import { useCMSFetch, useCMSItemList } from "../hooks/useCMSFetch";
+import { usePublicCMSQuery, useCMSItemList } from "../hooks/useCMSFetch";
 import { PreviewCMSFeedback } from "./PreviewCMSFeedback";
 
 const parseItem = (body: unknown) => body as Record<string, unknown> | undefined;
@@ -31,11 +31,16 @@ export function PreviewCMSCollection({
   const View = getView(element.type);
   if (!View) return null;
   return <View element={element} rootProps={rootProps} mode="preview">
-    {items.map((item, index) => (
-      <React.Fragment key={item.id || index}>
-        {renderElements(element.elements, item)}
-      </React.Fragment>
-    ))}
+    {items.map((item, index) => {
+      const record =
+        typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+      const key = typeof record.id === "string" || typeof record.id === "number" ? record.id : index;
+      return (
+        <React.Fragment key={key}>
+          {renderElements(element.elements, record)}
+        </React.Fragment>
+      );
+    })}
   </View>;
 }
 
@@ -47,7 +52,7 @@ export function PreviewCMSItem({
   renderElements: RenderElements;
 }) {
   const { contentTypeId, itemSlug } = element.settings ?? {};
-  const { data: item, loading, error } = useCMSFetch(
+  const { data: item, loading, error } = usePublicCMSQuery(
     contentTypeId && itemSlug ? `/api/cms/${contentTypeId}/item/${itemSlug}` : null,
     parseItem,
     undefined,

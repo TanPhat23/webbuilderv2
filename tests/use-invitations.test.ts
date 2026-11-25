@@ -13,7 +13,7 @@ import {
   useUpdateCollaboratorRole,
 } from "../src/features/collaboration/hooks/useCollaborators";
 import {
-  fetchProjectInvitations,
+  getProjectInvitations,
   invitationKeys,
   resolveInvitationScopeKey,
   useAcceptInvitation,
@@ -67,13 +67,13 @@ test("invitation and collaborator query keys scope consistently by project or al
   assert.deepEqual(resolveCollaboratorScopeKey(undefined), ["collaborators"]);
 });
 
-test("fetchProjectInvitations validates projectId and defaults 204 responses to an empty list", async () => {
-  await assert.rejects(fetchProjectInvitations(null), /Project ID is required/);
+test("getProjectInvitations validates projectId and defaults 204 responses to an empty list", async () => {
+  await assert.rejects(getProjectInvitations(null), /Project ID is required/);
 
   await withStubbedFetch(
     async () => new Response(null, { status: 204 }),
     async (requests) => {
-      const invitations = await fetchProjectInvitations("proj-9");
+      const invitations = await getProjectInvitations("proj-9");
       assert.deepEqual(invitations, []);
       assert.deepEqual(
         requests.map((r) => r.url),

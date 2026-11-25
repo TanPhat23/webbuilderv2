@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getContentTypes, getPublicContent, getPublicContentItem } from "@/features/cms/api/cms.api";
+import { listContentTypes, listPublicContent, getPublicContentItem } from "@/features/cms/api/cms.api";
 import type { ContentItem, ContentType } from "@/features/cms/interfaces/cms.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { cmsKeys } from "../query-keys";
@@ -37,7 +37,7 @@ export const useCMSContent = (
   } = useQuery<ContentItem[], Error>({
     queryKey: cmsKeys.publicContentList(contentTypeId, limit, sortBy, sortOrder),
     queryFn: () =>
-      getPublicContent({
+      listPublicContent({
         data: {
           contentTypeId,
           limit,
@@ -154,7 +154,7 @@ export const useCMSContentTypes = (projectId?: string) => {
   return useQuery<ContentType[], Error>({
     queryKey: cmsKeys.contentTypes(projectId),
     queryFn: () =>
-      getContentTypes({ data: projectId ? { projectId } : undefined }),
+      listContentTypes({ data: projectId ? { projectId } : undefined }),
     ...QUERY_CONFIG.LONG,
   });
 };

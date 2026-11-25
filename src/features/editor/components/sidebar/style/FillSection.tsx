@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Image as ImageIcon, X } from "lucide-react";
 import { Section } from "./SectionHeader";
-import { PropInput, StyleField } from "./PropInput";
+import { StylePropertyInput, StyleField } from "./PropInput";
 import { ColorRow } from "./ColorRow";
 import { StyleSelect } from "./controls";
 import {
@@ -12,7 +12,7 @@ import {
 } from "./styleModel";
 import type { StyleProps } from "./useStyleProps";
 
-const opts = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
+const toSelectOptions = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
 
 export function FillSection({ sp }: { sp: StyleProps }) {
   const container = useRef<HTMLDivElement>(null);
@@ -52,7 +52,7 @@ export function FillSection({ sp }: { sp: StyleProps }) {
       {imageOn && (
         <>
           <div ref={container} className="flex items-center gap-1">
-            <PropInput
+            <StylePropertyInput
               value={sp.values.backgroundImage}
               placeholder="Image URL or gradient"
               prefix={<ImageIcon />}
@@ -79,7 +79,7 @@ export function FillSection({ sp }: { sp: StyleProps }) {
               sp={sp}
               k="backgroundSize"
               label="Image size"
-              options={opts(["cover", "contain", "auto", "100% 100%"])}
+              options={toSelectOptions(["cover", "contain", "auto", "100% 100%"])}
             />
             <StyleField
               sp={sp}
@@ -92,7 +92,7 @@ export function FillSection({ sp }: { sp: StyleProps }) {
               sp={sp}
               k="backgroundRepeat"
               label="Image repeat"
-              options={opts(["no-repeat", "repeat", "repeat-x", "repeat-y"])}
+              options={toSelectOptions(["no-repeat", "repeat", "repeat-x", "repeat-y"])}
             />
           </div>
         </>

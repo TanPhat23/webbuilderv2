@@ -4,6 +4,7 @@ import React from "react";
 import { ComponentTooltip } from "../ComponentTooltip";
 import { IconRenderer, type IconName } from "@/features/editor/utils/icons/iconMap";
 import {
+  clearActiveDragPayload,
   setElementTypeDrag,
   setTemplateDrag,
 } from "@/features/editor/utils/element/dragPayload";
@@ -34,6 +35,7 @@ const ComponentHolder = ({
         <div
           draggable
           onDragStart={(e) => setElementTypeDrag(e.dataTransfer, type)}
+          onDragEnd={clearActiveDragPayload}
           className={cn(
             "flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors",
             className,
@@ -54,6 +56,7 @@ const ComponentHolder = ({
       <div
         draggable
         onDragStart={(e) => setElementTypeDrag(e.dataTransfer, type)}
+        onDragEnd={clearActiveDragPayload}
         className={cn(
           "group/item flex flex-col items-center justify-center gap-1.5 w-full h-[62px] px-2 py-1.5 text-center select-none rounded-lg border border-border/60 bg-card/50 hover:bg-accent hover:border-primary/40 cursor-grab active:cursor-grabbing transition-all duration-150 shadow-xs",
           className,
@@ -71,24 +74,25 @@ const ComponentHolder = ({
   );
 };
 
-type CustomComponentHolderProps = {
+type SectionTemplateCardProps = {
   name: string;
   index: number;
   variant?: HolderVariant;
   className?: string;
 };
 
-export function CustomComponentHolder({
+export function SectionTemplateCard({
   name,
   index,
   variant = "card",
   className,
-}: CustomComponentHolderProps) {
+}: SectionTemplateCardProps) {
   if (variant === "row") {
     return (
       <div
         draggable
         onDragStart={(e) => setTemplateDrag(e.dataTransfer, index)}
+        onDragEnd={clearActiveDragPayload}
         className={cn(
           "flex flex-row items-center gap-2 w-full px-2 h-full text-xs rounded-md cursor-grab active:cursor-grabbing transition-colors",
           className,
@@ -104,6 +108,7 @@ export function CustomComponentHolder({
     <div
       draggable
       onDragStart={(e) => setTemplateDrag(e.dataTransfer, index)}
+      onDragEnd={clearActiveDragPayload}
       className={cn(
         "group/item flex flex-col items-center justify-center gap-1.5 w-full h-[62px] px-2 py-1.5 text-center select-none rounded-lg border border-border/60 bg-card/50 hover:bg-accent hover:border-primary/40 cursor-grab active:cursor-grabbing transition-all duration-150 shadow-xs",
         className,

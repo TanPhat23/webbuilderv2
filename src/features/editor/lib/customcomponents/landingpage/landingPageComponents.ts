@@ -16,14 +16,14 @@ import { CustomComponent } from "../types";
 /* --------------------------------- Helpers --------------------------------- */
 /* -------------------------------------------------------------------------- */
 
-function mkId(prefix: string) {
+function createElementId(prefix: string) {
   return `${prefix}-${uuidv4().slice(0, 8)}`;
 }
 
 function createFeature(title: string, body: string) {
   return {
     type: "Frame",
-    name: mkId(title),
+    name: createElementId(title),
     content: "",
     tailwindStyles: "p-6 rounded-lg bg-transparent",
     elements: [
@@ -46,7 +46,7 @@ function createFeature(title: string, body: string) {
 function createStat(value: string, label: string) {
   return {
     type: "Frame",
-    name: mkId(label),
+    name: createElementId(label),
     content: "",
     tailwindStyles: "flex flex-col items-center",
     elements: [
@@ -74,13 +74,13 @@ function createTestimonial(
 ) {
   return {
     type: "Frame",
-    name: mkId(name),
+    name: createElementId(name),
     content: "",
     tailwindStyles: "p-6 rounded-lg bg-card border border-border",
     elements: [
       {
         type: "Frame",
-        name: mkId("meta"),
+        name: createElementId("meta"),
         content: "",
         tailwindStyles: "flex items-center gap-3 mb-3",
         elements: [
@@ -97,7 +97,7 @@ function createTestimonial(
           },
           {
             type: "Frame",
-            name: mkId("meta-text"),
+            name: createElementId("meta-text"),
             content: "",
             tailwindStyles: "flex flex-col",
             elements: [
@@ -134,7 +134,7 @@ function createPricingCard(
 ) {
   return {
     type: "Frame",
-    name: mkId(title),
+    name: createElementId(title),
     content: "",
     tailwindStyles: `p-6 rounded-lg border ${featured ? "border-primary bg-card" : "border-border bg-background"}`,
     styles: featured
@@ -153,7 +153,7 @@ function createPricingCard(
       },
       {
         type: "Frame",
-        name: mkId("bullets"),
+        name: createElementId("bullets"),
         content: "",
         tailwindStyles: "mt-4 flex flex-col gap-2",
         elements: bullets.map((b) => ({
@@ -188,7 +188,7 @@ function createPricingCard(
 function createFAQ(question: string, answer: string) {
   return {
     type: "Frame",
-    name: mkId(question),
+    name: createElementId(question),
     content: "",
     tailwindStyles: "p-4 rounded-lg bg-transparent border border-border",
     elements: [

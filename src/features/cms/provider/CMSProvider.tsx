@@ -1,5 +1,5 @@
 import React, { createContext, useContext } from "react";
-import { useCMSManager } from "../hooks/useCMSManager";
+import { useCMSWorkspace } from "../hooks/useCMSManager";
 import type { CMSContextValue } from "../components/types";
 
 const CMSContext = createContext<CMSContextValue | null>(null);
@@ -17,15 +17,15 @@ export function CMSProvider({
   children: React.ReactNode;
   projectId?: string;
 }): React.ReactElement {
-  const manager = useCMSManager(projectId);
+  const workspace = useCMSWorkspace(projectId);
 
   const value: CMSContextValue = {
-    ...manager,
-    handleDeleteType: (id) => manager.deleteTypeMutation.mutate({ id }),
+    ...workspace,
+    handleDeleteType: (id) => workspace.deleteTypeMutation.mutate({ id }),
     handleDeleteField: (contentTypeId, fieldId) =>
-      manager.deleteFieldMutation.mutate({ contentTypeId, fieldId }),
+      workspace.deleteFieldMutation.mutate({ contentTypeId, fieldId }),
     handleDeleteItem: (contentTypeId, itemId) =>
-      manager.deleteItemMutation.mutate({ contentTypeId, itemId }),
+      workspace.deleteItemMutation.mutate({ contentTypeId, itemId }),
   };
 
   return <CMSContext.Provider value={value}>{children}</CMSContext.Provider>;

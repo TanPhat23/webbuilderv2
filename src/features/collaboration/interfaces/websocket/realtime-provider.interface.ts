@@ -217,7 +217,7 @@ export interface RealtimeProviderClient {
 
 export interface RemoteElementState {
   elements: EditorElement[];
-  loadElements: (elements: EditorElement[], skipSave?: boolean) => unknown;
+  setElements: (elements: EditorElement[], skipSave?: boolean) => unknown;
   remoteAdd: (element: EditorElement) => void;
   remoteUpdate: (id: string, patch: Partial<EditorElement>) => void;
   remoteMove: (id: string, parentId: string | null, order: number) => void;

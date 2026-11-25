@@ -28,7 +28,7 @@ export interface ApiPage {
 }
 
 /** Map the Go API's camelCase page to the app's `Page` shape. */
-export function toPage(page: ApiPage): Page {
+export function mapApiPageToPage(page: ApiPage): Page {
   return {
     Id: page.id,
     Name: page.name,
@@ -45,7 +45,7 @@ export function toPage(page: ApiPage): Page {
 const PROJECT_FONTS = ["Inter", "Lora", "JetBrains Mono"] as const;
 
 export const projectService = {
-  getUserProjects: (token: string): Promise<Project[]> => {
+  listUserProjects: (token: string): Promise<Project[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_USER)
       .build();
@@ -59,25 +59,25 @@ export const projectService = {
     return apiClient.get<Project>(url, undefined, token);
   },
 
-  getProjectPages: (id: string, token: string): Promise<Page[]> => {
-    return projectService.getProjectPagesWithLogic(id, token).then((pages) => pages.map(toPage));
+  listProjectPages: (id: string, token: string): Promise<Page[]> => {
+    return projectService.listProjectPagesWithLogic(id, token).then((pages) => pages.map(mapApiPageToPage));
   },
 
-  getProjectPagesWithLogic: (id: string, token: string): Promise<ApiPage[]> => {
+  listProjectPagesWithLogic: (id: string, token: string): Promise<ApiPage[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PAGES(id))
       .build();
     return apiClient.get<ApiPage[]>(url, undefined, token);
   },
 
-  getProjectPublic: (id: string): Promise<Project> => {
+  getPublicProject: (id: string): Promise<Project> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_ID(id))
       .build();
     return apiClient.getPublic<Project>(url);
   },
 
-  getProjectPublicBySubdomain: (subdomain: string): Promise<Project> => {
+  getPublicProjectBySubdomain: (subdomain: string): Promise<Project> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC_BY_SUBDOMAIN(subdomain))
       .build();
@@ -85,14 +85,14 @@ export const projectService = {
   },
 
   /** Pages of a published project, with their logic, for the preview. */
-  getPagesPublic: (id: string, { previewCache = false } = {}): Promise<ApiPage[]> => {
+  listPublicPages: (id: string, { previewCache = false } = {}): Promise<ApiPage[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PAGES.GET_PUBLIC(id));
     if (previewCache) url.addQueryParam("previewCache", "1");
     return apiClient.getPublic<ApiPage[]>(url.build());
   },
 
-  getProjects: (): Promise<Project[]> => {
+  listPublicProjects: (): Promise<Project[]> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.PROJECTS.GET_PUBLIC)
       .build();
@@ -194,7 +194,7 @@ export const projectService = {
     return apiClient.patch<ApiPage>(url, updates, undefined, token);
   },
 
-  deleteProjectPage: (
+  deletePage: (
     projectId: string,
     pageId: string,
     token: string,

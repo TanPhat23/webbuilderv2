@@ -91,7 +91,7 @@ function resolvePageTree(
   return { project, page, pages, elements, ...(itemSlug ? { itemSlug } : {}) };
 }
 
-export async function loadPreviewData(
+export async function fetchPreviewSite(
   id: string,
   reads: PreviewReads,
   pageTarget?: string,
@@ -106,7 +106,7 @@ export async function loadPreviewData(
   return resolvePageTree(project, allPages, projectElements, Boolean(token), pageTarget);
 }
 
-export async function loadSubdomainSiteData(
+export async function fetchSubdomainSite(
   subdomain: string,
   reads: SubdomainSiteReads,
   pathname?: string,

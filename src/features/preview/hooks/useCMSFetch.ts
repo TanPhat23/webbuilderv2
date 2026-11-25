@@ -6,8 +6,8 @@ export interface CMSFetchState<T> {
   error: string | null;
 }
 
-const parseItems = (body: unknown): any[] => (Array.isArray(body) ? body : []);
-const NO_ITEMS: any[] = [];
+const parseItems = (body: unknown): unknown[] => (Array.isArray(body) ? body : []);
+const NO_ITEMS: unknown[] = [];
 
 interface CMSListQuery {
   contentTypeId?: string;
@@ -22,8 +22,8 @@ export function useCMSItemList({
   limit,
   sortBy,
   sortOrder,
-}: CMSListQuery): CMSFetchState<any[]> {
-  return useCMSFetch(
+}: CMSListQuery): CMSFetchState<unknown[]> {
+  return usePublicCMSQuery(
     contentTypeId
       ? `/api/cms/${contentTypeId}?limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
       : null,
@@ -39,7 +39,7 @@ export function useCMSItemList({
  * `parse` should be a stable (module-level) function; it turns the JSON body
  * into the shape the component renders.
  */
-export function useCMSFetch<T>(
+export function usePublicCMSQuery<T>(
   url: string | null,
   parse: (body: unknown) => T,
   initial: T,

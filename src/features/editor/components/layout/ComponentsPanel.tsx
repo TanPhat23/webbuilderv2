@@ -22,8 +22,8 @@ import { errorMessage } from "@/utils/errors/api-error";
 import { useEditorPermissions } from "../../hooks/useEditorPermissions";
 import { useProjectComponents } from "../../hooks/useProjectComponents";
 import { useComponentActions } from "../../hooks/useComponentActions";
-import { componentLibrary, componentLibraryKey, isComponentSnapshot, type ComponentSnapshot } from "../../services/component-library.service";
-import { setComponentDrag } from "../../utils/element/dragPayload";
+import { componentLibraryService, componentLibraryKey, isComponentSnapshot, type ComponentSnapshot } from "../../services/component-library.service";
+import { clearActiveDragPayload, setComponentDrag } from "../../utils/element/dragPayload";
 import { ComponentNameDialog } from "../ComponentNameDialog";
 import { DeletePageDialog, useDeletePage } from "../ProjectPageCommand";
 import { SaveElementDialog } from "../SaveElementDialog";
@@ -42,7 +42,7 @@ export default function ComponentsPanel() {
   const [deleting, setDeleting] = useState(false);
   const queryClient = useQueryClient();
   const deletePage = useDeletePage(projectId ?? undefined, project.pages);
-  const account = useQuery({ queryKey: componentLibraryKey(userId), queryFn: componentLibrary.list, enabled: !!userId });
+  const account = useQuery({ queryKey: componentLibraryKey(userId), queryFn: componentLibraryService.list, enabled: !!userId });
   const canInsert = !editor.isLocked && !editor.isReadOnly && !editor.isLoading && mode === "editor" && permissions.canCreateElements;
 
   const close = () => setDialog(undefined);
@@ -58,7 +58,7 @@ export default function ComponentsPanel() {
     if (deleting) return;
     setDeleting(true);
     try {
-      await componentLibrary.delete(snapshot.id);
+      await componentLibraryService.delete(snapshot.id);
       await queryClient.cancelQueries({ queryKey: componentLibraryKey(userId), exact: true });
       queryClient.setQueryData<ComponentSnapshot[]>(componentLibraryKey(userId), (items) => items?.filter(({ id }) => id !== snapshot.id));
       close();
@@ -93,6 +93,7 @@ export default function ComponentsPanel() {
                     onClick={() => setMode("editor")}
                     draggable={draggable}
                     onDragStart={(event) => { if (draggable) setComponentDrag(event.dataTransfer, "component", page.Id); }}
+                    onDragEnd={clearActiveDragPayload}
                     className={`${row} ${draggable ? "cursor-grab" : ""}`}
                   >
                     <Component className="size-3.5 shrink-0 text-muted-foreground" />
@@ -131,6 +132,7 @@ export default function ComponentsPanel() {
               <li key={snapshot.id} className="flex items-center gap-0.5">
                 <div draggable={draggable}
                   onDragStart={(event) => { if (draggable) setComponentDrag(event.dataTransfer, "snapshot", snapshot.id); }}
+                  onDragEnd={clearActiveDragPayload}
                   className={`${row} ${draggable ? "cursor-grab" : ""}`}>
                   <GripVertical className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate">{snapshot.name}</span>

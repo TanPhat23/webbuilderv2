@@ -29,7 +29,7 @@ export function DimensionFields({
   widthHint,
   heightHint,
 }: DimensionFieldsProps) {
-  const handle =
+  const createDimensionChangeHandler =
     (name: "width" | "height") => (e: ChangeEvent<HTMLInputElement>) => {
       const parsed = parseInt(e.target.value, 10);
       onChange(name, isNaN(parsed) ? undefined : parsed);
@@ -47,7 +47,7 @@ export function DimensionFields({
           id={`${idPrefix}-${name}`}
           type="number"
           value={value ?? ""}
-          onChange={handle(name)}
+          onChange={createDimensionChangeHandler(name)}
           placeholder="auto"
           min={0}
           className={PIXEL_INPUT_CLASS}

@@ -44,7 +44,7 @@ export function toPreamble(value: unknown): Preamble | null {
 const storageKey = (pageId: string) => `wb:code-preamble:${pageId}`;
 
 /** The preamble kept for a page in this browser. Storage can be missing or throw. */
-export function loadPreamble(pageId: string | undefined): Preamble {
+export function readStoredPreamble(pageId: string | undefined): Preamble {
   if (!pageId) return emptyPreamble();
   try {
     const raw = globalThis.localStorage?.getItem(storageKey(pageId));

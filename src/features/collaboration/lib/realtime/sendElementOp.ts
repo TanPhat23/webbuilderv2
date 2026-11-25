@@ -1,5 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 import type { MoveData } from "@/types/elements";
 import type { RealtimeProvider } from "./RealtimeProvider";
 
@@ -13,7 +13,7 @@ type Op = "update" | "delete" | "create" | "move";
  * `pendingMoves` drops a move for an element whose previous move is still in
  * flight.
  */
-export async function sendElementOp(
+export async function sendElementOperation(
   provider: Pick<
     RealtimeProvider,
     "updateElement" | "deleteElement" | "createElement" | "moveElement"
@@ -30,7 +30,7 @@ export async function sendElementOp(
     await provider.deleteElement(id);
   } else if (type === "create" && data) {
     const el = data as EditorElement;
-    const location = ElementTreeHelper.findLocation(getElements(), el.id);
+    const location = elementTree.findLocation(getElements(), el.id);
     await provider.createElement(
       el,
       location?.parentId ?? el.parentId ?? null,

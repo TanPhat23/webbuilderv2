@@ -1,4 +1,4 @@
-import { ElementTreeHelper as elementTree } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 import type { EditorElement } from "@/types/global.type";
 import type { ElementStore, ElementStoreCreator } from "./element-store-types";
 

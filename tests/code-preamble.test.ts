@@ -5,7 +5,7 @@ import {
   MAX_PREAMBLE_LENGTH,
   emptyPreamble,
   isEmptyPreamble,
-  loadPreamble,
+  readStoredPreamble,
   savePreamble,
   toPreamble,
 } from '../src/features/editor/lib/code/customCode';
@@ -58,11 +58,11 @@ test('toPreamble accepts partial objects and rejects untrusted shapes', () => {
   assert.notEqual(toPreamble({ top: 'x'.repeat(MAX_PREAMBLE_LENGTH) }), null);
 });
 
-test('savePreamble then loadPreamble round-trips per page', () => {
+test('savePreamble then readStoredPreamble round-trips per page', () => {
   const preamble = { imports: 'import x from "x"', top: 'const s = 1', body: 'const f = useForm()' };
   savePreamble('page-1', preamble);
-  assert.deepEqual(loadPreamble('page-1'), preamble);
-  assert.deepEqual(loadPreamble('page-2'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('page-1'), preamble);
+  assert.deepEqual(readStoredPreamble('page-2'), emptyPreamble());
   assert.ok(store.has('wb:code-preamble:page-1'));
 });
 
@@ -76,16 +76,16 @@ test('saving an empty preamble clears the stored entry', () => {
 test('a missing page id neither reads nor writes', () => {
   savePreamble(undefined, { imports: 'a', top: '', body: '' });
   assert.equal(store.size, 0);
-  assert.deepEqual(loadPreamble(undefined), emptyPreamble());
+  assert.deepEqual(readStoredPreamble(undefined), emptyPreamble());
 });
 
 test('corrupt or oversized stored data loads as an empty preamble', () => {
   store.set('wb:code-preamble:p', '{not json');
-  assert.deepEqual(loadPreamble('p'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('p'), emptyPreamble());
   store.set('wb:code-preamble:p', JSON.stringify({ imports: 7 }));
-  assert.deepEqual(loadPreamble('p'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('p'), emptyPreamble());
   store.set('wb:code-preamble:p', 'null');
-  assert.deepEqual(loadPreamble('p'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('p'), emptyPreamble());
 });
 
 test('unavailable or throwing storage degrades silently', () => {
@@ -94,11 +94,11 @@ test('unavailable or throwing storage degrades silently', () => {
     setItem: () => { throw new Error('full'); },
     removeItem: () => { throw new Error('blocked'); },
   });
-  assert.deepEqual(loadPreamble('p'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('p'), emptyPreamble());
   assert.doesNotThrow(() => savePreamble('p', { imports: 'a', top: '', body: '' }));
   assert.doesNotThrow(() => savePreamble('p', emptyPreamble()));
 
   delete (globalThis as { localStorage?: unknown }).localStorage;
-  assert.deepEqual(loadPreamble('p'), emptyPreamble());
+  assert.deepEqual(readStoredPreamble('p'), emptyPreamble());
   assert.doesNotThrow(() => savePreamble('p', { imports: 'a', top: '', body: '' }));
 });

@@ -11,7 +11,7 @@ import type {
 
 interface ISubscriptionService {
   getSubscriptionStatus: () => Promise<SubscriptionStatus>;
-  getAllSubscriptions: () => Promise<any>;
+  listSubscriptions: () => Promise<unknown>;
   createPayment: (data: CreatePaymentRequest) => Promise<CreatePaymentResponse>;
   cancelSubscription: (
     data: CancelSubscriptionRequest,
@@ -26,7 +26,7 @@ export const subscriptionService: ISubscriptionService = {
     return apiClient.get<SubscriptionStatus>(url);
   },
 
-  getAllSubscriptions: async (): Promise<any> => {
+  listSubscriptions: async (): Promise<unknown> => {
     const url = new URLBuilder("api")
       .setPath(API_ENDPOINTS.SUBSCRIPTION.GET)
       .build();

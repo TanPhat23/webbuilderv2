@@ -6,7 +6,7 @@ export const TEMPLATE_DRAG = "application/x-wf-template";
 /** A section on the open page being dragged to a new position. */
 export const MOVE_DRAG = "application/x-wf-move";
 
-export function setTemplateDragData(dt: DataTransfer, groupId: string, index: number) {
+export function writeTemplateDragPayload(dt: DataTransfer, groupId: string, index: number) {
   dt.setData(TEMPLATE_DRAG, JSON.stringify({ groupId, index }));
   dt.effectAllowed = "copy";
 }

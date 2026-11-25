@@ -14,7 +14,7 @@ export interface ComponentSnapshot {
 export const componentLibraryKey = (userId: string | null) => ["component-library", userId] as const;
 const endpoint = (path: string) => new URLBuilder("api").setPath(path).build();
 
-export const componentLibrary = {
+export const componentLibraryService = {
   async list() {
     const saved = await apiClient.get<ComponentSnapshot[]>(endpoint(API_ENDPOINTS.CUSTOM_ELEMENTS.GET_ALL));
     return (saved ?? []).filter((entry) => typeof entry.id === "string" && typeof entry.name === "string");

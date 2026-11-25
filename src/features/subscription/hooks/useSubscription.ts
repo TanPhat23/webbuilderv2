@@ -25,10 +25,10 @@ export function useSubscriptionStatus() {
 }
 
 /** Hook to get all subscriptions. */
-export function useAllSubscriptions() {
+export function useSubscriptions() {
   return useQuery({
     queryKey: subscriptionKeys.list(),
-    queryFn: () => subscriptionService.getAllSubscriptions(),
+    queryFn: () => subscriptionService.listSubscriptions(),
   });
 }
 

@@ -33,7 +33,7 @@ test("ElementKeyboardActions copy, cut, paste, reorder, and delete respect read-
     const e1 = makeText("el-1", "First");
     const e2 = makeText("el-2", "Second");
     ElementStore.getState().beginPage("proj-1", "page-1", false);
-    ElementStore.getState().loadElements([e1, e2]);
+    ElementStore.getState().setElements([e1, e2]);
     SelectionStore.getState().setSelectedElement(e1);
 
     const actions = new ElementKeyboardActions();
@@ -68,19 +68,19 @@ test("ElementKeyboardActions copy, cut, paste, reorder, and delete respect read-
 
     actions.setLocked(false);
     const linked = makeText("cmp-inst", "Comp", { component: { pageId: "master", rootId: "root" } });
-    ElementStore.getState().loadElements([e2, linked]);
+    ElementStore.getState().setElements([e2, linked]);
     SelectionStore.getState().setSelectedElement(linked);
     actions.copyElement();
 
     ElementStore.getState().beginPage("proj-other", "page-other", false);
-    ElementStore.getState().loadElements([]);
+    ElementStore.getState().setElements([]);
     actions.pasteElement();
     assert.equal(ElementStore.getState().elements.length, 0);
 
     actions.deselectAll();
     assert.equal(SelectionStore.getState().selectedElementId, undefined);
   } finally {
-    ElementStore.getState().loadElements([]);
+    ElementStore.getState().setElements([]);
     SelectionStore.getState().setSelectedElement(undefined);
     restore();
   }

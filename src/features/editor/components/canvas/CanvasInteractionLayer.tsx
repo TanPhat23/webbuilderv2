@@ -8,7 +8,7 @@ import EditorContextMenu from "@/features/editor/components/EditorContextMenu";
 import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
 import { CanvasOverlay } from "./CanvasOverlay";
 import {
-  elementNodeFrom,
+  findElementNodeFromTarget,
   isTypingInCanvas,
   setCanvasSelection,
 } from "./canvasDom";
@@ -34,9 +34,9 @@ export function CanvasInteractionLayer({
   const [root, setRoot] = useState<HTMLDivElement | null>(null);
   const draggingId = useSelectionStore((s) => s.draggingElementId);
 
-  const { picking, blockPickPointer, onClickCapture, onDoubleClickCapture } =
+  const { picking, blockPickPointer, handleClickCapture, handleDoubleClickCapture } =
     useCanvasPickMode(root);
-  const { drop, resetDrag, onDragStart, onDragOver, onDragLeave, onDrop } =
+  const { drop, resetDrag, handleDragStart, handleDragOver, handleDragLeave, handleDrop } =
     useCanvasDragDrop({
       root,
       canEdit,
@@ -46,21 +46,21 @@ export function CanvasInteractionLayer({
       userId,
     });
 
-  const onMouseOver = (event: React.MouseEvent): void => {
+  const handleMouseOver = (event: React.MouseEvent): void => {
     if (isTypingInCanvas(root)) return;
-    const id = elementNodeFrom(root, event.target)?.dataset.elementId;
+    const id = findElementNodeFromTarget(root, event.target)?.dataset.elementId;
     if (useSelectionStore.getState().hoveredElementId !== id) {
       setCanvasSelection({ hoveredElementId: id });
     }
   };
 
-  const onMouseLeave = (): void => {
+  const handleMouseLeave = (): void => {
     if (isTypingInCanvas(root)) return;
     setCanvasSelection({ hoveredElementId: undefined });
   };
 
-  const onDoubleClick = (event: React.MouseEvent): void => {
-    const id = elementNodeFrom(root, event.target)?.dataset.elementId;
+  const handleDoubleClick = (event: React.MouseEvent): void => {
+    const id = findElementNodeFromTarget(root, event.target)?.dataset.elementId;
     if (!id) return;
     event.preventDefault();
     if (!canEdit) {
@@ -71,13 +71,13 @@ export function CanvasInteractionLayer({
     setCanvasSelection({ selectedElementId: isSelected ? undefined : id });
   };
 
-  const onContextMenu = (event: React.MouseEvent): void => {
+  const handleContextMenu = (event: React.MouseEvent): void => {
     const shared = (event.target as Element | null)?.closest<HTMLElement>(
       "[data-shared-section-id]",
     );
     const id =
       shared?.dataset.sharedSectionId ??
-      elementNodeFrom(root, event.target)?.dataset.elementId;
+      findElementNodeFromTarget(root, event.target)?.dataset.elementId;
     if (!id) {
       event.preventDefault();
       return;
@@ -93,17 +93,17 @@ export function CanvasInteractionLayer({
       className="relative"
       onMouseDownCapture={blockPickPointer}
       onMouseUpCapture={blockPickPointer}
-      onClickCapture={onClickCapture}
-      onDoubleClickCapture={onDoubleClickCapture}
+      onClickCapture={handleClickCapture}
+      onDoubleClickCapture={handleDoubleClickCapture}
       onContextMenuCapture={blockPickPointer}
-      onMouseOver={onMouseOver}
-      onMouseLeave={onMouseLeave}
-      onDoubleClick={onDoubleClick}
-      onContextMenu={onContextMenu}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      onMouseOver={handleMouseOver}
+      onMouseLeave={handleMouseLeave}
+      onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
       onDragEnd={resetDrag}
     >
       <style>{CANVAS_CSS}</style>

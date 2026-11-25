@@ -2,7 +2,7 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as t from '@babel/types';
 import { generate } from '@babel/generator';
-import { ElementTreeHelper as H } from '../src/features/elements/lib/element-tree-helper';
+import { elementTree as H } from '../src/features/elements/lib/element-tree-helper';
 import {
   generateImports,
   getAvailableComponentImports,

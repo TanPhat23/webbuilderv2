@@ -28,7 +28,7 @@ const SectionsLibrary = React.lazy(() => import("../wireframe/SectionsLibrary"))
 const LogicPanel = React.lazy(() => import("@/features/interactions/components/LogicPanel"));
 const ComponentsPanel = React.lazy(() => import("./ComponentsPanel"));
 const CmsPanel = React.lazy(() => import("./CmsPanel"));
-const SnapshotManager = React.lazy(() => import("../sidebar/SnapshotManager"));
+const VersionHistoryPanel = React.lazy(() => import("../sidebar/SnapshotManager"));
 const ImageSelector = React.lazy(() =>
   import("@/features/images/components/ImageSelector").then((m) => ({
     default: m.ImageSelector,
@@ -69,7 +69,7 @@ export const RAIL_ITEMS: RailItem[] = [
   { id: "assets", label: "Assets", icon: ImageIcon, group: "main", render: () => <ImageSelector /> },
   { id: "cms", label: "CMS", icon: Database, group: "main", render: () => <CmsPanel /> },
   { id: "logic", label: "Logic", icon: Braces, group: "tools", width: 280, render: () => <LogicPanel /> },
-  { id: "history", label: "History", icon: History, group: "tools", render: () => <SnapshotManager /> },
+  { id: "history", label: "History", icon: History, group: "tools", render: () => <VersionHistoryPanel /> },
   { id: "ai", label: "AI assistant", icon: Sparkles, group: "tools", width: 380, bare: true, selfScroll: true, render: () => <CloseableAIChat /> },
 ];
 

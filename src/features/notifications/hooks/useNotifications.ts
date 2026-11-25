@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationService } from "@/features/notifications/services/notification.service";
 import type { NotificationFilters, UpdateNotificationPayload } from "@/features/notifications/interfaces/notification.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
-import { onMutationError } from "@/hooks/utils/mutationUtils";
+import { createMutationErrorHandler } from "@/hooks/utils/mutationUtils";
 
 export const notificationKeys = {
   all: ["notifications"] as const,
@@ -16,7 +16,7 @@ export const notificationKeys = {
 export function useNotifications(filters?: NotificationFilters) {
   return useQuery({
     queryKey: notificationKeys.list(filters),
-    queryFn: () => notificationService.getNotifications(filters),
+    queryFn: () => notificationService.listNotifications(filters),
     ...QUERY_CONFIG.SHORT,
   });
 }
@@ -31,7 +31,7 @@ export function useUpdateNotification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
-    onError: onMutationError("Failed to update notification", { log: true }),
+    onError: createMutationErrorHandler("Failed to update notification", { log: true }),
   });
 }
 
@@ -58,7 +58,7 @@ export function useCreateProfileUpdateNotification() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
-    onError: onMutationError("Failed to create profile update notification", {
+    onError: createMutationErrorHandler("Failed to create profile update notification", {
       log: true,
     }),
   });

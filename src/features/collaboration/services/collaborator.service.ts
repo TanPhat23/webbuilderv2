@@ -8,7 +8,7 @@ import {
 } from "../interfaces/collaboration.interface";
 
 interface ICollaboratorService {
-  getProjectCollaborators: (projectId: string) => Promise<Collaborator[]>;
+  listProjectCollaborators: (projectId: string) => Promise<Collaborator[]>;
   updateCollaboratorRole: (
     collaboratorId: string,
     data: UpdateCollaboratorRoleRequest,
@@ -18,7 +18,7 @@ interface ICollaboratorService {
 }
 
 export const collaboratorService: ICollaboratorService = {
-  getProjectCollaborators: async (
+  listProjectCollaborators: async (
     projectId: string,
   ): Promise<Collaborator[]> => {
     try {

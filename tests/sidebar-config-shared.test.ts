@@ -46,7 +46,7 @@ import type { InputElement } from '../src/types/elements/elements';
 after(cleanup);
 beforeEach(() => {
   cleanup();
-  useElementStore.getState().loadElements([], true);
+  useElementStore.getState().setElements([], true);
   useSelectionStore.getState().setSelectedElement(undefined);
 });
 
@@ -204,7 +204,7 @@ test('ConfigField, ConfigSection, ConfigEmpty, ConfigPanel, AccordionSection, an
 
 test('ValidationConfiguration adds, updates, edits messages on, and removes rules in element store', async () => {
   const el = makeInputElement([{ rule: 'required', message: 'Required!' }]);
-  useElementStore.getState().loadElements([el], true);
+  useElementStore.getState().setElements([el], true);
   useSelectionStore.getState().setSelectedElement(el);
 
   const r = await render(h(ValidationConfiguration));

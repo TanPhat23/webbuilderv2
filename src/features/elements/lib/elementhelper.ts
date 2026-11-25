@@ -1,6 +1,6 @@
 import { replacePlaceholders } from "./replacePlaceholders";
 import { EditorElement, ElementType } from "@/types/global.type";
-import { ElementTreeHelper } from "./element-tree-helper";
+import { elementTree } from "./element-tree-helper";
 import { ALL_ELEMENT_TYPES, type ResponsiveStyles } from "@/types/elements";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
 import React from "react";
@@ -83,7 +83,7 @@ export function isValidElementType(value: unknown): value is ElementType {
   );
 }
 
-export const elementHelper = {
+export const elementUtils = {
   // styles
   getSafeStyles,
   updateElementStyle,
@@ -91,20 +91,20 @@ export const elementHelper = {
   // content
   replacePlaceholders,
   getElementSettings,
-  // tree — delegated to ElementTreeHelper
-  isContainerElement: ElementTreeHelper.isContainerElement,
-  isEditableElement: ElementTreeHelper.isEditableElement,
-  findById: ElementTreeHelper.findById,
-  mapUpdateById: ElementTreeHelper.mapUpdateById,
-  mapDeleteById: ElementTreeHelper.mapDeleteById,
-  mapInsertAfterId: ElementTreeHelper.mapInsertAfterId,
-  mapInsertAt: ElementTreeHelper.mapInsertAt,
-  mapInsertRelative: ElementTreeHelper.mapInsertRelative,
-  mapMoveRelative: ElementTreeHelper.mapMoveRelative,
-  findLocation: ElementTreeHelper.findLocation,
-  mapRecursively: ElementTreeHelper.mapRecursively,
-  mapAddChildById: ElementTreeHelper.mapAddChildById,
-  mapSwapChildrenById: ElementTreeHelper.mapSwapChildrenById,
+  // tree — delegated to elementTree
+  isContainerElement: elementTree.isContainerElement,
+  isEditableElement: elementTree.isEditableElement,
+  findById: elementTree.findById,
+  mapUpdateById: elementTree.mapUpdateById,
+  mapDeleteById: elementTree.mapDeleteById,
+  mapInsertAfterId: elementTree.mapInsertAfterId,
+  mapInsertAt: elementTree.mapInsertAt,
+  mapInsertRelative: elementTree.mapInsertRelative,
+  mapMoveRelative: elementTree.mapMoveRelative,
+  findLocation: elementTree.findLocation,
+  mapRecursively: elementTree.mapRecursively,
+  mapAddChildById: elementTree.mapAddChildById,
+  mapSwapChildrenById: elementTree.mapSwapChildrenById,
   // misc
   isValidElementType,
 };

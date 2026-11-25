@@ -12,7 +12,7 @@ import { useElementCommentStore } from "@/features/editor";
 import { useSelectedElementWithSetter } from "@/features/editor";
 import { useElementComments, useProjectComments } from "@/features/comments/hooks/useElementComments";
 import { useCurrentProject } from "@/features/projects/hooks/useProjects";
-import { useCommentManager } from "@/features/comments";
+import { useElementCommentControls } from "@/features/comments";
 
 import { CommentsPanelHeader } from "./components/CommentsPanelHeader";
 import { CommentsListView } from "./components/CommentsListView";
@@ -93,10 +93,10 @@ export function ElementCommentsPanel() {
     setEditingText,
     startEditing,
     cancelEditing,
-    handleUpdate,
-    handleDelete,
-    handleToggleResolved,
-  } = useCommentManager({
+    updateComment: handleCommentUpdate,
+    deleteComment: handleCommentDelete,
+    toggleCommentResolved: handleToggleCommentResolved,
+  } = useElementCommentControls({
     comments: showAllComments ? [] : singleElementComments,
     isLoading,
     onUpdate: updateComment,
@@ -187,9 +187,9 @@ export function ElementCommentsPanel() {
               elementIds={elementIds}
               onStartEdit={startEditing}
               onCancelEdit={cancelEditing}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              onToggleResolved={handleToggleResolved}
+              onUpdate={handleCommentUpdate}
+              onDelete={handleCommentDelete}
+              onToggleResolved={handleToggleCommentResolved}
               onEditTextChange={setEditingText}
               onElementSelect={handleElementSelect}
               userId={user?.id}

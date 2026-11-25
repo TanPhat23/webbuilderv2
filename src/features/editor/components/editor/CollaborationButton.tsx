@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Users, UserPlus } from "lucide-react";
-import { CollaborationManager } from "@/features/collaboration";
+import { CollaborationSettingsPanel } from "@/features/collaboration";
 import { useAuth } from '@clerk/tanstack-react-start';
 import { useProject } from "@/features/projects/hooks/useProjects";
 
@@ -48,7 +48,7 @@ export default function CollaborationButton({
             Project Collaboration
           </DialogTitle>
         </DialogHeader>
-        <CollaborationManager
+        <CollaborationSettingsPanel
           projectId={projectId}
           currentUserId={userId || ""}
           isOwner={isOwner}

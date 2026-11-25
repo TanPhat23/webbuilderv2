@@ -11,7 +11,7 @@ import { deletePageInputSchema } from "@/features/projects/schema/page-deletion"
 import { getAuthToken } from "@/features/auth/lib/gettoken";
 import {
   projectService,
-  toPage,
+  mapApiPageToPage,
 } from "@/features/projects/services/project.service";
 
 export const createPage = createServerFn({ method: "POST" })
@@ -29,7 +29,7 @@ export const createPage = createServerFn({ method: "POST" })
       },
       token,
     );
-    return toPage(created);
+    return mapApiPageToPage(created);
   });
 
 const updatePageSchema = z.object({
@@ -54,7 +54,7 @@ export const updateProjectPage = createServerFn({ method: "POST" })
       },
       token,
     );
-    return toPage(updated);
+    return mapApiPageToPage(updated);
   });
 
 export const deleteProjectPage = createServerFn({ method: "POST" })
@@ -63,7 +63,7 @@ export const deleteProjectPage = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { token } = await getAuthToken();
-    await projectService.deleteProjectPage(data.projectId, data.pageId, token);
+    await projectService.deletePage(data.projectId, data.pageId, token);
   });
 
 const componentNameSchema = z.string().trim().min(1).max(255);

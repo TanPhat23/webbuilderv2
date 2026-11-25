@@ -69,7 +69,7 @@ const until = async (cond: () => boolean, what: string, ms = 4000) => {
 
 async function connect(user: string, pageId: string): Promise<Client> {
   const { RealtimeProvider } = await import('../../src/features/collaboration/lib/realtime/RealtimeProvider');
-  const { sendElementOp } = await import('../../src/features/collaboration/lib/realtime/sendElementOp');
+  const { sendElementOperation } = await import('../../src/features/collaboration/lib/realtime/sendElementOp');
   const { createElementStore } = await import('../../src/features/editor/store/element-store');
 
   const store = createElementStore();
@@ -90,7 +90,7 @@ async function connect(user: string, pageId: string): Promise<Client> {
   store.getState().setCollaborativeCallback((async (type: any, id: any, data: any) => {
     if (!provider.isSynced || !provider.isConnected()) return;
     try {
-      await sendElementOp(provider, () => store.getState().elements, pendingMoves, type, id, data);
+      await sendElementOperation(provider, () => store.getState().elements, pendingMoves, type, id, data);
     } catch (e) { failures.push(e as Error); errors.push({ message: (e as Error).message }); }
   }) as any);
 
@@ -167,10 +167,10 @@ test('editing an element a teammate just deleted is a soft failure', async () =>
   // Bob's edit was already in flight: send it straight to the server.
   await assert.rejects(b.provider.updateElement(uid('inner'), { content: 'late' }));
   await until(() => b.errors.length > 0, 'bob gets an error');
-  const { handleServerError } = await import('../../src/features/collaboration/lib/realtime/connectionErrors');
+  const { classifyServerError } = await import('../../src/features/collaboration/lib/realtime/connectionErrors');
   const last = b.errors.at(-1)!;
   assert.equal(last.code, 'NOT_FOUND');
-  const handling = handleServerError(last.code!, last.message);
+  const handling = classifyServerError(last.code!, last.message);
   assert.equal(handling.blocking, false);
   assert.match(handling.message, /teammate removed/);
 });

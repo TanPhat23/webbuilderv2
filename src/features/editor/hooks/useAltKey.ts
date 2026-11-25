@@ -8,22 +8,22 @@ export function useAltKey(
   const [altPressed, setAltPressed] = useState(false);
 
   useEffect(() => {
-    const onDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") setAltPressed(true);
     };
-    const onUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Alt") setAltPressed(false);
     };
-    const onBlur = () => setAltPressed(false);
+    const handleBlur = () => setAltPressed(false);
 
-    document.addEventListener("keydown", onDown, true);
-    document.addEventListener("keyup", onUp, true);
-    window.addEventListener("blur", onBlur);
+    document.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("keyup", handleKeyUp, true);
+    window.addEventListener("blur", handleBlur);
 
     return () => {
-      document.removeEventListener("keydown", onDown, true);
-      document.removeEventListener("keyup", onUp, true);
-      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("keyup", handleKeyUp, true);
+      window.removeEventListener("blur", handleBlur);
     };
   }, []);
 
@@ -33,21 +33,21 @@ export function useAltKey(
 
     let iframeDoc: Document | null = null;
 
-    const onDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Alt") setAltPressed(true);
     };
-    const onUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Alt") setAltPressed(false);
     };
-    const onBlur = () => setAltPressed(false);
+    const handleBlur = () => setAltPressed(false);
 
     const attach = () => {
       try {
         iframeDoc = iframe.contentDocument;
         if (!iframeDoc) return;
-        iframeDoc.addEventListener("keydown", onDown, true);
-        iframeDoc.addEventListener("keyup", onUp, true);
-        iframeDoc.defaultView?.addEventListener("blur", onBlur);
+        iframeDoc.addEventListener("keydown", handleKeyDown, true);
+        iframeDoc.addEventListener("keyup", handleKeyUp, true);
+        iframeDoc.defaultView?.addEventListener("blur", handleBlur);
       } catch {
         // cross-origin iframe — skip
       }
@@ -59,9 +59,9 @@ export function useAltKey(
     return () => {
       iframe.removeEventListener("load", attach);
       try {
-        iframeDoc?.removeEventListener("keydown", onDown, true);
-        iframeDoc?.removeEventListener("keyup", onUp, true);
-        iframeDoc?.defaultView?.removeEventListener("blur", onBlur);
+        iframeDoc?.removeEventListener("keydown", handleKeyDown, true);
+        iframeDoc?.removeEventListener("keyup", handleKeyUp, true);
+        iframeDoc?.defaultView?.removeEventListener("blur", handleBlur);
       } catch {
         // ignore cross-origin cleanup errors
       }

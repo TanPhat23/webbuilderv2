@@ -270,7 +270,7 @@ const flatten = (elements: EditorElement[]): EditorElement[] =>
     ...(hasChildren(el) ? flatten(children(el)) : []),
   ]);
 
-export const ElementTreeHelper = {
+export const elementTree = {
   isContainerElement,
   isEditableElement,
   findById,

@@ -20,7 +20,7 @@ const WEIGHTS = [
   ["800", "Extra bold"],
   ["900", "Black"],
 ].map(([value, label]) => ({ value, label }));
-const opts = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
+const toSelectOptions = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
 
 export function TypographySection({ sp }: { sp: StyleProps }) {
   const [more, setMore] = useState(false);
@@ -105,49 +105,49 @@ export function TypographySection({ sp }: { sp: StyleProps }) {
             sp={sp}
             k="fontStyle"
             label="Font style"
-            options={opts(["normal", "italic"])}
+            options={toSelectOptions(["normal", "italic"])}
             placeholder="Style"
           />
           <StyleSelect
             sp={sp}
             k="textTransform"
             label="Text case"
-            options={opts(["none", "uppercase", "lowercase", "capitalize"])}
+            options={toSelectOptions(["none", "uppercase", "lowercase", "capitalize"])}
             placeholder="Case"
           />
           <StyleSelect
             sp={sp}
             k="textDecoration"
             label="Decoration"
-            options={opts(["none", "underline", "line-through", "overline"])}
+            options={toSelectOptions(["none", "underline", "line-through", "overline"])}
             placeholder="Decoration"
           />
           <StyleSelect
             sp={sp}
             k="whiteSpace"
             label="White space"
-            options={opts(["normal", "nowrap", "pre", "pre-wrap", "pre-line"])}
+            options={toSelectOptions(["normal", "nowrap", "pre", "pre-wrap", "pre-line"])}
             placeholder="White space"
           />
           <StyleSelect
             sp={sp}
             k="textOverflow"
             label="Text overflow"
-            options={opts(["clip", "ellipsis"])}
+            options={toSelectOptions(["clip", "ellipsis"])}
             placeholder="Overflow"
           />
           <StyleSelect
             sp={sp}
             k="wordBreak"
             label="Word break"
-            options={opts(["normal", "break-all", "keep-all", "break-word"])}
+            options={toSelectOptions(["normal", "break-all", "keep-all", "break-word"])}
             placeholder="Word break"
           />
           <StyleSelect
             sp={sp}
             k="wordWrap"
             label="Word wrap"
-            options={opts(["normal", "break-word"])}
+            options={toSelectOptions(["normal", "break-word"])}
             placeholder="Word wrap"
           />
         </div>

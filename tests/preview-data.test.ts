@@ -4,14 +4,14 @@ import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
 import { ApiError } from "../src/utils/errors/api-error";
-import { loadPreviewData } from "../src/features/preview/lib/preview-data";
+import { fetchPreviewSite } from "../src/features/preview/lib/preview-data";
 import type { ApiPage } from "../src/features/projects/services/project.service";
 import type { EditorElement } from "../src/types/global.type";
 
 const missing = new ApiError("Project not found", 404, "not_found");
 const denied = new ApiError("Access denied", 403, "forbidden");
 const project = { id: "example", name: "Example", published: false } as Awaited<
-  ReturnType<Parameters<typeof loadPreviewData>[1]["project"]>
+  ReturnType<Parameters<typeof fetchPreviewSite>[1]["project"]>
 >;
 
 const pages = [
@@ -32,7 +32,7 @@ function source({ draft = false, token, privateError }: {
   privateError?: ApiError;
 } = {}) {
   const calls: string[] = [];
-  const reads: Parameters<typeof loadPreviewData>[1] = {
+  const reads: Parameters<typeof fetchPreviewSite>[1] = {
     draftToken: async () => { calls.push("session"); return token; },
     project: async (_id, token) => {
       calls.push(token ? "private project" : "public project");
@@ -54,43 +54,43 @@ function source({ draft = false, token, privateError }: {
 
 test("authorized users can preview a draft after the public lookup returns 404", async () => {
   const { calls, reads } = source({ draft: true, token: "test-session" });
-  assert.equal((await loadPreviewData("example", reads)).project, project);
+  assert.equal((await fetchPreviewSite("example", reads)).project, project);
   assert.deepEqual(calls, ["public project", "session", "private project", "private pages", "private elements"]);
 });
 
 test("unauthorized users receive no draft preview data", async () => {
   for (const token of [undefined, "test-session"]) {
     const { calls, reads } = source({ draft: true, token, privateError: denied });
-    await assert.rejects(loadPreviewData("example", reads), missing);
+    await assert.rejects(fetchPreviewSite("example", reads), missing);
     assert.deepEqual(calls, token ? ["public project", "session", "private project"] : ["public project", "session"]);
   }
 });
 
 test("published previews load without a session", async () => {
   const { calls, reads } = source();
-  assert.equal((await loadPreviewData("example", reads)).project, project);
+  assert.equal((await fetchPreviewSite("example", reads)).project, project);
   assert.deepEqual(calls, ["public project", "public pages", "public elements"]);
 });
 
 test("the project preview defaults to the home page and renders only its elements", async () => {
   const { reads } = source();
-  const data = await loadPreviewData("example", reads);
+  const data = await fetchPreviewSite("example", reads);
   assert.equal(data.page.id, "home");
   assert.deepEqual(data.elements.map((element) => element.id), ["home-content"]);
 });
 
 test("a page-specific preview renders only that page, even if it is empty", async () => {
   const { reads } = source();
-  const pricing = await loadPreviewData("example", reads, "pricing");
+  const pricing = await fetchPreviewSite("example", reads, "pricing");
   assert.equal(pricing.page.id, "pricing");
   assert.deepEqual(pricing.elements.map((element) => element.id), ["pricing-content"]);
-  const empty = await loadPreviewData("example", reads, "empty");
+  const empty = await fetchPreviewSite("example", reads, "empty");
   assert.deepEqual(empty.elements, []);
 });
 
 test("an unknown page ID does not fall back to another page", async () => {
   const { calls, reads } = source();
-  await assert.rejects(loadPreviewData("example", reads, "another-project-page"), { status: 404 });
+  await assert.rejects(fetchPreviewSite("example", reads, "another-project-page"), { status: 404 });
   assert.deepEqual(calls, ["public project", "public pages"]);
 });
 
@@ -118,8 +118,8 @@ test("linked headers and footers render current source content on other pages", 
   ];
   const { reads } = source();
   reads.elements = async () => saved;
-  const pricing = await loadPreviewData("example", reads, "pricing");
-  const visit = await loadPreviewData("example", reads, "empty");
+  const pricing = await fetchPreviewSite("example", reads, "pricing");
+  const visit = await fetchPreviewSite("example", reads, "empty");
   assert.deepEqual(pricing.elements.map((element) => element.id), [
     "pricing-header", "pricing-content", "pricing-footer",
   ]);
@@ -132,17 +132,17 @@ test("linked headers and footers render current source content on other pages", 
   const sharedFooter = pricing.elements[2];
   assert.equal(sharedFooter.type, "Footer");
   assert.equal(sharedFooter.elements[0].content, "Open daily");
-  assert.equal((await loadPreviewData("example", reads, "home")).elements[0], header);
+  assert.equal((await fetchPreviewSite("example", reads, "home")).elements[0], header);
 
   saved[0] = { ...header, elements: [{ ...navigation, content: "Updated menu" }] };
   for (const pageId of ["pricing", "empty"]) {
-    const shared = (await loadPreviewData("example", reads, pageId)).elements[0];
+    const shared = (await fetchPreviewSite("example", reads, pageId)).elements[0];
     assert.equal(shared.type, "Header");
     assert.equal(shared.elements[0].content, "Updated menu");
   }
 
   saved.splice(0, 1);
-  const fallback = (await loadPreviewData("example", reads, "pricing")).elements[0];
+  const fallback = (await fetchPreviewSite("example", reads, "pricing")).elements[0];
   assert.equal(fallback.type, "Section");
   assert.equal(fallback.elements[0].content, "Local fallback");
 });
@@ -153,11 +153,11 @@ test("published preview resolves linked masters without exposing a component rou
     { id: "instance", pageId: "home", type: "Text", content: "", settings: { component: { pageId: "master", rootId: "root" } } },
     { id: "root", pageId: "master", type: "Text", content: "Master text" },
   ];
-  assert.equal((await loadPreviewData("example", reads)).elements[0]?.content, "Master text");
-  await assert.rejects(loadPreviewData("example", reads, "master"), { status: 404 });
+  assert.equal((await fetchPreviewSite("example", reads)).elements[0]?.content, "Master text");
+  await assert.rejects(fetchPreviewSite("example", reads, "master"), { status: 404 });
   reads.pages = async () => [{ ...pages[0], id: "master", name: "", type: "cp" }, ...pages];
-  assert.equal((await loadPreviewData("example", reads)).page.id, "home");
-  await assert.rejects(loadPreviewData("example", reads, "master"), { status: 404 });
+  assert.equal((await fetchPreviewSite("example", reads)).page.id, "home");
+  await assert.rejects(fetchPreviewSite("example", reads, "master"), { status: 404 });
 });
 
 test("preview cannot expand a link to a regular page or deleted master", async () => {
@@ -169,7 +169,7 @@ test("preview cannot expand a link to a regular page or deleted master", async (
     { id: "deleted-root", pageId: "deleted-master", type: "Text", content: "Deleted component" },
     ...elements,
   ];
-  assert.deepEqual((await loadPreviewData("example", reads)).elements.map(({ id }) => id), ["home-content"]);
+  assert.deepEqual((await fetchPreviewSite("example", reads)).elements.map(({ id }) => id), ["home-content"]);
 });
 
 test("published component markup renders scoped heading IDs and sanitized overrides", async () => {
@@ -184,7 +184,7 @@ test("published component markup renders scoped heading IDs and sanitized overri
   };
   const { reads } = source();
   reads.elements = async () => [master, linked];
-  const { elements: rendered } = await loadPreviewData("example", reads);
+  const { elements: rendered } = await fetchPreviewSite("example", reads);
   const markup = renderToStaticMarkup(createElement<NonNullable<ComponentProps<typeof PreviewElementLoader>>>(PreviewElementLoader, { elements: rendered }));
   assert.match(markup, /<h3 id="instance~heading" data-element-id="instance~heading"><strong>Updated<\/strong><\/h3>/);
   assert.doesNotMatch(markup, /<script|Original/);

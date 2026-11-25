@@ -15,8 +15,8 @@ import {
 } from "../src/utils/errors/errorToast";
 import {
   getErrorMessage,
-  onMutationError,
-  onMutationSuccess,
+  createMutationErrorHandler,
+  createMutationSuccessHandler,
 } from "../src/hooks/utils/mutationUtils";
 
 test("image upload schemas validate MIME types, byte limits, base64 URIs, and drag payloads", () => {
@@ -132,14 +132,14 @@ test("errorToast and mutationUtils normalize messages and handle server request 
   showErrorToast("plain error");
   showSuccessToast("saved");
 
-  onMutationSuccess("Created")();
+  createMutationSuccessHandler("Created")();
   const origErr = console.error;
   const logged: unknown[] = [];
   console.error = (...args: unknown[]) => {
     logged.push(args);
   };
   try {
-    onMutationError("Fallback", { log: true })(new Error("bad input"));
+    createMutationErrorHandler("Fallback", { log: true })(new Error("bad input"));
     assert.equal(logged.length, 1);
   } finally {
     console.error = origErr;

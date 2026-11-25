@@ -1,20 +1,39 @@
 import type { EditorElement } from "@/types/global.type";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectionStore } from "@/features/editor/store/selection-store";
 import { DRAG_KEYS } from "@/features/editor/utils/element/dragPayload";
 import type { DropIndicatorState } from "./CanvasOverlay";
 import { findElementNode } from "./useElementRect";
 
-export function elementNodeFrom(
+function hasClosest(value: unknown): value is Element {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "closest" in value &&
+    typeof value.closest === "function"
+  );
+}
+
+function resolveElementFromTarget(target: EventTarget | null): Element | null {
+  if (hasClosest(target)) return target;
+  if (target !== null && typeof target === "object" && "parentElement" in target) {
+    const parent = target.parentElement;
+    return hasClosest(parent) ? parent : null;
+  }
+  return null;
+}
+
+export function findElementNodeFromTarget(
   root: HTMLElement | null,
   target: EventTarget | null,
 ): HTMLElement | null {
-  const element = target as Element | null;
-  const boundary = element?.closest?.<HTMLElement>("[data-component-instance]");
+  // Firefox can dispatch drag/pointer events with a Text node as target; unwrap cross-realm nodes safely.
+  const element = resolveElementFromTarget(target);
+  const boundary = element?.closest<HTMLElement>("[data-component-instance]");
   const closest = boundary
     ? findElementNode(boundary, boundary.dataset.componentInstance)
-    : element?.closest?.("[data-element-id]");
+    : element?.closest("[data-element-id]");
   return closest && root?.contains(closest) ? (closest as HTMLElement) : null;
 }
 
@@ -24,7 +43,7 @@ export function isTypingInCanvas(root: HTMLElement | null): boolean {
 }
 
 export function findElement(id: string): EditorElement | undefined {
-  return elementHelper.findById(useElementStore.getState().elements, id);
+  return elementUtils.findById(useElementStore.getState().elements, id);
 }
 
 export function setCanvasSelection(patch: {
@@ -35,8 +54,8 @@ export function setCanvasSelection(patch: {
   useSelectionStore.setState(patch);
 }
 
-export function hasElementDragData(dt: Pick<DataTransfer, "types">): boolean {
-  const types = Array.from(dt.types);
+export function hasElementDragPayload(dt: Pick<DataTransfer, "types">): boolean {
+  const types = Array.from(dt.types).map((t) => t.toLowerCase());
   return (
     types.includes(DRAG_KEYS.elementId.toLowerCase()) ||
     types.includes(DRAG_KEYS.elementType.toLowerCase()) ||

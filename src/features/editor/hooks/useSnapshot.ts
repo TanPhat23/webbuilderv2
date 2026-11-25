@@ -2,13 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { elementService } from "@/features/editor";
 import { Snapshot } from "@/features/editor";
 import { showSuccessToast } from "@/utils/errors/errorToast";
-import { onMutationError } from "@/hooks/utils/mutationUtils";
+import { createMutationErrorHandler } from "@/hooks/utils/mutationUtils";
 
 /** Hook to get all snapshots for a project. */
 export const useSnapshots = (projectId?: string) => {
   return useQuery({
     queryKey: ["snapshots", projectId],
-    queryFn: () => elementService.getSnapshots(projectId!),
+    queryFn: () => elementService.listSnapshots(projectId!),
     enabled: !!projectId,
   });
 };
@@ -29,12 +29,12 @@ export const useSaveSnapshot = () => {
       queryClient.invalidateQueries({ queryKey: ["snapshots", projectId] });
       showSuccessToast("Snapshot saved successfully");
     },
-    onError: onMutationError("Failed to save snapshot"),
+    onError: createMutationErrorHandler("Failed to save snapshot"),
   });
 };
 
 /** Hook to load a specific snapshot for a project. */
-export const useLoadSnapshot = () => {
+export const useRestoreSnapshot = () => {
   return useMutation({
     mutationFn: ({
       projectId,
@@ -42,11 +42,11 @@ export const useLoadSnapshot = () => {
     }: {
       projectId: string;
       snapshotId: string;
-    }) => elementService.loadSnapshot(projectId, snapshotId),
+    }) => elementService.getSnapshotElements(projectId, snapshotId),
     onSuccess: (elements) => {
       showSuccessToast("Snapshot loaded successfully");
       return elements;
     },
-    onError: onMutationError("Failed to load snapshot"),
+    onError: createMutationErrorHandler("Failed to load snapshot"),
   });
 };

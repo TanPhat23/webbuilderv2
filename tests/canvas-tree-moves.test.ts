@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { EditorElement } from '../src/types/global.type';
-import { ElementTreeHelper as T } from '../src/features/elements/lib/element-tree-helper';
+import { elementTree as T } from '../src/features/elements/lib/element-tree-helper';
 import { computeDropPosition, isHorizontalFlow } from '../src/features/editor/utils/element/dropPosition';
 
 const el = (id: string, type = 'Text', parentId?: string, elements?: EditorElement[]) =>

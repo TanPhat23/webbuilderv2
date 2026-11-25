@@ -1,4 +1,4 @@
-import type { CMSManagerResult } from "../hooks/useCMSManager";
+import type { CMSWorkspaceResult } from "../hooks/useCMSManager";
 
 export interface EditingField {
   name: string;
@@ -28,7 +28,7 @@ export const FIELD_TYPES = [
 
 export type FieldType = (typeof FIELD_TYPES)[number];
 
-export type CMSContextValue = CMSManagerResult & {
+export type CMSContextValue = CMSWorkspaceResult & {
   handleDeleteType: (id: string) => void;
   handleDeleteField: (contentTypeId: string, fieldId: string) => void;
   handleDeleteItem: (contentTypeId: string, itemId: string) => void;

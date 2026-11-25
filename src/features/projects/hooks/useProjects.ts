@@ -11,7 +11,7 @@ import {
 } from "@/features/projects/api/project.api";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showSuccessToast } from "@/utils/errors/errorToast";
-import { onMutationError } from "@/hooks/utils/mutationUtils";
+import { createMutationErrorHandler } from "@/hooks/utils/mutationUtils";
 import type {
   CreateProjectInput,
   ProjectUpdateFields,
@@ -93,7 +93,7 @@ export function useCreateProject() {
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project created successfully!");
     },
-    onError: onMutationError("Failed to create project"),
+    onError: createMutationErrorHandler("Failed to create project"),
   });
 }
 
@@ -113,7 +113,7 @@ export function useUpdateProject() {
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project updated successfully!");
     },
-    onError: onMutationError("Failed to update project"),
+    onError: createMutationErrorHandler("Failed to update project"),
   });
 }
 
@@ -126,7 +126,7 @@ export function useDeleteProject() {
       queryClient.invalidateQueries({ queryKey: projectKeys.userProjects() });
       showSuccessToast("Project deleted successfully!");
     },
-    onError: onMutationError("Failed to delete project"),
+    onError: createMutationErrorHandler("Failed to delete project"),
   });
 }
 
@@ -151,6 +151,6 @@ export function usePublishProject() {
           : "Project unpublished successfully!",
       );
     },
-    onError: onMutationError("Failed to update project"),
+    onError: createMutationErrorHandler("Failed to update project"),
   });
 }

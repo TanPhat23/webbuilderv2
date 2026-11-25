@@ -18,7 +18,7 @@ import { getAuthToken } from "@/features/auth/lib/gettoken";
 export const getUserProjects = createServerFn({ method: "GET" }).handler(
   async (): Promise<Project[]> => {
     const { token } = await getAuthToken();
-    return projectService.getUserProjects(token);
+    return projectService.listUserProjects(token);
   },
 );
 
@@ -68,5 +68,5 @@ export const getProjectPages = createServerFn({ method: "GET" })
   .validator((data: ProjectIdInput) => ProjectIdSchema.parse(data))
   .handler(async ({ data }): Promise<Page[]> => {
     const { token } = await getAuthToken();
-    return projectService.getProjectPages(data.projectId, token);
+    return projectService.listProjectPages(data.projectId, token);
   });

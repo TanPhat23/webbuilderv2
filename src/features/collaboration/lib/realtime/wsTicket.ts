@@ -35,7 +35,7 @@ export function resolveApiBaseUrl(wsUrl: string): string {
 /**
  * Mints a single-use WebSocket ticket for `projectId` using the caller's bearer token.
  */
-export async function fetchWsTicket(
+export async function requestWebSocketTicket(
   projectId: string,
   apiBaseUrl: string,
   getToken: () => Promise<string | null>,

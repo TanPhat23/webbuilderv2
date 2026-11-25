@@ -10,11 +10,11 @@ test('changing pages clears the previous page history and selection', async () =
   const a = { id: 'a', type: 'Text', pageId: 'a', content: 'original' } as const;
   const b = { id: 'b', type: 'Text', pageId: 'b', content: 'second' } as const;
   ElementStore.getState().beginPage('project', 'a');
-  ElementStore.getState().loadElements([a], true);
+  ElementStore.getState().setElements([a], true);
   SelectionStore.getState().setSelectedElement(a);
   ElementStore.getState().updateElement('a', { content: 'edited' });
   ElementStore.getState().beginPage('project', 'b');
-  ElementStore.getState().loadElements([b], true);
+  ElementStore.getState().setElements([b], true);
   ElementStore.getState().undo();
   assert.deepEqual(ElementStore.getState().elements, [b]);
   assert.equal(SelectionStore.getState().selectedElementId, undefined);
@@ -26,7 +26,7 @@ test('selected element resolves current remote changes and disappears after dele
   const { getSelectedOrHoveredElement } = await import('../src/features/editor/store/selected-element');
   const element = { id: 'item', type: 'Text', pageId: 'page', content: 'old' } as const;
   ElementStore.getState().beginPage('project', 'page');
-  ElementStore.getState().loadElements([element], true);
+  ElementStore.getState().setElements([element], true);
   SelectionStore.getState().setSelectedElement(element);
   ElementStore.getState().remoteUpdate('item', { content: 'new' });
   assert.equal(getSelectedOrHoveredElement()?.content, 'new');

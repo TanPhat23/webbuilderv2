@@ -75,7 +75,7 @@ const createElementStoreImpl: ElementStoreCreator = (set, get) => {
 
     beginPage: createBeginPage(set, get),
 
-    loadElements: (elements, skipSave) => {
+    setElements: (elements, skipSave) => {
       set({ elements });
       if (!skipSave) notify();
       return get();

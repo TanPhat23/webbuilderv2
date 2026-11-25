@@ -161,7 +161,7 @@ export default function ValidationConfiguration() {
         defaultRule = {
           rule: "custom",
           message: "",
-          validateFn: (value: unknown) => true,
+          validate: (_value: unknown) => true,
         };
         break;
       default:

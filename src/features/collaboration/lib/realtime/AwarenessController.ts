@@ -18,7 +18,7 @@ type AwarenessEvents = {
   ];
 };
 
-export class AwarenessController extends EventEmitter<AwarenessEvents> {
+export class PresenceController extends EventEmitter<AwarenessEvents> {
   private readonly _remotePresences = new Map<string, RemotePresence>();
   private localSelectedElement: string | null = null;
 
@@ -34,7 +34,7 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
     return this.localSelectedElement;
   }
 
-  public handleRemotePresence(data: PresenceBroadcastPayload): void {
+  public applyRemotePresence(data: PresenceBroadcastPayload): void {
     if (data.userId === this.userId) return;
 
     this._remotePresences.set(data.userId, {
@@ -51,7 +51,7 @@ export class AwarenessController extends EventEmitter<AwarenessEvents> {
     this.emitNormalizedChange();
   }
 
-  public handleSyncUsers(
+  public replaceRemotePresences(
     users: Array<{
       userId: string;
       userName: string;

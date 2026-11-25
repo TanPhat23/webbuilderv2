@@ -13,18 +13,18 @@
  */
 
 import { EventEmitter } from "./EventEmitter";
-import { ConnectionManager } from "./ConnectionManager";
+import { RealtimeSocketConnection } from "./ConnectionManager";
 import { MessageDispatcher } from "./MessageDispatcher";
 import type { WSEnvelope } from "../../interfaces/websocket";
 
 export class MessageSender extends EventEmitter {
-  private readonly connection: ConnectionManager;
+  private readonly connection: RealtimeSocketConnection;
   private readonly dispatcher: MessageDispatcher;
 
   private attached = false;
 
   constructor(
-    connection: ConnectionManager,
+    connection: RealtimeSocketConnection,
     dispatcher: MessageDispatcher,
     private readonly onRequest?: (envelope: WSEnvelope<unknown>) => void,
     private readonly onRejected?: (envelope: WSEnvelope<unknown>) => void,

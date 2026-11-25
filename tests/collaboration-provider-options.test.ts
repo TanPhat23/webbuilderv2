@@ -30,7 +30,7 @@ test('RealtimeProvider accepts injected getElementState without element store de
   let getterCalled = false;
   const mockState = {
     elements: [mockElement],
-    loadElements: () => {},
+    setElements: () => {},
     remoteAdd: () => {},
     remoteUpdate: () => {},
     remoteMove: () => {},
@@ -53,8 +53,8 @@ test('RealtimeProvider accepts injected getElementState without element store de
     assert.equal(provider.connected, false);
     assert.equal(provider.isSynced, false);
 
-    const handler = (provider as unknown as { messageHandler: { handle: (env: unknown) => void } }).messageHandler;
-    handler.handle({
+    const handler = (provider as unknown as { messageHandler: { routeEnvelope: (env: unknown) => void } }).messageHandler;
+    handler.routeEnvelope({
       type: 'element:update',
       payload: {
         id: 'el-1',

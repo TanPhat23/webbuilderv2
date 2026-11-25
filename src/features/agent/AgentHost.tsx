@@ -9,7 +9,7 @@ import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
 import { useActiveLogic } from "@/features/interactions/logic-hooks";
-import { loadPreamble, savePreamble } from "@/features/editor/lib/code/customCode";
+import { readStoredPreamble, savePreamble } from "@/features/editor/lib/code/customCode";
 import { elementService } from "@/features/elements/services/element.service";
 import { getProjectById, getProjectPages, updateProject } from "@/features/projects/api/project.api";
 import { createPage } from "@/features/projects/api/page.api";
@@ -98,7 +98,7 @@ export function AgentHost() {
         if (!id) throw new Error("No project is open.");
         const [pages, saved] = await Promise.all([
           queryClient.fetchQuery({ queryKey: projectKeys.pages(id), queryFn: () => getProjectPages({ data: { projectId: id } }), staleTime: 0 }),
-          elementService.getElements(id),
+          elementService.listProjectElements(id),
         ]);
         const state = ElementStore.getState();
         const current = pageOf();
@@ -178,10 +178,10 @@ export function AgentHost() {
       getSelectedId: () => useSelectionStore.getState().selectedElementId,
       generateCode: async () => {
         const { variables, flows, pageId } = live.current.logic;
-        const result = await elementService.generateCode(ElementStore.getState().elements, {}, { variables, flows }, loadPreamble(pageId ?? undefined));
+        const result = await elementService.generateCode(ElementStore.getState().elements, {}, { variables, flows }, readStoredPreamble(pageId ?? undefined));
         return result.code;
       },
-      getPreamble: () => loadPreamble(pageOf()),
+      getPreamble: () => readStoredPreamble(pageOf()),
       setPreamble: (next) => savePreamble(pageOf(), next),
       notifyChanged: (summary) => {
         useAgentActivity.getState().mark(false);

@@ -28,16 +28,16 @@ export function UpdateMetadataDialog({
   const { user, isLoaded } = useUser();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const getInitialFormData = () => ({
+  const buildInitialMetadataValues = () => ({
     bio: (user?.unsafeMetadata?.bio as string) || "",
     address: (user?.unsafeMetadata?.address as string) || "",
   });
 
-  const [formData, setFormData] = useState(getInitialFormData());
+  const [formData, setFormData] = useState(buildInitialMetadataValues());
 
   useEffect(() => {
     if (open && user) {
-      setFormData(getInitialFormData());
+      setFormData(buildInitialMetadataValues());
     }
   }, [open, user]);
 
@@ -69,7 +69,7 @@ export function UpdateMetadataDialog({
 
       toast.success("Additional information updated successfully!");
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating metadata:", error);
       toast.error("Failed to update information. Please try again.");
     } finally {
@@ -78,7 +78,7 @@ export function UpdateMetadataDialog({
   };
 
   const handleCancel = () => {
-    setFormData(getInitialFormData());
+    setFormData(buildInitialMetadataValues());
     onOpenChange(false);
   };
 

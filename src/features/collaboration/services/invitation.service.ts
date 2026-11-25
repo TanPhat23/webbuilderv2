@@ -13,8 +13,8 @@ export interface UpdateInvitationStatusRequest {
 
 interface IInvitationService {
   createInvitation: (data: CreateInvitationRequest) => Promise<Invitation>;
-  getProjectInvitations: (projectId: string) => Promise<Invitation[]>;
-  getPendingInvitationsByProject: (projectId: string) => Promise<Invitation[]>;
+  listProjectInvitations: (projectId: string) => Promise<Invitation[]>;
+  listPendingInvitationsByProject: (projectId: string) => Promise<Invitation[]>;
   acceptInvitation: (data: AcceptInvitationRequest) => Promise<void>;
   cancelInvitation: (invitationId: string) => Promise<Invitation>;
   updateInvitationStatus: (
@@ -44,7 +44,7 @@ export const invitationService: IInvitationService = {
    * @param projectId - The project ID
    * @returns Promise<Invitation[]> - Array of invitations
    */
-  getProjectInvitations: async (projectId: string): Promise<Invitation[]> => {
+  listProjectInvitations: async (projectId: string): Promise<Invitation[]> => {
     try {
       const url = new URLBuilder("api")
         .setPath(API_ENDPOINTS.INVITATIONS.GET_BY_PROJECT(projectId))
@@ -77,7 +77,7 @@ export const invitationService: IInvitationService = {
    * @param projectId - The project ID
    * @returns Promise<Invitation[]> - Array of pending invitations
    */
-  getPendingInvitationsByProject: async (
+  listPendingInvitationsByProject: async (
     projectId: string,
   ): Promise<Invitation[]> => {
     try {

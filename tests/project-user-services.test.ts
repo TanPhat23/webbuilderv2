@@ -8,7 +8,7 @@ redirectModules({
 });
 
 const { serverAuth } = await import('./support/test-clerk-server-stub');
-const { projectService, toPage } = await import('../src/features/projects/services/project.service');
+const { projectService, mapApiPageToPage } = await import('../src/features/projects/services/project.service');
 const projectApi = await import('../src/features/projects/api/project.api');
 const { userService } = await import('../src/features/users/services/user.service');
 const { getAuthToken } = await import('../src/features/auth/lib/gettoken');
@@ -55,8 +55,8 @@ afterEach(() => {
   console.error = realError;
 });
 
-test('toPage maps the camelCase API page onto the app Page shape', () => {
-  const page = toPage({
+test('mapApiPageToPage maps the camelCase API page onto the app Page shape', () => {
+  const page = mapApiPageToPage({
     id: 'pg',
     projectId: 'pr',
     name: 'Home',
@@ -71,7 +71,7 @@ test('toPage maps the camelCase API page onto the app Page shape', () => {
   assert.equal(page.CreatedAt.toISOString(), '2026-01-02T03:04:05.000Z');
   assert.equal(page.UpdatedAt.toISOString(), '2026-02-03T00:00:00.000Z');
 
-  const deleted = toPage({
+  const deleted = mapApiPageToPage({
     id: 'a', projectId: 'b', name: 'c', type: 'cp', styles: { color: 'red' } as never,
     createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z', deletedAt: '2026-03-01T00:00:00Z',
   });
@@ -81,10 +81,10 @@ test('toPage maps the camelCase API page onto the app Page shape', () => {
 
 test('authenticated project reads send the bearer token and hit the right route', async () => {
   respond = () => Response.json([{ id: 'x' }]);
-  await projectService.getUserProjects('T');
+  await projectService.listUserProjects('T');
   await projectService.getProjectById('p1', 'T');
   await projectService.getProjectAccess('p1', 'T');
-  await projectService.getProjectPagesWithLogic('p1', 'T');
+  await projectService.listProjectPagesWithLogic('p1', 'T');
   assert.deepEqual(
     requests.map((r) => [r.method, r.url.pathname]),
     [
@@ -97,20 +97,20 @@ test('authenticated project reads send the bearer token and hit the right route'
   for (const r of requests) assert.equal(r.headers.Authorization, 'Bearer T');
 });
 
-test('getProjectPages converts API pages to Page objects', async () => {
+test('listProjectPages converts API pages to Page objects', async () => {
   respond = () =>
     Response.json([
       { id: 'pg', projectId: 'p1', name: 'Home', type: 'sp', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z' },
     ]);
-  const pages = await projectService.getProjectPages('p1', 'T');
+  const pages = await projectService.listProjectPages('p1', 'T');
   assert.equal(pages[0].Id, 'pg');
   assert.ok(pages[0].CreatedAt instanceof Date);
 });
 
 test('public reads are sent without an Authorization header', async () => {
   respond = () => Response.json({ id: 'p1' });
-  await projectService.getProjectPublic('p1');
-  await projectService.getProjects();
+  await projectService.getPublicProject('p1');
+  await projectService.listPublicProjects();
   assert.deepEqual(
     requests.map((r) => r.url.pathname),
     ['/api/v1/projects/public/p1', '/api/v1/projects/public'],
@@ -118,10 +118,10 @@ test('public reads are sent without an Authorization header', async () => {
   for (const r of requests) assert.equal(r.headers.Authorization, undefined);
 });
 
-test('getPagesPublic adds the preview cache flag only when asked', async () => {
+test('listPublicPages adds the preview cache flag only when asked', async () => {
   respond = () => Response.json([]);
-  await projectService.getPagesPublic('p1');
-  await projectService.getPagesPublic('p1', { previewCache: true });
+  await projectService.listPublicPages('p1');
+  await projectService.listPublicPages('p1', { previewCache: true });
   assert.equal(requests[0].url.pathname, '/api/v1/pages/public/p1');
   assert.equal(requests[0].url.search, '');
   assert.equal(requests[1].url.searchParams.get('previewCache'), '1');
@@ -143,7 +143,7 @@ test('project writes use the expected verbs, routes and bodies', async () => {
   assert.equal(await projectService.deleteProject('p1', 'T'), true);
   await projectService.createPage('p1', { name: 'About', type: 'sp' }, 'T');
   await projectService.renamePage('p1', 'pg', 'Renamed', 'T');
-  assert.equal(await projectService.deleteProjectPage('p1', 'pg', 'T'), true);
+  assert.equal(await projectService.deletePage('p1', 'pg', 'T'), true);
 
   assert.deepEqual(
     requests.map((r) => [r.method, r.url.pathname]),

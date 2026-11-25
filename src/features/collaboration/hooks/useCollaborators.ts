@@ -5,8 +5,8 @@ import { collaboratorService } from "../services/collaborator.service";
 import type { UpdateCollaboratorRoleRequest } from "../interfaces/collaboration.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import {
-  onMutationError,
-  onMutationSuccess,
+  createMutationErrorHandler,
+  createMutationSuccessHandler,
 } from "@/hooks/utils/mutationUtils";
 
 export const collaboratorKeys = projectScopedKeys("collaborators");
@@ -26,7 +26,7 @@ export function useProjectCollaborators(
     queryFn: async () => {
       if (!projectId) throw new Error("Project ID is required");
       return (
-        (await collaboratorService.getProjectCollaborators(projectId)) || []
+        (await collaboratorService.listProjectCollaborators(projectId)) || []
       );
     },
     enabled: !!projectId && enabled,
@@ -70,8 +70,8 @@ export function useLeaveProject() {
         queryKey: collaboratorKeys.byProject(projectId),
       });
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-      onMutationSuccess("You have left the project successfully!")();
+      createMutationSuccessHandler("You have left the project successfully!")();
     },
-    onError: onMutationError("Failed to leave project"),
+    onError: createMutationErrorHandler("Failed to leave project"),
   });
 }

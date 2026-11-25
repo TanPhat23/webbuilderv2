@@ -46,7 +46,7 @@ export function resolveNativeTargetIds(
   return directId && chain[0] === directId ? [directId] : [];
 }
 
-export function handleNativeEvent(
+export function dispatchNativeEvent(
   event: Event,
   root: Element,
   index: Map<string, InteractionMap>,
@@ -65,7 +65,7 @@ export function handleNativeEvent(
   }
 }
 
-export function handleHoverEvent(
+export function dispatchHoverEvent(
   event: Event,
   root: Element,
   index: Map<string, InteractionMap>,
@@ -183,9 +183,9 @@ export function useInteractionEvents({
       vars,
     });
 
-    const onEvent = (event: Event) => handleNativeEvent(event, root, index, runner);
-    const onHover = (event: Event) => handleHoverEvent(event, root, index, runner);
-    const onError = (event: Event) =>
+    const handleEvent = (event: Event) => dispatchNativeEvent(event, root, index, runner);
+    const handleHover = (event: Event) => dispatchHoverEvent(event, root, index, runner);
+    const handleError = (event: Event) =>
       dispatchImageError(
         asOwnerElement(event.target, root.ownerDocument),
         event,
@@ -196,10 +196,10 @@ export function useInteractionEvents({
       );
 
     const nativeTypes = Object.keys(NATIVE_EVENTS);
-    nativeTypes.forEach((type) => root.addEventListener(type, onEvent));
-    root.addEventListener("mouseover", onHover);
-    root.addEventListener("mouseout", onHover);
-    root.addEventListener("error", onError, true);
+    nativeTypes.forEach((type) => root.addEventListener(type, handleEvent));
+    root.addEventListener("mouseover", handleHover);
+    root.addEventListener("mouseout", handleHover);
+    root.addEventListener("error", handleError, true);
 
     const runPending = () =>
       dispatchPendingLoads(root, index, fired, imageErrors, runner);
@@ -222,10 +222,10 @@ export function useInteractionEvents({
 
     return () => {
       mutations.disconnect();
-      nativeTypes.forEach((type) => root.removeEventListener(type, onEvent));
-      root.removeEventListener("mouseover", onHover);
-      root.removeEventListener("mouseout", onHover);
-      root.removeEventListener("error", onError, true);
+      nativeTypes.forEach((type) => root.removeEventListener(type, handleEvent));
+      root.removeEventListener("mouseover", handleHover);
+      root.removeEventListener("mouseout", handleHover);
+      root.removeEventListener("error", handleError, true);
     };
   }, [enabled, platform, flows, vars, index, rootRef, idsRef, fired, imageErrors]);
 }

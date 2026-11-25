@@ -1,5 +1,5 @@
 import { useElementStore } from "@/features/editor/store/element-store";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import {
   parentLayout,
   type ParentLayout,
@@ -12,7 +12,7 @@ export function useParentLayout(
 ): ParentLayout {
   const parent = useElementStore((s) =>
     element?.parentId
-      ? elementHelper.findById(s.elements, element.parentId)
+      ? elementUtils.findById(s.elements, element.parentId)
       : undefined,
   );
   return parentLayout(parent);

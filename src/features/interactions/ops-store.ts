@@ -1,5 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import {
   getInteractionsEditorAdapter,
   type ElementStoreLike,
@@ -135,7 +135,7 @@ export function commit(
   store: ElementStoreLike = dynamicElementStore,
 ): OpResult {
   const state = store.getState();
-  const el = elementHelper.findById(
+  const el = elementUtils.findById(
     state.elements as EditorElement[],
     elementId,
   ) as EditorElement | undefined;

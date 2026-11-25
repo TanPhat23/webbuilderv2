@@ -30,7 +30,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 // Standardised onError / onSuccess handlers
 
 /**
- * Options accepted by {@link onMutationError}.
+ * Options accepted by {@link createMutationErrorHandler}.
  */
 export interface MutationErrorOptions {
   /**
@@ -57,11 +57,11 @@ export interface MutationErrorOptions {
  * ```ts
  * useMutation({
  *   mutationFn: someService.delete,
- *   onError: onMutationError("Failed to delete item"),
+ *   onError: createMutationErrorHandler("Failed to delete item"),
  * });
  * ```
  */
-export function onMutationError(
+export function createMutationErrorHandler(
   fallbackMessage: string,
   options: MutationErrorOptions = {},
 ): (error: unknown) => void {
@@ -79,7 +79,7 @@ export function onMutationError(
 }
 
 /**
- * Options accepted by {@link onMutationSuccess}.
+ * Options accepted by {@link createMutationSuccessHandler}.
  */
 export interface MutationSuccessOptions {
   /** Override the default toast duration (ms). */
@@ -98,11 +98,11 @@ export interface MutationSuccessOptions {
  * ```ts
  * useMutation({
  *   mutationFn: someService.create,
- *   onSuccess: onMutationSuccess("Item created successfully!"),
+ *   onSuccess: createMutationSuccessHandler("Item created successfully!"),
  * });
  * ```
  */
-export function onMutationSuccess(
+export function createMutationSuccessHandler(
   message: string,
   options: MutationSuccessOptions = {},
 ): () => void {

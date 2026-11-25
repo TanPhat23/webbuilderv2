@@ -155,7 +155,7 @@ function HoverBox({ root, id }: { root: HTMLElement; id: string }) {
   return (
     <div
       className="rounded-sm border-2 border-blue-400/50"
-      style={boxStyle(rect)}
+      style={{ ...boxStyle(rect), pointerEvents: "none" }}
     />
   );
 }
@@ -174,7 +174,7 @@ function DropIndicator({
     return (
       <div
         className="rounded-sm border-2 border-dashed border-green-600 bg-green-500/5"
-        style={boxStyle(rect)}
+        style={{ ...boxStyle(rect), pointerEvents: "none" }}
       />
     );
   }
@@ -197,7 +197,7 @@ function DropIndicator({
   return (
     <div
       className="rounded-full bg-blue-500"
-      style={{ position: "absolute", ...bar }}
+      style={{ position: "absolute", pointerEvents: "none", ...bar }}
     />
   );
 }
@@ -237,6 +237,7 @@ export function CanvasOverlay({
     <div
       aria-hidden
       className="pointer-events-none absolute inset-0 z-[1000]"
+      style={{ pointerEvents: "none" }}
       data-canvas-overlay
     >
       {!isDragging && hoveredId && hoveredId !== selectedElement?.id && (

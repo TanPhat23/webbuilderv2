@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { useElementStore } from "../src/features/editor/store/element-store";
-import { elementHelper } from "../src/features/elements/lib/elementhelper";
+import { elementUtils } from "../src/features/elements/lib/elementhelper";
 
 const el = (id: string, extra: Record<string, unknown> = {}) =>
   ({
@@ -17,7 +17,7 @@ const el = (id: string, extra: Record<string, unknown> = {}) =>
 
 test("an element dropped into a flex row fills instead of overflowing", () => {
   const store = useElementStore.getState();
-  store.loadElements(
+  store.setElements(
     [
       el("nav", { tailwindStyles: "flex items-center", elements: [el("link", { parentId: "nav" })] }),
       el("stack"),
@@ -32,7 +32,7 @@ test("an element dropped into a flex row fills instead of overflowing", () => {
   });
   useElementStore.getState().insertElementRelative(image, "link", "before");
 
-  const placed = elementHelper.findById(useElementStore.getState().elements, "img")!;
+  const placed = elementUtils.findById(useElementStore.getState().elements, "img")!;
   assert.deepEqual(placed.styles?.default, {
     height: "auto",
     flexGrow: 1,
@@ -49,7 +49,7 @@ test("an element dropped into a flex row fills instead of overflowing", () => {
   });
   useElementStore.getState().addElement(other);
   assert.deepEqual(
-    elementHelper.findById(useElementStore.getState().elements, "img2")!.styles?.default,
+    elementUtils.findById(useElementStore.getState().elements, "img2")!.styles?.default,
     { width: "100%" },
   );
 
@@ -61,7 +61,7 @@ test("an element dropped into a flex row fills instead of overflowing", () => {
   useElementStore.getState().moveElement("img2", "link", "after");
   useElementStore.getState().setCollaborativeCallback(null as any);
   assert.equal(
-    (elementHelper.findById(useElementStore.getState().elements, "img2")!.styles?.default as any)
+    (elementUtils.findById(useElementStore.getState().elements, "img2")!.styles?.default as any)
       .flexGrow,
     1,
   );

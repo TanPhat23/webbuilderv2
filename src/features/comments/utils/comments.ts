@@ -38,7 +38,7 @@ export function sortCommentsByDate(
 /**
  * Filters and sorts comments in one operation
  */
-export function processComments(
+export function filterAndSortComments(
   comments: ElementComment[],
   viewMode: ViewMode,
   sortOrder: SortOrder

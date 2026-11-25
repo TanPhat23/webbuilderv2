@@ -62,7 +62,7 @@ export const webhookService = {
     );
   },
 
-  remove: (
+  delete: (
     projectId: string,
     webhookId: string,
     token: string,

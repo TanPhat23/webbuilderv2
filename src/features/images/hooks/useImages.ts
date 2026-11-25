@@ -3,7 +3,7 @@ import { imageService } from "../services/image.service";
 import type { Image } from "../interfaces/image.interface";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showErrorToast, showSuccessToast } from "@/utils/errors/errorToast";
-import { getErrorMessage, onMutationError } from "@/hooks/utils/mutationUtils";
+import { getErrorMessage, createMutationErrorHandler } from "@/hooks/utils/mutationUtils";
 import {
   ImageFileSchema,
   ImageUploadResponseSchema,
@@ -25,7 +25,7 @@ export function useUserImages() {
   return useQuery({
     queryKey: imageKeys.lists(),
     queryFn: async () => {
-      const images = await imageService.getUserImages();
+      const images = await imageService.listUserImages();
       // Validate response
       return ImagesArraySchema.parse(images);
     },
@@ -73,7 +73,7 @@ export function useUploadImage() {
 
       showSuccessToast("Image uploaded successfully!");
     },
-    onError: onMutationError("Failed to upload image"),
+    onError: createMutationErrorHandler("Failed to upload image"),
   });
 }
 

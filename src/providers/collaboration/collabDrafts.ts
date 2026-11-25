@@ -4,26 +4,26 @@ import { createEditorDraftStore } from "@/features/editor/store/editor-draft";
 
 type DraftStore = ReturnType<typeof createEditorDraftStore>;
 
-export interface CollabDraftManager {
+export interface OfflineDraftRecovery {
   save: (elements: EditorElement[]) => void;
   saveCatching: (elements: EditorElement[], unavailableMessage: string) => void;
   offerRecovery: () => void;
   dismissToast: () => void;
 }
 
-export function createCollabDraftManager({
+export function createOfflineDraftRecovery({
   projectId,
   pageId,
   userId,
-  loadElements,
+  setElements,
   isCurrentPage,
 }: {
   projectId: string;
   pageId: string;
   userId: string;
-  loadElements: (elements: EditorElement[], skipSave?: boolean) => void;
+  setElements: (elements: EditorElement[], skipSave?: boolean) => void;
   isCurrentPage: () => boolean;
-}): CollabDraftManager {
+}): OfflineDraftRecovery {
   let store: DraftStore | undefined;
   try {
     store = createEditorDraftStore(window.localStorage, userId, projectId, pageId);
@@ -59,7 +59,7 @@ export function createCollabDraftManager({
           onClick: () => {
             if (!isCurrentPage()) return;
             try {
-              loadElements(draft.elements, true);
+              setElements(draft.elements, true);
             } catch {
               toast.error("Could not read the local draft.");
             }

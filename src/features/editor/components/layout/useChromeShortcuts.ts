@@ -13,7 +13,7 @@ export function useChromeShortcuts({
   showRef.current = onShowShortcuts;
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === "\\") {
@@ -27,7 +27,7 @@ export function useChromeShortcuts({
         showRef.current();
       }
     };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 }

@@ -25,9 +25,9 @@ export function ElementRefInput({ value, onChange, elements, ctx, allowNumber, .
   const missing = typeof value === "string" && !!value && !value.includes("{{") && !selected;
   useEffect(() => {
     if (!picking) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") cancel(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") cancel(); };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [picking, cancel]);
   return <div className="flex min-w-0 flex-col gap-1">
     <div className="flex min-w-0 items-center gap-1">

@@ -2,10 +2,10 @@ import type { Page } from "@/features/pages";
 import { createPage, deleteProjectPage } from "@/features/projects/api/page.api";
 import { cloneComponentTree } from "@/features/projects/lib/components";
 import { RealtimeProvider } from "@/features/collaboration/lib/realtime/RealtimeProvider";
-import { fetchWsTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/realtime/wsTicket";
+import { requestWebSocketTicket, resolveApiBaseUrl } from "@/features/collaboration/lib/realtime/wsTicket";
 import { newEntityId } from "@/lib/entity-id";
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 import { ComponentConversionUnconfirmed } from "./component-conversion";
 
 type Session = { userId: string; getToken: () => Promise<string | null> };
@@ -13,8 +13,8 @@ type Session = { userId: string; getToken: () => Promise<string | null> };
 async function writeRoot(projectId: string, root: EditorElement, session: Session) {
   const local = {
     elements: [] as EditorElement[],
-    loadElements(elements: EditorElement[]) { local.elements = elements; },
-    remoteAdd(element: EditorElement) { local.elements = ElementTreeHelper.mapAddChildById(local.elements, element.parentId, element); },
+    setElements(elements: EditorElement[]) { local.elements = elements; },
+    remoteAdd(element: EditorElement) { local.elements = elementTree.mapAddChildById(local.elements, element.parentId, element); },
     remoteUpdate() {},
     remoteMove() {},
     remoteDelete() {},
@@ -33,7 +33,7 @@ async function writeRoot(projectId: string, root: EditorElement, session: Sessio
         userId: session.userId,
         // The editor keeps its own socket; the API replaces a second normal one.
         writer: true,
-        getTicket: () => fetchWsTicket(projectId, apiBaseUrl, session.getToken),
+        getTicket: () => requestWebSocketTicket(projectId, apiBaseUrl, session.getToken),
         getElementState: () => local,
         onError: (error) => reject(new Error("message" in error ? error.message : error.payload?.message ?? "Could not connect to the master page.")),
       });

@@ -3,7 +3,7 @@ import { useCallback } from "react";
 import type { EditorElement } from "@/types/global.type";
 import { useEventModeStore, useIsSelected, useUpdateElement } from "@/features/editor";
 import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { eventsStyle } from "./eventsStyle";
 
 interface UseCanvasElementOptions {
@@ -34,7 +34,7 @@ export function useCanvasElement(
   const updateElement = useUpdateElement();
 
   const isEditing =
-    canEdit && isSelected && elementHelper.isEditableElement(element);
+    canEdit && isSelected && elementUtils.isEditableElement(element);
 
   const onBlur = useCallback(
     (e: React.FocusEvent<HTMLElement>) => {
@@ -57,7 +57,7 @@ export function useCanvasElement(
     suppressContentEditableWarning: true,
     onBlur,
     style: {
-      ...elementHelper.getSafeStyles(element),
+      ...elementUtils.getSafeStyles(element),
       ...style,
       ...eventsStyle(eventsActive),
     } as React.CSSProperties,

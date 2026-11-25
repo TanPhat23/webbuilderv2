@@ -47,7 +47,7 @@ export interface ServerErrorHandling {
 }
 
 /** Maps the server's error codes to what the client should do and say. */
-export function handleServerError(code: WSErrorCode | string, serverMessage?: string): ServerErrorHandling {
+export function classifyServerError(code: WSErrorCode | string, serverMessage?: string): ServerErrorHandling {
   switch (code) {
     case "JOIN_REQUIRED":
       return { message: "Reconnecting to the page…", rejoin: true, blocking: false };

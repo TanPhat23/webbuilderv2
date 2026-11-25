@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { CustomComponent } from "../types";
 
-function mkId(prefix: string) {
+function createElementId(prefix: string) {
   return `${prefix}-${uuidv4().slice(0, 8)}`;
 }
 
@@ -12,7 +12,7 @@ function mkId(prefix: string) {
 export const portfolioSiteTemplate = {
   component: {
     type: "Section",
-    id: mkId("portfolio-site"),
+    id: createElementId("portfolio-site"),
     name: "Portfolio Site Template",
     role: "main",
     ariaLabel: "Portfolio Website Template",
@@ -941,7 +941,7 @@ export const portfolioSiteTemplate = {
 export const agencySiteTemplate = {
   component: {
     type: "Section",
-    id: mkId("agency-site"),
+    id: createElementId("agency-site"),
     name: "Agency Site Template",
     role: "main",
     ariaLabel: "Digital Agency Website Template",
@@ -2074,7 +2074,7 @@ export const agencySiteTemplate = {
 export const saasSiteTemplate = {
   component: {
     type: "Section",
-    id: mkId("saas-site"),
+    id: createElementId("saas-site"),
     name: "SaaS Site Template",
     role: "main",
     ariaLabel: "SaaS Product Website Template",
@@ -2753,7 +2753,7 @@ export const saasSiteTemplate = {
 export const blogSiteTemplate = {
   component: {
     type: "Section",
-    id: mkId("blog-site"),
+    id: createElementId("blog-site"),
     name: "Blog Site Template",
     role: "main",
     ariaLabel: "Blog Website Template",
@@ -3090,7 +3090,7 @@ export const blogSiteTemplate = {
 export const ecommerceSiteTemplate = {
   component: {
     type: "Section",
-    id: mkId("ecommerce-site"),
+    id: createElementId("ecommerce-site"),
     name: "E-Commerce Site Template",
     role: "main",
     ariaLabel: "E-Commerce Website Template",

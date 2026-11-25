@@ -15,7 +15,7 @@ const { makeClient, disposeClients } = await import('./support/test-hook-harness
 const { createCmsBackend } = await import('./support/cms-fake-backend');
 const { cmsKeys } = await import('../src/features/cms/query-keys');
 const hooks = await import('../src/features/cms/hooks');
-const { useCMSManager } = await import('../src/features/cms/hooks/useCMSManager');
+const { useCMSWorkspace } = await import('../src/features/cms/hooks/useCMSManager');
 const { CMSProvider, useCMSContext } = await import('../src/features/cms/provider/CMSProvider');
 
 const h = React.createElement;
@@ -51,9 +51,9 @@ function Wrap({ children }: { children?: React.ReactNode }) {
 }
 
 async function mountManager() {
-  const ref: { current: ReturnType<typeof useCMSManager> } = { current: undefined as never };
+  const ref: { current: ReturnType<typeof useCMSWorkspace> } = { current: undefined as never };
   function Probe() {
-    ref.current = useCMSManager();
+    ref.current = useCMSWorkspace();
     return null;
   }
   await dom.mount(h(Wrap, null, h(Probe)));
@@ -63,7 +63,7 @@ async function mountManager() {
 
 const act = dom.act;
 
-// -------------------------------------------------------------- useCMSManager
+// -------------------------------------------------------------- useCMSWorkspace
 
 test('manager loads content types but not fields or items until a type is selected', async () => {
   const m = await mountManager();
@@ -99,7 +99,7 @@ test('a failed types query is surfaced as an error and an empty list', async () 
 
 test('createType appends the new type to the cached list', async () => {
   const m = await mountManager();
-  await act(async () => m.current.handleCreateType({ name: 'News', description: 'd' }));
+  await act(async () => m.current.createContentType({ name: 'News', description: 'd' }));
   await dom.settle();
   assert.deepEqual(backend.writes().map((r) => [r.method, r.path, r.body]), [
     ['POST', '/api/v1/content-types', { name: 'News', description: 'd' }],
@@ -144,7 +144,7 @@ test('field create, update and delete keep the cache in sync', async () => {
   await act(async () => m.current.selectType('t1'));
   await dom.settle();
 
-  await act(async () => m.current.handleCreateField({ name: 'Summary', type: 'textarea', required: true }));
+  await act(async () => m.current.createContentField({ name: 'Summary', type: 'textarea', required: true }));
   await dom.settle();
   assert.deepEqual(m.current.contentFields.map((f) => f.name), ['Body', 'Summary']);
   const created = m.current.contentFields[1];
@@ -162,9 +162,9 @@ test('field create, update and delete keep the cache in sync', async () => {
   assert.equal(client.getQueryState(cmsKeys.publicContentItem())?.isInvalidated, true);
 });
 
-test('handleCreateField does nothing without a selected type', async () => {
+test('createContentField does nothing without a selected type', async () => {
   const m = await mountManager();
-  await act(async () => m.current.handleCreateField({ name: 'x', type: 'text', required: false }));
+  await act(async () => m.current.createContentField({ name: 'x', type: 'text', required: false }));
   await dom.settle();
   assert.equal(backend.writes().length, 0);
 });
@@ -177,7 +177,7 @@ test('item create, update and delete keep the cache in sync and invalidate publi
   client.setQueryData(list, []);
 
   await act(async () =>
-    m.current.handleCreateItem({ title: 'New', slug: 'new', published: true, fieldValues: [{ fieldId: 'f1', value: 'hi' }] }));
+    m.current.createContentItem({ title: 'New', slug: 'new', published: true, fieldValues: [{ fieldId: 'f1', value: 'hi' }] }));
   await dom.settle();
   assert.deepEqual(m.current.contentItems.map((i) => i.title), ['Item i1', 'New']);
   const created = m.current.contentItems[1];
@@ -197,21 +197,21 @@ test('item create, update and delete keep the cache in sync and invalidate publi
   assert.deepEqual(m.current.contentItems.map((i) => i.title), ['Edited']);
 });
 
-test('handleCreateItem ignores calls without a type and rejects invalid items', async () => {
+test('createContentItem ignores calls without a type and rejects invalid items', async () => {
   const m = await mountManager();
-  await act(async () => m.current.handleCreateItem({ title: 'a', slug: 'b', published: false }));
+  await act(async () => m.current.createContentItem({ title: 'a', slug: 'b', published: false }));
   assert.equal(backend.writes().length, 0);
 
   await act(async () => m.current.selectType('t1'));
   await dom.settle();
-  assert.throws(() => m.current.handleCreateItem({ title: '', slug: 'b', published: false }), /Title is required/);
+  assert.throws(() => m.current.createContentItem({ title: '', slug: 'b', published: false }), /Title is required/);
   assert.equal(backend.writes().length, 0);
 });
 
 test('a failing mutation leaves the cache untouched and reports the error', async () => {
   backend.failures.set('POST /api/v1/content-types', 500);
   const m = await mountManager();
-  await act(async () => m.current.handleCreateType({ name: 'Nope' }));
+  await act(async () => m.current.createContentType({ name: 'Nope' }));
   await dom.settle();
   assert.equal(m.current.contentTypes.length, 2);
   assert.ok(m.current.createTypeMutation.error);

@@ -18,9 +18,9 @@ const { imageService } = await import('../src/features/images/services/image.ser
 const { notificationService } = await import('../src/features/notifications/services/notification.service');
 const { notificationsServer } = await import('../src/features/notifications/server/notifications.server');
 const { subscriptionService } = await import('../src/features/subscription/services/subscription.service');
-const { getPreviewData } = await import('../src/features/preview/api/preview.api');
+const { getPreviewSite } = await import('../src/features/preview/api/preview.api');
 const { createPage, deleteProjectPage, renameComponentPage } = await import('../src/features/projects/api/page.api');
-const { sendElementOp } = await import('../src/features/collaboration/lib/realtime/sendElementOp');
+const { sendElementOperation } = await import('../src/features/collaboration/lib/realtime/sendElementOp');
 const { useAgentActivity } = await import('../src/features/agent/activity');
 
 let net: ReturnType<typeof installFetch>;
@@ -116,9 +116,9 @@ test('elementCommentService maps each operation to its verb and route', async ()
   net.respond = () => Response.json({ id: 'c1', data: [] });
   await elementCommentService.createElementComment({ elementId: 'e', content: 'hi', projectId: 'p' });
   await elementCommentService.getElementCommentById('c1');
-  await elementCommentService.getElementComments('e1');
-  await elementCommentService.getProjectComments('p1');
-  await elementCommentService.getCommentsByAuthorId('a1');
+  await elementCommentService.listElementComments('e1');
+  await elementCommentService.listProjectComments('p1');
+  await elementCommentService.listCommentsByAuthorId('a1');
   await elementCommentService.updateElementComment('c1', { content: 'x' });
   assert.equal(await elementCommentService.deleteElementComment('c1'), true);
   await elementCommentService.toggleResolvedStatus('c1');
@@ -154,7 +154,7 @@ test('imageService uploads multipart data with the token and reports failures', 
 
 test('imageService lists and deletes images through the api client', async () => {
   net.respond = (r) => (r.method === 'DELETE' ? new Response(null, { status: 204 }) : Response.json([{ imageId: 'i' }]));
-  assert.deepEqual(await imageService.getUserImages(), [{ imageId: 'i' }]);
+  assert.deepEqual(await imageService.listUserImages(), [{ imageId: 'i' }]);
   assert.equal(await imageService.deleteImage('i9'), true);
   const calls = net.api();
   assert.equal(calls[0].method, 'GET');
@@ -164,9 +164,9 @@ test('imageService lists and deletes images through the api client', async () =>
 
 test('notificationService adds filter and search query params and surfaces errors', async () => {
   net.respond = () => Response.json({ notifications: [] });
-  await notificationService.getNotifications();
+  await notificationService.listNotifications();
   assert.equal(last().url.search, '');
-  await notificationService.getNotifications({ filter: 'unread', search: 'hello' });
+  await notificationService.listNotifications({ filter: 'unread', search: 'hello' });
   assert.equal(last().url.searchParams.get('filter'), 'unread');
   assert.equal(last().url.searchParams.get('search'), 'hello');
   assert.equal(last().url.pathname, '/api/notifications');
@@ -176,7 +176,7 @@ test('notificationService adds filter and search query params and surfaces error
   assert.deepEqual(last().body, { notificationId: 'n1', read: true });
 
   net.respond = () => new Response('', { status: 500 });
-  await assert.rejects(notificationService.getNotifications(), /Failed to fetch notifications/);
+  await assert.rejects(notificationService.listNotifications(), /Failed to fetch notifications/);
   await assert.rejects(notificationService.updateNotification({ notificationId: 'n', read: false }), /Failed to update notification/);
 });
 
@@ -217,7 +217,7 @@ test('notificationsServer maps API notifications to the app shape and sends the 
 test('subscriptionService hits status, list, payment and cancel routes', async () => {
   net.respond = () => Response.json({ ok: true });
   await subscriptionService.getSubscriptionStatus();
-  await subscriptionService.getAllSubscriptions();
+  await subscriptionService.listSubscriptions();
   await subscriptionService.createPayment({ planId: 'pro' } as never);
   await subscriptionService.cancelSubscription({ subscriptionId: 's1' });
   const calls = net.api();
@@ -246,12 +246,12 @@ function previewRoutes(opts: { projectStatus?: number } = {}) {
   };
 }
 
-test('getPreviewData validates ids, disables caching and serves public data to anonymous users', async () => {
+test('getPreviewSite validates ids, disables caching and serves public data to anonymous users', async () => {
   serverAuth.userId = null;
   previewRoutes();
-  await assert.rejects(getPreviewData({ data: { id: 'bad id' } } as never));
-  await assert.rejects(getPreviewData({ data: { id: 'p1', pageId: 'no/slash' } } as never));
-  const result = (await getPreviewData({ data: { id: 'p1' } } as never)) as { project: { id: string }; page: { id: string } };
+  await assert.rejects(getPreviewSite({ data: { id: 'bad id' } } as never));
+  await assert.rejects(getPreviewSite({ data: { id: 'p1', pageId: 'no/slash' } } as never));
+  const result = (await getPreviewSite({ data: { id: 'p1' } } as never)) as { project: { id: string }; page: { id: string } };
   assert.equal(responseHeaders['Cache-Control'], 'private, no-store');
   assert.equal(result.project.id, 'p1');
   assert.equal(result.page.id, 'pg1');
@@ -259,22 +259,22 @@ test('getPreviewData validates ids, disables caching and serves public data to a
   assert.ok(net.api().some((r) => r.url.searchParams.get('previewCache') === '1'));
 });
 
-test('getPreviewData falls back to the signed-in draft read and maps a missing page to not-found', async () => {
+test('getPreviewSite falls back to the signed-in draft read and maps a missing page to not-found', async () => {
   previewRoutes({ projectStatus: 404 });
-  const result = (await getPreviewData({ data: { id: 'p1', pageId: 'pg1' } } as never)) as { page: { id: string } };
+  const result = (await getPreviewSite({ data: { id: 'p1', pageId: 'pg1' } } as never)) as { page: { id: string } };
   assert.equal(result.page.id, 'pg1');
   assert.ok(net.api().some((r) => r.headers.Authorization === 'Bearer tok-1'));
   assert.ok(net.api().every((r) => r.url.searchParams.get('previewCache') === null || !r.headers.Authorization));
 
   // 404 for a page that does not exist becomes the router's notFound().
-  await assert.rejects(getPreviewData({ data: { id: 'p1', pageId: 'missing' } } as never), (e: unknown) => {
+  await assert.rejects(getPreviewSite({ data: { id: 'p1', pageId: 'missing' } } as never), (e: unknown) => {
     assert.ok(typeof e === 'object' && e !== null && 'isNotFound' in e);
     return true;
   });
 
   // Non-404 failures propagate untouched.
   net.respond = () => new Response('boom', { status: 500 });
-  await assert.rejects(getPreviewData({ data: { id: 'p1' } } as never), (e: unknown) => !(typeof e === 'object' && e !== null && 'isNotFound' in e));
+  await assert.rejects(getPreviewSite({ data: { id: 'p1' } } as never), (e: unknown) => !(typeof e === 'object' && e !== null && 'isNotFound' in e));
 });
 
 // ---- page.api ------------------------------------------------------------
@@ -311,7 +311,7 @@ test('deleteProjectPage and renameComponentPage validate path ids and call the A
   await assert.rejects(renameComponentPage({ data: { projectId: 'p1', pageId: 'pg1', name: 'x'.repeat(256) } }));
 });
 
-// ---- sendElementOp -------------------------------------------------------
+// ---- sendElementOperation -------------------------------------------------------
 
 function fakeProvider() {
   const calls: unknown[][] = [];
@@ -329,28 +329,28 @@ function fakeProvider() {
   };
 }
 
-test('sendElementOp routes update and delete operations only when their inputs are present', async () => {
+test('sendElementOperation routes update and delete operations only when their inputs are present', async () => {
   const { calls, provider } = fakeProvider();
   const pending = new Set<string>();
-  await sendElementOp(provider as never, () => [], pending, 'update', 'e1', { content: 'x' });
-  await sendElementOp(provider as never, () => [], pending, 'update', undefined, { content: 'x' });
-  await sendElementOp(provider as never, () => [], pending, 'update', 'e1', undefined);
-  await sendElementOp(provider as never, () => [], pending, 'delete', 'e2', undefined);
-  await sendElementOp(provider as never, () => [], pending, 'delete', undefined, undefined);
+  await sendElementOperation(provider as never, () => [], pending, 'update', 'e1', { content: 'x' });
+  await sendElementOperation(provider as never, () => [], pending, 'update', undefined, { content: 'x' });
+  await sendElementOperation(provider as never, () => [], pending, 'update', 'e1', undefined);
+  await sendElementOperation(provider as never, () => [], pending, 'delete', 'e2', undefined);
+  await sendElementOperation(provider as never, () => [], pending, 'delete', undefined, undefined);
   assert.deepEqual(calls, [['update', 'e1', { content: 'x' }], ['delete', 'e2']]);
 });
 
-test('sendElementOp create uses the element location, then the element parent, then null', async () => {
+test('sendElementOperation create uses the element location, then the element parent, then null', async () => {
   const { calls, provider } = fakeProvider();
   const pending = new Set<string>();
   const parent = { id: 'root', parentId: null, pageId: 'pg', type: 'Section', content: '', styles: {}, elements: [{ id: 'c1', parentId: 'root', elements: [] }] };
   const created = { id: 'c1', parentId: 'stale' };
-  await sendElementOp(provider as never, () => [parent] as never, pending, 'create', 'c1', created);
+  await sendElementOperation(provider as never, () => [parent] as never, pending, 'create', 'c1', created);
   const orphan = { id: 'o1', parentId: 'known-parent' };
-  await sendElementOp(provider as never, () => [], pending, 'create', 'o1', orphan);
+  await sendElementOperation(provider as never, () => [], pending, 'create', 'o1', orphan);
   const rootless = { id: 'r1' };
-  await sendElementOp(provider as never, () => [], pending, 'create', 'r1', rootless);
-  await sendElementOp(provider as never, () => [], pending, 'create', 'r2', undefined);
+  await sendElementOperation(provider as never, () => [], pending, 'create', 'r1', rootless);
+  await sendElementOperation(provider as never, () => [], pending, 'create', 'r2', undefined);
 
   assert.equal(calls.length, 3);
   assert.deepEqual(calls[0].slice(0, 2), ['create', created]);
@@ -360,18 +360,18 @@ test('sendElementOp create uses the element location, then the element parent, t
   assert.deepEqual(calls[2], ['create', rootless, null, undefined]);
 });
 
-test('sendElementOp drops a move while the same element is already moving and always clears the flag', async () => {
+test('sendElementOperation drops a move while the same element is already moving and always clears the flag', async () => {
   const { calls, provider } = fakeProvider();
   const pending = new Set<string>(['busy']);
   const move = (elementId: string) => ({ elementId, newParentId: 'p', newPosition: 2 });
-  await sendElementOp(provider as never, () => [], pending, 'move', undefined, move('busy'));
+  await sendElementOperation(provider as never, () => [], pending, 'move', undefined, move('busy'));
   assert.equal(calls.length, 0);
 
-  await sendElementOp(provider as never, () => [], pending, 'move', undefined, move('free'));
+  await sendElementOperation(provider as never, () => [], pending, 'move', undefined, move('free'));
   assert.deepEqual(calls, [['move', 'free', 'p', 2]]);
   assert.equal(pending.has('free'), false);
 
   const failing = { ...provider, moveElement: async () => { throw new Error('ws closed'); } };
-  await assert.rejects(sendElementOp(failing as never, () => [], pending, 'move', undefined, move('boom')), /ws closed/);
+  await assert.rejects(sendElementOperation(failing as never, () => [], pending, 'move', undefined, move('boom')), /ws closed/);
   assert.equal(pending.has('boom'), false);
 });

@@ -119,13 +119,13 @@ function normalizeFieldValues(
   }));
 }
 
-export const getContentTypes = createServerFn({ method: "GET" })
+export const listContentTypes = createServerFn({ method: "GET" })
   .validator((data?: { projectId?: string }) =>
     ContentTypesQuerySchema.parse(data),
   )
   .handler(async ({ data }): Promise<ContentType[]> => {
     const { token } = await getAuthToken();
-    return cmsService.getContentTypes(token, data?.projectId);
+    return cmsService.listContentTypes(token, data?.projectId);
   });
 
 export const getContentTypeById = createServerFn({ method: "GET" })
@@ -165,11 +165,11 @@ export const deleteContentType = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getContentFieldsByContentType = createServerFn({ method: "GET" })
+export const listContentFieldsByContentType = createServerFn({ method: "GET" })
   .validator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
   .handler(async ({ data }): Promise<ContentField[]> => {
     const { token } = await getAuthToken();
-    return cmsService.getContentFieldsByContentType(data.contentTypeId, token);
+    return cmsService.listContentFieldsByContentType(data.contentTypeId, token);
   });
 
 export const getContentFieldById = createServerFn({ method: "GET" })
@@ -222,11 +222,11 @@ export const deleteContentField = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getContentItemsByContentType = createServerFn({ method: "GET" })
+export const listContentItemsByContentType = createServerFn({ method: "GET" })
   .validator((data: ContentTypeIdInput) => ContentTypeIdSchema.parse(data))
   .handler(async ({ data }): Promise<ContentItem[]> => {
     const { token } = await getAuthToken();
-    return cmsService.getContentItemsByContentType(data.contentTypeId, token);
+    return cmsService.listContentItemsByContentType(data.contentTypeId, token);
   });
 
 export const getContentItemById = createServerFn({ method: "GET" })
@@ -287,7 +287,7 @@ export const deleteContentItem = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-export const getPublicContent = createServerFn({ method: "GET" })
+export const listPublicContent = createServerFn({ method: "GET" })
   .validator((data: PublicContentQueryInput) =>
     PublicContentQuerySchema.parse(data),
   )
@@ -301,7 +301,7 @@ export const getPublicContent = createServerFn({ method: "GET" })
       sortOrder: data.sortOrder,
     };
 
-    return cmsService.getPublicContent(query, token);
+    return cmsService.listPublicContent(query, token);
   });
 
 export const getPublicContentItem = createServerFn({ method: "GET" })

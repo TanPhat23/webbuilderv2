@@ -17,7 +17,7 @@ import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissio
 import {
   useSnapshots,
   useSaveSnapshot,
-  useLoadSnapshot,
+  useRestoreSnapshot,
 } from "@/features/editor/hooks/useSnapshot";
 import type { EditorElement } from "@/types/global.type";
 import PanelIntro from "@/components/PanelIntro";
@@ -33,13 +33,13 @@ function relativeTime(iso: string): string {
 }
 
 /** Saved versions of the project, listed inline in the History panel. */
-export default function SnapshotManager() {
+export default function VersionHistoryPanel() {
   const { data: project } = useCurrentProject();
-  const { elements, loadElements } = useElementsWithLoad();
+  const { elements, setElements } = useElementsWithLoad();
   const permissions = useEditorPermissions(project?.id);
   const { data: snapshots = [], isLoading } = useSnapshots(project?.id);
   const save = useSaveSnapshot();
-  const load = useLoadSnapshot();
+  const restoreSnapshot = useRestoreSnapshot();
   const [restoreId, setRestoreId] = useState<string | null>(null);
 
   const canSave = permissions.canCreateSnapshots && elements.length > 0;
@@ -62,9 +62,9 @@ export default function SnapshotManager() {
 
   const handleRestore = () => {
     if (!project?.id || !restoreId) return;
-    load.mutate(
+    restoreSnapshot.mutate(
       { projectId: project.id, snapshotId: restoreId },
-      { onSuccess: (els) => loadElements(els as EditorElement[]) },
+      { onSuccess: (els) => setElements(els as EditorElement[]) },
     );
     setRestoreId(null);
   };
@@ -128,7 +128,7 @@ export default function SnapshotManager() {
                   aria-label={`Restore ${snapshot.name}`}
                   title="Restore"
                   className="h-6 w-6 shrink-0 text-muted-foreground opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-                  disabled={load.isPending}
+                  disabled={restoreSnapshot.isPending}
                   onClick={() => setRestoreId(snapshot.id)}
                 >
                   <RotateCcw className="h-3 w-3" />

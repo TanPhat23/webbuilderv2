@@ -31,7 +31,7 @@ export function EditProfileDialog({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const getInitialFormData = () => ({
+  const buildInitialProfileValues = () => ({
     firstName:
       (user?.unsafeMetadata?.firstName as string) || user?.firstName || "",
     lastName:
@@ -40,7 +40,7 @@ export function EditProfileDialog({
       (user?.unsafeMetadata?.username as string) || user?.username || "",
   });
 
-  const [formData, setFormData] = useState(getInitialFormData());
+  const [formData, setFormData] = useState(buildInitialProfileValues());
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function EditProfileDialog({
 
   useEffect(() => {
     if (open && user) {
-      setFormData(getInitialFormData());
+      setFormData(buildInitialProfileValues());
     }
   }, [open, user]);
 
@@ -133,18 +133,26 @@ export function EditProfileDialog({
       onOpenChange(false);
       setImageFile(null);
       setImagePreview(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating profile:", error);
 
       // Handle specific Clerk errors
-      if (error.errors?.[0]?.code === "username_exists") {
+      const firstClerkError =
+        typeof error === "object" &&
+        error !== null &&
+        "errors" in error &&
+        Array.isArray((error as { errors?: unknown[] }).errors)
+          ? (error as { errors: Array<{ code?: string; message?: string }> }).errors[0]
+          : undefined;
+
+      if (firstClerkError?.code === "username_exists") {
         toast.error("This username is already taken");
-      } else if (error.errors?.[0]?.code === "form_param_format_invalid") {
+      } else if (firstClerkError?.code === "form_param_format_invalid") {
         toast.error("Invalid format for one of the fields");
-      } else if (error.errors?.[0]?.code === "form_param_nil") {
+      } else if (firstClerkError?.code === "form_param_nil") {
         toast.error("Required fields cannot be empty");
       } else {
-        toast.error(error.errors?.[0]?.message || "Failed to update profile");
+        toast.error(firstClerkError?.message || "Failed to update profile");
       }
     } finally {
       setIsUpdating(false);
@@ -153,7 +161,7 @@ export function EditProfileDialog({
   };
 
   const handleCancel = () => {
-    setFormData(getInitialFormData());
+    setFormData(buildInitialProfileValues());
     setImageFile(null);
     setImagePreview(null);
     onOpenChange(false);

@@ -5,7 +5,7 @@ import { StyleSelect } from "./controls";
 import { isSectionOn, SECTION_KEYS, sectionDefaults } from "./styleModel";
 import type { StyleProps } from "./useStyleProps";
 
-const opts = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
+const toSelectOptions = (xs: string[]) => xs.map((v) => ({ value: v, label: v }));
 
 export function EffectsSection({ sp }: { sp: StyleProps }) {
   const opacity = Number(sp.values.opacity ?? sp.inherited.opacity ?? 1);
@@ -64,14 +64,14 @@ export function EffectsSection({ sp }: { sp: StyleProps }) {
           sp={sp}
           k="overflow"
           label="Overflow"
-          options={opts(["visible", "hidden", "scroll", "auto", "clip"])}
+          options={toSelectOptions(["visible", "hidden", "scroll", "auto", "clip"])}
           placeholder="Overflow"
         />
         <StyleSelect
           sp={sp}
           k="cursor"
           label="Cursor"
-          options={opts([
+          options={toSelectOptions([
             "auto",
             "default",
             "pointer",
@@ -86,28 +86,28 @@ export function EffectsSection({ sp }: { sp: StyleProps }) {
           sp={sp}
           k="overflowX"
           label="Overflow X"
-          options={opts(["visible", "hidden", "scroll", "auto", "clip"])}
+          options={toSelectOptions(["visible", "hidden", "scroll", "auto", "clip"])}
           placeholder="Overflow X"
         />
         <StyleSelect
           sp={sp}
           k="overflowY"
           label="Overflow Y"
-          options={opts(["visible", "hidden", "scroll", "auto", "clip"])}
+          options={toSelectOptions(["visible", "hidden", "scroll", "auto", "clip"])}
           placeholder="Overflow Y"
         />
         <StyleSelect
           sp={sp}
           k="visibility"
           label="Visibility"
-          options={opts(["visible", "hidden", "collapse"])}
+          options={toSelectOptions(["visible", "hidden", "collapse"])}
           placeholder="Visibility"
         />
         <StyleSelect
           sp={sp}
           k="boxSizing"
           label="Box sizing"
-          options={opts(["border-box", "content-box"])}
+          options={toSelectOptions(["border-box", "content-box"])}
           placeholder="Box sizing"
         />
       </div>

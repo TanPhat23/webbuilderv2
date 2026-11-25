@@ -13,7 +13,7 @@ export function useSharedSectionSources(enabled: boolean) {
   const { data: pages } = useProjectRoutePages(projectId);
   const saved = useQuery({
     queryKey: ["shared-sections", projectId, pageId],
-    queryFn: () => projectId ? elementService.getElements(projectId) : Promise.resolve([]),
+    queryFn: () => projectId ? elementService.listProjectElements(projectId) : Promise.resolve([]),
     enabled: enabled && Boolean(projectId && pageId),
     refetchInterval: enabled ? 10_000 : false,
   });

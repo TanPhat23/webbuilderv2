@@ -248,7 +248,7 @@ const SIDE_SUFFIX: Record<SideKey, string> = {
   left: "Left",
 };
 
-function str(v: string | number | undefined): string {
+function toStyleString(v: string | number | undefined): string {
   return v === undefined ? "" : String(v);
 }
 
@@ -257,7 +257,7 @@ export function readSides(styles: StyleMap, prop: "padding" | "margin"): Sides {
   const parts: string[] = [];
   let token = "";
   let depth = 0;
-  for (const char of str(styles[prop]).trim()) {
+  for (const char of toStyleString(styles[prop]).trim()) {
     if (/\s/.test(char) && depth === 0) {
       if (token) parts.push(token);
       token = "";
@@ -273,7 +273,7 @@ export function readSides(styles: StyleMap, prop: "padding" | "margin"): Sides {
   const out = { ...base };
   for (const side of Object.keys(SIDE_SUFFIX) as SideKey[]) {
     const v = styles[`${prop}${SIDE_SUFFIX[side]}`];
-    if (v !== undefined && v !== "") out[side] = str(v);
+    if (v !== undefined && v !== "") out[side] = toStyleString(v);
   }
   return out;
 }

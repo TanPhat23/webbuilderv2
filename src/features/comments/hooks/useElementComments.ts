@@ -6,7 +6,7 @@ import { useUser } from '@clerk/tanstack-react-start';
 import { useCurrentProject } from "@/features/projects/hooks/useProjects";
 import { QUERY_CONFIG } from "@/utils/query/queryConfig";
 import { showSuccessToast } from "@/utils/errors/errorToast";
-import { onMutationError } from "@/hooks/utils/mutationUtils";
+import { createMutationErrorHandler } from "@/hooks/utils/mutationUtils";
 
 export const elementCommentKeys = {
   all: ["element-comments"] as const,
@@ -64,7 +64,7 @@ export function useElementComments(
     refetch,
   } = useQuery({
     queryKey: elementCommentKeys.list(elementId || ""),
-    queryFn: () => elementCommentService.getElementComments(elementId || ""),
+    queryFn: () => elementCommentService.listElementComments(elementId || ""),
     enabled: autoLoad && !!elementId,
     ...QUERY_CONFIG.SHORT,
   });
@@ -94,7 +94,7 @@ export function useElementComments(
       });
       showSuccessToast("Comment posted successfully!");
     },
-    onError: onMutationError("Failed to post comment"),
+    onError: createMutationErrorHandler("Failed to post comment"),
   });
 
   // Update comment mutation
@@ -121,7 +121,7 @@ export function useElementComments(
       });
       showSuccessToast("Comment updated successfully!");
     },
-    onError: onMutationError("Failed to update comment"),
+    onError: createMutationErrorHandler("Failed to update comment"),
   });
 
   // Delete comment mutation
@@ -137,7 +137,7 @@ export function useElementComments(
       });
       showSuccessToast("Comment deleted successfully!");
     },
-    onError: onMutationError("Failed to delete comment"),
+    onError: createMutationErrorHandler("Failed to delete comment"),
   });
 
   // Toggle resolved mutation
@@ -155,7 +155,7 @@ export function useElementComments(
         queryKey: elementCommentKeys.list(elementId!),
       });
     },
-    onError: onMutationError("Failed to update comment status"),
+    onError: createMutationErrorHandler("Failed to update comment status"),
   });
 
   // Wrapper functions to maintain the same API
@@ -248,7 +248,7 @@ export function useProjectComments(projectId?: string) {
     refetch,
   } = useQuery({
     queryKey: elementCommentKeys.projectList(projectId || ""),
-    queryFn: () => elementCommentService.getProjectComments(projectId || ""),
+    queryFn: () => elementCommentService.listProjectComments(projectId || ""),
     enabled: !!projectId,
     ...QUERY_CONFIG.SHORT,
   });

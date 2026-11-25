@@ -57,13 +57,13 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   // Every action that changes the page is disabled (not hidden) when read-only.
   const canEdit = !isReadOnly && !isLocked;
 
-  const onCopy = () => keyboardEventHandler.copyElement();
-  const onCut = () => keyboardEventHandler.cutElement();
-  const onPaste = () => keyboardEventHandler.pasteElement();
-  const onBringToFront = () => keyboardEventHandler.bringToFront();
-  const onSendToBack = () => keyboardEventHandler.sendToBack();
-  const onDelete = () => keyboardEventHandler.deleteElement();
-  const onSave = () => setSaveElement(getSelectedOrHoveredElement());
+  const handleCopy = () => keyboardEventHandler.copyElement();
+  const handleCut = () => keyboardEventHandler.cutElement();
+  const handlePaste = () => keyboardEventHandler.pasteElement();
+  const handleBringToFront = () => keyboardEventHandler.bringToFront();
+  const handleSendToBack = () => keyboardEventHandler.sendToBack();
+  const handleDelete = () => keyboardEventHandler.deleteElement();
+  const handleSave = () => setSaveElement(getSelectedOrHoveredElement());
 
   const triggerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -89,7 +89,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
         new view.KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       );
     };
-    const onPointerDown = (e: Event) => {
+    const handlePointerDown = (e: Event) => {
       const target = e.target as Element | null;
       // Inside the menu or its "Shared section" submenu (portalled separately).
       if (
@@ -100,18 +100,18 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
         return;
       close();
     };
-    const onKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // Our own synthetic Escape is handled by Radix; ignore it here.
       if (e.key === "Escape" && e.isTrusted) close();
     };
 
     const cleanups: Array<() => void> = [];
     for (const doc of docs) {
-      doc.addEventListener("pointerdown", onPointerDown, true);
-      doc.addEventListener("keydown", onKeyDown, true);
+      doc.addEventListener("pointerdown", handlePointerDown, true);
+      doc.addEventListener("keydown", handleKeyDown, true);
       cleanups.push(() => {
-        doc.removeEventListener("pointerdown", onPointerDown, true);
-        doc.removeEventListener("keydown", onKeyDown, true);
+        doc.removeEventListener("pointerdown", handlePointerDown, true);
+        doc.removeEventListener("keydown", handleKeyDown, true);
       });
     }
     return () => cleanups.forEach((fn) => fn());
@@ -148,17 +148,17 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
                 "min-w-52 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md"
               }
             >
-              <ContextMenuItem onSelect={onCopy}>
+              <ContextMenuItem onSelect={handleCopy}>
                 <Copy />
                 Copy
                 <ContextMenuShortcut>{MOD}C</ContextMenuShortcut>
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={onCut}>
+              <ContextMenuItem disabled={!canEdit} onSelect={handleCut}>
                 <Scissors />
                 Cut
                 <ContextMenuShortcut>{MOD}X</ContextMenuShortcut>
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={onPaste}>
+              <ContextMenuItem disabled={!canEdit} onSelect={handlePaste}>
                 <ClipboardPaste />
                 Paste
                 <ContextMenuShortcut>{MOD}V</ContextMenuShortcut>
@@ -166,11 +166,11 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
 
               <ContextMenuSeparator />
 
-              <ContextMenuItem disabled={!canEdit} onSelect={onBringToFront}>
+              <ContextMenuItem disabled={!canEdit} onSelect={handleBringToFront}>
                 <BringToFront />
                 Bring to front
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={onSendToBack}>
+              <ContextMenuItem disabled={!canEdit} onSelect={handleSendToBack}>
                 <SendToBack />
                 Send to back
               </ContextMenuItem>
@@ -181,7 +181,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
                 <Component />
                 Create component…
               </ContextMenuItem>
-              <ContextMenuItem onSelect={onSave}>
+              <ContextMenuItem onSelect={handleSave}>
                 <Save />
                 Save to my library…
               </ContextMenuItem>
@@ -193,7 +193,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
               <ContextMenuItem
                 variant="destructive"
                 disabled={!canEdit}
-                onSelect={onDelete}
+                onSelect={handleDelete}
               >
                 <Trash2 />
                 Delete

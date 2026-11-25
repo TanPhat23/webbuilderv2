@@ -72,7 +72,7 @@ export function useDeleteProjectWebhook(projectId?: string) {
     mutationFn: async (webhookId): Promise<boolean> => {
       if (!projectId) throw new Error("Project ID is required");
       const token = (await getToken()) ?? "";
-      return webhookService.remove(projectId, webhookId, token);
+      return webhookService.delete(projectId, webhookId, token);
     },
     onSuccess: () => {
       if (projectId) {

@@ -5,7 +5,7 @@ import { setResponseHeader } from "@tanstack/react-start/server";
 import { elementService } from "@/features/elements/services/element.service";
 import { projectService } from "@/features/projects/services/project.service";
 import { isApiError } from "@/utils/errors/api-error";
-import { loadPreviewData, loadSubdomainSiteData } from "../lib/preview-data";
+import { fetchPreviewSite, fetchSubdomainSite } from "../lib/preview-data";
 import { isValidSubdomainLabel } from "@/lib/site-routing";
 
 const isId = (value: unknown): value is string =>
@@ -15,7 +15,7 @@ const isOptionalTarget = (value: unknown): value is string | undefined =>
   value === undefined || (typeof value === "string" && value.length <= 255 && !value.includes(".."));
 
 // The API responses are JSON, though the element and logic types allow unknown fields.
-export const getPreviewData = createServerFn({ method: "GET", strict: { output: false } })
+export const getPreviewSite = createServerFn({ method: "GET", strict: { output: false } })
   .validator((data: { id: string; pageId?: string; pageTarget?: string }) => {
     if (
       !isId(data?.id) ||
@@ -30,17 +30,17 @@ export const getPreviewData = createServerFn({ method: "GET", strict: { output: 
     setResponseHeader("Cache-Control", "private, no-store");
     const { userId, getToken } = await auth();
     try {
-      return await loadPreviewData(id, {
+      return await fetchPreviewSite(id, {
         draftToken: async () => userId ? getToken() : null,
         project: (id, token) => token
           ? projectService.getProjectById(id, token)
-          : projectService.getProjectPublic(id),
+          : projectService.getPublicProject(id),
         pages: (id, token) => token
-          ? projectService.getProjectPagesWithLogic(id, token)
-          : projectService.getPagesPublic(id, { previewCache: !userId }),
+          ? projectService.listProjectPagesWithLogic(id, token)
+          : projectService.listPublicPages(id, { previewCache: !userId }),
         elements: (id, token) => token
-          ? elementService.getElements(id, token)
-          : elementService.getElementsPublic(id, { previewCache: !userId }),
+          ? elementService.listProjectElements(id, token)
+          : elementService.listPublicElements(id, { previewCache: !userId }),
       }, pageTarget ?? pageId);
     } catch (error) {
       if (isApiError(error) && error.status === 404) throw notFound();
@@ -48,7 +48,7 @@ export const getPreviewData = createServerFn({ method: "GET", strict: { output: 
     }
   });
 
-export const getSubdomainSiteData = createServerFn({ method: "GET", strict: { output: false } })
+export const getSubdomainSite = createServerFn({ method: "GET", strict: { output: false } })
   .validator((data: { subdomain: string; pathname?: string }) => {
     const clean = typeof data?.subdomain === "string" ? data.subdomain.trim().toLowerCase() : "";
     if (!isValidSubdomainLabel(clean) || !isOptionalTarget(data?.pathname)) {
@@ -59,10 +59,10 @@ export const getSubdomainSiteData = createServerFn({ method: "GET", strict: { ou
   .handler(async ({ data: { subdomain, pathname } }) => {
     setResponseHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
     try {
-      return await loadSubdomainSiteData(subdomain, {
-        projectBySubdomain: (sub) => projectService.getProjectPublicBySubdomain(sub),
-        pages: (projectId) => projectService.getPagesPublic(projectId, { previewCache: true }),
-        elements: (projectId) => elementService.getElementsPublic(projectId, { previewCache: true }),
+      return await fetchSubdomainSite(subdomain, {
+        projectBySubdomain: (sub) => projectService.getPublicProjectBySubdomain(sub),
+        pages: (projectId) => projectService.listPublicPages(projectId, { previewCache: true }),
+        elements: (projectId) => elementService.listPublicElements(projectId, { previewCache: true }),
       }, pathname);
     } catch (error) {
       if (isApiError(error) && error.status === 404) throw notFound();

@@ -1,5 +1,5 @@
 import type { EditorElement } from "@/types/global.type";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 
 export type ElementOperation = {
   type: "element:create" | "element:update" | "element:move" | "element:delete";
@@ -30,30 +30,30 @@ export function applyElementOperation(elements: EditorElement[], operation: Elem
   const payload = operation.payload;
   if (operation.type === "element:create") {
     const element = payload.element as EditorElement | undefined;
-    if (!element || !element.id || ElementTreeHelper.findById(elements, element.id)) return elements;
+    if (!element || !element.id || elementTree.findById(elements, element.id)) return elements;
     const position = typeof payload.position === "number" ? payload.position :
       typeof element.orderKey === "string" && typeof element.order === "number" ? element.order : undefined;
     return position === undefined
-      ? ElementTreeHelper.mapAddChildById(elements, element.parentId, element)
-      : ElementTreeHelper.mapInsertAt(elements, element.parentId, position, element);
+      ? elementTree.mapAddChildById(elements, element.parentId, element)
+      : elementTree.mapInsertAt(elements, element.parentId, position, element);
   }
   const id = typeof payload.id === "string" ? payload.id : "";
   if (!id) return elements;
-  if (operation.type === "element:delete") return ElementTreeHelper.mapDeleteById(elements, id);
+  if (operation.type === "element:delete") return elementTree.mapDeleteById(elements, id);
   if (operation.type === "element:move") {
-    const element = ElementTreeHelper.findById(elements, id);
+    const element = elementTree.findById(elements, id);
     if (!element) return elements;
     const parentId = typeof payload.parentId === "string" && payload.parentId ? payload.parentId : null;
     if (parentId) {
-      const parent = ElementTreeHelper.findById(elements, parentId);
-      if (!parent || !Array.isArray((parent as { elements?: unknown }).elements) || ElementTreeHelper.findById([element], parentId)) return elements;
+      const parent = elementTree.findById(elements, parentId);
+      if (!parent || !Array.isArray((parent as { elements?: unknown }).elements) || elementTree.findById([element], parentId)) return elements;
     }
-    const without = ElementTreeHelper.mapDeleteById(elements, id);
+    const without = elementTree.mapDeleteById(elements, id);
     const order = typeof payload.order === "number" ? payload.order : 0;
     const orderKey = typeof payload.orderKey === "string" ? payload.orderKey : element.orderKey;
-    return ElementTreeHelper.mapInsertAt(without, parentId, order, { ...element, parentId: parentId ?? undefined, order, orderKey } as EditorElement);
+    return elementTree.mapInsertAt(without, parentId, order, { ...element, parentId: parentId ?? undefined, order, orderKey } as EditorElement);
   }
-  return ElementTreeHelper.mapUpdateById(elements, id, (element) => {
+  return elementTree.mapUpdateById(elements, id, (element) => {
     const propertyNames = ["name", "content", "src", "href", "tailwindStyles", "isLocked"];
     const properties = isObject(payload.properties) ? payload.properties : {};
     const patch: ObjectMap = {};

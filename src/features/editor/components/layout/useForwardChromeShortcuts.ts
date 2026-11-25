@@ -13,7 +13,7 @@ export function useForwardChromeShortcuts(
     if (!iframe) return;
     let iframeDoc: Document | null = null;
 
-    const onKey = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target) || !isChromeShortcut(e)) return;
       e.preventDefault();
       document.dispatchEvent(
@@ -31,9 +31,9 @@ export function useForwardChromeShortcuts(
 
     const attach = () => {
       try {
-        iframeDoc?.removeEventListener("keydown", onKey);
+        iframeDoc?.removeEventListener("keydown", handleKeyDown);
         iframeDoc = iframe.contentDocument;
-        iframeDoc?.addEventListener("keydown", onKey);
+        iframeDoc?.addEventListener("keydown", handleKeyDown);
       } catch {
         // cross-origin iframe: nothing to forward
       }
@@ -45,7 +45,7 @@ export function useForwardChromeShortcuts(
     return () => {
       iframe.removeEventListener("load", attach);
       try {
-        iframeDoc?.removeEventListener("keydown", onKey);
+        iframeDoc?.removeEventListener("keydown", handleKeyDown);
       } catch {
         // ignore cross-origin cleanup errors
       }

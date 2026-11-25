@@ -24,7 +24,7 @@ redirectModules({
 const { authState } = await import('./support/test-clerk-stub');
 const { routerState } = await import('./support/editor-router-stub');
 const { useCanvasDragDrop } = await import('../src/features/editor/components/canvas/useCanvasDragDrop');
-const SnapshotManager = (await import('../src/features/editor/components/sidebar/SnapshotManager')).default;
+const VersionHistoryPanel = (await import('../src/features/editor/components/sidebar/SnapshotManager')).default;
 const { useElementStore } = await import('../src/features/editor/store/element-store');
 const { useSelectionStore } = await import('../src/features/editor/store/selection-store');
 const { projectKeys } = await import('../src/features/projects/hooks/useProjects');
@@ -57,7 +57,7 @@ beforeEach(() => {
   authState.isLoaded = true;
   console.error = () => {};
   useElementStore.getState().beginPage('proj-1', 'page-1', false);
-  useElementStore.getState().loadElements([], true);
+  useElementStore.getState().setElements([], true);
   useSelectionStore.getState().setSelectedElement(undefined);
   globalThis.fetch = (async () => Response.json([])) as typeof fetch;
 });
@@ -79,7 +79,7 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
     const child = makeText('el-child');
     const parent = makeFrame('el-parent', [child]);
     const sibling = makeText('el-sibling');
-    useElementStore.getState().loadElements([parent, sibling], true);
+    useElementStore.getState().setElements([parent, sibling], true);
 
     const dndRef: { current: ReturnType<typeof useCanvasDragDrop> | undefined } = { current: undefined };
     function CanvasHost() {
@@ -150,22 +150,22 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
     const getDrop = () => dndRef.current?.drop ?? null;
 
     await act(() => {
-      dndRef.current?.onDragStart(dragEvent(parentNode));
+      dndRef.current?.handleDragStart(dragEvent(parentNode));
     });
     assert.equal(parentNode.getAttribute('data-dragging'), 'true');
 
     await act(() => {
-      dndRef.current?.onDragOver(dragEvent(childNode));
+      dndRef.current?.handleDragOver(dragEvent(childNode));
     });
     assert.ok(getDrop() === null);
 
     await act(() => {
-      dndRef.current?.onDragOver(dragEvent(siblingNode));
+      dndRef.current?.handleDragOver(dragEvent(siblingNode));
     });
     assert.equal(getDrop()?.targetId, 'el-sibling');
 
     await act(() => {
-      dndRef.current?.onDrop(dragEvent(siblingNode));
+      dndRef.current?.handleDrop(dragEvent(siblingNode));
       dndRef.current?.resetDrag();
     });
     assert.equal(parentNode.getAttribute('data-dragging'), null);
@@ -175,11 +175,37 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
     const idx = types.indexOf('elementid');
     if (idx >= 0) types.splice(idx, 1);
     await act(() => {
-      dndRef.current?.onDragOver(dragEvent(siblingNode));
-      dndRef.current?.onDrop(dragEvent(siblingNode));
-      dndRef.current?.onDragLeave(dragEvent(siblingNode, { relatedTarget: document.body }));
+      dndRef.current?.handleDragOver(dragEvent(siblingNode));
+      dndRef.current?.handleDrop(dragEvent(siblingNode));
+      dndRef.current?.handleDragLeave(dragEvent(siblingNode, { relatedTarget: document.body }));
     });
     assert.equal(useElementStore.getState().elements.length, 3);
+
+    dt.setData('elementType', 'Heading');
+    await act(() => {
+      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
+      dndRef.current?.handleDragLeave(dragEvent(parentNode, { relatedTarget: null }));
+      dndRef.current?.handleDrop(dragEvent(parentNode.firstChild ?? parentNode, { clientX: 60, clientY: 50 }));
+    });
+    const updatedParent = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
+    assert.ok(updatedParent?.elements?.some((el) => el.type === 'Heading'));
+
+    const { setElementTypeDrag, getActiveDragPayload } = await import('../src/features/editor/utils/element/dragPayload');
+    const emptyDt = {
+      types: ['elementtype'],
+      dropEffect: 'none',
+      effectAllowed: 'uninitialized',
+      setData() {},
+      getData: () => '',
+    } as unknown as DataTransfer;
+    setElementTypeDrag(emptyDt, 'Button');
+    await act(() => {
+      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50, dataTransfer: emptyDt }));
+      dndRef.current?.handleDrop(dragEvent(parentNode, { clientX: 60, clientY: 50, dataTransfer: emptyDt }));
+    });
+    const afterFallback = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
+    assert.ok(afterFallback?.elements?.some((el) => el.type === 'Button'));
+    assert.equal(getActiveDragPayload(), null);
   } finally {
     (globalThis as Record<string, unknown>).CSS = prevCss;
     await cleanup();
@@ -187,7 +213,7 @@ test('useCanvasDragDrop computes drop indicators, handles move and create drops,
   }
 });
 
-test('SnapshotManager lists saved versions and saves or restores snapshots', async () => {
+test('VersionHistoryPanel lists saved versions and saves or restores snapshots', async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity, staleTime: Infinity } },
   });
@@ -237,9 +263,9 @@ test('SnapshotManager lists saved versions and saves or restores snapshots', asy
         },
       ],
     );
-    useElementStore.getState().loadElements([makeText('live-el')], true);
+    useElementStore.getState().setElements([makeText('live-el')], true);
 
-    const r = await render(h(QueryClientProvider, { client }, h(SnapshotManager)));
+    const r = await render(h(QueryClientProvider, { client }, h(VersionHistoryPanel)));
     assert.ok(r.container.textContent?.includes('Version 1'));
 
     const saveBtn = $$q<HTMLButtonElement>(r.container, 'button').find((b) =>

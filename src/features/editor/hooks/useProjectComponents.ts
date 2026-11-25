@@ -76,7 +76,7 @@ export function useProjectComponents(enabled = true) {
   const masterPageIds = useMemo(() => pages.map((page) => page.Id).sort(), [pages]);
   const query = useQuery({
     queryKey: [...projectComponentElementsKey(projectId), masterPageIds.join(",")],
-    queryFn: () => elementService.getElementsByPages(projectId!, masterPageIds),
+    queryFn: () => elementService.listElementsByPages(projectId!, masterPageIds),
     enabled: enabled && !!projectId && masterPageIds.length > 0,
     refetchInterval: enabled ? 5_000 : false,
     // A new component page changes the key; keep showing the old masters meanwhile.

@@ -31,7 +31,7 @@ async function setup() {
   FakeWebSocket.instances = [];
   const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
   const errors: { message?: string; code?: string }[] = [];
-  const state: any = { elements: [], loadElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
+  const state: any = { elements: [], setElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u',
     getTicket: async () => 'ticket-1', getElementState: () => state,

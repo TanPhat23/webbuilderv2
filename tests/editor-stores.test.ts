@@ -19,7 +19,7 @@ const { useImageStore } = await import('../src/features/images/store/image-store
 const { useElementStore } = await import('../src/features/editor/store/element-store');
 const { useSelectionStore } = await import('../src/features/editor/store/selection-store');
 const selectors = await import('../src/features/editor/store/selectors/selection-selectors');
-const { ElementTreeHelper } = await import('../src/features/elements/lib/element-tree-helper');
+const { elementTree } = await import('../src/features/elements/lib/element-tree-helper');
 const { disposeClients, renderHook } = await import('./support/test-hook-harness');
 
 after(disposeClients);
@@ -129,16 +129,16 @@ test('mouse store tracks cursors, selections and users per collaborator', () => 
   );
 });
 
-test('syncFromAwareness mirrors remote cursors and selections', () => {
+test('syncFromPresence mirrors remote cursors and selections', () => {
   const s = MouseStore;
   s.getState().clear();
   s.getState().setRemoteUsers({ stale: { x: 1, y: 1 } });
 
-  s.getState().syncFromAwareness(null);
-  s.getState().syncFromAwareness({});
+  s.getState().syncFromPresence(null);
+  s.getState().syncFromPresence({});
   assert.deepEqual(s.getState().remoteUsers, { stale: { x: 1, y: 1 } }, 'missing awareness is a no-op');
 
-  s.getState().syncFromAwareness({
+  s.getState().syncFromPresence({
     getStates: () =>
       new Map<unknown, never>([
         [1, { cursor: { x: 10, y: 20 }, selectedElement: 'e1' } as never],
@@ -250,30 +250,30 @@ test('selection selectors read ids, flags, elements and drag state from the stor
   assert.equal(actions.setDraggedOverElement, setDraggedOverElement);
 });
 
-test('ElementTreeHelper.findLocation reports parent id and index, or undefined', () => {
+test('elementTree.findLocation reports parent id and index, or undefined', () => {
   const tree = [
     node('a', 'Text'),
     node('b', 'Frame', [node('b1', 'Text'), node('b2', 'Frame', [node('b2a', 'Text')])]),
   ];
-  assert.deepEqual(ElementTreeHelper.findLocation(tree, 'a'), { parentId: null, index: 0 });
-  assert.deepEqual(ElementTreeHelper.findLocation(tree, 'b'), { parentId: null, index: 1 });
-  assert.deepEqual(ElementTreeHelper.findLocation(tree, 'b2'), { parentId: 'b', index: 1 });
-  assert.deepEqual(ElementTreeHelper.findLocation(tree, 'b2a'), { parentId: 'b2', index: 0 });
-  assert.equal(ElementTreeHelper.findLocation(tree, 'nope'), undefined);
+  assert.deepEqual(elementTree.findLocation(tree, 'a'), { parentId: null, index: 0 });
+  assert.deepEqual(elementTree.findLocation(tree, 'b'), { parentId: null, index: 1 });
+  assert.deepEqual(elementTree.findLocation(tree, 'b2'), { parentId: 'b', index: 1 });
+  assert.deepEqual(elementTree.findLocation(tree, 'b2a'), { parentId: 'b2', index: 0 });
+  assert.equal(elementTree.findLocation(tree, 'nope'), undefined);
 });
 
-test('ElementTreeHelper.mapInsertAfterId inserts next to the target at any depth', () => {
+test('elementTree.mapInsertAfterId inserts next to the target at any depth', () => {
   const tree = [node('a', 'Text'), node('b', 'Frame', [node('b1', 'Text'), node('b2', 'Text')])];
   const ids = (list: { id: string; elements?: unknown[] }[]) => list.map((e) => e.id);
 
-  const root = ElementTreeHelper.mapInsertAfterId(tree, 'a', node('new')) as never as { id: string; parentId?: string }[];
+  const root = elementTree.mapInsertAfterId(tree, 'a', node('new')) as never as { id: string; parentId?: string }[];
   assert.deepEqual(ids(root), ['a', 'new', 'b']);
   assert.equal(root[1].parentId, undefined);
 
-  const nested = ElementTreeHelper.mapInsertAfterId(tree, 'b1', node('new')) as never as { id: string; elements: { id: string; parentId?: string }[] }[];
+  const nested = elementTree.mapInsertAfterId(tree, 'b1', node('new')) as never as { id: string; elements: { id: string; parentId?: string }[] }[];
   assert.deepEqual(ids(nested[1].elements as never), ['b1', 'new', 'b2']);
   assert.equal(nested[1].elements[1].parentId, 'b');
   assert.deepEqual(ids(tree as never), ['a', 'b'], 'input is not mutated');
 
-  assert.equal(ElementTreeHelper.mapInsertAfterId(tree, 'ghost', node('new')), tree, 'missing target returns the same array');
+  assert.equal(elementTree.mapInsertAfterId(tree, 'ghost', node('new')), tree, 'missing target returns the same array');
 });

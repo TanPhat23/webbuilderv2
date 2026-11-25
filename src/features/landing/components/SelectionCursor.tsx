@@ -67,7 +67,7 @@ export default function SelectionCursor() {
       if (!frame) frame = requestAnimationFrame(apply);
     };
 
-    const onMove = (event: PointerEvent) => {
+    const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return;
       px = event.clientX;
       py = event.clientY;
@@ -86,17 +86,17 @@ export default function SelectionCursor() {
       }
       schedule();
     };
-    const onLeave = () => opacity.set(0);
+    const handlePointerLeave = () => opacity.set(0);
 
-    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule);
-    document.documentElement.addEventListener("pointerleave", onLeave);
+    document.documentElement.addEventListener("pointerleave", handlePointerLeave);
     return () => {
-      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
+      document.documentElement.removeEventListener("pointerleave", handlePointerLeave);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [reduce, x, y, w, h, opacity]);

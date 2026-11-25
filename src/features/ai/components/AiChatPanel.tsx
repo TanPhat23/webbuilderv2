@@ -20,7 +20,7 @@ import { useElements, useSelectedElementWithSetter } from "@/features/editor";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { parseCode } from "@/features/editor/lib/code/parseCode";
 import { ElementStore } from "@/features/editor/store/element-store";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import type { EditorElement } from "@/types/global.type";
 import { cn } from "@/lib/utils";
 import type {
@@ -343,7 +343,7 @@ export default function AiChatPanel({
       ) {
         const replacement = parsed.elements[0];
         if (!replacement) return;
-        afterTree = elementHelper.mapUpdateById(
+        afterTree = elementUtils.mapUpdateById(
           beforeTree,
           selectedElement.id,
           () => ({

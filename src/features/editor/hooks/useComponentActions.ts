@@ -16,7 +16,7 @@ import { elementService } from "@/features/elements/services/element.service";
 import { createComponentMaster } from "../services/component-master.service";
 import { ElementStore } from "../store/element-store";
 import { useSelectionStore } from "../store/selection-store";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { useEditorPermissions } from "./useEditorPermissions";
 import { projectComponentElementsKey, projectElementsKey, rememberPendingMaster } from "./useProjectComponents";
 
@@ -41,7 +41,7 @@ export function useComponentActions() {
     if (!trimmed || trimmed.length > 255) throw new Error("Enter a name from 1 to 255 characters.");
     const { fromElementId, snapshot } = options;
     const store = ElementStore.getState();
-    const original = fromElementId ? elementHelper.findById(store.elements, fromElementId) : undefined;
+    const original = fromElementId ? elementUtils.findById(store.elements, fromElementId) : undefined;
     if (fromElementId && (!canReplace || !original || original.pageId !== pageId)) {
       throw new Error("Select an element on the open page.");
     }
@@ -54,7 +54,7 @@ export function useComponentActions() {
           const pages = queryClient.getQueryData<Page[]>(projectKeys.pages(projectId));
           const routes = new Set(pages?.filter((page) => page.Type !== "cp" && !page.DeletedAt).map(({ Id }) => Id));
           const saved = await queryClient.fetchQuery({
-            queryKey: projectElementsKey(projectId), queryFn: () => elementService.getElements(projectId),
+            queryKey: projectElementsKey(projectId), queryFn: () => elementService.listProjectElements(projectId),
           });
           [source] = resolveSharedSections([source], saved, routes);
         }
@@ -74,14 +74,14 @@ export function useComponentActions() {
         };
         const live = currentPage();
         if (!live || !stageElement || !deleteElement) throw new Error("The open page changed while creating the component.");
-        const location = original && elementHelper.findLocation(live.elements, original.id);
-        const current = original && elementHelper.findById(live.elements, original.id);
+        const location = original && elementUtils.findLocation(live.elements, original.id);
+        const current = original && elementUtils.findById(live.elements, original.id);
         if (original && (!location || !isEqual(current, original))) {
           throw new Error("The selected element changed. Try again.");
         }
 
         const parent = snapshot && live.isComponentPage ? live.elements[0] : undefined;
-        if (parent && !elementHelper.isContainerElement(parent)) {
+        if (parent && !elementUtils.isContainerElement(parent)) {
           throw new Error("Add a container to the master before inserting another component.");
         }
         const parentId = location?.parentId ?? parent?.id ?? null;
@@ -95,8 +95,8 @@ export function useComponentActions() {
           ...(original && { removeOriginal: async () => {
             const open = currentPage();
             if (!open) throw new Error("The open page changed while creating the component.");
-            const savedOriginal = elementHelper.findById(open.elements, original.id);
-            const savedLocation = elementHelper.findLocation(open.elements, original.id);
+            const savedOriginal = elementUtils.findById(open.elements, original.id);
+            const savedLocation = elementUtils.findLocation(open.elements, original.id);
             if (!isEqual(savedOriginal, original) || !isEqual(savedLocation, location)) {
               throw new RealtimeRequestRejected("The selected element changed. Try again.");
             }
@@ -109,10 +109,10 @@ export function useComponentActions() {
         });
 
         const updated = currentPage();
-        if (updated && elementHelper.findById(updated.elements, linked.id)) {
+        if (updated && elementUtils.findById(updated.elements, linked.id)) {
           const previous = original
-            ? elementHelper.mapUpdateById(updated.elements, linked.id, () => original)
-            : elementHelper.mapDeleteById(updated.elements, linked.id);
+            ? elementUtils.mapUpdateById(updated.elements, linked.id, () => original)
+            : elementUtils.mapDeleteById(updated.elements, linked.id);
           updated.rememberTree(previous);
           useSelectionStore.setState({ selectedElementId: linked.id });
         }

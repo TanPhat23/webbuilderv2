@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   ApiError, errorMessage, isRetryable, networkError, parseErrorResponse,
 } from '../src/utils/errors/api-error';
-import { classifyClose, handleServerError } from '../src/features/collaboration/lib/realtime/connectionErrors';
+import { classifyClose, classifyServerError } from '../src/features/collaboration/lib/realtime/connectionErrors';
 
 test('parses the Go error shape', () => {
   const e = parseErrorResponse(403, JSON.stringify({ error: 'Access denied', requestId: 'r1' }));
@@ -61,14 +61,14 @@ test('close codes: transient vs fatal', () => {
 });
 
 test('server error codes map to actions', () => {
-  assert.equal(handleServerError('JOIN_REQUIRED').rejoin, true);
-  assert.equal(handleServerError('NOT_FOUND').blocking, true);
+  assert.equal(classifyServerError('JOIN_REQUIRED').rejoin, true);
+  assert.equal(classifyServerError('NOT_FOUND').blocking, true);
   // A teammate deleted the element: not a missing page.
   for (const m of ['element not found in cache', 'element not found', 'parent not found']) {
-    const r = handleServerError('NOT_FOUND', m);
+    const r = classifyServerError('NOT_FOUND', m);
     assert.equal(r.blocking, false);
     assert.match(r.message, /teammate removed/);
   }
-  assert.equal(handleServerError('VALIDATION_ERROR', 'bad').message, 'bad');
-  assert.equal(handleServerError('PROCESS_ERROR').blocking, false);
+  assert.equal(classifyServerError('VALIDATION_ERROR', 'bad').message, 'bad');
+  assert.equal(classifyServerError('PROCESS_ERROR').blocking, false);
 });

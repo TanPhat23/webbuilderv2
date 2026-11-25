@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { normalizeCssInput, splitNumber, stepCssValue } from "./styleModel";
 import type { StyleProps } from "./useStyleProps";
 
-type PropInputProps = {
+type StylePropertyInputProps = {
   value: string | number | undefined;
   placeholder?: string;
   prefix: React.ReactNode;
@@ -24,7 +24,7 @@ type PropInputProps = {
   className?: string;
 };
 
-export function PropInput({
+export function StylePropertyInput({
   value,
   placeholder,
   prefix,
@@ -36,7 +36,7 @@ export function PropInput({
   onCommit,
   disabled,
   className,
-}: PropInputProps) {
+}: StylePropertyInputProps) {
   const raw = value === undefined ? "" : String(value);
   const [draft, setDraft] = useState<string | null>(null);
   const [invalid, setInvalid] = useState(false);
@@ -174,7 +174,7 @@ export function PropInput({
   );
 }
 
-/** A PropInput bound to one style key of the selected element. */
+/** A StylePropertyInput bound to one style key of the selected element. */
 export function StyleField({
   sp,
   k,
@@ -194,7 +194,7 @@ export function StyleField({
 }) {
   const inherited = sp.inherited[k];
   return (
-    <PropInput
+    <StylePropertyInput
       value={sp.values[k]}
       placeholder={
         inherited !== undefined

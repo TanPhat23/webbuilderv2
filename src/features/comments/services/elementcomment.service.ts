@@ -9,9 +9,9 @@ interface IElementCommentService {
     data: CreateElementCommentRequest,
   ) => Promise<ElementComment>;
   getElementCommentById: (commentId: string) => Promise<ElementComment>;
-  getElementComments: (elementId: string) => Promise<ElementCommentResponse>;
-  getProjectComments: (projectId: string) => Promise<ElementCommentResponse>;
-  getCommentsByAuthorId: (authorId: string) => Promise<ElementCommentResponse>;
+  listElementComments: (elementId: string) => Promise<ElementCommentResponse>;
+  listProjectComments: (projectId: string) => Promise<ElementCommentResponse>;
+  listCommentsByAuthorId: (authorId: string) => Promise<ElementCommentResponse>;
   updateElementComment: (
     commentId: string,
     data: UpdateElementCommentRequest,
@@ -43,7 +43,7 @@ export const elementCommentService: IElementCommentService = {
   },
 
   // Get all comments for a specific element
-  getElementComments: async (
+  listElementComments: async (
     elementId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(
@@ -54,7 +54,7 @@ export const elementCommentService: IElementCommentService = {
   },
 
   // Get all comments for a project
-  getProjectComments: async (
+  listProjectComments: async (
     projectId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(
@@ -65,7 +65,7 @@ export const elementCommentService: IElementCommentService = {
   },
 
   // Get all comments by a specific author
-  getCommentsByAuthorId: async (
+  listCommentsByAuthorId: async (
     authorId: string,
   ): Promise<ElementCommentResponse> => {
     return apiClient.get<ElementCommentResponse>(

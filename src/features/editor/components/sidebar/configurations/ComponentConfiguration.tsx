@@ -15,7 +15,7 @@ import { useProjectComponents } from "../../../hooks/useProjectComponents";
 import { useEditorPermissions } from "../../../hooks/useEditorPermissions";
 import { useSelectionStore } from "../../../store/selection-store";
 import { ElementStore } from "../../../store/element-store";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 
 const fieldLabels: Record<keyof ComponentOverride, string> = {
   text: "Text", src: "Image URL", alt: "Alt text", href: "Link URL",
@@ -36,7 +36,7 @@ export function ComponentConfiguration({ element }: { element: EditorElement }) 
   if (root?.id === setting.rootId) {
     const resolved = resolveComponents([root], source.elements, source.pageIds);
     visitComponentTree([root], (node) => {
-      const baseline = elementHelper.findById(resolved, node.id);
+      const baseline = elementUtils.findById(resolved, node.id);
       if (baseline && componentOverrideFields(baseline).length) nodes.push(baseline);
     });
   }
@@ -69,10 +69,10 @@ export function ComponentConfiguration({ element }: { element: EditorElement }) 
   function detachInstance() {
     if (!editable) return;
     const store = ElementStore.getState();
-    const live = elementHelper.findById(store.elements, element.id);
+    const live = elementUtils.findById(store.elements, element.id);
     if (!live || !componentSetting(live)) return;
     const next = detach(live, source.elements, source.pageIds);
-    store.replaceTree(elementHelper.mapUpdateById(store.elements, element.id, () => next));
+    store.replaceTree(elementUtils.mapUpdateById(store.elements, element.id, () => next));
     useSelectionStore.setState({ selectedElementId: next.id });
   }
 

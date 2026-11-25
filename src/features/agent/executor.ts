@@ -20,8 +20,8 @@ import {
   componentRoots, componentSetting, detach, usageCount, visitComponentTree,
   type ComponentSource,
 } from "@/features/projects/lib/components";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
-import { toTree } from "./readTree";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
+import { buildElementTree } from "./readTree";
 
 /** A change to the project's shared styling. A null theme value removes that key. */
 export interface ProjectStylePatch {
@@ -160,7 +160,7 @@ export function createExecutor(host: AgentHost) {
     const name = typeof args.name === "string" ? args.name.trim() : "";
     if (!name || name.length > MAX_PAGE_NAME) return error("invalid_edit", "Nothing was done.", [{ path: "name", message: "must be 1 to 255 characters" }]);
     const from = args.fromElementId;
-    if (from !== undefined && (typeof from !== "string" || !elementHelper.findById(host.getElements(), from))) {
+    if (from !== undefined && (typeof from !== "string" || !elementUtils.findById(host.getElements(), from))) {
       return error("invalid_edit", "Nothing was done.", [{ path: "fromElementId", message: "must identify an element on the open page" }]);
     }
     const result = await host.createComponent(name, from);
@@ -215,7 +215,7 @@ export function createExecutor(host: AgentHost) {
         const elements = host.getElements();
         visitComponentTree(elements, (element) => { if (componentSetting(element)) hasComponents = true; });
         const names = hasComponents ? new Map((await host.getComponents()).pages.map(({ id, name }) => [id, name])) : undefined;
-        return { ok: true, result: { pageId, source: "editor", elements: toTree(elements, names) } };
+        return { ok: true, result: { pageId, source: "editor", elements: buildElementTree(elements, names) } };
       }
       case "create_component":
         return createComponent(args);
@@ -225,10 +225,10 @@ export function createExecutor(host: AgentHost) {
         if (host.getPageId() !== pageId || !host.isReady()) return error("page_not_open", "The open page changed.");
         if (!host.canEdit()) return error("forbidden", "The open page is no longer editable.");
         const tree = host.getElements();
-        const element = typeof id === "string" && elementHelper.findById(tree, id);
+        const element = typeof id === "string" && elementUtils.findById(tree, id);
         if (!element || !componentSetting(element)) return error("invalid_edit", "Select a component instance.", [{ path: "elementId", message: "must identify a component instance" }]);
         const local = detach(element, source.elements, source.pageIds);
-        const next = elementHelper.mapUpdateById(tree, element.id, () => local);
+        const next = elementUtils.mapUpdateById(tree, element.id, () => local);
         if (host.playTreeChange) {
           host.playTreeChange(tree, next, "Component detached");
         } else {

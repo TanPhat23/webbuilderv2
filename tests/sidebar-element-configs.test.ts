@@ -70,7 +70,7 @@ function withProviders(client: QueryClient, child: React.ReactNode) {
 
 beforeEach(() => {
   console.error = () => {};
-  useElementStore.getState().loadElements([], true);
+  useElementStore.getState().setElements([], true);
   useSelectionStore.getState().setSelectedElement(undefined);
   globalThis.fetch = (async () => Response.json([])) as typeof fetch;
 });
@@ -121,7 +121,7 @@ test('ButtonConfiguration and LinkConfiguration update href, target, and rel att
       tailwindStyles: '',
       settings: { target: '_self' },
     };
-    useElementStore.getState().loadElements([btn], true);
+    useElementStore.getState().setElements([btn], true);
     useSelectionStore.getState().setSelectedElement(btn);
 
     const rBtn = await render(
@@ -141,7 +141,7 @@ test('ButtonConfiguration and LinkConfiguration update href, target, and rel att
       tailwindStyles: '',
       settings: {},
     };
-    useElementStore.getState().loadElements([lnk], true);
+    useElementStore.getState().setElements([lnk], true);
     useSelectionStore.getState().setSelectedElement(lnk);
 
     const rLnk = await render(
@@ -170,7 +170,7 @@ test('FormConfiguration, TextareaConfiguration, TableConfiguration, and SelectCo
       settings: { action: '/api/submit', method: 'post' },
       elements: [],
     };
-    useElementStore.getState().loadElements([formEl], true);
+    useElementStore.getState().setElements([formEl], true);
     useSelectionStore.getState().setSelectedElement(formEl);
 
     const rForm = await render(
@@ -191,7 +191,7 @@ test('FormConfiguration, TextareaConfiguration, TableConfiguration, and SelectCo
       tailwindStyles: '',
       settings: { name: 'bio', rows: 4, wrap: 'soft', resize: 'vertical' },
     };
-    useElementStore.getState().loadElements([taEl], true);
+    useElementStore.getState().setElements([taEl], true);
     useSelectionStore.getState().setSelectedElement(taEl);
 
     const rTa = await render(
@@ -209,7 +209,7 @@ test('FormConfiguration, TextareaConfiguration, TableConfiguration, and SelectCo
       settings: { caption: '', columns: [] },
       elements: [],
     };
-    useElementStore.getState().loadElements([tblEl], true);
+    useElementStore.getState().setElements([tblEl], true);
     useSelectionStore.getState().setSelectedElement(tblEl);
 
     const rTbl = await render(
@@ -235,7 +235,7 @@ test('FormConfiguration, TextareaConfiguration, TableConfiguration, and SelectCo
       },
       elements: [],
     };
-    useElementStore.getState().loadElements([selEl], true);
+    useElementStore.getState().setElements([selEl], true);
     useSelectionStore.getState().setSelectedElement(selEl);
 
     const rSel = await render(
@@ -265,7 +265,7 @@ test('CMSConfiguration renders Grid and Single Item controls from seeded CMS con
       settings: { contentTypeId: 'ct-1', displayMode: 'grid', limit: 6 },
       elements: [],
     };
-    useElementStore.getState().loadElements([gridEl], true);
+    useElementStore.getState().setElements([gridEl], true);
     useSelectionStore.getState().setSelectedElement(gridEl);
 
     const rGrid = await render(
@@ -284,7 +284,7 @@ test('CMSConfiguration renders Grid and Single Item controls from seeded CMS con
       settings: { contentTypeId: 'ct-1', displayMode: 'single', itemSlug: 'hello-world' },
       elements: [],
     };
-    useElementStore.getState().loadElements([itemEl], true);
+    useElementStore.getState().setElements([itemEl], true);
     useSelectionStore.getState().setSelectedElement(itemEl);
 
     const rItem = await render(

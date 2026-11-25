@@ -45,7 +45,7 @@ export function ImageSourceTabs({
   const isExternalUrl = isExternalMedia(src);
   const fileName = extractImageFileName(src);
 
-  const processFile = async (file: File) => {
+  const validateAndUploadImage = async (file: File) => {
     if (isUploading) return;
     const validation = ImageFileSchema.safeParse({ file });
     if (!validation.success) {
@@ -74,14 +74,14 @@ export function ImageSourceTabs({
 
   const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) await processFile(file);
+    if (file) await validateAndUploadImage(file);
   };
 
   const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file) await processFile(file);
+    if (file) await validateAndUploadImage(file);
   };
 
   return (

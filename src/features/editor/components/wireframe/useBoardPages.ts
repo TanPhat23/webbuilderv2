@@ -17,7 +17,7 @@ export function useBoardPages() {
   // Keyed by the open page so switching pages refetches the saved state.
   const query = useQuery({
     queryKey: ["wireframe-elements", projectId, activePageId],
-    queryFn: () => elementService.getElements(projectId as string),
+    queryFn: () => elementService.listProjectElements(projectId as string),
     enabled: Boolean(projectId),
     placeholderData: keepPreviousData,
     staleTime: 0,

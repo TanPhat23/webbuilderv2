@@ -2,7 +2,7 @@ import type { EditorElement } from "@/types/global.type";
 import React, { createContext, useContext } from "react";
 import { getView } from "@/features/elements/registry";
 import { getViewChildren } from "@/features/elements/element-children";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { isMissingComponent } from "@/features/projects/lib/components";
 import { PreviewCMSCollection, PreviewCMSItem } from "./PreviewCMSContent";
 
@@ -32,7 +32,7 @@ function PreviewElement({ element, data, draggableRoot }: {
     id: element.id,
     "data-element-id": element.id,
     className: element.tailwindStyles,
-    style: elementHelper.getSafeStyles(element),
+    style: elementUtils.getSafeStyles(element),
     draggable: draggableRoot,
   };
   const props = { rootProps, mode: "preview" as const };

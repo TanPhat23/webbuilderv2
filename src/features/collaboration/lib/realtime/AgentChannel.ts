@@ -9,12 +9,12 @@ export interface AgentChannelOptions {
 /**
  * Routes `agent:request` messages (a CLI's tool call, relayed by the realtime
  * service) to the executor and sends the outcome back as `agent:response`.
- * Same shape as LogicChannel: handle() returns true when the message was ours.
+ * Same shape as LogicChannel: dispatchMessage() returns true when the message was ours.
  */
 export class AgentChannel {
   constructor(private readonly options: AgentChannelOptions) {}
 
-  handle(envelope: WSEnvelope<unknown>): boolean {
+  dispatchMessage(envelope: WSEnvelope<unknown>): boolean {
     if (envelope.type !== WS_MESSAGE.AGENT_REQUEST) return false;
     const requestId = envelope.requestId;
     if (!requestId) return true;

@@ -15,17 +15,17 @@ import CollaboratorsTable from "./CollaboratorsTable";
 import InvitationsTable from "./InvitationsTable";
 import ConfirmationDialogs from "./ConfirmationDialogs";
 
-interface CollaborationManagerProps {
+interface CollaborationSettingsPanelProps {
   projectId: string;
   currentUserId: string;
   isOwner: boolean;
 }
 
-export function CollaborationManager({
+export function CollaborationSettingsPanel({
   projectId,
   currentUserId,
   isOwner,
-}: CollaborationManagerProps) {
+}: CollaborationSettingsPanelProps) {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [deleteCollaboratorId, setDeleteCollaboratorId] = useState<
     string | null

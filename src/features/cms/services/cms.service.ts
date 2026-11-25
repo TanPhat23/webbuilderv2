@@ -23,7 +23,7 @@ function normalizeListResponse<T>(response: T[] | { data?: T[] }): T[] {
 }
 
 export const cmsService = {
-  getContentTypes: async (
+  listContentTypes: async (
     token: string,
     projectId?: string,
   ): Promise<ContentType[]> => {
@@ -81,7 +81,7 @@ export const cmsService = {
     return apiClient.delete(url, undefined, token);
   },
 
-  getContentFieldsByContentType: async (
+  listContentFieldsByContentType: async (
     contentTypeId: string,
     token: string,
   ): Promise<ContentField[]> => {
@@ -151,7 +151,7 @@ export const cmsService = {
     return apiClient.delete(url, undefined, token);
   },
 
-  getContentItemsByContentType: async (
+  listContentItemsByContentType: async (
     contentTypeId: string,
     token: string,
   ): Promise<ContentItem[]> => {
@@ -224,7 +224,7 @@ export const cmsService = {
     return apiClient.delete(url, undefined, token);
   },
 
-  getPublicContent: async (
+  listPublicContent: async (
     params: PublicContentQuery | undefined,
     token: string,
   ): Promise<ContentItem[]> => {

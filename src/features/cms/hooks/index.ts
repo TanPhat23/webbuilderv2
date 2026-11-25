@@ -10,4 +10,4 @@ export {
   getFieldValues,
   useCMSContentTypes,
 } from "./useCMSContent";
-export { useCMSManager } from "./useCMSManager";
+export { useCMSWorkspace } from "./useCMSManager";

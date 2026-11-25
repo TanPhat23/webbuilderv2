@@ -1,7 +1,7 @@
 import { useShallow } from "zustand/react/shallow";
 import { useSelectionStore } from "../selection-store";
 import { useElementStore } from "../element-store";
-import { ElementTreeHelper } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 import type { EditorElement } from "@/types/global.type";
 
 /*
@@ -26,7 +26,7 @@ export const useIsHovered = (id: string) =>
 /** Looks up an element by id; re-renders when that element changes. */
 export const useElementById = (id: string | undefined): EditorElement | undefined =>
   useElementStore((state) =>
-    id ? ElementTreeHelper.findById(state.elements, id) : undefined,
+    id ? elementTree.findById(state.elements, id) : undefined,
   );
 
 export const useSelectedElement = (): EditorElement | undefined =>

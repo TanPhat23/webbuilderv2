@@ -4,7 +4,7 @@ import type { NotificationResponse, UpdateNotificationPayload, NotificationFilte
 const API_BASE = "/api/notifications";
 
 export const notificationService = {
-  getNotifications: async (
+  listNotifications: async (
     filters?: NotificationFilters,
   ): Promise<NotificationResponse> => {
     const builder = new URLBuilder("next").setPath(API_BASE);

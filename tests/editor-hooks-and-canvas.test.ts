@@ -69,7 +69,7 @@ beforeEach(() => {
   routerState.navigations.length = 0;
   authState.userId = 'user-1';
   authState.isLoaded = true;
-  useElementStore.getState().loadElements([], true);
+  useElementStore.getState().setElements([], true);
   useSelectionStore.getState().setSelectedElement(undefined);
   useEventModeStore.setState({ isEventModeEnabled: false, disabledElementEvents: new Set() });
   usePickStore.getState().cancel();
@@ -87,7 +87,7 @@ after(cleanup);
 test('element-store-remote applies remoteAdd, remoteUpdate, remoteMove, and remoteDelete', () => {
   const frameA = makeFrame('f-a');
   const frameB = makeFrame('f-b');
-  useElementStore.getState().loadElements([frameA, frameB], true);
+  useElementStore.getState().setElements([frameA, frameB], true);
 
   const child = makeText('t-1', 'Initial', { parentId: 'f-a' });
   useElementStore.getState().remoteAdd(child);
@@ -109,7 +109,7 @@ test('element-store-remote applies remoteAdd, remoteUpdate, remoteMove, and remo
 
 test('useCanvasElement builds editable rootProps and updates changed text on blur', async () => {
   const item = makeText('t-edit', 'Original');
-  useElementStore.getState().loadElements([item], true);
+  useElementStore.getState().setElements([item], true);
   useSelectionStore.getState().setSelectedElement(item);
 
   let propsRef: ReturnType<typeof useCanvasElement> | undefined;
@@ -169,13 +169,13 @@ test('useCanvasPickMode picks target elements, blocks multi-click, and cancels o
 
   await act(async () => {
     pickApi?.blockPickPointer(makeMouseEvent('mousedown', 1));
-    pickApi?.onClickCapture(makeMouseEvent('click', 1));
+    pickApi?.handleClickCapture(makeMouseEvent('click', 1));
   });
   assert.deepEqual(picked, ['picked-el']);
   assert.equal(prevented && stopped, true);
 
   await act(async () => {
-    pickApi?.onDoubleClickCapture(makeMouseEvent('dblclick', 2));
+    pickApi?.handleDoubleClickCapture(makeMouseEvent('dblclick', 2));
   });
 
   await act(() => {
@@ -193,7 +193,7 @@ test('useElementRect measures relative element bounds and clears when element di
   try {
   assert.equal(findElementNode(null, 'x'), null);
   const item = makeText('box-1');
-  useElementStore.getState().loadElements([item], true);
+  useElementStore.getState().setElements([item], true);
 
   let measured: ReturnType<typeof useElementRect> | undefined;
   let leftOffset = 25;
@@ -228,7 +228,7 @@ test('useElementRect measures relative element bounds and clears when element di
 
   leftOffset = 45;
   await act(async () => {
-    useElementStore.getState().loadElements([], true);
+    useElementStore.getState().setElements([], true);
   });
   assert.equal(measured?.node, null);
   assert.equal(measured?.rect, null);
@@ -252,7 +252,7 @@ test('useCanvasRootDrop enforces create permissions, single component root, and 
       queryClient: client,
       addElement: (el) => {
         added.push(el.type);
-        useElementStore.getState().loadElements([...useElementStore.getState().elements, el], true);
+        useElementStore.getState().setElements([...useElementStore.getState().elements, el], true);
       },
     });
     return null;

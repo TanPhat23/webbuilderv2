@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
 import { SiteNavigationProvider } from "../src/features/elements/context/SiteNavigationContext";
-import { loadSubdomainSiteData } from "../src/features/preview/lib/preview-data";
+import { fetchSubdomainSite } from "../src/features/preview/lib/preview-data";
 import {
   buildPublicSiteUrl,
   effectivePageSlug,
@@ -117,7 +117,7 @@ test("PreviewElementLoader rewrites ?page links via SiteNavigationProvider in bo
   assert.match(html, /href="\/our-story"/);
 });
 
-test("loadSubdomainSiteData resolves published subdomain project pages and rejects unknown routes", async () => {
+test("fetchSubdomainSite resolves published subdomain project pages and rejects unknown routes", async () => {
   const project = {
     id: "proj-1",
     name: "Glaze",
@@ -136,12 +136,12 @@ test("loadSubdomainSiteData resolves published subdomain project pages and rejec
     ],
   };
 
-  const story = await loadSubdomainSiteData("glaze", reads, "/our-story");
+  const story = await fetchSubdomainSite("glaze", reads, "/our-story");
   assert.equal(story.page.id, "p-story");
   assert.deepEqual(story.elements.map((e) => e.id), ["el-1"]);
 
   await assert.rejects(
-    loadSubdomainSiteData("glaze", reads, "/does-not-exist"),
+    fetchSubdomainSite("glaze", reads, "/does-not-exist"),
     (err: unknown) => err instanceof ApiError && err.status === 404,
   );
 });

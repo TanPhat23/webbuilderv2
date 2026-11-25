@@ -13,7 +13,7 @@ import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { plainComponentSnapshot } from "@/features/projects/lib/resolve-elements";
 import type { EditorElement } from "@/types/global.type";
 import { useProjectComponents } from "../hooks/useProjectComponents";
-import { componentLibrary, componentLibraryKey } from "../services/component-library.service";
+import { componentLibraryService, componentLibraryKey } from "../services/component-library.service";
 
 export function SaveElementDialog({
   element, onClose, initialName, title = "Save to my library",
@@ -38,7 +38,7 @@ export function SaveElementDialog({
     setSaving(true);
     setError("");
     try {
-      await componentLibrary.save(trimmed, description.trim(), plainComponentSnapshot(element, element.pageId, source));
+      await componentLibraryService.save(trimmed, description.trim(), plainComponentSnapshot(element, element.pageId, source));
       void queryClient.invalidateQueries({ queryKey: componentLibraryKey(userId) });
       toast.success(`Saved "${trimmed}" to your library`);
       onClose();

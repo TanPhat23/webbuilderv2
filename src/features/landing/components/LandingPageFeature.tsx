@@ -223,12 +223,12 @@ function WorkflowStage() {
       setPhase(5);
       return;
     }
-    const at = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
+    const sampleAt = (ms: number, fn: () => void) => timers.current.push(window.setTimeout(fn, ms));
     let s = 0;
     if (startRef.current === 1) {
       setPhase(0);
       measure("rest");
-      at(40, () => {
+      sampleAt(40, () => {
         setShowCursor(true);
         measure("button");
         setPhase(1);
@@ -238,17 +238,17 @@ function WorkflowStage() {
       setShowCursor(false);
       measure("button");
     }
-    at(s, () => setPhase(2));
-    at(s + 380, () => setPhase(3));
-    at(s + 1130, () => setPhase(4));
-    at(s + 1930, () => setPhase(5));
+    sampleAt(s, () => setPhase(2));
+    sampleAt(s + 380, () => setPhase(3));
+    sampleAt(s + 1130, () => setPhase(4));
+    sampleAt(s + 1930, () => setPhase(5));
     if (autoRef.current) {
-      at(s + 4800, () => {
+      sampleAt(s + 4800, () => {
         setPhase(0);
         setShowCursor(false);
         measure("rest");
       });
-      at(s + 5500, () => {
+      sampleAt(s + 5500, () => {
         if (!autoRef.current) return;
         if (inViewRef.current) advance();
         else waitingRef.current = true;

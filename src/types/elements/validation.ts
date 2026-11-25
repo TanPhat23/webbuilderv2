@@ -43,7 +43,7 @@ export interface MaxRule extends ValueRule<number> {
 
 export interface CustomRule<T = unknown> extends BaseValidationRule<T> {
   rule: "custom";
-  validateFn: (value: T) => boolean;
+  validate: (value: T) => boolean;
 }
 
 export type ValidationRule<T = unknown> =

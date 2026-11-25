@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/collapsible";
 import { ElementComment } from "@/features/comments";
 import { useElements } from "@/features/editor";
-import { elementHelper } from "@/features/elements/lib/elementhelper";
+import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { CommentCard } from "./CommentCard";
 
 interface ElementCommentGroupProps {
@@ -52,7 +52,7 @@ export function ElementCommentGroup({
   const elements = useElements();
   const [isOpen, setIsOpen] = useState(true);
 
-  const element = elementHelper.findById(elements, elementId);
+  const element = elementUtils.findById(elements, elementId);
   const unresolvedCount = comments.filter((c) => !c.resolved).length;
 
   return (

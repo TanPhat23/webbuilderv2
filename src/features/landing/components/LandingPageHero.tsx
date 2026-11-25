@@ -15,7 +15,7 @@ export default function LandingPageHero({ ctaTo }: { ctaTo: "/sign-up" | "/dashb
   const reduce = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
 
-  const onMove = (event: PointerEvent<HTMLElement>) => {
+  const handlePointerMove = (event: PointerEvent<HTMLElement>) => {
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -26,7 +26,7 @@ export default function LandingPageHero({ ctaTo }: { ctaTo: "/sign-up" | "/dashb
   return (
     <section
       ref={ref}
-      onPointerMove={onMove}
+      onPointerMove={handlePointerMove}
       className="relative isolate flex min-h-[calc(100svh-4rem)] flex-col justify-center overflow-hidden"
     >
       <div aria-hidden className="grid-faint absolute inset-0 -z-20" />

@@ -22,38 +22,38 @@ const env = (type: string, extra: Record<string, unknown> = {}) => ({ type, proj
 
 test('ignores messages that are not about logic', () => {
   const { ch } = channel();
-  assert.equal(ch.handle(env('element:update')), false);
-  assert.equal(ch.handle(env('error', { requestId: 'other' })), false);
+  assert.equal(ch.dispatchMessage(env('element:update')), false);
+  assert.equal(ch.dispatchMessage(env('error', { requestId: 'other' })), false);
 });
 
 test('an error for a logic request rejects it and is not passed on', () => {
   const { ch, settled, waiting } = channel();
   ch.track('r1');
   waiting.add('r1');
-  assert.equal(ch.handle(env('error', { requestId: 'r1', payload: { code: 'VALIDATION_ERROR', message: 'nope' } })), true);
+  assert.equal(ch.dispatchMessage(env('error', { requestId: 'r1', payload: { code: 'VALIDATION_ERROR', message: 'nope' } })), true);
   assert.equal(settled[0].ok, false);
   // a second error for the same request is not ours any more
-  assert.equal(ch.handle(env('error', { requestId: 'r1' })), false);
+  assert.equal(ch.dispatchMessage(env('error', { requestId: 'r1' })), false);
 });
 
 test('our own broadcast settles the request and is marked own', () => {
   const { ch, settled, waiting, changed } = channel();
   waiting.add('r2');
-  assert.equal(ch.handle(env('logic:update', { requestId: 'r2', payload: { scope: 'project', logic: {} } })), true);
+  assert.equal(ch.dispatchMessage(env('logic:update', { requestId: 'r2', payload: { scope: 'project', logic: {} } })), true);
   assert.equal(settled[0].ok, true);
   assert.equal(changed[0].own, true);
 });
 
 test('someone else’s broadcast is applied without settling anything', () => {
   const { ch, settled, changed } = channel();
-  ch.handle(env('logic:update', { requestId: 'theirs', payload: { scope: 'page', pageId: 'home', logic: {} } }));
+  ch.dispatchMessage(env('logic:update', { requestId: 'theirs', payload: { scope: 'page', pageId: 'home', logic: {} } }));
   assert.equal(settled.length, 0);
   assert.equal(changed[0].own, false);
 });
 
 test('a sync is delivered to the store', () => {
   const { ch, synced } = channel();
-  assert.equal(ch.handle(env('logic:sync', { payload: { project: {}, pageId: 'home' } })), true);
+  assert.equal(ch.dispatchMessage(env('logic:sync', { payload: { project: {}, pageId: 'home' } })), true);
   assert.equal(synced.length, 1);
 });
 
@@ -62,7 +62,7 @@ test('a move applies both documents and settles the request', () => {
   waiting.add('move-1');
   ch.track('move-1');
   const payload = { project: {}, page: {}, pageId: 'home', projectRevision: 2, pageRevision: 3 };
-  assert.equal(ch.handle(env('logic:move', { requestId: 'move-1', payload })), true);
+  assert.equal(ch.dispatchMessage(env('logic:move', { requestId: 'move-1', payload })), true);
   assert.deepEqual(synced, [payload]);
   assert.equal(settled[0].ok, true);
 });

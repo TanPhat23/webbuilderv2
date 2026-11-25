@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/command";
 import elementHolders, { type ElementType } from "@/features/editor/constants/elements";
 import { ELEMENT_CATEGORIES } from "@/features/editor/constants/elementCategories";
-import ComponentHolder, { CustomComponentHolder } from "./ComponentHolder";
+import ComponentHolder, { SectionTemplateCard } from "./ComponentHolder";
 import { customComps } from "@/features/editor/lib/customcomponents/customComponents";
 import type { ElementTemplate } from "@/types/global.type";
 
@@ -132,7 +132,7 @@ export function ElementSelector() {
                     value={`${label} custom`}
                     className="p-0 rounded-lg transition-all border-none bg-transparent hover:bg-transparent data-[selected=true]:bg-transparent cursor-pointer"
                   >
-                    <CustomComponentHolder
+                    <SectionTemplateCard
                       name={label}
                       index={index}
                       variant="card"

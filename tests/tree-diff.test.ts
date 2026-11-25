@@ -99,7 +99,7 @@ test("identical trees produce nothing", () => {
 test("undo sends the reverse of a delete; edits send removed style keys", () => {
   const sent: any[] = [];
   const store = useElementStore;
-  store.getState().loadElements([el("a"), el("b"), el("c")], true);
+  store.getState().setElements([el("a"), el("b"), el("c")], true);
   store.getState().setCollaborativeCallback(((type: string, id: string, data: any) => {
     sent.push([type, id, data]);
   }) as any);

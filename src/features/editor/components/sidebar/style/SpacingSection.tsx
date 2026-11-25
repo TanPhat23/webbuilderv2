@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Square, SquareDashed } from "lucide-react";
 import { Section } from "./SectionHeader";
-import { PropInput } from "./PropInput";
+import { StylePropertyInput } from "./PropInput";
 import {
   readSides,
   sidesDiffer,
@@ -58,7 +58,7 @@ function Group({
     return (
       <div className="grid grid-cols-2 gap-2">
         {SIDES.map(({ side, short }) => (
-          <PropInput
+          <StylePropertyInput
             key={side}
             {...override(side)}
             {...common}
@@ -74,7 +74,7 @@ function Group({
   }
   return (
     <div className="grid grid-cols-2 gap-1.5">
-      <PropInput
+      <StylePropertyInput
         {...common}
         value={sides.left || undefined}
         placeholder={inh.left || "0"}
@@ -83,7 +83,7 @@ function Group({
         label={`${name} left and right`}
         onCommit={(v) => sp.replace(writeAxis(sp.values, prop, "x", v))}
       />
-      <PropInput
+      <StylePropertyInput
         {...common}
         value={sides.top || undefined}
         placeholder={inh.top || "0"}

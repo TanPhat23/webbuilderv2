@@ -2,13 +2,13 @@
 import { useState, useCallback } from "react";
 import { ElementComment } from "@/features/comments/interfaces/elementcomment.interface";
 import {
-  processComments,
+  filterAndSortComments,
   getUnresolvedCount,
   ViewMode,
   SortOrder,
 } from "@/features/comments/utils/comments";
 
-interface UseCommentManagerProps {
+interface UseElementCommentControlsProps {
   comments: ElementComment[];
   isLoading: boolean;
   onUpdate: (
@@ -19,21 +19,21 @@ interface UseCommentManagerProps {
   onToggleResolved: (commentId: string) => Promise<ElementComment | null>;
 }
 
-interface CommentManagerState {
+interface CommentControlsState {
   editingCommentId: string | null;
   editingText: string;
   viewMode: ViewMode;
   sortOrder: SortOrder;
 }
 
-export function useCommentManager({
+export function useElementCommentControls({
   comments,
   isLoading,
   onUpdate,
   onDelete,
   onToggleResolved,
-}: UseCommentManagerProps) {
-  const [state, setState] = useState<CommentManagerState>({
+}: UseElementCommentControlsProps) {
+  const [state, setState] = useState<CommentControlsState>({
     editingCommentId: null,
     editingText: "",
     viewMode: "all",
@@ -77,7 +77,7 @@ export function useCommentManager({
   }, []);
 
   // Handle update with editing state reset
-  const handleUpdate = useCallback(
+  const updateComment = useCallback(
     async (commentId: string) => {
       if (!state.editingText.trim()) return;
 
@@ -94,7 +94,7 @@ export function useCommentManager({
   );
 
   // Handle delete with confirmation
-  const handleDelete = useCallback(
+  const deleteComment = useCallback(
     async (commentId: string) => {
       if (!window.confirm("Are you sure you want to delete this comment?")) {
         return;
@@ -113,7 +113,7 @@ export function useCommentManager({
   );
 
   // Handle toggle resolved
-  const handleToggleResolved = useCallback(
+  const toggleCommentResolved = useCallback(
     async (commentId: string) => {
       try {
         const result = await onToggleResolved(commentId);
@@ -128,7 +128,7 @@ export function useCommentManager({
   );
 
   // Get processed comments (filtered and sorted)
-  const processedComments = processComments(
+  const processedComments = filterAndSortComments(
     comments,
     state.viewMode,
     state.sortOrder,
@@ -157,8 +157,8 @@ export function useCommentManager({
     cancelEditing,
 
     // Handlers
-    handleUpdate,
-    handleDelete,
-    handleToggleResolved,
+    updateComment,
+    deleteComment,
+    toggleCommentResolved,
   };
 }

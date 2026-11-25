@@ -5,7 +5,7 @@ export { PaymentMethodSelector } from "./components/PaymentMethod";
 export {
   subscriptionKeys,
   useSubscriptionStatus,
-  useAllSubscriptions,
+  useSubscriptions,
   useCreatePayment,
   useCancelSubscription,
 } from "./hooks/useSubscription";

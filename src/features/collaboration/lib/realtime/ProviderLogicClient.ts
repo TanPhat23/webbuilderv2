@@ -7,7 +7,7 @@ import {
   type WSEnvelope,
   type RealtimeProviderOptions,
 } from "../../interfaces/websocket";
-import type { ConnectionManager } from "./ConnectionManager";
+import type { RealtimeSocketConnection } from "./ConnectionManager";
 import type { MessageDispatcher } from "./MessageDispatcher";
 import type { MessageSender } from "./MessageSender";
 import { LogicChannel } from "./LogicChannel";
@@ -51,7 +51,7 @@ export class ProviderLogicClient {
     projectId: string;
     pageId: string;
     userId: string;
-    connection: ConnectionManager;
+    connection: RealtimeSocketConnection;
     dispatcher: MessageDispatcher;
     sender: MessageSender;
     onLogicSync?: (payload: LogicSyncPayload) => void;
@@ -85,9 +85,9 @@ export class ProviderLogicClient {
     }
   }
 
-  public handleIncoming(envelope: WSEnvelope<unknown>): boolean {
-    if (this.logicChannel.handle(envelope)) return true;
-    return this.agentChannel?.handle(envelope) ?? false;
+  public routeEnvelope(envelope: WSEnvelope<unknown>): boolean {
+    if (this.logicChannel.dispatchMessage(envelope)) return true;
+    return this.agentChannel?.dispatchMessage(envelope) ?? false;
   }
 
   public async updateLogic(

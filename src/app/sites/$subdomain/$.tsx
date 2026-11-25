@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSubdomainSiteData } from "@/features/preview/api/preview.api";
+import { getSubdomainSite } from "@/features/preview/api/preview.api";
 import { SitePageView } from "@/features/preview/components/SitePageView";
 import { errorMessage } from "@/utils/errors/api-error";
 
 export const Route = createFileRoute("/sites/$subdomain/$")({
   loader: ({ params }) =>
-    getSubdomainSiteData({
+    getSubdomainSite({
       data: { subdomain: params.subdomain, pathname: params._splat },
     }),
   pendingComponent: () => (

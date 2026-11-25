@@ -35,12 +35,12 @@ type MouseStore = {
   setUsers: (users: Record<string, Collaborator>) => void;
   setRemoteUsers: (remoteUsers: Record<string, MousePosition>) => void;
   setSelectedByUser: (selectedByUser: Record<string, string>) => void;
-  syncFromAwareness: (awareness?: Awareness | null) => void;
+  syncFromPresence: (awareness?: Awareness | null) => void;
   removeUser: (userId: string) => void;
   clear: () => void;
 };
 
-export const useMouseStore = create<MouseStore>((set, get) => ({
+export const useMouseStore = create<MouseStore>((set) => ({
   mousePositions: {},
   selectedElements: {},
   users: {},
@@ -112,7 +112,7 @@ export const useMouseStore = create<MouseStore>((set, get) => ({
     set({ selectedByUser });
   },
 
-  syncFromAwareness: (awareness?: Awareness | null) => {
+  syncFromPresence: (awareness?: Awareness | null) => {
     if (!awareness || !awareness.getStates) return;
 
     const allStates = awareness.getStates();

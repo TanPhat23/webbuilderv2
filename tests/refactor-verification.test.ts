@@ -32,7 +32,7 @@ test("RealtimeProvider options and element state injection", async () => {
   let getterCalled = false;
   const mockState = {
     elements: [mockElement],
-    loadElements: () => {},
+    setElements: () => {},
     remoteAdd: () => {},
     remoteUpdate: () => {},
     remoteMove: () => {},
@@ -55,8 +55,8 @@ test("RealtimeProvider options and element state injection", async () => {
     assert.equal(providerWithState.connected, false);
     assert.equal(providerWithState.isSynced, false);
 
-    const handler = (providerWithState as unknown as { messageHandler: { handle: (env: unknown) => void } }).messageHandler;
-    handler.handle({
+    const handler = (providerWithState as unknown as { messageHandler: { routeEnvelope: (env: unknown) => void } }).messageHandler;
+    handler.routeEnvelope({
       type: "element:update",
       payload: {
         id: "el-integration",

@@ -428,7 +428,7 @@ function emitStep(step: Step, at: string, ctx: EmitContext): string[] {
   return emitSimpleStep(verb, s, at, ctx) ?? [];
 }
 
-const usesCtx = (body: string[]) => body.some((l) => /\bctx\b/.test(l)) || body.some((l) => /\bscope\b/.test(l));
+const usesContext = (body: string[]) => body.some((l) => /\bctx\b/.test(l)) || body.some((l) => /\bscope\b/.test(l));
 const scopeLine = (body: string[]) => (body.some((l) => /\bscope\b/.test(l)) ? ["  const scope = scopeOf(ctx);"] : []);
 const functionBody = (steps: Step[], at: string, ctx: EmitContext) => {
   const lines = emitSteps(steps, at, ctx);
@@ -443,7 +443,7 @@ function emitFlowBlocks(
     const body = functionBody(flow.do, `flow:${name}.do`, ctx);
     return [
       `/** Flow "${comment(name)}". */`,
-      `export async function ${ctx.flowFns.get(name)}(${usesCtx(body) ? "ctx" : "_ctx"}: Ctx, depth = 0): Promise<void> {`,
+      `export async function ${ctx.flowFns.get(name)}(${usesContext(body) ? "ctx" : "_ctx"}: Ctx, depth = 0): Promise<void> {`,
       `  if (depth > ${MAX_FLOW_DEPTH}) throw new Error("flows nested more than ${MAX_FLOW_DEPTH} deep");`,
       ...scopeLine(body),
       ...body,
@@ -480,7 +480,7 @@ function emitInteractionBlocks(
       const usesDepth = body.some((line) => line.includes("depth + 1"));
       blocks.push([
         `/** Element "${comment(el.name)}" (${comment(el.id)}), interaction ${comment(ixId)}: on ${comment(ix.on)}. */`,
-        `async function ${fn}(${usesCtx(body) ? "ctx" : "_ctx"}: Ctx${usesDepth ? ", depth = 0" : ""}): Promise<void> {`,
+        `async function ${fn}(${usesContext(body) ? "ctx" : "_ctx"}: Ctx${usesDepth ? ", depth = 0" : ""}): Promise<void> {`,
         ...scopeLine(body),
         ...body,
         "}",

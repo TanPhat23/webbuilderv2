@@ -9,7 +9,7 @@ const loader = `export async function load(url, context, nextLoad) {
 }`;
 register('data:text/javascript,' + encodeURIComponent(loader));
 
-const { AwarenessController } = await import('../src/features/collaboration/lib/realtime/AwarenessController');
+const { PresenceController } = await import('../src/features/collaboration/lib/realtime/AwarenessController');
 
 class FakeWebSocket {
   static OPEN = 1;
@@ -35,7 +35,7 @@ async function setup(extra: Record<string, unknown> = {}) {
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   FakeWebSocket.instances = [];
   const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
-  const state: any = { elements: [], loadElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
+  const state: any = { elements: [], setElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const events: Record<string, unknown[]> = { sync: [], changed: [], users: [], errors: [] };
   const provider = new RealtimeProvider({
     url: 'ws://localhost:1234', projectId: 'p', pageId: 'pg', userId: 'u', userName: 'Una',
@@ -52,23 +52,23 @@ async function setup(extra: Record<string, unknown> = {}) {
   return { provider, socket, events, restore: () => { provider.destroy(); globalThis.WebSocket = original; } };
 }
 
-// ---------------------------------------------------------------- AwarenessController
+// ---------------------------------------------------------------- PresenceController
 
 test('awareness tracks the local selection', () => {
-  const a = new AwarenessController('me');
+  const a = new PresenceController('me');
   assert.equal(a.getLocalSelectedElement(), null);
   a.updateLocalSelection('el-1');
   assert.equal(a.getLocalSelectedElement(), 'el-1');
 });
 
 test('remote presence is stored, normalised and ignores our own user', () => {
-  const a = new AwarenessController('me');
+  const a = new PresenceController('me');
   const changes: any[] = [];
   a.on('change', (d) => changes.push(d));
-  a.handleRemotePresence({ userId: 'me', userName: 'Me', cursorX: 1, cursorY: 1 });
+  a.applyRemotePresence({ userId: 'me', userName: 'Me', cursorX: 1, cursorY: 1 });
   assert.equal(changes.length, 0);
-  a.handleRemotePresence({ userId: 'bo', userName: 'Bo', cursorX: 3, cursorY: 4, elementId: 'e9' });
-  a.handleRemotePresence({ userId: 'cy', userName: 'Cy', cursorX: 0, cursorY: 0, elementId: null });
+  a.applyRemotePresence({ userId: 'bo', userName: 'Bo', cursorX: 3, cursorY: 4, elementId: 'e9' });
+  a.applyRemotePresence({ userId: 'cy', userName: 'Cy', cursorX: 0, cursorY: 0, elementId: null });
   const last = changes.at(-1);
   assert.deepEqual(last.remoteUsers.bo, { x: 3, y: 4 });
   assert.deepEqual(last.selectedByUser, { bo: 'e9' });
@@ -78,10 +78,10 @@ test('remote presence is stored, normalised and ignores our own user', () => {
   assert.equal(a.remotePresences.size, 2, 'the getter returns a copy');
 });
 
-test('handleSyncUsers replaces the roster and skips us', () => {
-  const a = new AwarenessController('me');
-  a.handleRemotePresence({ userId: 'old', userName: 'Old', cursorX: 0, cursorY: 0 });
-  a.handleSyncUsers([
+test('replaceRemotePresences replaces the roster and skips us', () => {
+  const a = new PresenceController('me');
+  a.applyRemotePresence({ userId: 'old', userName: 'Old', cursorX: 0, cursorY: 0 });
+  a.replaceRemotePresences([
     { userId: 'me', userName: 'Me', presence: { cursorX: 0, cursorY: 0 } },
     { userId: 'new', userName: 'New', presence: { cursorX: 5, cursorY: 6, elementId: 'x' } },
   ]);
@@ -89,15 +89,15 @@ test('handleSyncUsers replaces the roster and skips us', () => {
 });
 
 test('pruneStale drops only presences older than the limit', () => {
-  const a = new AwarenessController('me');
+  const a = new PresenceController('me');
   const realNow = Date.now;
   let now = 1_000_000;
   Date.now = () => now;
   try {
     const changes: unknown[] = [];
-    a.handleRemotePresence({ userId: 'stale', userName: 'S', cursorX: 0, cursorY: 0 });
+    a.applyRemotePresence({ userId: 'stale', userName: 'S', cursorX: 0, cursorY: 0 });
     now += 50_000;
-    a.handleRemotePresence({ userId: 'fresh', userName: 'F', cursorX: 0, cursorY: 0 });
+    a.applyRemotePresence({ userId: 'fresh', userName: 'F', cursorX: 0, cursorY: 0 });
     a.on('change', (d) => changes.push(d));
     now += 20_000; // stale = 70s, fresh = 20s
     a.pruneStale();

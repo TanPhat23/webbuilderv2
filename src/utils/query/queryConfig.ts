@@ -11,7 +11,7 @@
  *
  * useQuery({
  *   queryKey: ["cms-content-types"],
- *   queryFn: () => cmsService.getContentTypes(),
+ *   queryFn: () => cmsService.listContentTypes(),
  *   ...QUERY_CONFIG.LONG,
  * });
  * ```

@@ -31,7 +31,7 @@ export class LogicChannel {
   }
 
   /** Returns true when the message was a logic message and has been dealt with. */
-  handle(envelope: WSEnvelope<unknown>): boolean {
+  dispatchMessage(envelope: WSEnvelope<unknown>): boolean {
     if (envelope.type === "error") {
       const id = envelope.requestId;
       if (!id || !this.requests.has(id)) return false;

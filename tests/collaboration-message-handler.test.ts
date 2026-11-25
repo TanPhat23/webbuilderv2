@@ -8,12 +8,12 @@ test('remote updates use the injected current element state and merge settings',
   let patch: Partial<EditorElement> | undefined;
   const handler = new ElementMessageHandler({
     getElementState: () => ({
-      elements: [element], loadElements: () => {}, remoteAdd: () => {},
+      elements: [element], setElements: () => {}, remoteAdd: () => {},
       remoteUpdate: (_id, value) => { patch = value; }, remoteMove: () => {}, remoteDelete: () => {},
     }),
     handleSyncUsers: () => {}, handleRemotePresence: () => {}, resolvePendingRequest: () => false,
   });
-  handler.handle({ type: 'element:update', payload: { id: 'child', settings: { added: 'value' } } } as any);
+  handler.routeEnvelope({ type: 'element:update', payload: { id: 'child', settings: { added: 'value' } } } as any);
   assert.deepEqual(patch?.settings, { existing: 'kept', added: 'value' });
 });
 
@@ -23,7 +23,7 @@ test('sync and remote operations are forwarded to the injected state', () => {
   const handler = new ElementMessageHandler({
     getElementState: () => ({
       elements: [],
-      loadElements: (...args) => { calls.push(['load', ...args]); },
+      setElements: (...args) => { calls.push(['load', ...args]); },
       remoteAdd: (...args) => { calls.push(['add', ...args]); },
       remoteUpdate: () => {},
       remoteMove: (...args) => { calls.push(['move', ...args]); },
@@ -31,9 +31,9 @@ test('sync and remote operations are forwarded to the injected state', () => {
     }),
     handleSyncUsers: () => {}, handleRemotePresence: () => {}, resolvePendingRequest: () => false,
   });
-  handler.handle({ type: 'sync:page', payload: { elements: [element], users: [] } } as any);
-  handler.handle({ type: 'element:create', payload: { element } } as any);
-  handler.handle({ type: 'element:move', payload: { id: 'child', order: 2 } } as any);
-  handler.handle({ type: 'element:delete', payload: { id: 'child' } } as any);
+  handler.routeEnvelope({ type: 'sync:page', payload: { elements: [element], users: [] } } as any);
+  handler.routeEnvelope({ type: 'element:create', payload: { element } } as any);
+  handler.routeEnvelope({ type: 'element:move', payload: { id: 'child', order: 2 } } as any);
+  handler.routeEnvelope({ type: 'element:delete', payload: { id: 'child' } } as any);
   assert.deepEqual(calls, [['load', [element], true], ['add', element], ['move', 'child', null, 2], ['delete', 'child']]);
 });

@@ -40,7 +40,7 @@ function withStubbedFetch(
   });
 }
 
-test("elementService batches getElementsByPages in chunks of 100 and forwards explicit bearer token", async () => {
+test("elementService batches listElementsByPages in chunks of 100 and forwards explicit bearer token", async () => {
   await withStubbedFetch(
     async (req) => {
       const parsed = new URL(req.url);
@@ -54,11 +54,11 @@ test("elementService batches getElementsByPages in chunks of 100 and forwards ex
       return Response.json(body);
     },
     async (calls) => {
-      assert.deepEqual(await elementService.getElementsByPages("proj-1", [], "tok-1"), []);
+      assert.deepEqual(await elementService.listElementsByPages("proj-1", [], "tok-1"), []);
       assert.equal(calls.length, 0);
 
       const pageIds = Array.from({ length: 205 }, (_, i) => `p${i}`);
-      const elements = await elementService.getElementsByPages("proj-1", pageIds, "tok-1");
+      const elements = await elementService.listElementsByPages("proj-1", pageIds, "tok-1");
       assert.equal(calls.length, 3);
       assert.equal(calls[0].headers.Authorization, "Bearer tok-1");
       assert.equal(new URL(calls[0].url).searchParams.get("pageIds")?.split(",").length, 100);
@@ -95,17 +95,17 @@ test("elementService builds public, snapshot, and generateCode requests and wrap
       return Response.json([]);
     },
     async (calls) => {
-      await elementService.getElements("proj-1", "explicit");
+      await elementService.listProjectElements("proj-1", "explicit");
       assert.equal(calls[0].url, "http://localhost:8080/api/v1/elements/proj-1");
 
-      await elementService.getElementsPublic("proj-1", { previewCache: true });
+      await elementService.listPublicElements("proj-1", { previewCache: true });
       assert.equal(
         calls[1].url,
         "http://localhost:8080/api/v1/elements/public/proj-1?previewCache=1",
       );
       assert.equal(calls[1].headers.Authorization, undefined);
 
-      const loaded = await elementService.loadSnapshot("proj-1", "snap-1");
+      const loaded = await elementService.getSnapshotElements("proj-1", "snap-1");
       assert.equal(loaded[0].content, "Restored");
 
       const codeResult = await elementService.generateCode([], {}, { variables: {}, flows: {} });

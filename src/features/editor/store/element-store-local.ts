@@ -1,4 +1,4 @@
-import { ElementTreeHelper as elementTree } from "@/features/elements/lib/element-tree-helper";
+import { elementTree } from "@/features/elements/lib/element-tree-helper";
 import {
   adaptToParent,
   parentLayout,
