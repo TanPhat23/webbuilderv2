@@ -88,7 +88,7 @@ export default function PagesPanel() {
                   </span>
                   {page.Type === "dp" && (
                     <span className="shrink-0 rounded bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                      CMS
+                      {page.ContentTypeId ? "CMS" : "DYN"}
                     </span>
                   )}
                 </button>

@@ -23,6 +23,7 @@ export interface LoadedSitePageData {
   readonly page: ApiPage;
   readonly pages: ApiPage[];
   readonly elements: EditorElement[];
+  readonly params?: Readonly<Record<string, string>>;
   readonly itemSlug?: string;
 }
 
@@ -78,7 +79,7 @@ function resolvePageTree(
   const matched = resolveRoutePage(pages, target);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
 
-  const { page, itemSlug } = matched;
+  const { page, params, itemSlug } = matched;
   const pageElements = projectElements.filter((element) => element.pageId === page.id);
   const routeIds = new Set(pages.map(({ id: routeId }) => routeId));
   const componentIds = collectComponentIds(allPages, projectElements, hasToken);
@@ -88,7 +89,14 @@ function resolvePageTree(
     pageIds: routeIds,
     componentIds,
   });
-  return { project, page, pages, elements, ...(itemSlug ? { itemSlug } : {}) };
+  return {
+    project,
+    page,
+    pages,
+    elements,
+    ...(Object.keys(params).length > 0 ? { params } : {}),
+    ...(itemSlug ? { itemSlug } : {}),
+  };
 }
 
 export async function fetchPreviewSite(

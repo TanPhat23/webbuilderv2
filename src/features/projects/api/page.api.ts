@@ -25,6 +25,7 @@ export const createPage = createServerFn({ method: "POST" })
         name: data.Name,
         ...(data.Slug !== undefined ? { slug: data.Slug } : {}),
         type: data.Type,
+        ...(data.ContentTypeId ? { contentTypeId: data.ContentTypeId } : {}),
         styles: (data.Styles ?? {}) as JsonRecord,
       },
       token,
@@ -37,11 +38,18 @@ const updatePageSchema = z.object({
   pageId: z.string().min(1),
   name: z.string().trim().min(1).max(255).optional(),
   slug: z.string().trim().max(200).optional(),
+  contentTypeId: z.string().max(255).nullable().optional(),
 });
 
 export const updateProjectPage = createServerFn({ method: "POST" })
-  .validator((data: { projectId: string; pageId: string; name?: string; slug?: string }) =>
-    updatePageSchema.parse(data),
+  .validator(
+    (data: {
+      projectId: string;
+      pageId: string;
+      name?: string;
+      slug?: string;
+      contentTypeId?: string | null;
+    }) => updatePageSchema.parse(data),
   )
   .handler(async ({ data }): Promise<Page> => {
     const { token } = await getAuthToken();
@@ -51,6 +59,9 @@ export const updateProjectPage = createServerFn({ method: "POST" })
       {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.slug !== undefined ? { slug: data.slug } : {}),
+        ...(data.contentTypeId !== undefined
+          ? { contentTypeId: data.contentTypeId ?? "" }
+          : {}),
       },
       token,
     );

@@ -3,6 +3,7 @@ import type { EditorElement } from "@/types/global.type";
 import type { CMSContentGridElement, CMSContentItemElement, CMSContentListElement } from "@/types/elements";
 import { getView } from "@/features/elements/registry";
 import type { ViewProps } from "@/features/elements/view-props";
+import { useSiteNavigationOptional } from "@/features/elements/context/SiteNavigationContext";
 import { usePublicCMSQuery, useCMSItemList } from "../hooks/useCMSFetch";
 import { PreviewCMSFeedback } from "./PreviewCMSFeedback";
 
@@ -51,9 +52,13 @@ export function PreviewCMSItem({
 }: ViewProps<CMSContentItemElement> & {
   renderElements: RenderElements;
 }) {
-  const { contentTypeId, itemSlug } = element.settings ?? {};
+  const siteNav = useSiteNavigationOptional();
+  const { contentTypeId, itemSlug: configuredSlug } = element.settings ?? {};
+  const effectiveSlug = configuredSlug || siteNav?.itemSlug || "";
   const { data: item, loading, error } = usePublicCMSQuery(
-    contentTypeId && itemSlug ? `/api/cms/${contentTypeId}/item/${itemSlug}` : null,
+    contentTypeId && effectiveSlug
+      ? `/api/cms/${contentTypeId}/item/${encodeURIComponent(effectiveSlug)}`
+      : null,
     parseItem,
     undefined,
   );

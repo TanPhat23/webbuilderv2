@@ -17,6 +17,7 @@ const pageShape = {
   Name: z.string(),
   Slug: z.string().optional(),
   Type: PageTypeSchema,
+  ContentTypeId: z.string().nullable().optional(),
   Styles: flatJsonRecordSchema.nullable(),
   ProjectId: z.string(),
   CreatedAt: z.date().optional(),
@@ -29,6 +30,7 @@ const createPageShape = {
   Name: z.string().min(1),
   Slug: z.string().max(255).optional(),
   Type: PageTypeSchema.default("sp"),
+  ContentTypeId: z.string().max(255).nullable().optional(),
   Styles: flatJsonRecordSchema.nullable().default(null),
   ProjectId: z.string(),
 } satisfies z.ZodRawShape;

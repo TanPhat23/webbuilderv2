@@ -18,8 +18,14 @@ import {
   type SiteRoutingMode,
 } from "@/lib/site-routing";
 import type { LoadedSitePageData } from "@/features/preview/lib/preview-data";
+import { usePublicCMSQuery } from "@/features/preview/hooks/useCMSFetch";
 import { browserPlatform } from "@/features/interactions/runtime/executors";
 import type { PlatformFactory } from "@/features/interactions/runtime/hostDom";
+
+const parseCmsRecord = (body: unknown): Record<string, unknown> | undefined =>
+  body !== null && typeof body === "object"
+    ? (body as Record<string, unknown>)
+    : undefined;
 
 interface SitePageViewProps {
   readonly data: LoadedSitePageData;
@@ -33,8 +39,27 @@ export function SitePageView({
   showRunLog = false,
 }: SitePageViewProps): React.JSX.Element {
   const routerNavigate = useNavigate();
-  const { project, page, pages, elements, itemSlug } = data;
+  const { project, page, pages, elements, params, itemSlug } = data;
   const projectId = project.id ?? "";
+
+  const cmsItemUrl =
+    page.type === "dp" && page.contentTypeId && itemSlug
+      ? `/api/cms/${encodeURIComponent(page.contentTypeId)}/item/${encodeURIComponent(itemSlug)}`
+      : null;
+  const {
+    data: boundCmsItem,
+    loading: boundCmsLoading,
+    error: boundCmsError,
+  } = usePublicCMSQuery(cmsItemUrl, parseCmsRecord, undefined);
+
+  const pageRootData = useMemo<Record<string, unknown> | undefined>(() => {
+    const hasParams = params && Object.keys(params).length > 0;
+    if (!hasParams && !boundCmsItem) return undefined;
+    return {
+      ...(params ?? {}),
+      ...(boundCmsItem ?? {}),
+    };
+  }, [params, boundCmsItem]);
 
   const logic = useMemo(
     () => mergedLogic(snapshotFromServer(project.logic, [page])),
@@ -134,10 +159,11 @@ export function SitePageView({
       mode,
       pages,
       currentPath,
+      params,
       itemSlug,
       navigate: handleSiteNavigate,
     }),
-    [mode, pages, currentPath, itemSlug, handleSiteNavigate],
+    [mode, pages, currentPath, params, itemSlug, handleSiteNavigate],
   );
 
   const sitePlatform: PlatformFactory = useCallback(
@@ -181,7 +207,20 @@ export function SitePageView({
           flows={logic.flows}
           showLog={showRunLog}
         >
-          <PreviewElementLoader elements={elements} />
+          {cmsItemUrl && boundCmsLoading ? (
+            <div className="flex min-h-[40vh] items-center justify-center text-sm text-zinc-500">
+              Loading content…
+            </div>
+          ) : cmsItemUrl && boundCmsError ? (
+            <div className="flex min-h-[40vh] flex-col items-center justify-center gap-2 px-6 text-center">
+              <p className="text-2xl font-semibold text-zinc-900">404</p>
+              <p className="text-sm text-zinc-500">
+                We couldn&apos;t find an item for &ldquo;{itemSlug}&rdquo;.
+              </p>
+            </div>
+          ) : (
+            <PreviewElementLoader elements={elements} data={pageRootData} />
+          )}
         </InteractionHost>
       </div>
     </SiteNavigationProvider>

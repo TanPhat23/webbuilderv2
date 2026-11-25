@@ -48,17 +48,21 @@ import { CreatePageSchema } from "@/features/pages/schema/page";
 import { Page } from "@/features/pages";
 import { createPage, updateProjectPage } from "@/features/projects/api/page.api";
 import {
-  normalizeRoutePath,
   pageRoutePath,
   slugifyPageName,
+  validatePageSlugPattern,
 } from "@/lib/site-routing";
+import { useCMSContentTypes } from "@/features/cms/hooks/useCMSContent";
 import { extractUpdateErrorMessage } from "@/features/projectsettings/utils/projectSettingsState";
 import { showSuccessToast } from "@/utils/errors/errorToast";
+
+const NONE_COLLECTION = "__none__";
 
 const createPageSchema = z.object({
   name: z.string().min(1, "Page name is required"),
   slug: z.string().max(200).optional(),
   type: PageTypeSchema.exclude(["cp"]),
+  contentTypeId: z.string().max(255).optional(),
 });
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
@@ -66,6 +70,7 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
   const queryClient = useQueryClient();
   const { id } = useParams({ strict: false });
   const [open, setOpen] = useState(false);
+  const { data: contentTypes = [] } = useCMSContentTypes(open ? id : undefined);
 
   const form = useForm<CreatePageFormValues>({
     resolver: zodResolver(createPageSchema),
@@ -73,21 +78,36 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
       name: "",
       slug: "",
       type: "sp",
+      contentTypeId: NONE_COLLECTION,
     },
   });
 
   const watchedName = useWatch({ control: form.control, name: "name" });
+  const watchedType = useWatch({ control: form.control, name: "type" });
+  const isDynamic = watchedType === "dp";
   const suggestedSlug = slugifyPageName(watchedName || "");
 
   const onSubmit = async (data: CreatePageFormValues) => {
-    const cleanSlug =
-      data.slug && data.slug.trim().length > 0
-        ? normalizeRoutePath(data.slug)
+    let cleanSlug: string | undefined;
+    if (data.slug && data.slug.trim().length > 0) {
+      const checked = validatePageSlugPattern(data.slug, data.type === "dp");
+      if (!checked.valid) {
+        form.setError("slug", { message: checked.error });
+        return;
+      }
+      cleanSlug = checked.normalized;
+    }
+    const boundCollection =
+      data.type === "dp" &&
+      data.contentTypeId &&
+      data.contentTypeId !== NONE_COLLECTION
+        ? data.contentTypeId
         : undefined;
     const newPage = CreatePageSchema.safeParse({
       Id: newEntityId(),
       Name: data.name,
       ...(cleanSlug !== undefined ? { Slug: cleanSlug } : {}),
+      ...(boundCollection !== undefined ? { ContentTypeId: boundCollection } : {}),
       ProjectId: id as string,
       Styles: {},
       Type: data.type,
@@ -160,12 +180,24 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-mono text-muted-foreground">/</span>
                       <Input
-                        placeholder={suggestedSlug || "home"}
+                        placeholder={
+                          isDynamic
+                            ? `${suggestedSlug || "blog"}/:slug`
+                            : suggestedSlug || "home"
+                        }
                         className="font-mono text-sm"
                         {...field}
                       />
                     </div>
                   </FormControl>
+                  {isDynamic && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Use <code className="font-mono">:param</code> (e.g.{" "}
+                      <code className="font-mono">blog/:slug</code>) or a trailing catch-all{" "}
+                      <code className="font-mono">*path</code> /{" "}
+                      <code className="font-mono">*</code>.
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -194,6 +226,38 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
                 </FormItem>
               )}
             />
+            {isDynamic && (
+              <FormField
+                control={form.control}
+                name="contentTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CMS Collection (optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? NONE_COLLECTION}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="None (generic :param route)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE_COLLECTION}>
+                          None (generic :param route)
+                        </SelectItem>
+                        {contentTypes.map((ct) => (
+                          <SelectItem key={ct.id} value={ct.id}>
+                            {ct.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <Button
                 type="button"
@@ -296,6 +360,7 @@ export function useDeletePage(id: string | undefined, pages: Page[]) {
 const editPageSchema = z.object({
   name: z.string().trim().min(1, "Page name is required").max(255),
   slug: z.string().trim().max(200),
+  contentTypeId: z.string().max(255).optional(),
 });
 type EditPageFormValues = z.infer<typeof editPageSchema>;
 
@@ -308,6 +373,10 @@ export function EditPageDialog({
 }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const isDynamic = page.Type === "dp";
+  const { data: contentTypes = [] } = useCMSContentTypes(
+    open && isDynamic ? page.ProjectId : undefined,
+  );
   const initialSlug = page.Slug ?? slugifyPageName(page.Name);
 
   const form = useForm<EditPageFormValues>({
@@ -315,6 +384,7 @@ export function EditPageDialog({
     defaultValues: {
       name: page.Name || "Home",
       slug: initialSlug,
+      contentTypeId: page.ContentTypeId || NONE_COLLECTION,
     },
   });
 
@@ -324,12 +394,23 @@ export function EditPageDialog({
       form.reset({
         name: page.Name || "Home",
         slug: page.Slug ?? slugifyPageName(page.Name),
+        contentTypeId: page.ContentTypeId || NONE_COLLECTION,
       });
     }
   };
 
   const onSubmit = async (values: EditPageFormValues) => {
-    const cleanSlug = normalizeRoutePath(values.slug);
+    const checked = validatePageSlugPattern(values.slug, isDynamic);
+    if (!checked.valid) {
+      form.setError("slug", { message: checked.error });
+      return;
+    }
+    const cleanSlug = checked.normalized;
+    const nextContentTypeId = isDynamic
+      ? values.contentTypeId && values.contentTypeId !== NONE_COLLECTION
+        ? values.contentTypeId
+        : null
+      : undefined;
     try {
       const updated = await updateProjectPage({
         data: {
@@ -337,6 +418,9 @@ export function EditPageDialog({
           pageId: page.Id,
           name: values.name,
           slug: cleanSlug,
+          ...(nextContentTypeId !== undefined
+            ? { contentTypeId: nextContentTypeId }
+            : {}),
         },
       });
       queryClient.setQueryData<Page[]>(
@@ -397,16 +481,59 @@ export function EditPageDialog({
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-mono text-muted-foreground">/</span>
                       <Input
-                        placeholder="leave empty for root /"
+                        placeholder={
+                          isDynamic
+                            ? "blog/:slug or docs/*path or *"
+                            : "leave empty for root /"
+                        }
                         className="font-mono text-sm"
                         {...field}
                       />
                     </div>
                   </FormControl>
+                  {isDynamic && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Supports <code className="font-mono">:param</code> and trailing{" "}
+                      <code className="font-mono">*catchall</code> /{" "}
+                      <code className="font-mono">*</code>.
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
+            {isDynamic && (
+              <FormField
+                control={form.control}
+                name="contentTypeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CMS Collection (optional)</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value ?? NONE_COLLECTION}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="None (generic :param route)" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NONE_COLLECTION}>
+                          None (generic :param route)
+                        </SelectItem>
+                        {contentTypes.map((ct) => (
+                          <SelectItem key={ct.id} value={ct.id}>
+                            {ct.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <DialogFooter>
               <Button
                 type="button"

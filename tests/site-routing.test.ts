@@ -9,10 +9,12 @@ import {
   buildPublicSiteUrl,
   effectivePageSlug,
   extractSubdomain,
+  interpolateHref,
   isValidSubdomainLabel,
   resolveRoutePage,
   resolveSiteHref,
   slugifyPageName,
+  validatePageSlugPattern,
 } from "../src/lib/site-routing";
 import type { ApiPage } from "../src/features/projects/services/project.service";
 import { ApiError } from "../src/utils/errors/api-error";
@@ -144,4 +146,97 @@ test("fetchSubdomainSite resolves published subdomain project pages and rejects 
     fetchSubdomainSite("glaze", reads, "/does-not-exist"),
     (err: unknown) => err instanceof ApiError && err.status === 404,
   );
+});
+
+test("resolveRoutePage supports :param patterns, catch-all * routes, and specificity precedence", () => {
+  const dynamicPages: ApiPage[] = [
+    { id: "p-home", projectId: "proj-1", name: "Home", slug: "", type: "sp", createdAt: "", updatedAt: "" },
+    { id: "p-static-doc", projectId: "proj-1", name: "Intro", slug: "docs/intro", type: "sp", createdAt: "", updatedAt: "" },
+    { id: "p-post", projectId: "proj-1", name: "Post", slug: "blog/:slug", type: "dp", contentTypeId: "ct-blog", createdAt: "", updatedAt: "" },
+    { id: "p-shop", projectId: "proj-1", name: "Product", slug: "shop/:category/:slug", type: "dp", createdAt: "", updatedAt: "" },
+    { id: "p-docs-catch", projectId: "proj-1", name: "Docs", slug: "docs/*path", type: "dp", createdAt: "", updatedAt: "" },
+    { id: "p-root-catch", projectId: "proj-1", name: "Fallback", slug: "*", type: "dp", createdAt: "", updatedAt: "" },
+  ];
+
+  // Exact static route beats catch-all
+  const staticHit = resolveRoutePage(dynamicPages, "/docs/intro");
+  assert.equal(staticHit?.page.id, "p-static-doc");
+  assert.deepEqual(staticHit?.params, {});
+
+  // Single :param route
+  const postHit = resolveRoutePage(dynamicPages, "/blog/hello-world");
+  assert.equal(postHit?.page.id, "p-post");
+  assert.deepEqual(postHit?.params, { slug: "hello-world" });
+  assert.equal(postHit?.itemSlug, "hello-world");
+
+  // Multi-segment :param route
+  const shopHit = resolveRoutePage(dynamicPages, "/shop/shoes/air-max");
+  assert.equal(shopHit?.page.id, "p-shop");
+  assert.deepEqual(shopHit?.params, { category: "shoes", slug: "air-max" });
+  assert.equal(shopHit?.itemSlug, "air-max");
+
+  // Prefixed catch-all beats root catch-all
+  const docsHit = resolveRoutePage(dynamicPages, "/docs/guides/routing/dynamic");
+  assert.equal(docsHit?.page.id, "p-docs-catch");
+  assert.deepEqual(docsHit?.params, { path: "guides/routing/dynamic" });
+  assert.equal(docsHit?.itemSlug, "guides/routing/dynamic");
+
+  // Root catch-all matches any remaining unknown path
+  const fallbackHit = resolveRoutePage(dynamicPages, "/anything/at/all");
+  assert.equal(fallbackHit?.page.id, "p-root-catch");
+  assert.deepEqual(fallbackHit?.params, { "*": "anything/at/all" });
+  assert.equal(fallbackHit?.itemSlug, "anything/at/all");
+});
+
+test("validatePageSlugPattern enforces static, :param, and trailing *catchall rules", () => {
+  assert.deepEqual(validatePageSlugPattern("/blog/:slug/", true), {
+    valid: true,
+    normalized: "blog/:slug",
+  });
+  assert.deepEqual(validatePageSlugPattern("/docs/*path", true), {
+    valid: true,
+    normalized: "docs/*path",
+  });
+  assert.deepEqual(validatePageSlugPattern("*", true), {
+    valid: true,
+    normalized: "*",
+  });
+  assert.equal(validatePageSlugPattern("blog/:slug", false).valid, false);
+  assert.equal(validatePageSlugPattern("*", false).valid, false);
+  assert.equal(validatePageSlugPattern("docs/*path/edit", true).valid, false);
+  assert.equal(validatePageSlugPattern("blog/:slug/:slug", true).valid, false);
+});
+
+test("interpolateHref and PreviewElementLoader resolve dynamic CMS item links", () => {
+  assert.equal(
+    interpolateHref("/blog/{{slug}}", { slug: "hello-world" }),
+    "/blog/hello-world",
+  );
+  assert.equal(
+    interpolateHref("/shop/:category/:slug", { category: "shoes" }, { slug: "air-max" }),
+    "/shop/shoes/air-max",
+  );
+
+  const elements = [
+    { id: "lnk", pageId: "p-home", type: "Link" as const, content: "Read {{title}}", href: "/journal/{{slug}}" },
+  ];
+  const html = renderToStaticMarkup(
+    createElement(
+      SiteNavigationProvider,
+      {
+        value: {
+          mode: { kind: "domain", subdomain: "glaze" },
+          pages,
+          currentPath: "/",
+          navigate: () => {},
+        },
+      },
+      createElement(PreviewElementLoader, {
+        elements,
+        data: { title: "Morning Croissant", slug: "morning-croissant" },
+      }),
+    ),
+  );
+  assert.match(html, /href="\/journal\/morning-croissant"/);
+  assert.match(html, /Read Morning Croissant/);
 });

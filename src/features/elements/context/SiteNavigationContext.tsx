@@ -5,6 +5,7 @@ export interface SiteNavigationContextValue {
   readonly mode: SiteRoutingMode;
   readonly pages: ReadonlyArray<RoutePageSummary>;
   readonly currentPath: string;
+  readonly params?: Readonly<Record<string, string>>;
   readonly itemSlug?: string;
   readonly navigate: (
     href: string,

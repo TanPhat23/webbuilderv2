@@ -10,6 +10,7 @@ export interface Page {
   Name: string;
   Slug?: string;
   Type: PageType;
+  ContentTypeId?: string | null;
   Styles: JsonRecord | null;
   ProjectId: string;
   CreatedAt: Date;

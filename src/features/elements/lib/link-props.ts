@@ -1,7 +1,7 @@
 import type React from "react";
 import type { ButtonElement, LinkElement } from "@/types/elements";
 import type { SiteNavigationContextValue } from "@/features/elements/context/SiteNavigationContext";
-import { resolveSiteHref } from "@/lib/site-routing";
+import { interpolateHref, resolveSiteHref } from "@/lib/site-routing";
 
 const protocols = new Set(["http:", "https:", "mailto:", "tel:"]);
 const targets = new Set(["_self", "_blank", "_parent", "_top"]);
@@ -16,9 +16,11 @@ export interface PreviewLinkProps {
 export function previewLinkProps(
   element: LinkElement | ButtonElement,
   siteNav?: SiteNavigationContextValue | null,
+  data?: Record<string, unknown>,
 ): PreviewLinkProps | undefined {
-  const rawHref = typeof element.href === "string" ? element.href.trim() : "";
-  if (!rawHref) return undefined;
+  const uninterpolated = typeof element.href === "string" ? element.href.trim() : "";
+  if (!uninterpolated) return undefined;
+  const rawHref = interpolateHref(uninterpolated, data, siteNav?.params);
   try {
     if (!protocols.has(new URL(rawHref, "https://preview.invalid/").protocol)) return undefined;
   } catch {

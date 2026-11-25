@@ -12,7 +12,7 @@ interface LinkViewProps extends ViewProps<LinkElement> {
 
 export default function LinkView({ element, rootProps, children, data, labelProps, mode }: LinkViewProps) {
   const siteNav = useSiteNavigationOptional();
-  const link = previewLinkProps(element, mode === "preview" ? siteNav : null);
+  const link = previewLinkProps(element, mode === "preview" ? siteNav : null, data);
   const Tag = link ? "a" : "div";
   const html = { __html: sanitizeTextContent(resolveContent(element, data, false)) };
 
