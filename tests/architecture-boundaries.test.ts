@@ -479,3 +479,72 @@ test("boundary rule 9: symmetric monorepo keeps root free of src/ and runtime de
     );
   }
 });
+
+const LEGACY_CANVAS_FILES = [
+  "features/editor/components/editor/PreviewContainer.tsx",
+  "features/editor/components/editor/EditorCanvas.tsx",
+  "features/editor/hooks/useIframePreview.ts",
+  "features/editor/hooks/useCanvasRootDrop.ts",
+  "features/editor/components/canvas/CanvasInteractionLayer.tsx",
+  "features/editor/components/canvas/CanvasOverlay.tsx",
+  "features/editor/components/canvas/useCanvasDragDrop.ts",
+  "features/editor/components/canvas/useElementRect.ts",
+];
+
+const LEGACY_CANVAS_MODULE_NAMES = [
+  "PreviewContainer",
+  "EditorCanvas",
+  "useIframePreview",
+  "useCanvasRootDrop",
+  "CanvasInteractionLayer",
+  "CanvasOverlay",
+  "useCanvasDragDrop",
+  "useElementRect",
+];
+
+function lastSegment(specifier: string): string {
+  return specifier.split("/").pop() ?? specifier;
+}
+
+test("boundary rule 10: legacy portal-in-iframe canvas modules are gone and the Editor never clones its host stylesheets into #preview-iframe", () => {
+  const stillPresent = LEGACY_CANVAS_FILES.filter((rel) => fs.existsSync(path.join(SRC_ROOT, rel)));
+  assert.deepEqual(stillPresent, [], `Legacy canvas files must be deleted:\n${stillPresent.join("\n")}`);
+
+  const importers: string[] = [];
+  for (const fullPath of walkSourceFiles(SRC_ROOT)) {
+    const rel = toPosix(path.relative(SRC_ROOT, fullPath));
+    for (const specifier of extractModuleSpecifiers(fs.readFileSync(fullPath, "utf8"), fullPath)) {
+      if (LEGACY_CANVAS_MODULE_NAMES.includes(lastSegment(specifier))) {
+        importers.push(`${rel} -> ${specifier}`);
+      }
+    }
+  }
+  assert.deepEqual(importers, [], `Nothing may import a deleted canvas module:\n${importers.join("\n")}`);
+
+  const siteFrame = fs.readFileSync(
+    path.join(SRC_ROOT, "features/editor/components/canvas/SiteFrame.tsx"),
+    "utf8",
+  );
+  const sourceFile = ts.createSourceFile("SiteFrame.tsx", siteFrame, ts.ScriptTarget.Latest, false, ts.ScriptKind.TSX);
+  const headQueries: string[] = [];
+  function visit(node: ts.Node): void {
+    if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
+      const callee = node.expression;
+      const receiver = callee.expression.getText(sourceFile);
+      if (
+        (callee.name.text === "querySelectorAll" || callee.name.text === "querySelector") &&
+        /(^|\.)head$/.test(receiver)
+      ) {
+        headQueries.push(node.getText(sourceFile));
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  assert.deepEqual(
+    headQueries,
+    [],
+    `SiteFrame must not query document.head to clone Editor stylesheets into #preview-iframe:\n${headQueries.join("\n")}`,
+  );
+  assert.doesNotMatch(siteFrame, /document\.head\.querySelectorAll/);
+});

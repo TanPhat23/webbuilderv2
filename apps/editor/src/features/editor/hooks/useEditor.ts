@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, type SetStateAction } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
 import type { Page } from "@/features/pages";
 import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
 import type { Viewport, UseEditorReturn } from "../context/EditorContext";
+import { showErrorToast, PERMISSION_ERRORS } from "@/utils/errors/errorToast";
+import { ElementFactory } from "../lib/ElementFactory";
 import { resolveFallbackPage } from "../lib/editorPage";
 import {
   useCanvasViewportStore,
@@ -13,7 +14,6 @@ import {
 import { useElementStore } from "../store/element-store";
 import { useAddElement } from "../store/selectors/element-selectors";
 import { useSelectedElement } from "../store/selectors/selection-selectors";
-import { useCanvasRootDrop } from "./useCanvasRootDrop";
 import { useEditorPermissions } from "./useEditorPermissions";
 
 export type { Viewport, UseEditorReturn };
@@ -117,7 +117,6 @@ export const useEditor = (
     useCanvasViewportStore.getState().setPreset(resolved);
   }, []);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { userId } = useAuth();
   const effectiveUserId = userId ?? undefined;
 
@@ -150,15 +149,17 @@ export const useEditor = (
     navigate,
   });
 
-  const dropState = useCanvasRootDrop({
-    projectId: id,
-    pageId,
-    userId: userId ?? null,
-    canCreate,
-    isComponentPage,
-    queryClient,
-    addElement,
-  });
+  const addNewSection = useCallback((): void => {
+    if (!canCreate) {
+      showErrorToast(PERMISSION_ERRORS.cannotAdd);
+      return;
+    }
+    const newElement = ElementFactory.getInstance().createElement({
+      type: "Section",
+      pageId,
+    });
+    if (newElement) addElement(newElement);
+  }, [canCreate, pageId, addElement]);
 
   const isLoading = isLoadingPages || isLoadingProject;
   const permissionsSummary = useMemo(
@@ -175,13 +176,9 @@ export const useEditor = (
     () => ({
       currentView,
       setCurrentView,
-      isDraggingOver: dropState.isDraggingOver,
       isLoading,
       selectedElement,
-      handleDrop: dropState.handleDrop,
-      handleDragOver: dropState.handleDragOver,
-      handleDragLeave: dropState.handleDragLeave,
-      addNewSection: dropState.addNewSection,
+      addNewSection,
       isReadOnly,
       isLocked,
       permissions: permissionsSummary,
@@ -190,13 +187,9 @@ export const useEditor = (
     [
       currentView,
       setCurrentView,
-      dropState.isDraggingOver,
       isLoading,
       selectedElement,
-      dropState.handleDrop,
-      dropState.handleDragOver,
-      dropState.handleDragLeave,
-      dropState.addNewSection,
+      addNewSection,
       isReadOnly,
       isLocked,
       permissionsSummary,

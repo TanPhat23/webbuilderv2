@@ -10,7 +10,7 @@ import {
 export type CodeSplitProps = {
   /**
    * The right-hand content (the preview) that will be rendered in the split.
-   * This is typically a React element that contains the PreviewContainer.
+   * This is typically a React element that contains the CanvasStage.
    */
   canvas: React.ReactElement;
   /**

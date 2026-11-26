@@ -10,7 +10,7 @@ import {
   render,
 } from './support/sidebar-dom-harness';
 import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
-import type { DropPayload } from '../apps/editor/src/features/editor/utils/element/dragPayload';
+import type { StageElementSnapshot } from '../apps/editor/src/features/editor/components/canvas/rectTracker';
 
 redirectModules({
   '@clerk/tanstack-react-start': './test-clerk-stub.ts',
@@ -25,8 +25,9 @@ const { useEventModeStore } = await import('../apps/editor/src/features/editor/s
 const { usePickStore } = await import('../apps/editor/src/features/interactions/editing/pick-store');
 const { useCanvasElement } = await import('../apps/editor/src/features/editor/components/elements/shared/useCanvasElement');
 const { useCanvasPickMode } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasPickMode');
-const { findElementNode, useElementRect } = await import('../apps/editor/src/features/editor/components/canvas/useElementRect');
-const { useCanvasRootDrop } = await import('../apps/editor/src/features/editor/hooks/useCanvasRootDrop');
+const { findElementNode, useStageElementRect } = await import('../apps/editor/src/features/editor/components/canvas/rectTracker');
+const { useCanvasController } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasController');
+const { useCanvasViewportStore } = await import('../apps/editor/src/features/editor/store/canvas-viewport-store');
 const { useEditor } = await import('../apps/editor/src/features/editor/hooks/useEditor');
 const { rememberPendingMaster, useProjectComponents } = await import('../apps/editor/src/features/editor/hooks/useProjectComponents');
 const { EditorContext } = await import('../apps/editor/src/features/editor/context/EditorContext');
@@ -188,124 +189,244 @@ test('useCanvasPickMode picks target elements, blocks multi-click, and cancels o
   assert.equal(usePickStore.getState().onPick, null);
 });
 
-test('useElementRect measures relative element bounds and clears when element disappears', async () => {
-  const prevCss = (globalThis as Record<string, unknown>).CSS;
-  (globalThis as Record<string, unknown>).CSS = { escape: (s: string) => s };
-  try {
-  assert.equal(findElementNode(null, 'x'), null);
-  const item = makeText('box-1');
-  useElementStore.getState().setElements([item], true);
-
-  let measured: ReturnType<typeof useElementRect> | undefined;
-  let leftOffset = 25;
-  function Box() {
-    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
-    measured = useElementRect(root, useElementStore.getState().elements[0]?.id);
-    return h(
-      'div',
-      {
-        ref: (node: HTMLDivElement | null) => {
-          if (node) {
-            node.getBoundingClientRect = () => ({ left: 10, top: 20, width: 500, height: 400 } as DOMRect);
-          }
-          setRoot(node);
-        },
-      },
-      useElementStore.getState().elements.length > 0
-        ? h('span', {
-            'data-element-id': 'box-1',
-            ref: (node: HTMLSpanElement | null) => {
-              if (node) {
-                node.getBoundingClientRect = () => ({ left: leftOffset, top: 50, width: 120, height: 40 } as DOMRect);
-              }
-            },
-          })
-        : null,
-    );
+test('useCanvasController ignores the second press of a double click that completed a pick', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  useSelectionStore.getState().setSelectedElement(undefined);
+  let controller: ReturnType<typeof useCanvasController> | undefined;
+  function PickProbe() {
+    const [siteRoot, setSiteRoot] = React.useState<HTMLDivElement | null>(null);
+    controller = useCanvasController({
+      siteRoot,
+      stageEl: null,
+      iframeRef: { current: null },
+      canEdit: true,
+      canCreate: true,
+      queryClient: client,
+      projectId: 'proj-1',
+      userId: 'user-1',
+    });
+    return h('div', { ref: setSiteRoot, id: 'wb-site-root' }, h('button', { 'data-element-id': 'picked-el' }, 'Pick me'));
   }
 
-  await render(h(Box));
-  assert.deepEqual(measured?.rect, { left: 15, top: 30, width: 120, height: 40 });
+  try {
+    const r = await render(h(PickProbe));
+    const target = r.container.querySelector('[data-element-id="picked-el"]') as HTMLElement;
+    const picked: string[] = [];
+    usePickStore.getState().start((id) => picked.push(id));
 
-  leftOffset = 45;
-  await act(async () => {
-    useElementStore.getState().setElements([], true);
-  });
-  assert.equal(measured?.node, null);
-  assert.equal(measured?.rect, null);
+    const mouse = (type: string, detail: number): React.MouseEvent => {
+      let stopped = false;
+      return {
+        type,
+        detail,
+        target,
+        preventDefault() {},
+        stopPropagation() { stopped = true; },
+        isPropagationStopped: () => stopped,
+      } as unknown as React.MouseEvent;
+    };
+    const press = (): React.PointerEvent =>
+      ({ button: 0, clientX: 5, clientY: 5, altKey: false, shiftKey: false, target, preventDefault() {}, stopPropagation() {} }) as unknown as React.PointerEvent;
+    const release = (): void => {
+      const up = new Event('pointerup', { bubbles: true, cancelable: true });
+      Object.defineProperties(up, { clientX: { value: 5 }, clientY: { value: 5 } });
+      window.dispatchEvent(up);
+    };
+
+    // First click completes the pick.
+    await act(async () => {
+      controller?.siteHandlers.onClickCapture(mouse('click', 1));
+    });
+    assert.deepEqual(picked, ['picked-el']);
+
+    // Second press of the double click: pick mode swallows the mouse events, so it must not select on release.
+    await act(async () => {
+      controller?.siteHandlers.onPointerDown(press());
+      controller?.siteHandlers.onMouseDownCapture(mouse('mousedown', 2));
+      release();
+    });
+    assert.equal(useSelectionStore.getState().selectedElementId, undefined);
+
+    // A later ordinary click still selects.
+    await act(async () => {
+      controller?.siteHandlers.onMouseDownCapture(mouse('mousedown', 1));
+      controller?.siteHandlers.onPointerDown(press());
+      release();
+    });
+    assert.equal(useSelectionStore.getState().selectedElementId, 'picked-el');
   } finally {
-    (globalThis as Record<string, unknown>).CSS = prevCss;
+    usePickStore.getState().cancel();
+    client.clear();
   }
 });
 
-test('useCanvasRootDrop enforces create permissions, single component root, and section creation', async () => {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  const added: string[] = [];
-  let api: ReturnType<typeof useCanvasRootDrop> | undefined;
+test('useStageElementRect measures stage-projected element bounds and clears when the element disappears', async () => {
+  useCanvasViewportStore.getState().setManualZoom(1);
+  assert.equal(findElementNode(null, 'x'), null);
 
-  function DropProbe(props: { canCreate: boolean; isComponentPage: boolean }) {
-    api = useCanvasRootDrop({
-      projectId: 'proj-1',
-      pageId: 'page-1',
-      userId: 'user-1',
-      canCreate: props.canCreate,
-      isComponentPage: props.isComponentPage,
-      queryClient: client,
-      addElement: (el) => {
-        added.push(el.type);
-        useElementStore.getState().setElements([...useElementStore.getState().elements, el], true);
-      },
-    });
+  const stageEl = document.createElement('div');
+  const iframeEl = document.createElement('iframe');
+  const siteRoot = document.createElement('div');
+  const box = document.createElement('span');
+  box.setAttribute('data-element-id', 'box-1');
+  siteRoot.appendChild(box);
+  stageEl.append(iframeEl);
+  document.body.appendChild(stageEl);
+
+  const rect = (left: number, top: number, width: number, height: number): DOMRect =>
+    ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON: () => ({}) }) as DOMRect;
+  stageEl.getBoundingClientRect = () => rect(10, 20, 800, 600);
+  iframeEl.getBoundingClientRect = () => rect(10, 20, 500, 400);
+  Object.defineProperty(iframeEl, 'clientHeight', { configurable: true, value: 400 });
+  box.getBoundingClientRect = () => rect(25, 50, 120, 40);
+
+  assert.equal(findElementNode(siteRoot, 'box-1'), box);
+
+  let measured: StageElementSnapshot | undefined;
+  function Box() {
+    measured = useStageElementRect(siteRoot, stageEl, iframeEl, 'box-1');
     return null;
   }
 
-  const fakeDataTransfer = (payload: DropPayload | null): DataTransfer => ({
-    getData: (mime: string) => {
-      if (!payload) return '';
-      if (mime === 'elementType' && payload.kind === 'create') return payload.elementType;
-      if (mime === 'elementId' && payload.kind === 'move') return payload.elementId;
-      return '';
+  try {
+    const view = await render(h(Box));
+    assert.equal(measured?.node, box);
+    assert.deepEqual(measured?.rect, { left: 25, top: 50, width: 120, height: 40 });
+    assert.equal(measured?.visibleInFrame, true);
+
+    box.remove();
+    await act(async () => {
+      siteRoot.ownerDocument.dispatchEvent(new Event('scroll'));
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    assert.equal(measured?.node, null);
+    assert.equal(measured?.rect, null);
+    await view.unmount();
+  } finally {
+    stageEl.remove();
+    useCanvasViewportStore.getState().resetViewport();
+  }
+});
+
+test('useCanvasController root drops enforce create permissions and the single component root', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  useElementStore.getState().beginPage('proj-1', 'page-1', false);
+  useElementStore.getState().setElements([], true);
+  useCanvasViewportStore.getState().setManualZoom(1);
+
+  let controller: ReturnType<typeof useCanvasController> | undefined;
+  function DropProbe(props: { canCreate: boolean }) {
+    const [siteRoot, setSiteRoot] = React.useState<HTMLDivElement | null>(null);
+    controller = useCanvasController({
+      siteRoot,
+      stageEl: null,
+      iframeRef: { current: null },
+      canEdit: true,
+      canCreate: props.canCreate,
+      queryClient: client,
+      projectId: 'proj-1',
+      userId: 'user-1',
+    });
+    return h('div', { ref: setSiteRoot, id: 'wb-site-root' });
+  }
+
+  const store = new Map<string, string>();
+  const types: string[] = [];
+  const dataTransfer = {
+    types,
+    dropEffect: 'none',
+    setData(key: string, value: string) {
+      const lower = key.toLowerCase();
+      store.set(lower, value);
+      if (!types.includes(lower)) types.push(lower);
     },
-  } as unknown as DataTransfer);
+    getData: (key: string) => store.get(key.toLowerCase()) ?? '',
+  } as unknown as DataTransfer;
+  const dragEvent = (): React.DragEvent =>
+    ({
+      target: document.body,
+      relatedTarget: null,
+      clientX: 10,
+      clientY: 10,
+      dataTransfer,
+      preventDefault() {},
+      stopPropagation() {},
+    }) as unknown as React.DragEvent;
+  const realElementsFromPoint = document.elementsFromPoint;
+  document.elementsFromPoint = () => [document.body];
+  const dropOnce = async (): Promise<void> => {
+    await act(async () => {
+      controller?.siteHandlers.onDragOver(dragEvent());
+      controller?.siteHandlers.onDrop(dragEvent());
+    });
+  };
 
-  const rootTarget = document.createElement('div');
-  const dragEvent = (payload: DropPayload | null): React.DragEvent<HTMLDivElement> => ({
-    target: rootTarget,
-    dataTransfer: fakeDataTransfer(payload),
-    preventDefault() {},
-    stopPropagation() {},
-  } as unknown as React.DragEvent<HTMLDivElement>);
+  try {
+    dataTransfer.setData('elementType', 'Text');
 
-  const r = await render(h(DropProbe, { canCreate: false, isComponentPage: false }));
-  await act(async () => {
-    api?.addNewSection();
-    api?.handleDragOver(dragEvent({ kind: 'create', elementType: 'Text' }));
-    api?.handleDrop(dragEvent({ kind: 'create', elementType: 'Text' }));
-  });
-  assert.deepEqual(added, []);
+    const r = await render(h(DropProbe, { canCreate: false }));
+    await dropOnce();
+    assert.equal(controller?.drop, null);
+    assert.equal(useElementStore.getState().elements.length, 0);
 
-  await r.rerender(h(DropProbe, { canCreate: true, isComponentPage: true }));
-  await act(async () => {
-    api?.handleDragOver(dragEvent({ kind: 'create', elementType: 'Text' }));
-  });
-  assert.equal(api?.isDraggingOver, true);
-  await act(async () => {
-    api?.handleDragLeave(dragEvent(null));
-  });
-  assert.equal(api?.isDraggingOver, false);
+    await r.rerender(h(DropProbe, { canCreate: true }));
+    await act(async () => {
+      controller?.siteHandlers.onDragOver(dragEvent());
+    });
+    assert.deepEqual(controller?.drop, { kind: 'root' });
+    await act(async () => {
+      controller?.siteHandlers.onDragLeave(dragEvent());
+    });
+    assert.equal(controller?.drop, null);
 
-  await act(async () => {
-    api?.handleDrop(dragEvent({ kind: 'move', elementId: 'x' }));
-    api?.handleDrop(dragEvent({ kind: 'create', elementType: 'Text' }));
-    api?.handleDrop(dragEvent({ kind: 'create', elementType: 'Text' }));
-  });
-  assert.deepEqual(added, ['Text']);
+    await dropOnce();
+    assert.deepEqual(useElementStore.getState().elements.map((el) => el.type), ['Text']);
 
-  await act(async () => {
-    api?.addNewSection();
-  });
-  assert.deepEqual(added, ['Text', 'Section']);
-  client.clear();
+    // A master (component) page holds one root: once it exists, a drop that is not inside it is rejected.
+    useElementStore.getState().beginPage('proj-1', 'cp-1', true);
+    useElementStore.getState().setElements([makeFrame('master-root')], true);
+    await dropOnce();
+    assert.equal(useElementStore.getState().elements.length, 1);
+  } finally {
+    document.elementsFromPoint = realElementsFromPoint;
+    useCanvasViewportStore.getState().resetViewport();
+    client.clear();
+  }
+});
+
+test('useEditor addNewSection creates a Section only when creation is permitted', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  client.setQueryData(projectKeys.pages('p1'), [
+    { Id: 'home', Name: 'Home', Type: 'sp', Styles: null, ProjectId: 'p1', CreatedAt: new Date(0), UpdatedAt: new Date(0), DeletedAt: null },
+  ]);
+  client.setQueryData(projectKeys.detail('p1'), { id: 'p1' });
+  client.setQueryData(collaboratorKeys.byProject('p1'), [{ userId: 'user-1', role: CollaboratorRole.OWNER }]);
+
+  let editorResult: ReturnType<typeof useEditor> | undefined;
+  function EditorProbe(props: { readOnly: boolean }) {
+    editorResult = useEditor('p1', 'home', { isReadOnly: props.readOnly });
+    return null;
+  }
+
+  try {
+    const r = await render(h(QueryClientProvider, { client }, h(EditorProbe, { readOnly: true })));
+    await flush(5);
+    useElementStore.getState().setElements([], true);
+    await act(async () => {
+      editorResult?.addNewSection();
+    });
+    assert.equal(useElementStore.getState().elements.length, 0);
+
+    await r.rerender(h(QueryClientProvider, { client }, h(EditorProbe, { readOnly: false })));
+    await flush(5);
+    await act(async () => {
+      editorResult?.addNewSection();
+    });
+    assert.deepEqual(useElementStore.getState().elements.map((el) => el.type), ['Section']);
+  } finally {
+    await cleanup();
+    client.clear();
+  }
 });
 
 test('useEditor and useProjectComponents resolve queries, component masters, and lifecycle redirects', async () => {

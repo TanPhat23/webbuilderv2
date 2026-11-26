@@ -41,12 +41,8 @@ export function editorValue(over: { isReadOnly?: boolean; isLocked?: boolean } =
     editor: {
       currentView: 'desktop',
       setCurrentView() {},
-      isDraggingOver: false,
       isLoading: false,
       selectedElement: undefined,
-      handleDrop() {},
-      handleDragOver() {},
-      handleDragLeave() {},
       addNewSection() {},
       isReadOnly: false,
       isLocked: false,

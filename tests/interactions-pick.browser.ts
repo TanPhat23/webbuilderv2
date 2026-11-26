@@ -1,12 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
-import { chromium } from '@playwright/test';
+import { chromium, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 
+async function readCounters(page: Page): Promise<number[]> {
+  const downs = await page.getByTestId('downs').textContent();
+  const clicks = await page.getByTestId('clicks').textContent();
+  return [Number(downs), Number(clicks)];
+}
+
 test('picking a canvas target suppresses canvas actions, Escape cancels, and the label reflects interactions', async () => {
-  const server = await createServer({ configFile:false, optimizeDeps:{entries:['tests/fixtures/interactions-pick.html']}, define:{ 'process.env': '{}' }, plugins:[{name:'fixture-overlay', enforce:'pre', resolveId(source) { if (source === '@/features/auth/lib/gettoken') return resolve('tests/fixtures/interactions-pick-auth-stub.ts'); if (source === '@/features/editor/utils/element/create/ElementFactory') return resolve('tests/fixtures/interactions-pick-factory-stub.ts'); if (source === './CanvasOverlay') return resolve('tests/fixtures/interactions-pick-overlay-stub.tsx'); if (source === '@/features/editor/components/EditorContextMenu') return resolve('tests/fixtures/interactions-pick-context-stub.tsx'); if (source === '@/features/editor') return resolve('tests/fixtures/interactions-pick-editor-stub.ts'); if (source === '@/features/collaboration' || source === '../../apps/editor/src/features/collaboration') return resolve('apps/editor/src/features/collaboration/interfaces/collaboration.interface.ts'); }},tailwindcss()], esbuild:{jsx:'automatic'}, resolve:{alias:[{find:/^@\/features\/auth\/lib\/gettoken$/,replacement:resolve('tests/fixtures/interactions-pick-auth-stub.ts')},{find:/^@\/features\/editor\/components\/EditorContextMenu$/,replacement:resolve('tests/fixtures/interactions-pick-context-stub.tsx')},{find:/^@\/features\/editor\/utils\/element\/create\/ElementFactory$/,replacement:resolve('tests/fixtures/interactions-pick-factory-stub.ts')},{find:/^@\/features\/editor$/,replacement:resolve('tests/fixtures/interactions-pick-editor-stub.ts')},{find:/^@\/features\/collaboration$/,replacement:resolve('apps/editor/src/features/collaboration/interfaces/collaboration.interface.ts')},{find:'@',replacement:resolve('apps/editor/src')}]}, server:{port:0} });
+  const server = await createServer({ configFile:false, optimizeDeps:{entries:['tests/fixtures/interactions-pick.html']}, define:{ 'process.env': '{}' }, plugins:[{name:'fixture-overlay', enforce:'pre', resolveId(source) { if (source === '@/features/auth/lib/gettoken') return resolve('tests/fixtures/interactions-pick-auth-stub.ts'); if (source === '@/features/editor/utils/element/create/ElementFactory') return resolve('tests/fixtures/interactions-pick-factory-stub.ts'); if (source === '@/features/editor/lib/dropElement') return resolve('tests/fixtures/interactions-pick-drop-stub.ts'); if (source === '@/features/editor/components/EditorContextMenu') return resolve('tests/fixtures/interactions-pick-context-stub.tsx'); if (source === '@/features/editor') return resolve('tests/fixtures/interactions-pick-editor-stub.ts'); if (source === '@/features/collaboration' || source === '../../apps/editor/src/features/collaboration') return resolve('apps/editor/src/features/collaboration/interfaces/collaboration.interface.ts'); }},tailwindcss()], esbuild:{jsx:'automatic'}, resolve:{alias:[{find:/^@\/features\/auth\/lib\/gettoken$/,replacement:resolve('tests/fixtures/interactions-pick-auth-stub.ts')},{find:/^@\/features\/editor\/lib\/dropElement$/,replacement:resolve('tests/fixtures/interactions-pick-drop-stub.ts')},{find:/^@\/features\/editor\/components\/EditorContextMenu$/,replacement:resolve('tests/fixtures/interactions-pick-context-stub.tsx')},{find:/^@\/features\/editor\/utils\/element\/create\/ElementFactory$/,replacement:resolve('tests/fixtures/interactions-pick-factory-stub.ts')},{find:/^@\/features\/editor$/,replacement:resolve('tests/fixtures/interactions-pick-editor-stub.ts')},{find:/^@\/features\/collaboration$/,replacement:resolve('apps/editor/src/features/collaboration/interfaces/collaboration.interface.ts')},{find:'@',replacement:resolve('apps/editor/src')}]}, server:{port:0} });
   await server.listen();
   const browser = await chromium.launch({headless:true});
   try {
@@ -23,17 +29,17 @@ test('picking a canvas target suppresses canvas actions, Escape cancels, and the
     await page.getByText('Target element').click();
     assert.equal(await page.getByTestId('picked').textContent(), 'target');
     assert.equal(await page.getByTestId('selected').textContent(), 'source');
-    assert.deepEqual(await page.evaluate(() => [(window as any).downs,(window as any).clicks]), [0,0]);
+    assert.deepEqual(await readCounters(page), [0,0]);
     await page.getByRole('button',{name:'Pick on canvas'}).click();
     await page.getByText('Target element').dblclick();
     assert.equal(await page.getByTestId('selected').textContent(), 'source');
-    assert.deepEqual(await page.evaluate(() => [(window as any).downs,(window as any).clicks]), [0,0]);
+    assert.deepEqual(await readCounters(page), [0,0]);
     await page.getByRole('button',{name:'Pick on canvas'}).click();
     await page.keyboard.press('Escape');
     assert.equal(await page.getByRole('button',{name:'Pick on canvas'}).count(), 1);
     assert.equal(await page.getByTestId('selected').textContent(), 'source');
     await page.getByText('Target element').click();
-    assert.deepEqual(await page.evaluate(() => [(window as any).downs,(window as any).clicks]), [1,1]);
+    assert.deepEqual(await readCounters(page), [1,1]);
     await page.getByText('Target element').click({button:'right'});
     assert.equal(await page.getByTestId('selected').textContent(), 'target');
     assert.equal(await page.getByLabel('Has interactions').count(),1);

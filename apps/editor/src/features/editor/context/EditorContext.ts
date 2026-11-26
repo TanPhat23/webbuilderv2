@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   type Dispatch,
-  type DragEvent,
   type ReactNode,
   type SetStateAction,
 } from "react";
@@ -13,12 +12,8 @@ export type Viewport = "mobile" | "tablet" | "desktop";
 export interface UseEditorReturn {
   currentView: Viewport;
   setCurrentView: Dispatch<SetStateAction<Viewport>>;
-  isDraggingOver: boolean;
   isLoading: boolean;
   selectedElement: EditorElement | undefined;
-  handleDrop: (e: DragEvent<HTMLDivElement>) => void;
-  handleDragOver: (e: DragEvent<HTMLDivElement>) => void;
-  handleDragLeave: (e: DragEvent<HTMLDivElement>) => void;
   addNewSection: () => void;
   isReadOnly: boolean;
   isLocked: boolean;

@@ -8,10 +8,6 @@ interface UseEditorShortcutsOptions {
   stageRef?: React.RefObject<HTMLElement | null>;
   /** Mount node inside the preview iframe; its owner document receives shortcuts. */
   mountNode?: HTMLElement | null;
-  /** @deprecated legacy EditorCanvas wiring, removed with it. */
-  canvasRef?: React.RefObject<HTMLDivElement | null>;
-  /** @deprecated legacy EditorCanvas wiring, removed with it. */
-  iframeRef?: React.RefObject<HTMLIFrameElement | null>;
   isReadOnly?: boolean;
   isLocked?: boolean;
 }
@@ -19,7 +15,6 @@ interface UseEditorShortcutsOptions {
 export function useEditorShortcuts({
   stageRef,
   mountNode,
-  iframeRef,
   isReadOnly = false,
   isLocked = false,
 }: UseEditorShortcutsOptions): { keyboardActions: ElementKeyboardActions } {
@@ -96,7 +91,6 @@ export function useEditorShortcuts({
     const candidates = [
       stageRef?.current?.ownerDocument,
       mountNode?.ownerDocument,
-      iframeRef?.current?.contentDocument,
     ];
     for (const doc of candidates) {
       if (doc) docs.add(doc);
@@ -106,7 +100,7 @@ export function useEditorShortcuts({
     return () => {
       for (const doc of docs) doc.removeEventListener("keydown", handleKeyDown);
     };
-  }, [stageRef, mountNode, iframeRef]);
+  }, [stageRef, mountNode]);
 
   return {
     keyboardActions: keyboardEventRef.current,

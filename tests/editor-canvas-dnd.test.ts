@@ -23,7 +23,8 @@ redirectModules({
 
 const { authState } = await import('./support/test-clerk-stub');
 const { routerState } = await import('./support/editor-router-stub');
-const { useCanvasDragDrop } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasDragDrop');
+const { useCanvasController } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasController');
+const { useCanvasViewportStore } = await import('../apps/editor/src/features/editor/store/canvas-viewport-store');
 const VersionHistoryPanel = (await import('../apps/editor/src/features/editor/components/sidebar/SnapshotManager')).default;
 const { useElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
 const { useSelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
@@ -70,10 +71,62 @@ afterEach(async () => {
 
 after(cleanup);
 
-test('useCanvasDragDrop computes drop indicators and handles sidebar insert drops', async () => {
+function makeRect(left: number, top: number, width: number, height: number): DOMRect {
+  return {
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    x: left,
+    y: top,
+    toJSON: () => ({}),
+  };
+}
+
+interface FakeDragData {
+  readonly dataTransfer: DataTransfer;
+  readonly set: (key: string, value: string) => void;
+}
+
+function createDataTransfer(): FakeDragData {
+  const store = new Map<string, string>();
+  const types: string[] = [];
+  const dataTransfer = {
+    types,
+    dropEffect: 'none',
+    setData(key: string, value: string) {
+      const lower = key.toLowerCase();
+      store.set(lower, value);
+      if (!types.includes(lower)) types.push(lower);
+    },
+    getData: (key: string) => store.get(key.toLowerCase()) ?? '',
+  } as unknown as DataTransfer;
+  return { dataTransfer, set: (key, value) => dataTransfer.setData(key, value) };
+}
+
+function dragEventAt(
+  target: EventTarget,
+  dataTransfer: DataTransfer,
+  point: { clientX: number; clientY: number },
+  extra: Partial<React.DragEvent> = {},
+): React.DragEvent {
+  return {
+    target,
+    relatedTarget: null,
+    ...point,
+    dataTransfer,
+    preventDefault() {},
+    stopPropagation() {},
+    ...extra,
+  } as unknown as React.DragEvent;
+}
+
+test('useCanvasController resolves sidebar HTML5 drops through the unified hit-tester', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  const prevCss = (globalThis as Record<string, unknown>).CSS;
-  (globalThis as Record<string, unknown>).CSS = { escape: (s: string) => s };
+  const realElementsFromPoint = document.elementsFromPoint;
+  useCanvasViewportStore.getState().setManualZoom(1);
 
   try {
     const child = makeText('el-child');
@@ -81,11 +134,14 @@ test('useCanvasDragDrop computes drop indicators and handles sidebar insert drop
     const sibling = makeText('el-sibling');
     useElementStore.getState().setElements([parent, sibling], true);
 
-    const dndRef: { current: ReturnType<typeof useCanvasDragDrop> | undefined } = { current: undefined };
-    function CanvasHost() {
-      const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
-      dndRef.current = useCanvasDragDrop({
-        root,
+    const controllerRef: { current: ReturnType<typeof useCanvasController> | undefined } = { current: undefined };
+    function CanvasHost({ showChild }: { readonly showChild: boolean }) {
+      const [siteRoot, setSiteRoot] = React.useState<HTMLDivElement | null>(null);
+      controllerRef.current = useCanvasController({
+        siteRoot,
+        stageEl: null,
+        iframeRef: { current: null },
+        canEdit: true,
         canCreate: true,
         queryClient: client,
         projectId: 'proj-1',
@@ -93,74 +149,58 @@ test('useCanvasDragDrop computes drop indicators and handles sidebar insert drop
       });
       return h(
         'div',
-        { ref: setRoot },
+        { ref: setSiteRoot, id: 'wb-site-root' },
         h(
           'div',
-          {
-            'data-element-id': 'el-parent',
-            'data-element-type': 'Frame',
-          },
-          h('div', {
-            'data-element-id': 'el-child',
-            'data-element-type': 'Text',
-          }),
+          { 'data-element-id': 'el-parent', 'data-element-type': 'Frame' },
+          showChild ? h('div', { 'data-element-id': 'el-child', 'data-element-type': 'Text' }) : null,
         ),
-        h('div', {
-          'data-element-id': 'el-sibling',
-          'data-element-type': 'Text',
-        }),
+        h('div', { 'data-element-id': 'el-sibling', 'data-element-type': 'Text' }),
       );
     }
 
-    const r = await render(h(CanvasHost));
+    const r = await render(h(CanvasHost, { showChild: true }));
+    const siteRoot = $q<HTMLElement>(r.container, '#wb-site-root');
     const parentNode = $q<HTMLElement>(r.container, '[data-element-id="el-parent"]');
+    const childNode = $q<HTMLElement>(r.container, '[data-element-id="el-child"]');
     const siblingNode = $q<HTMLElement>(r.container, '[data-element-id="el-sibling"]');
-    parentNode.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 100 } as DOMRect);
-    siblingNode.getBoundingClientRect = () => ({ left: 0, top: 120, width: 200, height: 40 } as DOMRect);
+    parentNode.getBoundingClientRect = () => makeRect(0, 0, 200, 100);
+    childNode.getBoundingClientRect = () => makeRect(10, 10, 180, 30);
+    siblingNode.getBoundingClientRect = () => makeRect(0, 120, 200, 40);
+    let stack: Element[] = [siblingNode, siteRoot];
+    document.elementsFromPoint = () => stack;
 
-    const storeData = new Map<string, string>();
-    const types: string[] = [];
-    const dt = {
-      types,
-      dropEffect: 'none',
-      setData(k: string, v: string) {
-        const lower = k.toLowerCase();
-        storeData.set(lower, v);
-        if (!types.includes(lower)) types.push(lower);
-      },
-      getData: (k: string) => storeData.get(k.toLowerCase()) ?? '',
-    } as unknown as DataTransfer;
+    const { dataTransfer, set } = createDataTransfer();
+    const controller = () => {
+      if (!controllerRef.current) throw new Error('controller not rendered');
+      return controllerRef.current;
+    };
+    const getDrop = () => controller().drop;
 
-    const dragEvent = (target: EventTarget, extra: Partial<React.DragEvent> = {}) => ({
-      target,
-      relatedTarget: null,
-      clientX: 10,
-      clientY: 125,
-      dataTransfer: dt,
-      preventDefault() {},
-      stopPropagation() {},
-      ...extra,
-    } as unknown as React.DragEvent);
-
-    const getDrop = () => dndRef.current?.drop ?? null;
-
-    dt.setData('elementType', 'Text');
+    set('elementType', 'Text');
     await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(siblingNode));
+      controller().siteHandlers.onDragOver(dragEventAt(siblingNode, dataTransfer, { clientX: 10, clientY: 125 }));
     });
-    assert.equal(getDrop()?.targetId, 'el-sibling');
+    assert.deepEqual(getDrop(), {
+      kind: 'relative',
+      indicator: { targetId: 'el-sibling', position: 'before', horizontal: false },
+    });
 
     await act(() => {
-      dndRef.current?.handleDrop(dragEvent(siblingNode));
-      dndRef.current?.handleDragLeave(dragEvent(siblingNode, { relatedTarget: document.body }));
+      controller().siteHandlers.onDrop(dragEventAt(siblingNode, dataTransfer, { clientX: 10, clientY: 125 }));
     });
     assert.equal(useElementStore.getState().elements.length, 3);
+    assert.equal(getDrop(), null);
 
-    dt.setData('elementType', 'Heading');
+    stack = [parentNode, siteRoot];
+    set('elementType', 'Heading');
     await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
-      dndRef.current?.handleDragLeave(dragEvent(parentNode, { relatedTarget: null }));
-      dndRef.current?.handleDrop(dragEvent(parentNode.firstChild ?? parentNode, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDragOver(dragEventAt(parentNode, dataTransfer, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDragLeave(
+        dragEventAt(parentNode, dataTransfer, { clientX: 60, clientY: 50 }, { relatedTarget: null }),
+      );
+      controller().siteHandlers.onDragOver(dragEventAt(parentNode, dataTransfer, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDrop(dragEventAt(childNode, dataTransfer, { clientX: 60, clientY: 50 }));
     });
     const updatedParent = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
     assert.ok(updatedParent?.elements?.some((el) => el.type === 'Heading'));
@@ -175,8 +215,8 @@ test('useCanvasDragDrop computes drop indicators and handles sidebar insert drop
     } as unknown as DataTransfer;
     setElementTypeDrag(emptyDt, 'Button');
     await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50, dataTransfer: emptyDt }));
-      dndRef.current?.handleDrop(dragEvent(parentNode, { clientX: 60, clientY: 50, dataTransfer: emptyDt }));
+      controller().siteHandlers.onDragOver(dragEventAt(parentNode, emptyDt, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDrop(dragEventAt(parentNode, emptyDt, { clientX: 60, clientY: 50 }));
     });
     const afterFallback = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
     assert.ok(afterFallback?.elements?.some((el) => el.type === 'Button'));
@@ -185,19 +225,101 @@ test('useCanvasDragDrop computes drop indicators and handles sidebar insert drop
     // Persisted elements synced from Go can carry pageId: ""; drop must fall back to activePage.pageId.
     const emptyPageFrame: FrameElement = { ...makeFrame('el-parent', []), pageId: '' };
     useElementStore.getState().setElements([emptyPageFrame], true);
-    dt.setData('elementType', 'Section');
+    await r.rerender(h(CanvasHost, { showChild: false }));
+    set('elementType', 'Section');
     await act(() => {
-      dndRef.current?.handleDragOver(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
-      dndRef.current?.handleDrop(dragEvent(parentNode, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDragOver(dragEventAt(parentNode, dataTransfer, { clientX: 60, clientY: 50 }));
+      controller().siteHandlers.onDrop(dragEventAt(parentNode, dataTransfer, { clientX: 60, clientY: 50 }));
     });
     const afterEmptyPageId = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
     assert.ok(afterEmptyPageId?.elements?.some((el) => el.type === 'Section' && el.pageId === 'page-1'));
   } finally {
-    (globalThis as Record<string, unknown>).CSS = prevCss;
+    document.elementsFromPoint = realElementsFromPoint;
+    useCanvasViewportStore.getState().resetViewport();
     await cleanup();
     client.clear();
   }
 });
+
+test('useCanvasController snaps sidebar drops to the nearest Flex row child slot', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  const realElementsFromPoint = document.elementsFromPoint;
+  useCanvasViewportStore.getState().setManualZoom(1);
+
+  try {
+    const row = makeFrame('row-1', [makeText('card-1'), makeText('card-2'), makeText('card-3')]);
+    useElementStore.getState().setElements([row], true);
+
+    const controllerRef: { current: ReturnType<typeof useCanvasController> | undefined } = { current: undefined };
+    function CanvasHost() {
+      const [siteRoot, setSiteRoot] = React.useState<HTMLDivElement | null>(null);
+      controllerRef.current = useCanvasController({
+        siteRoot,
+        stageEl: null,
+        iframeRef: { current: null },
+        canEdit: true,
+        canCreate: true,
+        queryClient: client,
+        projectId: 'proj-1',
+        userId: 'user-1',
+      });
+      return h(
+        'div',
+        { ref: setSiteRoot, id: 'wb-site-root' },
+        h(
+          'div',
+          {
+            'data-element-id': 'row-1',
+            'data-element-type': 'Frame',
+            style: { display: 'flex', flexDirection: 'row' },
+          },
+          ...['card-1', 'card-2', 'card-3'].map((id) =>
+            h('div', { key: id, 'data-element-id': id, 'data-element-type': 'Text' }),
+          ),
+        ),
+      );
+    }
+
+    const r = await render(h(CanvasHost));
+    const siteRoot = $q<HTMLElement>(r.container, '#wb-site-root');
+    const rowNode = $q<HTMLElement>(r.container, '[data-element-id="row-1"]');
+    rowNode.getBoundingClientRect = () => makeRect(0, 0, 600, 200);
+    makeRectOf(r.container, 'card-1', makeRect(20, 40, 100, 120));
+    makeRectOf(r.container, 'card-2', makeRect(150, 40, 100, 120));
+    makeRectOf(r.container, 'card-3', makeRect(280, 40, 100, 120));
+    document.elementsFromPoint = () => [rowNode, siteRoot];
+
+    const { dataTransfer, set } = createDataTransfer();
+    set('elementType', 'Text');
+    const point = { clientX: 142, clientY: 100 };
+
+    await act(() => {
+      controllerRef.current?.siteHandlers.onDragOver(dragEventAt(rowNode, dataTransfer, point));
+    });
+    assert.deepEqual(controllerRef.current?.drop, {
+      kind: 'relative',
+      indicator: { targetId: 'card-2', position: 'before', horizontal: true },
+    });
+
+    await act(() => {
+      controllerRef.current?.siteHandlers.onDrop(dragEventAt(rowNode, dataTransfer, point));
+    });
+    const savedRow = useElementStore.getState().elements.find((el) => el.id === 'row-1') as FrameElement | undefined;
+    const order = savedRow?.elements?.map((el) => el.id) ?? [];
+    assert.equal(order.length, 4);
+    assert.deepEqual([order[0], order[2], order[3]], ['card-1', 'card-2', 'card-3']);
+    assert.equal(savedRow?.elements?.[1]?.type, 'Text');
+  } finally {
+    document.elementsFromPoint = realElementsFromPoint;
+    useCanvasViewportStore.getState().resetViewport();
+    await cleanup();
+    client.clear();
+  }
+});
+
+function makeRectOf(container: HTMLElement, id: string, rect: DOMRect): void {
+  $q<HTMLElement>(container, `[data-element-id="${id}"]`).getBoundingClientRect = () => rect;
+}
 
 test('VersionHistoryPanel lists saved versions and saves or restores snapshots', async () => {
   const client = new QueryClient({

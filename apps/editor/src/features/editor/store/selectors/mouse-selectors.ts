@@ -20,7 +20,7 @@ export const useCollaboratorUsers = () => useMouseStore((s) => s.users);
 
 /**
  * Select remote users + online users together (shallow compared).
- * Used by the EditorCanvas component to render collaborator cursors.
+ * Used by RemoteCursorsOverlay to render collaborator cursors.
  */
 export const useCollaborationCursors = () =>
   useMouseStore(

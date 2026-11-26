@@ -479,6 +479,13 @@ export function useCanvasController({
     }
   };
 
+  // A press that pick mode swallows (the second press of the double click that
+  // completed a pick) must not select the element when it is released.
+  const onMouseDownCapture = (event: React.MouseEvent): void => {
+    pick.blockPickPointer(event);
+    if (event.isPropagationStopped()) manipulation.cancel();
+  };
+
   const onMouseOver = (event: React.MouseEvent): void => {
     if (session.kind !== "idle" || isTypingInCanvas(siteRoot)) return;
     const id = findElementNodeFromTarget(siteRoot, event.target)?.dataset.elementId;
@@ -532,7 +539,7 @@ export function useCanvasController({
     startSpacing: manipulation.startSpacing,
     cancel: manipulation.cancel,
     siteHandlers: {
-      onMouseDownCapture: pick.blockPickPointer,
+      onMouseDownCapture,
       onMouseUpCapture: pick.blockPickPointer,
       onContextMenuCapture: pick.blockPickPointer,
       onClickCapture: pick.handleClickCapture,
