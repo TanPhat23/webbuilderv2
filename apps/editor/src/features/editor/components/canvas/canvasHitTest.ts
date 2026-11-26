@@ -29,15 +29,6 @@ export interface ResolveCanvasDropTargetParams {
 
 const CONTAINER_TYPE_SET: ReadonlySet<string> = new Set(CONTAINER_ELEMENT_TYPES);
 
-function hasClosest(value: unknown): value is Element {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    "closest" in value &&
-    typeof value.closest === "function"
-  );
-}
-
 function isSkippedOverlayOrDraggedNode(
   el: Element,
   draggedNode: HTMLElement | null,
@@ -67,32 +58,27 @@ function findLastRootElementNode(
   siteRoot: HTMLElement,
   rootElements: readonly EditorElement[],
 ): { readonly id: string; readonly node: Element } | null {
-  if (typeof siteRoot.querySelector === "function") {
-    for (let i = rootElements.length - 1; i >= 0; i -= 1) {
-      const rootEl = rootElements[i];
-      if (!rootEl) continue;
-      const found = findElementNode(siteRoot, rootEl.id);
-      if (found) {
-        return { id: rootEl.id, node: found };
-      }
+  for (let i = rootElements.length - 1; i >= 0; i -= 1) {
+    const rootEl = rootElements[i];
+    if (!rootEl) continue;
+    const found = findElementNode(siteRoot, rootEl.id);
+    if (found) {
+      return { id: rootEl.id, node: found };
     }
   }
 
-  const children = siteRoot.children;
-  if (children) {
-    for (let i = children.length - 1; i >= 0; i -= 1) {
-      const child = children[i];
-      if (!child || typeof child.getAttribute !== "function") continue;
-      const directId = child.getAttribute("data-element-id");
-      if (directId) {
-        return { id: directId, node: child };
-      }
-      const instId = child.getAttribute("data-component-instance");
-      if (instId) {
-        const instNode = findElementNode(child, instId);
-        if (instNode) {
-          return { id: instId, node: instNode };
-        }
+  for (let i = siteRoot.children.length - 1; i >= 0; i -= 1) {
+    const child = siteRoot.children[i];
+    if (!child) continue;
+    const directId = child.getAttribute("data-element-id");
+    if (directId) {
+      return { id: directId, node: child };
+    }
+    const instId = child.getAttribute("data-component-instance");
+    if (instId) {
+      const instNode = findElementNode(child, instId);
+      if (instNode) {
+        return { id: instId, node: instNode };
       }
     }
   }
@@ -169,14 +155,11 @@ export function resolveCanvasDropTarget(
     return null;
   }
 
-  if (typeof doc.elementsFromPoint !== "function") return null;
-
   const rootElements: EditorElement[] = [...elements];
   const stack = doc.elementsFromPoint(iframeClientX, iframeClientY);
 
   let candidate: HTMLElement | null = null;
   for (const el of stack) {
-    if (!hasClosest(el)) continue;
     if (isSkippedOverlayOrDraggedNode(el, draggedNode)) continue;
     const resolved = findElementNodeFromTarget(siteRoot, el);
     if (!resolved) continue;

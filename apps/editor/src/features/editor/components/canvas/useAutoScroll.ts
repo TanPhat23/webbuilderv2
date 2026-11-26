@@ -46,7 +46,6 @@ export function useAutoScroll(
 ): void {
   const pointerYRef = useRef<number | null>(activePointerParentY);
   const onScrollTickRef = useRef<(() => void) | undefined>(onScrollTick);
-  const scheduleSyncTickRef = useRef<(() => void) | null>(null);
 
   useLayoutEffect(() => {
     pointerYRef.current = activePointerParentY;
@@ -56,12 +55,8 @@ export function useAutoScroll(
   const isActive = activePointerParentY !== null;
 
   useEffect(() => {
-    if (!isActive) {
-      scheduleSyncTickRef.current = null;
-      return;
-    }
+    if (!isActive) return;
 
-    let cancelled = false;
     let rafId: number | null = null;
 
     const runStep = (): void => {
@@ -94,47 +89,17 @@ export function useAutoScroll(
       }
     };
 
-    const scheduleNext = (): void => {
-      if (cancelled || rafId !== null) return;
-      let synchronous = true;
-      let ranSync = false;
-      const nextId = requestAnimationFrame(() => {
-        if (cancelled) return;
-        rafId = null;
-        runStep();
-        if (synchronous) {
-          ranSync = true;
-        } else {
-          scheduleNext();
-        }
-      });
-      synchronous = false;
-      if (!ranSync) {
-        rafId = nextId;
-      }
+    const tick = (): void => {
+      rafId = null;
+      runStep();
+      rafId = requestAnimationFrame(tick);
     };
-
-    scheduleSyncTickRef.current = (): void => {
-      if (!cancelled && rafId === null) {
-        scheduleNext();
-      }
-    };
-
-    scheduleNext();
+    rafId = requestAnimationFrame(tick);
 
     return (): void => {
-      cancelled = true;
-      scheduleSyncTickRef.current = null;
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
-        rafId = null;
       }
     };
   }, [iframeRef, isActive]);
-
-  useEffect(() => {
-    if (activePointerParentY !== null) {
-      scheduleSyncTickRef.current?.();
-    }
-  }, [activePointerParentY]);
 }

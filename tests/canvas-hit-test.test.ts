@@ -282,7 +282,7 @@ test("computeAutoScrollStep and useAutoScroll scroll smoothly near top and botto
     await new Promise((r) => setTimeout(r, 25));
   });
   assert.ok(scroller.scrollTop > 100);
-  assert.ok(ticks >= 1);
+  assert.ok(ticks >= 2, "loop keeps running across multiple frames");
 
   const pausedScrollTop = scroller.scrollTop;
   await mounted.rerender(h(AutoScrollHarness, { pointerY: null }));

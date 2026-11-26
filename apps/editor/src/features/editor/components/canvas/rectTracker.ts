@@ -221,15 +221,10 @@ export function subscribeStageRect(
 
   const schedule = (): void => {
     if (disposed || rafId !== null) return;
-    let ranSync = false;
-    const scheduledId = requestAnimationFrame(() => {
-      ranSync = true;
+    rafId = requestAnimationFrame(() => {
       rafId = null;
       flush();
     });
-    if (!ranSync) {
-      rafId = scheduledId;
-    }
   };
 
   if (IframeRO) {
