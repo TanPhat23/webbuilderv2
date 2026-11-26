@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import PreviewContainer from "@/features/editor/components/editor/PreviewContainer";
 import EditorCanvas from "@/features/editor/components/editor/EditorCanvas";
 import CodeSplit from "@/features/editor/components/editor/CodeSplit";
+import { DynamicPagePreviewBar } from "@/features/editor/components/editor/DynamicPagePreviewBar";
 import { useEditorContext } from "@/providers/editorprovider";
 
 const WireframeBoard = React.lazy(
@@ -73,6 +74,7 @@ export default function Editor(_props: EditorProps) {
 
   return (
     <div className="flex-1 w-full h-full flex flex-col bg-background text-foreground relative">
+      {mode !== "wireframe" && <DynamicPagePreviewBar />}
       <div className="flex-1 min-h-0 overflow-hidden">
         {mode === "wireframe" ? (
           <React.Suspense fallback={null}>

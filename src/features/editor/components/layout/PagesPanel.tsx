@@ -12,7 +12,11 @@ import {
   EditPageDialog,
   useDeletePage,
 } from "../ProjectPageCommand";
-import { pageRoutePath } from "@/lib/site-routing";
+import {
+  effectivePageSlug,
+  hasCatchAllSegment,
+  pageRoutePath,
+} from "@/lib/site-routing";
 import PanelIntro from "@/components/PanelIntro";
 
 export default function PagesPanel() {
@@ -65,7 +69,13 @@ export default function PagesPanel() {
           {visible.map((page) => {
             const current = page.Id === pageId;
             const Icon = page.Type === "dp" ? Database : FileText;
+            const slug = effectivePageSlug({ name: page.Name, slug: page.Slug });
             const routePath = pageRoutePath({ name: page.Name, slug: page.Slug });
+            const dynamicBadge = page.ContentTypeId
+              ? "CMS"
+              : hasCatchAllSegment(slug)
+                ? "*"
+                : "DYN";
             return (
               <li key={page.Id} className="group relative">
                 <button
@@ -88,7 +98,7 @@ export default function PagesPanel() {
                   </span>
                   {page.Type === "dp" && (
                     <span className="shrink-0 rounded bg-muted px-1 text-[9px] uppercase tracking-wide text-muted-foreground">
-                      {page.ContentTypeId ? "CMS" : "DYN"}
+                      {dynamicBadge}
                     </span>
                   )}
                 </button>

@@ -34,6 +34,8 @@ import { Route as PreviewIdSplatRouteImport } from './app/preview/$id/$'
 import { Route as SitesSubdomainIndexRouteImport } from './app/sites/$subdomain/index'
 import { Route as SitesSubdomainSplatRouteImport } from './app/sites/$subdomain/$'
 import { Route as ProtectedEditorIdIndexRouteImport } from './app/_protected/editor.$id/index'
+import { Route as ApiCmsContentTypeIdIndexRouteImport } from './app/api/cms/$contentTypeId/index'
+import { Route as ApiCmsContentTypeIdItemSplatRouteImport } from './app/api/cms/$contentTypeId/item/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -162,6 +164,18 @@ const ProtectedEditorIdIndexRoute = ProtectedEditorIdIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ProtectedEditorIdRoute,
 } as any)
+const ApiCmsContentTypeIdIndexRoute =
+  ApiCmsContentTypeIdIndexRouteImport.update({
+    id: '/api/cms/$contentTypeId/',
+    path: '/api/cms/$contentTypeId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiCmsContentTypeIdItemSplatRoute =
+  ApiCmsContentTypeIdItemSplatRouteImport.update({
+    id: '/api/cms/$contentTypeId/item/$',
+    path: '/api/cms/$contentTypeId/item/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -188,6 +202,8 @@ export interface FileRoutesByFullPath {
   '/preview/$id/': typeof PreviewIdIndexRoute
   '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/editor/$id/': typeof ProtectedEditorIdIndexRoute
+  '/api/cms/$contentTypeId/': typeof ApiCmsContentTypeIdIndexRoute
+  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -210,6 +226,8 @@ export interface FileRoutesByTo {
   '/preview/$id': typeof PreviewIdIndexRoute
   '/sites/$subdomain': typeof SitesSubdomainIndexRoute
   '/editor/$id': typeof ProtectedEditorIdIndexRoute
+  '/api/cms/$contentTypeId': typeof ApiCmsContentTypeIdIndexRoute
+  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -238,6 +256,8 @@ export interface FileRoutesById {
   '/preview/$id/': typeof PreviewIdIndexRoute
   '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/_protected/editor/$id/': typeof ProtectedEditorIdIndexRoute
+  '/api/cms/$contentTypeId/': typeof ApiCmsContentTypeIdIndexRoute
+  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -266,6 +286,8 @@ export interface FileRouteTypes {
     | '/preview/$id/'
     | '/sites/$subdomain/'
     | '/editor/$id/'
+    | '/api/cms/$contentTypeId/'
+    | '/api/cms/$contentTypeId/item/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -288,6 +310,8 @@ export interface FileRouteTypes {
     | '/preview/$id'
     | '/sites/$subdomain'
     | '/editor/$id'
+    | '/api/cms/$contentTypeId'
+    | '/api/cms/$contentTypeId/item/$'
   id:
     | '__root__'
     | '/'
@@ -315,6 +339,8 @@ export interface FileRouteTypes {
     | '/preview/$id/'
     | '/sites/$subdomain/'
     | '/_protected/editor/$id/'
+    | '/api/cms/$contentTypeId/'
+    | '/api/cms/$contentTypeId/item/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -333,6 +359,8 @@ export interface RootRouteChildren {
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   PreviewIdIndexRoute: typeof PreviewIdIndexRoute
   SitesSubdomainIndexRoute: typeof SitesSubdomainIndexRoute
+  ApiCmsContentTypeIdIndexRoute: typeof ApiCmsContentTypeIdIndexRoute
+  ApiCmsContentTypeIdItemSplatRoute: typeof ApiCmsContentTypeIdItemSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -512,6 +540,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtectedEditorIdIndexRouteImport
       parentRoute: typeof ProtectedEditorIdRoute
     }
+    '/api/cms/$contentTypeId/': {
+      id: '/api/cms/$contentTypeId/'
+      path: '/api/cms/$contentTypeId'
+      fullPath: '/api/cms/$contentTypeId/'
+      preLoaderRoute: typeof ApiCmsContentTypeIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cms/$contentTypeId/item/$': {
+      id: '/api/cms/$contentTypeId/item/$'
+      path: '/api/cms/$contentTypeId/item/$'
+      fullPath: '/api/cms/$contentTypeId/item/$'
+      preLoaderRoute: typeof ApiCmsContentTypeIdItemSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -600,6 +642,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   PreviewIdIndexRoute: PreviewIdIndexRoute,
   SitesSubdomainIndexRoute: SitesSubdomainIndexRoute,
+  ApiCmsContentTypeIdIndexRoute: ApiCmsContentTypeIdIndexRoute,
+  ApiCmsContentTypeIdItemSplatRoute: ApiCmsContentTypeIdItemSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

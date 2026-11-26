@@ -45,6 +45,14 @@ export function PreviewCMSCollection({
   </View>;
 }
 
+function encodeSlugPath(slug: string): string {
+  return slug
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
 export function PreviewCMSItem({
   element,
   rootProps,
@@ -53,11 +61,14 @@ export function PreviewCMSItem({
   renderElements: RenderElements;
 }) {
   const siteNav = useSiteNavigationOptional();
-  const { contentTypeId, itemSlug: configuredSlug } = element.settings ?? {};
+  const { contentTypeId: configuredContentTypeId, itemSlug: configuredSlug } =
+    element.settings ?? {};
+  const effectiveContentTypeId =
+    configuredContentTypeId || siteNav?.contentTypeId || "";
   const effectiveSlug = configuredSlug || siteNav?.itemSlug || "";
   const { data: item, loading, error } = usePublicCMSQuery(
-    contentTypeId && effectiveSlug
-      ? `/api/cms/${contentTypeId}/item/${encodeURIComponent(effectiveSlug)}`
+    effectiveContentTypeId && effectiveSlug
+      ? `/api/cms/${encodeURIComponent(effectiveContentTypeId)}/item/${encodeSlugPath(effectiveSlug)}`
       : null,
     parseItem,
     undefined,

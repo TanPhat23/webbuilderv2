@@ -37,6 +37,7 @@ export interface ResolvedRouteMatch<T extends RoutePageSummary> {
   readonly page: T;
   readonly params: Readonly<Record<string, string>>;
   readonly itemSlug?: string;
+  readonly matchedPath: string;
 }
 
 const VALID_STATIC_SEG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -50,6 +51,11 @@ export function hasDynamicSegments(slug: string): boolean {
     .some((part) => part.startsWith(":") || part.startsWith("*"));
 }
 
+export function hasCatchAllSegment(slug: string): boolean {
+  if (!slug) return false;
+  return slug.split("/").some((part) => part.startsWith("*"));
+}
+
 export function extractRouteParamNames(slug: string): readonly string[] {
   if (!slug) return [];
   const names: string[] = [];
@@ -61,6 +67,76 @@ export function extractRouteParamNames(slug: string): readonly string[] {
     }
   }
   return names;
+}
+
+export function defaultSampleParams(slug: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const name of extractRouteParamNames(slug)) {
+    if (name === "*") {
+      result[name] = "example";
+    } else if (name === "slug") {
+      result[name] = "sample-post";
+    } else {
+      result[name] = `sample-${name}`;
+    }
+  }
+  return result;
+}
+
+function encodePathSegments(raw: string): string {
+  return raw
+    .split("/")
+    .filter((seg) => seg.length > 0)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
+/**
+ * Instantiates a page route pattern (e.g. `blog/:slug`, `docs/*path`, `*`, or
+ * legacy static `dp` prefix `journal`) with concrete parameter values.
+ */
+export function instantiateRoutePath(
+  patternSlug: string,
+  params?: Readonly<Record<string, string>>,
+  fallbackItemSlug?: string,
+): string {
+  const cleaned = normalizeRoutePath(patternSlug);
+  if (!cleaned) {
+    if (fallbackItemSlug) {
+      const encoded = encodePathSegments(fallbackItemSlug);
+      return encoded ? `/${encoded}` : "/";
+    }
+    return "/";
+  }
+
+  if (!hasDynamicSegments(cleaned)) {
+    if (fallbackItemSlug) {
+      const encoded = encodePathSegments(fallbackItemSlug);
+      return encoded ? `/${cleaned}/${encoded}` : `/${cleaned}`;
+    }
+    return `/${cleaned}`;
+  }
+
+  const out: string[] = [];
+  for (const part of cleaned.split("/")) {
+    if (part.startsWith(":") && part.length > 1) {
+      const name = part.slice(1);
+      const val =
+        params?.[name] ||
+        (name === "slug" ? fallbackItemSlug : undefined) ||
+        fallbackItemSlug ||
+        `sample-${name}`;
+      out.push(encodeURIComponent(val));
+    } else if (part.startsWith("*")) {
+      const name = part.length > 1 ? part.slice(1) : "*";
+      const val = params?.[name] || fallbackItemSlug || "example";
+      const encoded = encodePathSegments(val);
+      if (encoded) out.push(encoded);
+    } else if (part) {
+      out.push(part);
+    }
+  }
+  return out.length > 0 ? `/${out.join("/")}` : "/";
 }
 
 export function validatePageSlugPattern(
@@ -152,11 +228,15 @@ export function effectivePageSlug(
   return slugifyPageName(page.name);
 }
 
-export function normalizeRoutePath(rawPath: string | undefined): string {
+export function stripPathEdges(rawPath: string | undefined): string {
   if (!rawPath) return "";
   const withoutHash = rawPath.split("#")[0] ?? "";
   const withoutQuery = withoutHash.split("?")[0] ?? "";
-  return withoutQuery.trim().toLowerCase().replace(/^\/+|\/+$/g, "");
+  return withoutQuery.trim().replace(/^\/+|\/+$/g, "");
+}
+
+export function normalizeRoutePath(rawPath: string | undefined): string {
+  return stripPathEdges(rawPath).toLowerCase();
 }
 
 export function pageRoutePath(
@@ -194,16 +274,17 @@ interface PatternCandidate<T extends RoutePageSummary> {
 function matchDynamicPattern<T extends RoutePageSummary>(
   page: T,
   patternSlug: string,
-  pathSegments: readonly string[],
+  rawSegments: readonly string[],
+  lowerSegments: readonly string[],
 ): PatternCandidate<T> | null {
   const patternSegments = patternSlug.split("/");
   const lastSegment = patternSegments[patternSegments.length - 1] ?? "";
   const isCatchAll = lastSegment.startsWith("*");
 
-  if (!isCatchAll && patternSegments.length !== pathSegments.length) {
+  if (!isCatchAll && patternSegments.length !== rawSegments.length) {
     return null;
   }
-  if (isCatchAll && pathSegments.length < patternSegments.length) {
+  if (isCatchAll && rawSegments.length < patternSegments.length) {
     return null;
   }
 
@@ -214,20 +295,21 @@ function matchDynamicPattern<T extends RoutePageSummary>(
 
   for (let i = 0; i < fixedLen; i++) {
     const pat = patternSegments[i] ?? "";
-    const seg = pathSegments[i] ?? "";
+    const rawSeg = rawSegments[i] ?? "";
+    const lowerSeg = lowerSegments[i] ?? "";
     if (pat.startsWith(":")) {
       const name = pat.slice(1);
-      if (!name || !seg) return null;
-      params[name] = safeDecodeSegment(seg);
+      if (!name || !rawSeg) return null;
+      params[name] = safeDecodeSegment(rawSeg);
     } else {
-      if (pat !== seg) return null;
+      if (pat !== lowerSeg) return null;
       staticCount += 1;
       staticMask += 1 << Math.max(0, 20 - i);
     }
   }
 
   if (isCatchAll) {
-    const rest = pathSegments
+    const rest = rawSegments
       .slice(fixedLen)
       .map(safeDecodeSegment)
       .join("/");
@@ -246,6 +328,36 @@ function matchDynamicPattern<T extends RoutePageSummary>(
   };
 }
 
+function resolveRootPage<T extends RoutePageSummary>(
+  pages: readonly T[],
+): ResolvedRouteMatch<T> | null {
+  const explicitHome = pages.find((page) => {
+    const slug = effectivePageSlug(page);
+    return (slug === "" && !hasDynamicSegments(slug)) || page.name === "";
+  });
+  if (explicitHome) {
+    return { page: explicitHome, params: {}, matchedPath: "/" };
+  }
+
+  const rootCatchAll = pages.find((page) => {
+    if (page.type !== "dp") return false;
+    const slug = effectivePageSlug(page);
+    return slug.startsWith("*") && !slug.includes("/");
+  });
+  if (rootCatchAll) {
+    const slug = effectivePageSlug(rootCatchAll);
+    const catchName = slug.length > 1 ? slug.slice(1) : "*";
+    return {
+      page: rootCatchAll,
+      params: { [catchName]: "" },
+      matchedPath: "/",
+    };
+  }
+
+  const first = pages[0];
+  return first ? { page: first, params: {}, matchedPath: pageRoutePath(first) } : null;
+}
+
 export function resolveRoutePage<T extends RoutePageSummary>(
   pages: readonly T[],
   target?: string,
@@ -253,30 +365,26 @@ export function resolveRoutePage<T extends RoutePageSummary>(
   if (pages.length === 0) return null;
 
   if (target === undefined) {
-    const home =
-      pages.find((page) => effectivePageSlug(page) === "" || page.name === "") ??
-      pages[0];
-    return home ? { page: home, params: {} } : null;
+    return resolveRootPage(pages);
   }
 
   const byId = pages.find((page) => page.id === target);
-  if (byId) return { page: byId, params: {} };
+  if (byId) return { page: byId, params: {}, matchedPath: pageRoutePath(byId) };
 
-  const clean = normalizeRoutePath(target);
-  if (clean === "") {
-    const home =
-      pages.find((page) => effectivePageSlug(page) === "" || page.name === "") ??
-      pages[0];
-    return home ? { page: home, params: {} } : null;
+  const rawClean = stripPathEdges(target);
+  const lowerClean = rawClean.toLowerCase();
+  if (lowerClean === "") {
+    return resolveRootPage(pages);
   }
 
   const exact = pages.find((page) => {
     const slug = effectivePageSlug(page);
-    return slug === clean && !hasDynamicSegments(slug);
+    return slug === lowerClean && !hasDynamicSegments(slug);
   });
-  if (exact) return { page: exact, params: {} };
+  if (exact) return { page: exact, params: {}, matchedPath: pageRoutePath(exact) };
 
-  const pathSegments = clean.split("/");
+  const rawSegments = rawClean.split("/");
+  const lowerSegments = lowerClean.split("/");
   const paramMatches: PatternCandidate<T>[] = [];
   const catchAllMatches: PatternCandidate<T>[] = [];
 
@@ -284,7 +392,7 @@ export function resolveRoutePage<T extends RoutePageSummary>(
     if (page.type !== "dp") continue;
     const slug = effectivePageSlug(page);
     if (!slug || !hasDynamicSegments(slug)) continue;
-    const candidate = matchDynamicPattern(page, slug, pathSegments);
+    const candidate = matchDynamicPattern(page, slug, rawSegments, lowerSegments);
     if (!candidate) continue;
     if (candidate.isCatchAll) {
       catchAllMatches.push(candidate);
@@ -292,6 +400,8 @@ export function resolveRoutePage<T extends RoutePageSummary>(
       paramMatches.push(candidate);
     }
   }
+
+  const matchedPath = `/${rawClean}`;
 
   if (paramMatches.length > 0) {
     paramMatches.sort(
@@ -303,6 +413,7 @@ export function resolveRoutePage<T extends RoutePageSummary>(
       page: best.page,
       params: best.params,
       ...(itemSlug ? { itemSlug } : {}),
+      matchedPath,
     };
   }
 
@@ -319,6 +430,7 @@ export function resolveRoutePage<T extends RoutePageSummary>(
       page: best.page,
       params: best.params,
       ...(itemSlug ? { itemSlug } : {}),
+      matchedPath,
     };
   }
 
@@ -327,15 +439,25 @@ export function resolveRoutePage<T extends RoutePageSummary>(
   for (const page of pages) {
     if (page.type !== "dp") continue;
     const prefix = effectivePageSlug(page);
-    if (prefix && !hasDynamicSegments(prefix) && clean.startsWith(`${prefix}/`)) {
-      const rest = clean.slice(prefix.length + 1);
+    if (prefix && !hasDynamicSegments(prefix) && lowerClean.startsWith(`${prefix}/`)) {
+      const rest = rawClean.slice(prefix.length + 1);
       if (rest) {
-        return { page, params: { slug: rest }, itemSlug: rest };
+        const decodedRest = rest.split("/").map(safeDecodeSegment).join("/");
+        return {
+          page,
+          params: { slug: decodedRest },
+          itemSlug: decodedRest,
+          matchedPath,
+        };
       }
     }
   }
 
   return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function lookupBindingValue(
@@ -346,8 +468,8 @@ function lookupBindingValue(
   if (data) {
     let cur: unknown = data;
     for (const part of key.split(".")) {
-      if (cur !== null && typeof cur === "object" && part in cur) {
-        cur = (cur as Record<string, unknown>)[part];
+      if (isRecord(cur) && part in cur) {
+        cur = cur[part];
       } else {
         cur = undefined;
         break;
@@ -356,12 +478,20 @@ function lookupBindingValue(
     if (typeof cur === "string" || typeof cur === "number") {
       return String(cur);
     }
-    if (
-      data.fieldValues !== null &&
-      typeof data.fieldValues === "object" &&
-      key in (data.fieldValues as Record<string, unknown>)
-    ) {
-      const fv = (data.fieldValues as Record<string, unknown>)[key];
+    const rawFieldValues = data.fieldValues;
+    if (Array.isArray(rawFieldValues)) {
+      for (const entry of rawFieldValues) {
+        if (!isRecord(entry)) continue;
+        const fieldMeta = entry.field;
+        if (isRecord(fieldMeta) && fieldMeta.name === key) {
+          const val = entry.value;
+          if (typeof val === "string" || typeof val === "number") {
+            return String(val);
+          }
+        }
+      }
+    } else if (isRecord(rawFieldValues) && key in rawFieldValues) {
+      const fv = rawFieldValues[key];
       if (typeof fv === "string" || typeof fv === "number") {
         return String(fv);
       }
@@ -374,8 +504,8 @@ function lookupBindingValue(
 }
 
 /**
- * Interpolates `{{field}}` placeholders (and `:param` path tokens when
- * non-external) in an element href using CMS item data and/or route params.
+ * Interpolates `{{field}}` placeholders (and `:param` / `*catchall` path tokens
+ * when non-external) in an element href using CMS item data and/or route params.
  */
 export function interpolateHref(
   rawHref: string,
@@ -383,15 +513,25 @@ export function interpolateHref(
   routeParams?: Readonly<Record<string, string>>,
 ): string {
   if (!data && !routeParams) return rawHref;
-  let next = rawHref.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (match, key: string) => {
+  let next = rawHref.replace(/\{\{\s*([a-zA-Z0-9_.*-]+)\s*\}\}/g, (match, key: string) => {
     const val = lookupBindingValue(key, data, routeParams);
-    return val !== undefined ? encodeURIComponent(val) : match;
+    if (val === undefined) return match;
+    return val.includes("/") ? encodePathSegments(val) : encodeURIComponent(val);
   });
 
   if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(next)) {
     next = next.replace(/\/:([a-z][a-z0-9_]*)/g, (match, key: string) => {
       const val = lookupBindingValue(key, data, routeParams);
       return val !== undefined ? `/${encodeURIComponent(val)}` : match;
+    });
+    next = next.replace(/\/\*([a-z][a-z0-9_]*)?$/g, (match, key: string | undefined) => {
+      const lookupKey = key && key.length > 0 ? key : "*";
+      const val =
+        lookupBindingValue(lookupKey, data, routeParams) ??
+        lookupBindingValue("slug", data, routeParams);
+      if (val === undefined) return match;
+      const encoded = encodePathSegments(val);
+      return encoded ? `/${encoded}` : "/";
     });
   }
   return next;
@@ -575,23 +715,28 @@ export function resolveSiteHref(
     }
   }
 
-  let cleanPath = normalizeRoutePath(parsed.pathname);
+  let rawPath = stripPathEdges(parsed.pathname);
   if (ctx.mode.kind === "preview") {
-    const previewPrefix = normalizeRoutePath(
+    const previewPrefix = stripPathEdges(
       `/preview/${encodeURIComponent(ctx.mode.projectId)}`,
     );
-    if (cleanPath === previewPrefix) {
-      cleanPath = "";
-    } else if (cleanPath.startsWith(`${previewPrefix}/`)) {
-      cleanPath = cleanPath.slice(previewPrefix.length + 1);
+    const lowerRaw = rawPath.toLowerCase();
+    const lowerPrefix = previewPrefix.toLowerCase();
+    if (lowerRaw === lowerPrefix) {
+      rawPath = "";
+    } else if (lowerRaw.startsWith(`${lowerPrefix}/`)) {
+      rawPath = rawPath.slice(previewPrefix.length + 1);
     }
   }
-  const matched = resolveRoutePage(ctx.pages, cleanPath);
+  const matched = resolveRoutePage(ctx.pages, rawPath);
+  const hasDynamicMatch =
+    matched !== null &&
+    (Object.keys(matched.params).length > 0 || Boolean(matched.itemSlug));
   const resolvedPath =
-    matched && !matched.itemSlug
+    matched && !hasDynamicMatch
       ? pageRoutePath(matched.page)
-      : cleanPath
-        ? `/${cleanPath}`
+      : rawPath
+        ? `/${rawPath}`
         : "/";
   const hash = parsed.hash || "";
 

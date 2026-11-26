@@ -8,20 +8,27 @@ import { CMSContentItemElement } from "@/features/editor";
 import { ContentItem } from "@/features/cms";
 import { ChildElements } from "../context/ChildElementLoaderContext";
 import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
+import { useDynamicPagePreview } from "@/features/editor/hooks/useDynamicPagePreview";
 import { useCanvasElement, CMSEmptyState } from "./shared";
 
 const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
   const cmsElement = element as CMSContentItemElement;
   const { rootProps } = useCanvasElement(cmsElement);
+  const dynamicPreview = useDynamicPagePreview();
   const settings = cmsElement.settings || {};
-  const { contentTypeId, itemSlug } = settings;
+  const contentTypeId = settings.contentTypeId || dynamicPreview.contentTypeId || "";
+  const itemSlug = settings.itemSlug || dynamicPreview.selectedItem?.slug || "";
 
   const { contentItem, isFetching } = useCMSContentItem(
-    contentTypeId || "",
-    itemSlug || "",
+    contentTypeId,
+    settings.itemSlug ? itemSlug : "",
   );
 
-  const itemToRender = (data as ContentItem | undefined) || contentItem;
+  const itemToRender =
+    (settings.itemSlug ? contentItem : undefined) ||
+    dynamicPreview.selectedItem ||
+    (data as ContentItem | undefined) ||
+    contentItem;
 
   if (!contentTypeId) {
     return (

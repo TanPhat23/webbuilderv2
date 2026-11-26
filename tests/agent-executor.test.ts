@@ -221,6 +221,59 @@ test("create_page needs the right to create pages and a sane name", async () => 
   assert.equal(calls.created.length, 0);
 });
 
+test("create_page supports dynamic :param, catch-all *, and CMS collection options and validates constraints", async () => {
+  const createdCalls: Array<{ name: string; options?: unknown }> = [];
+  const { h } = host({
+    getPageId: () => undefined,
+    createPage: async (name, options) => {
+      createdCalls.push({ name, options });
+      return {
+        id: "dp_1",
+        name,
+        slug: options?.slug ?? "",
+        type: options?.type ?? "sp",
+        contentTypeId: options?.contentTypeId ?? null,
+      };
+    },
+  });
+  const run = createExecutor(h);
+
+  const dynamic = await run(req("create_page", {
+    name: "Blog Post",
+    type: "dp",
+    slug: "/blog/:slug/",
+    contentTypeId: "ct-blog",
+  }, { pageId: undefined }));
+  assert.equal(dynamic.ok, true);
+  assert.deepEqual(createdCalls[0], {
+    name: "Blog Post",
+    options: { type: "dp", slug: "blog/:slug", contentTypeId: "ct-blog" },
+  });
+
+  const catchAll = await run(req("create_page", {
+    name: "Docs Fallback",
+    type: "dp",
+    slug: "docs/*path",
+  }, { pageId: undefined }));
+  assert.equal(catchAll.ok, true);
+  assert.deepEqual(createdCalls[1], {
+    name: "Docs Fallback",
+    options: { type: "dp", slug: "docs/*path" },
+  });
+
+  for (const bad of [
+    { name: "Bad", type: "cp" },
+    { name: "Bad", type: "sp", slug: "blog/:slug" },
+    { name: "Bad", slug: "docs/*path" },
+    { name: "Bad", type: "dp", slug: "docs/*path/edit" },
+    { name: "Bad", type: "sp", contentTypeId: "ct-blog" },
+  ]) {
+    const out = await run(req("create_page", bad, { pageId: undefined }));
+    assert.ok(!out.ok && out.error.code === "invalid_edit", JSON.stringify(bad));
+  }
+  assert.equal(createdCalls.length, 2);
+});
+
 test("a refused write says why, so the CLI can tell the user what to change", async () => {
   const { h, calls } = host({ canEdit: () => false, whyNotEditable: () => ({ code: "editor_locked", message: "The editor is in code mode." }) });
   const out = await createExecutor(h)(req("apply_edits", { operations: [{ op: "delete", id: "t" }] }));

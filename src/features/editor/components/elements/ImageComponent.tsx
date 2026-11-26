@@ -44,7 +44,7 @@ function useRoomForDetails(enabled: boolean) {
   return { ref, hasRoom };
 }
 
-const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
+const ImageComponent: React.FC<EditorComponentProps> = ({ element, data }) => {
   const { rootProps } = useCanvasElement(element);
   const { ref: placeholderRef, hasRoom } = useRoomForDetails(!element.src);
   const { isDragOver, dragTarget, handleDragOver, handleDragLeave, handleDrop } =
@@ -65,7 +65,7 @@ const ImageComponent: React.FC<EditorComponentProps> = ({ element }) => {
   if (element.src) {
     return (
       <>
-        <ImageView element={element} mode="edit" rootProps={{
+        <ImageView element={element} data={data} mode="edit" rootProps={{
           ...wrapperProps,
           className: cn(rootProps.className, isDragOver && "ring-2 ring-primary ring-offset-2"),
         }} />

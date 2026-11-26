@@ -8,4 +8,8 @@ test('content resolution keeps preview substitution and raw editing content', ()
   assert.equal(resolveContent({ content: '' }, 'supplied text', false), 'supplied text');
   assert.equal(resolveContent({}, { content: 'supplied content' }, false), 'supplied content');
   assert.equal(resolveContent({}, undefined, false), '');
+  assert.equal(
+    resolveContent({ content: 'By {{ author }}' }, { fieldValues: [{ field: { name: 'author' }, value: 'Grace' }] }, false),
+    'By Grace',
+  );
 });

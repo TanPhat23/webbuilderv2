@@ -125,14 +125,29 @@ export function AgentHost() {
       },
       canEditProject: () => live.current.canEditProject,
       canCreatePages: () => live.current.canCreatePages,
-      createPage: async (name) => {
+      createPage: async (name, options) => {
         const id = live.current.projectId;
         if (!id) throw new Error("No project is open.");
-        // Same call as the Pages panel: a static page ("sp") with no page styles.
-        const page = await createPage({ data: { Id: newEntityId(), Name: name, ProjectId: id, Styles: {}, Type: "sp" } });
+        const page = await createPage({
+          data: {
+            Id: newEntityId(),
+            Name: name,
+            ...(options?.slug !== undefined ? { Slug: options.slug } : {}),
+            ...(options?.contentTypeId !== undefined ? { ContentTypeId: options.contentTypeId } : {}),
+            ProjectId: id,
+            Styles: {},
+            Type: options?.type ?? "sp",
+          },
+        });
         await queryClient.cancelQueries({ queryKey: projectKeys.pages(id), exact: true });
         queryClient.setQueryData<(typeof page)[]>(projectKeys.pages(id), (pages) => [...(pages ?? []), page]);
-        return { id: page.Id, name: page.Name };
+        return {
+          id: page.Id,
+          name: page.Name,
+          slug: page.Slug,
+          type: page.Type,
+          contentTypeId: page.ContentTypeId,
+        };
       },
       openPage: async (pageId) => {
         const id = live.current.projectId;

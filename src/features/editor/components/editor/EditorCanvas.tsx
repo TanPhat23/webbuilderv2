@@ -10,6 +10,7 @@ import { useElementStore } from "@/features/editor/store/element-store";
 import { useElements } from "@/features/editor";
 import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { useForwardChromeShortcuts } from "@/features/editor/components/layout/useForwardChromeShortcuts";
+import { useDynamicPagePreview } from "@/features/editor/hooks/useDynamicPagePreview";
 
 type EditorCanvasProps = {
   isDraggingOver: boolean;
@@ -42,6 +43,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 }) => {
   const collab = useCollaborationOptional();
   const { editor, renderAgentPlaybackHud } = useEditorContext();
+  const { previewData } = useDynamicPagePreview();
   const elements = useElements();
   const isMaster = useElementStore((state) => state.isComponentPage);
   // Elements arrive over the collab socket after the REST queries finish, so
@@ -114,6 +116,7 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
           <EmptyPageStarter onAddSection={addNewSection} />
         ) : (
           <ElementLoader
+            data={previewData}
             isReadOnly={isReadOnly}
             isLocked={isLocked}
             iframeRef={iframeRef}

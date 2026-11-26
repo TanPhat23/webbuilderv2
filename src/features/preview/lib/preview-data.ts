@@ -10,12 +10,21 @@ interface PreviewReads {
   project: (id: string, token?: string) => Promise<Project>;
   pages: (id: string, token?: string) => Promise<ApiPage[]>;
   elements: (id: string, token?: string) => Promise<EditorElement[]>;
+  cmsItem?: (
+    contentTypeId: string,
+    slug: string,
+    token?: string,
+  ) => Promise<Record<string, unknown> | null>;
 }
 
 interface SubdomainSiteReads {
   projectBySubdomain: (subdomain: string) => Promise<Project>;
   pages: (id: string) => Promise<ApiPage[]>;
   elements: (id: string) => Promise<EditorElement[]>;
+  cmsItem?: (
+    contentTypeId: string,
+    slug: string,
+  ) => Promise<Record<string, unknown> | null>;
 }
 
 export interface LoadedSitePageData {
@@ -25,6 +34,8 @@ export interface LoadedSitePageData {
   readonly elements: EditorElement[];
   readonly params?: Readonly<Record<string, string>>;
   readonly itemSlug?: string;
+  readonly matchedPath?: string;
+  readonly cmsItem?: Record<string, unknown>;
 }
 
 async function readProjectWithDraftFallback(
@@ -74,12 +85,13 @@ function resolvePageTree(
   projectElements: EditorElement[],
   hasToken: boolean,
   target?: string,
+  cmsItem?: Record<string, unknown>,
 ): LoadedSitePageData {
   const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
   const matched = resolveRoutePage(pages, target);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
 
-  const { page, params, itemSlug } = matched;
+  const { page, params, itemSlug, matchedPath } = matched;
   const pageElements = projectElements.filter((element) => element.pageId === page.id);
   const routeIds = new Set(pages.map(({ id: routeId }) => routeId));
   const componentIds = collectComponentIds(allPages, projectElements, hasToken);
@@ -96,6 +108,8 @@ function resolvePageTree(
     elements,
     ...(Object.keys(params).length > 0 ? { params } : {}),
     ...(itemSlug ? { itemSlug } : {}),
+    matchedPath,
+    ...(cmsItem ? { cmsItem } : {}),
   };
 }
 
@@ -110,8 +124,31 @@ export async function fetchPreviewSite(
   const matched = resolveRoutePage(pages, pageTarget);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
 
+  let cmsItem: Record<string, unknown> | undefined;
+  if (
+    matched.page.type === "dp" &&
+    matched.page.contentTypeId &&
+    matched.itemSlug &&
+    reads.cmsItem
+  ) {
+    const loaded = await reads.cmsItem(
+      matched.page.contentTypeId,
+      matched.itemSlug,
+      token,
+    );
+    if (!loaded) throw new ApiError("Content item not found", 404, "not_found");
+    cmsItem = loaded;
+  }
+
   const projectElements = await reads.elements(id, token);
-  return resolvePageTree(project, allPages, projectElements, Boolean(token), pageTarget);
+  return resolvePageTree(
+    project,
+    allPages,
+    projectElements,
+    Boolean(token),
+    pageTarget,
+    cmsItem,
+  );
 }
 
 export async function fetchSubdomainSite(
@@ -128,6 +165,28 @@ export async function fetchSubdomainSite(
   const matched = resolveRoutePage(pages, pathname);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
 
+  let cmsItem: Record<string, unknown> | undefined;
+  if (
+    matched.page.type === "dp" &&
+    matched.page.contentTypeId &&
+    matched.itemSlug &&
+    reads.cmsItem
+  ) {
+    const loaded = await reads.cmsItem(
+      matched.page.contentTypeId,
+      matched.itemSlug,
+    );
+    if (!loaded) throw new ApiError("Content item not found", 404, "not_found");
+    cmsItem = loaded;
+  }
+
   const projectElements = await reads.elements(projectId);
-  return resolvePageTree(project, allPages, projectElements, false, pathname);
+  return resolvePageTree(
+    project,
+    allPages,
+    projectElements,
+    false,
+    pathname,
+    cmsItem,
+  );
 }

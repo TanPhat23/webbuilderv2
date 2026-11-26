@@ -25,7 +25,7 @@ export function useCMSItemList({
 }: CMSListQuery): CMSFetchState<unknown[]> {
   return usePublicCMSQuery(
     contentTypeId
-      ? `/api/cms/${contentTypeId}?limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
+      ? `/api/cms/${encodeURIComponent(contentTypeId)}?limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`
       : null,
     parseItems,
     NO_ITEMS,

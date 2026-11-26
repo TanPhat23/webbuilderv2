@@ -18,11 +18,8 @@ import CollaborationButton from "../editor/CollaborationButton";
 import ModeSwitch from "./ModeSwitch";
 import CommentsToggle from "./CommentsToggle";
 import { useCurrentPage, useProject } from "@/features/projects/hooks/useProjects";
-import {
-  buildPublicSiteUrl,
-  effectivePageSlug,
-  pageRoutePath,
-} from "@/lib/site-routing";
+import { useDynamicPagePreview } from "@/features/editor/hooks/useDynamicPagePreview";
+import { buildPublicSiteUrl } from "@/lib/site-routing";
 import PublishButton from "./PublishButton";
 
 interface EditorTopBarProps {
@@ -36,19 +33,13 @@ export default function EditorTopBar({
 }: EditorTopBarProps) {
   const { editor } = useEditorContext();
   const currentPage = useCurrentPage();
+  const { previewPath, previewSplat } = useDynamicPagePreview();
   const { data: project } = useProject(projectId);
   const isMaster = currentPage?.Type === "cp";
-  const currentSlug = currentPage
-    ? effectivePageSlug({ name: currentPage.Name, slug: currentPage.Slug })
-    : "";
+  const currentSlug = previewSplat;
   const liveSiteUrl =
     project?.published && project.subdomain
-      ? buildPublicSiteUrl(
-          project.subdomain,
-          currentPage
-            ? pageRoutePath({ name: currentPage.Name, slug: currentPage.Slug })
-            : "/",
-        )
+      ? buildPublicSiteUrl(project.subdomain, previewPath)
       : null;
   const [navOpen, setNavOpen] = useState(false);
 

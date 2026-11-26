@@ -208,10 +208,7 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a page type" />
@@ -360,6 +357,7 @@ export function useDeletePage(id: string | undefined, pages: Page[]) {
 const editPageSchema = z.object({
   name: z.string().trim().min(1, "Page name is required").max(255),
   slug: z.string().trim().max(200),
+  type: PageTypeSchema.exclude(["cp"]),
   contentTypeId: z.string().max(255).optional(),
 });
 type EditPageFormValues = z.infer<typeof editPageSchema>;
@@ -373,10 +371,7 @@ export function EditPageDialog({
 }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const isDynamic = page.Type === "dp";
-  const { data: contentTypes = [] } = useCMSContentTypes(
-    open && isDynamic ? page.ProjectId : undefined,
-  );
+  const initialType: "sp" | "dp" = page.Type === "dp" ? "dp" : "sp";
   const initialSlug = page.Slug ?? slugifyPageName(page.Name);
 
   const form = useForm<EditPageFormValues>({
@@ -384,9 +379,16 @@ export function EditPageDialog({
     defaultValues: {
       name: page.Name || "Home",
       slug: initialSlug,
+      type: initialType,
       contentTypeId: page.ContentTypeId || NONE_COLLECTION,
     },
   });
+
+  const watchedType = useWatch({ control: form.control, name: "type" });
+  const isDynamic = watchedType === "dp";
+  const { data: contentTypes = [] } = useCMSContentTypes(
+    open && isDynamic ? page.ProjectId : undefined,
+  );
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
@@ -394,23 +396,25 @@ export function EditPageDialog({
       form.reset({
         name: page.Name || "Home",
         slug: page.Slug ?? slugifyPageName(page.Name),
+        type: page.Type === "dp" ? "dp" : "sp",
         contentTypeId: page.ContentTypeId || NONE_COLLECTION,
       });
     }
   };
 
   const onSubmit = async (values: EditPageFormValues) => {
-    const checked = validatePageSlugPattern(values.slug, isDynamic);
+    const nextIsDynamic = values.type === "dp";
+    const checked = validatePageSlugPattern(values.slug, nextIsDynamic);
     if (!checked.valid) {
       form.setError("slug", { message: checked.error });
       return;
     }
     const cleanSlug = checked.normalized;
-    const nextContentTypeId = isDynamic
+    const nextContentTypeId = nextIsDynamic
       ? values.contentTypeId && values.contentTypeId !== NONE_COLLECTION
         ? values.contentTypeId
         : null
-      : undefined;
+      : null;
     try {
       const updated = await updateProjectPage({
         data: {
@@ -418,9 +422,8 @@ export function EditPageDialog({
           pageId: page.Id,
           name: values.name,
           slug: cleanSlug,
-          ...(nextContentTypeId !== undefined
-            ? { contentTypeId: nextContentTypeId }
-            : {}),
+          type: values.type,
+          contentTypeId: nextContentTypeId,
         },
       });
       queryClient.setQueryData<Page[]>(
@@ -498,6 +501,27 @@ export function EditPageDialog({
                       <code className="font-mono">*</code>.
                     </p>
                   )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a page type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="sp">Single Page</SelectItem>
+                      <SelectItem value="dp">Dynamic Page</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

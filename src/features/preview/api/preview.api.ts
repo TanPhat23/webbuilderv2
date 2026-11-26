@@ -4,6 +4,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { elementService } from "@/features/elements/services/element.service";
 import { projectService } from "@/features/projects/services/project.service";
+import {
+  cmsService,
+  flattenContentItemRecord,
+} from "@/features/cms/services/cms.service";
 import { isApiError } from "@/utils/errors/api-error";
 import { fetchPreviewSite, fetchSubdomainSite } from "../lib/preview-data";
 import { isValidSubdomainLabel } from "@/lib/site-routing";
@@ -41,6 +45,25 @@ export const getPreviewSite = createServerFn({ method: "GET", strict: { output: 
         elements: (id, token) => token
           ? elementService.listProjectElements(id, token)
           : elementService.listPublicElements(id, { previewCache: !userId }),
+        cmsItem: async (contentTypeId, slug, token) => {
+          try {
+            return await cmsService.fetchPublicContentItem(contentTypeId, slug);
+          } catch (error) {
+            if (!isApiError(error) || error.status !== 404) throw error;
+            const authToken = token ?? (userId ? ((await getToken()) ?? undefined) : undefined);
+            if (!authToken) return null;
+            try {
+              const item = await cmsService.getPublicContentItem(
+                contentTypeId,
+                slug,
+                authToken,
+              );
+              return flattenContentItemRecord(item);
+            } catch {
+              return null;
+            }
+          }
+        },
       }, pageTarget ?? pageId);
     } catch (error) {
       if (isApiError(error) && error.status === 404) throw notFound();
@@ -63,6 +86,14 @@ export const getSubdomainSite = createServerFn({ method: "GET", strict: { output
         projectBySubdomain: (sub) => projectService.getPublicProjectBySubdomain(sub),
         pages: (projectId) => projectService.listPublicPages(projectId, { previewCache: true }),
         elements: (projectId) => elementService.listPublicElements(projectId, { previewCache: true }),
+        cmsItem: async (contentTypeId, slug) => {
+          try {
+            return await cmsService.fetchPublicContentItem(contentTypeId, slug);
+          } catch (error) {
+            if (isApiError(error) && error.status === 404) return null;
+            throw error;
+          }
+        },
       }, pathname);
     } catch (error) {
       if (isApiError(error) && error.status === 404) throw notFound();

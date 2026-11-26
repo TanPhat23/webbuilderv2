@@ -4,11 +4,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
 import { SiteNavigationProvider } from "../src/features/elements/context/SiteNavigationContext";
-import { fetchSubdomainSite } from "../src/features/preview/lib/preview-data";
+import { fetchPreviewSite, fetchSubdomainSite } from "../src/features/preview/lib/preview-data";
 import {
   buildPublicSiteUrl,
+  defaultSampleParams,
   effectivePageSlug,
   extractSubdomain,
+  instantiateRoutePath,
   interpolateHref,
   isValidSubdomainLabel,
   resolveRoutePage,
@@ -239,4 +241,132 @@ test("interpolateHref and PreviewElementLoader resolve dynamic CMS item links", 
   );
   assert.match(html, /href="\/journal\/morning-croissant"/);
   assert.match(html, /Read Morning Croissant/);
+});
+
+test("resolveRoutePage preserves dynamic/catch-all casing, reports matchedPath, and handles root catch-all", () => {
+  const mixedPages: ApiPage[] = [
+    { id: "p-user", projectId: "proj-1", name: "User", slug: "users/:username", type: "dp", createdAt: "", updatedAt: "" },
+    { id: "p-docs", projectId: "proj-1", name: "Docs", slug: "docs/*path", type: "dp", createdAt: "", updatedAt: "" },
+    { id: "p-root", projectId: "proj-1", name: "Fallback", slug: "*", type: "dp", createdAt: "", updatedAt: "" },
+  ];
+
+  const userHit = resolveRoutePage(mixedPages, "/Users/AliceSmith");
+  assert.equal(userHit?.page.id, "p-user");
+  assert.deepEqual(userHit?.params, { username: "AliceSmith" });
+  assert.equal(userHit?.matchedPath, "/Users/AliceSmith");
+
+  const docsHit = resolveRoutePage(mixedPages, "/Docs/API/GetUser");
+  assert.equal(docsHit?.page.id, "p-docs");
+  assert.deepEqual(docsHit?.params, { path: "API/GetUser" });
+  assert.equal(docsHit?.matchedPath, "/Docs/API/GetUser");
+
+  // Without an explicit static home page, "/" resolves to the root catch-all
+  const rootHit = resolveRoutePage(mixedPages, "/");
+  assert.equal(rootHit?.page.id, "p-root");
+  assert.equal(rootHit?.matchedPath, "/");
+
+  // Case is also preserved by resolveSiteHref for dynamic links
+  const domainCtx = { mode: { kind: "domain" as const, subdomain: "glaze" }, pages: mixedPages };
+  assert.equal(resolveSiteHref("/users/AliceSmith", domainCtx)?.href, "/users/AliceSmith");
+});
+
+test("instantiateRoutePath, interpolateHref (*catchall + fieldValues), ?page dynamic links, and ImageView placeholders work end-to-end", () => {
+  assert.deepEqual(defaultSampleParams("blog/:slug"), { slug: "sample-post" });
+  assert.equal(instantiateRoutePath("blog/:slug", { slug: "my-post" }), "/blog/my-post");
+  assert.equal(instantiateRoutePath("docs/*path", { path: "guides/getting-started" }), "/docs/guides/getting-started");
+  assert.equal(instantiateRoutePath("*", { "*": "fallback/page" }), "/fallback/page");
+
+  assert.equal(
+    interpolateHref("/docs/*path", { path: "guides/getting-started" }),
+    "/docs/guides/getting-started",
+  );
+  assert.equal(
+    interpolateHref("/blog/{{slug}}", {
+      fieldValues: [{ field: { name: "slug" }, value: "from-field-values" }],
+    }),
+    "/blog/from-field-values",
+  );
+
+  const dynamicPages: ApiPage[] = [
+    ...pages,
+    { id: "p-post", projectId: "proj-1", name: "Post", slug: "blog/:slug", type: "dp", contentTypeId: "ct-blog", createdAt: "", updatedAt: "" },
+  ];
+  const elements = [
+    { id: "lnk", pageId: "p-home", type: "Link" as const, content: "Open {{ title }}", href: "?page=p-post" },
+    { id: "img", pageId: "p-home", type: "Image" as const, src: "{{ coverImage }}", content: "Photo of {{ title }}" },
+  ];
+  const html = renderToStaticMarkup(
+    createElement(
+      SiteNavigationProvider,
+      {
+        value: {
+          mode: { kind: "domain", subdomain: "glaze" },
+          pages: dynamicPages,
+          currentPath: "/",
+          navigate: () => {},
+        },
+      },
+      createElement(PreviewElementLoader, {
+        elements,
+        data: {
+          title: "Sourdough Loaf",
+          slug: "sourdough-loaf",
+          coverImage: "https://cdn.example.com/sourdough.jpg",
+        },
+      }),
+    ),
+  );
+  assert.match(html, /href="\/blog\/sourdough-loaf"/);
+  assert.match(html, /Open Sourdough Loaf/);
+  assert.match(html, /src="https:\/\/cdn\.example\.com\/sourdough\.jpg"/);
+  assert.match(html, /alt="Photo of Sourdough Loaf"/);
+});
+
+test("fetchSubdomainSite and fetchPreviewSite SSR-preload bound CMS items and 404 when missing", async () => {
+  const cmsPages: ApiPage[] = [
+    { id: "p-home", projectId: "proj-1", name: "Home", slug: "", type: "sp", createdAt: "", updatedAt: "" },
+    { id: "p-post", projectId: "proj-1", name: "Post", slug: "blog/:slug", type: "dp", contentTypeId: "ct-blog", createdAt: "", updatedAt: "" },
+  ];
+  const project = {
+    id: "proj-1",
+    name: "Glaze",
+    ownerId: "u1",
+    published: true,
+    subdomain: "glaze",
+    createdAt: "2026-11-24T00:00:00Z",
+    updatedAt: "2026-11-24T00:00:00Z",
+    views: 0,
+  };
+
+  const subdomainLoaded = await fetchSubdomainSite(
+    "glaze",
+    {
+      projectBySubdomain: async () => project,
+      pages: async () => cmsPages,
+      elements: async () => [{ id: "h1", pageId: "p-post", type: "Heading", content: "{{title}}" }],
+      cmsItem: async (ctId, slug) =>
+        ctId === "ct-blog" && slug === "hello"
+          ? { id: "item-1", slug: "hello", title: "Hello World" }
+          : null,
+    },
+    "/blog/hello",
+  );
+  assert.equal(subdomainLoaded.page.id, "p-post");
+  assert.equal(subdomainLoaded.matchedPath, "/blog/hello");
+  assert.equal(subdomainLoaded.cmsItem?.title, "Hello World");
+
+  await assert.rejects(
+    fetchPreviewSite(
+      "proj-1",
+      {
+        draftToken: async () => undefined,
+        project: async () => project,
+        pages: async () => cmsPages,
+        elements: async () => [],
+        cmsItem: async () => null,
+      },
+      "/blog/non-existent",
+    ),
+    (err: unknown) => err instanceof ApiError && err.status === 404,
+  );
 });

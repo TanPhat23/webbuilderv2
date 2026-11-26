@@ -7,6 +7,7 @@ export interface SiteNavigationContextValue {
   readonly currentPath: string;
   readonly params?: Readonly<Record<string, string>>;
   readonly itemSlug?: string;
+  readonly contentTypeId?: string;
   readonly navigate: (
     href: string,
     opts?: { readonly newTab?: boolean; readonly replace?: boolean },

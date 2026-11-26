@@ -22,6 +22,14 @@ import { usePublicCMSQuery } from "@/features/preview/hooks/useCMSFetch";
 import { browserPlatform } from "@/features/interactions/runtime/executors";
 import type { PlatformFactory } from "@/features/interactions/runtime/hostDom";
 
+function encodeSlugSegments(slug: string): string {
+  return slug
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
 const parseCmsRecord = (body: unknown): Record<string, unknown> | undefined =>
   body !== null && typeof body === "object"
     ? (body as Record<string, unknown>)
@@ -39,18 +47,19 @@ export function SitePageView({
   showRunLog = false,
 }: SitePageViewProps): React.JSX.Element {
   const routerNavigate = useNavigate();
-  const { project, page, pages, elements, params, itemSlug } = data;
+  const { project, page, pages, elements, params, itemSlug, matchedPath, cmsItem } = data;
   const projectId = project.id ?? "";
 
   const cmsItemUrl =
-    page.type === "dp" && page.contentTypeId && itemSlug
-      ? `/api/cms/${encodeURIComponent(page.contentTypeId)}/item/${encodeURIComponent(itemSlug)}`
+    !cmsItem && page.type === "dp" && page.contentTypeId && itemSlug
+      ? `/api/cms/${encodeURIComponent(page.contentTypeId)}/item/${encodeSlugSegments(itemSlug)}`
       : null;
   const {
-    data: boundCmsItem,
+    data: fetchedCmsItem,
     loading: boundCmsLoading,
     error: boundCmsError,
   } = usePublicCMSQuery(cmsItemUrl, parseCmsRecord, undefined);
+  const boundCmsItem = cmsItem ?? fetchedCmsItem;
 
   const pageRootData = useMemo<Record<string, unknown> | undefined>(() => {
     const hasParams = params && Object.keys(params).length > 0;
@@ -71,10 +80,9 @@ export function SitePageView({
   useScrollReveal(reveals, true);
 
   const currentPath = useMemo(() => {
-    const base = pageRoutePath(page);
-    if (!itemSlug) return base;
-    return base === "/" ? `/${itemSlug}` : `${base}/${itemSlug}`;
-  }, [page, itemSlug]);
+    if (matchedPath) return matchedPath;
+    return pageRoutePath(page);
+  }, [matchedPath, page]);
 
   const handleSiteNavigate = useCallback(
     (
@@ -161,9 +169,10 @@ export function SitePageView({
       currentPath,
       params,
       itemSlug,
+      contentTypeId: page.contentTypeId ?? undefined,
       navigate: handleSiteNavigate,
     }),
-    [mode, pages, currentPath, params, itemSlug, handleSiteNavigate],
+    [mode, pages, currentPath, params, itemSlug, page.contentTypeId, handleSiteNavigate],
   );
 
   const sitePlatform: PlatformFactory = useCallback(

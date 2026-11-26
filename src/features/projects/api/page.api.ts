@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { Page } from "@/features/pages";
 import {
   CreatePageSchema,
+  PageTypeSchema,
   type CreatePageInput,
   type JsonRecord,
 } from "@/features/pages/schema/page";
@@ -38,6 +39,7 @@ const updatePageSchema = z.object({
   pageId: z.string().min(1),
   name: z.string().trim().min(1).max(255).optional(),
   slug: z.string().trim().max(200).optional(),
+  type: PageTypeSchema.exclude(["cp"]).optional(),
   contentTypeId: z.string().max(255).nullable().optional(),
 });
 
@@ -48,6 +50,7 @@ export const updateProjectPage = createServerFn({ method: "POST" })
       pageId: string;
       name?: string;
       slug?: string;
+      type?: "sp" | "dp";
       contentTypeId?: string | null;
     }) => updatePageSchema.parse(data),
   )
@@ -59,6 +62,7 @@ export const updateProjectPage = createServerFn({ method: "POST" })
       {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.slug !== undefined ? { slug: data.slug } : {}),
+        ...(data.type !== undefined ? { type: data.type } : {}),
         ...(data.contentTypeId !== undefined
           ? { contentTypeId: data.contentTypeId ?? "" }
           : {}),

@@ -21,12 +21,27 @@ import {
   type ComponentSource,
 } from "@/features/projects/lib/components";
 import { elementUtils } from "@/features/elements/lib/elementhelper";
+import { validatePageSlugPattern } from "@/lib/site-routing";
 import { buildElementTree } from "./readTree";
 
 /** A change to the project's shared styling. A null theme value removes that key. */
 export interface ProjectStylePatch {
   css?: string;
   theme?: Record<string, unknown>;
+}
+
+export interface CreatePageOptions {
+  readonly type?: "sp" | "dp";
+  readonly slug?: string;
+  readonly contentTypeId?: string;
+}
+
+export interface CreatedPageSummary {
+  readonly id: string;
+  readonly name: string;
+  readonly slug?: string;
+  readonly type?: string;
+  readonly contentTypeId?: string | null;
 }
 
 interface AgentComponents extends ComponentSource {
@@ -47,7 +62,7 @@ export interface AgentHost {
   canEditProject(): boolean;
   canCreatePages(): boolean;
   /** Creates an empty page in this project. */
-  createPage(name: string): Promise<{ id: string; name: string }>;
+  createPage(name: string, options?: CreatePageOptions): Promise<CreatedPageSummary>;
   /** Switches the builder to another page of this project; false if the project has no such page. */
   openPage(pageId: string): Promise<boolean>;
   /** Applies the patch and returns the patch that restores what it replaced. */
@@ -99,10 +114,75 @@ export function createExecutor(host: AgentHost) {
       if (!name) return error("invalid_edit", "Nothing was done.", [{ path: "name", message: "a page name is required" }]);
       if (name.length > MAX_PAGE_NAME) return error("invalid_edit", "Nothing was done.", [{ path: "name", message: `longer than ${MAX_PAGE_NAME} characters` }]);
       if (args.open !== undefined && typeof args.open !== "boolean") return error("invalid_edit", "Nothing was done.", [{ path: "open", message: "must be true or false" }]);
-      const page = await host.createPage(name);
+
+      let pageType: "sp" | "dp" | undefined;
+      if (args.type !== undefined) {
+        if (args.type !== "sp" && args.type !== "dp") {
+          return error("invalid_edit", "Nothing was done.", [{ path: "type", message: "must be 'sp' or 'dp'" }]);
+        }
+        pageType = args.type;
+      }
+      const isDynamic = pageType === "dp";
+
+      let normalizedSlug: string | undefined;
+      if (args.slug !== undefined) {
+        if (typeof args.slug !== "string") {
+          return error("invalid_edit", "Nothing was done.", [{ path: "slug", message: "must be a string" }]);
+        }
+        if (args.slug.trim().length > 0) {
+          const checked = validatePageSlugPattern(args.slug, isDynamic);
+          if (!checked.valid) {
+            return error("invalid_edit", "Nothing was done.", [{ path: "slug", message: checked.error }]);
+          }
+          normalizedSlug = checked.normalized;
+        }
+      }
+
+      let contentTypeId: string | undefined;
+      if (args.contentTypeId !== undefined) {
+        if (typeof args.contentTypeId !== "string") {
+          return error("invalid_edit", "Nothing was done.", [{ path: "contentTypeId", message: "must be a string" }]);
+        }
+        const trimmedCt = args.contentTypeId.trim();
+        if (trimmedCt.length > 0) {
+          if (!isDynamic) {
+            return error("invalid_edit", "Nothing was done.", [{ path: "contentTypeId", message: "binding a CMS collection requires type 'dp'" }]);
+          }
+          if (trimmedCt.length > MAX_PAGE_NAME) {
+            return error("invalid_edit", "Nothing was done.", [{ path: "contentTypeId", message: `longer than ${MAX_PAGE_NAME} characters` }]);
+          }
+          contentTypeId = trimmedCt;
+        }
+      }
+
+      const options: CreatePageOptions | undefined =
+        pageType !== undefined || normalizedSlug !== undefined || contentTypeId !== undefined
+          ? {
+              ...(pageType !== undefined ? { type: pageType } : {}),
+              ...(normalizedSlug !== undefined ? { slug: normalizedSlug } : {}),
+              ...(contentTypeId !== undefined ? { contentTypeId } : {}),
+            }
+          : undefined;
+
+      const page = options
+        ? await host.createPage(name, options)
+        : await host.createPage(name);
       host.notifyProjectChanged(`Page "${page.name}" created`);
       const opened = args.open === true && (await host.openPage(page.id));
-      return { ok: true, result: { pageId: page.id, name: page.name, opened, note: opened ? "The editor is loading the new page. If the next call says editor_not_ready or no_editor_session, wait a moment and retry." : "The page is empty. Call open_page to work on it." } };
+      return {
+        ok: true,
+        result: {
+          pageId: page.id,
+          name: page.name,
+          ...(page.slug !== undefined ? { slug: page.slug } : {}),
+          ...(page.type !== undefined ? { type: page.type } : {}),
+          ...(page.contentTypeId ? { contentTypeId: page.contentTypeId } : {}),
+          opened,
+          note: opened
+            ? "The editor is loading the new page. If the next call says editor_not_ready or no_editor_session, wait a moment and retry."
+            : "The page is empty. Call open_page to work on it.",
+        },
+      };
     }
     if (req.tool === "open_page") {
       if (typeof args.pageId !== "string" || !args.pageId) return error("invalid_edit", "Nothing was done.", [{ path: "pageId", message: "a page id is required" }]);

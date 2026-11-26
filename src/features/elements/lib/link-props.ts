@@ -1,7 +1,7 @@
 import type React from "react";
 import type { ButtonElement, LinkElement } from "@/types/elements";
 import type { SiteNavigationContextValue } from "@/features/elements/context/SiteNavigationContext";
-import { interpolateHref, resolveSiteHref } from "@/lib/site-routing";
+import { interpolateHref, pageRoutePath, resolveSiteHref } from "@/lib/site-routing";
 
 const protocols = new Set(["http:", "https:", "mailto:", "tel:"]);
 const targets = new Set(["_self", "_blank", "_parent", "_top"]);
@@ -13,6 +13,23 @@ export interface PreviewLinkProps {
   readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
+function expandDynamicPageQueryHref(
+  rawHref: string,
+  siteNav?: SiteNavigationContextValue | null,
+): string {
+  if (!siteNav || !rawHref.startsWith("?")) return rawHref;
+  try {
+    const parsed = new URL(rawHref, "https://site.invalid/");
+    const pageId = parsed.searchParams.get("page");
+    if (!pageId) return rawHref;
+    const matched = siteNav.pages.find((page) => page.id === pageId);
+    if (!matched || matched.type !== "dp") return rawHref;
+    return `${pageRoutePath(matched)}${parsed.hash || ""}`;
+  } catch {
+    return rawHref;
+  }
+}
+
 export function previewLinkProps(
   element: LinkElement | ButtonElement,
   siteNav?: SiteNavigationContextValue | null,
@@ -20,7 +37,8 @@ export function previewLinkProps(
 ): PreviewLinkProps | undefined {
   const uninterpolated = typeof element.href === "string" ? element.href.trim() : "";
   if (!uninterpolated) return undefined;
-  const rawHref = interpolateHref(uninterpolated, data, siteNav?.params);
+  const expanded = expandDynamicPageQueryHref(uninterpolated, siteNav);
+  const rawHref = interpolateHref(expanded, data, siteNav?.params);
   try {
     if (!protocols.has(new URL(rawHref, "https://preview.invalid/").protocol)) return undefined;
   } catch {

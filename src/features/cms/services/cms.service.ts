@@ -22,6 +22,36 @@ function normalizeListResponse<T>(response: T[] | { data?: T[] }): T[] {
   return Array.isArray(response.data) ? response.data : [];
 }
 
+function encodeSlugSegments(slug: string): string {
+  return slug
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map(encodeURIComponent)
+    .join("/");
+}
+
+export function flattenContentItemRecord(
+  item: ContentItem,
+): Record<string, unknown> {
+  const flattened: Record<string, unknown> = {
+    contentTypeId: item.contentTypeId,
+    createdAt: item.createdAt,
+    id: item.id,
+    published: item.published,
+    slug: item.slug,
+    title: item.title,
+    updatedAt: item.updatedAt,
+    ...(item.contentType !== undefined ? { contentType: item.contentType } : {}),
+  };
+  for (const fv of item.fieldValues ?? []) {
+    const fieldName = fv.field?.name;
+    if (fieldName) {
+      flattened[fieldName] = fv.value;
+    }
+  }
+  return flattened;
+}
+
 export const cmsService = {
   listContentTypes: async (
     token: string,
@@ -298,5 +328,45 @@ export const cmsService = {
     }
 
     return item;
+  },
+
+  fetchPublicContentList: async (
+    params: PublicContentQuery,
+  ): Promise<Record<string, unknown>[]> => {
+    const builder = new URLBuilder("api").setPath(
+      API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET,
+    );
+    if (params.contentTypeId) {
+      builder.addQueryParam("contentTypeId", params.contentTypeId);
+    }
+    if (params.limit !== undefined) {
+      builder.addQueryParam("limit", String(params.limit));
+    }
+    if (params.sortBy) {
+      builder.addQueryParam("sortBy", params.sortBy);
+    }
+    if (params.sortOrder) {
+      builder.addQueryParam("sortOrder", params.sortOrder);
+    }
+    const response = await apiClient.getPublic<
+      Record<string, unknown>[] | { data?: Record<string, unknown>[] }
+    >(builder.build());
+    return normalizeListResponse(response);
+  },
+
+  fetchPublicContentItem: async (
+    contentTypeId: string,
+    slug: string,
+  ): Promise<Record<string, unknown>> => {
+    const encodedSlug = encodeSlugSegments(slug);
+    const url = new URLBuilder("api")
+      .setPath(
+        API_ENDPOINTS.CMS.PUBLIC_CONTENT.GET_ITEM(
+          encodeURIComponent(contentTypeId),
+          encodedSlug,
+        ),
+      )
+      .build();
+    return apiClient.getPublic<Record<string, unknown>>(url);
   },
 };
