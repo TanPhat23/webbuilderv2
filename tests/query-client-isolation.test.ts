@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { dehydrate } from '@tanstack/react-query';
-import { getQueryClient } from '../src/client/queryclient';
+import { getQueryClient } from '../apps/editor/src/client/queryclient';
 
 test('server query clients do not share cached private data across requests', () => {
   const firstRequest = getQueryClient();

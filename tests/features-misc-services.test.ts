@@ -11,17 +11,17 @@ redirectModules({
 const { installFetch, muteConsole } = await import('./support/test-features-misc-harness');
 const { serverAuth } = await import('./support/test-features-misc-clerk-server-stub');
 const { responseHeaders } = await import('./support/test-features-misc-start-server-stub');
-const { agentTokenService } = await import('../src/features/agent/services/agentTokens.service');
-const { aiContentService } = await import('../src/features/ai/services/aicontent.service');
-const { elementCommentService } = await import('../src/features/comments/services/elementcomment.service');
-const { imageService } = await import('../src/features/images/services/image.service');
-const { notificationService } = await import('../src/features/notifications/services/notification.service');
-const { notificationsServer } = await import('../src/features/notifications/server/notifications.server');
-const { subscriptionService } = await import('../src/features/subscription/services/subscription.service');
-const { createPreviewLaunchUrl } = await import('../src/features/preview/api/preview-ticket.api');
-const { createPage, deleteProjectPage, renameComponentPage } = await import('../src/features/projects/api/page.api');
-const { sendElementOperation } = await import('../src/features/collaboration/lib/realtime/sendElementOp');
-const { useAgentActivity } = await import('../src/features/agent/activity');
+const { agentTokenService } = await import('../apps/editor/src/features/agent/services/agentTokens.service');
+const { aiContentService } = await import('../apps/editor/src/features/ai/services/aicontent.service');
+const { elementCommentService } = await import('../apps/editor/src/features/comments/services/elementcomment.service');
+const { imageService } = await import('../apps/editor/src/features/images/services/image.service');
+const { notificationService } = await import('../apps/editor/src/features/notifications/services/notification.service');
+const { notificationsServer } = await import('../apps/editor/src/features/notifications/server/notifications.server');
+const { subscriptionService } = await import('../apps/editor/src/features/subscription/services/subscription.service');
+const { createPreviewLaunchUrl } = await import('../apps/editor/src/features/preview/api/preview-ticket.api');
+const { createPage, deleteProjectPage, renameComponentPage } = await import('../apps/editor/src/features/projects/api/page.api');
+const { sendElementOperation } = await import('../apps/editor/src/features/collaboration/lib/realtime/sendElementOp');
+const { useAgentActivity } = await import('../apps/editor/src/features/agent/activity');
 
 let net: ReturnType<typeof installFetch>;
 let restoreConsole: () => void;

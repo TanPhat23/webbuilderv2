@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   buildPublicCollectionSubmitUrl,
   submitFormToCollection,
-} from "../src/features/elements/utils/formSubmission";
+} from "@webbuilder/site-runtime/elements/utils/formSubmission";
 
 describe("formSubmission", () => {
   it("builds public project-scoped collection submit URL", () => {

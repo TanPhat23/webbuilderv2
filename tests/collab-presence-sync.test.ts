@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { RemotePresence, User } from "../src/features/collaboration/interfaces/websocket";
+import type { RemotePresence, User } from "../apps/editor/src/features/collaboration/interfaces/websocket";
 import {
   buildMouseStorePresencePatch,
   canStartCollabRoom,
   extractProviderErrorMessage,
   HIDDEN_CURSOR,
-} from "../src/features/collaboration/lib/presenceSync";
+} from "../apps/editor/src/features/collaboration/lib/presenceSync";
 
 test("buildMouseStorePresencePatch transforms presences and preserves existing user info", () => {
   const presences = new Map<string, RemotePresence>([

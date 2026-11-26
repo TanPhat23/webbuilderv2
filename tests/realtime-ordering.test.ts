@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { OrderedElementSession, mergeServerPatch } from '../src/features/collaboration/lib/realtime/OrderedElementSession';
-import type { EditorElement } from '../src/types/global.type';
+import { OrderedElementSession, mergeServerPatch } from '../apps/editor/src/features/collaboration/lib/realtime/OrderedElementSession';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
 
 const text = (id: string, content = '') => ({ id, type: 'Text', pageId: 'page', content } as EditorElement);
 const update = (seq: number, id: string, content: string, clientOpId?: string) => ({ type: 'element:update', seq, clientOpId, payload: { id, content } } as const);
@@ -11,7 +11,7 @@ test('server patches recursively merge objects and delete null-valued fields', (
 });
 
 test('ordered creates use the server position and retain the assigned key', async () => {
-  const { applyElementOperation } = await import('../src/features/collaboration/lib/realtime/OrderedElementSession');
+  const { applyElementOperation } = await import('../apps/editor/src/features/collaboration/lib/realtime/OrderedElementSession');
   const elements = [text('a'), text('c')];
   const inserted = { ...text('b'), order: 1, orderKey: 'a1' };
   const result = applyElementOperation(elements, { type: 'element:create', payload: { element: inserted } });
@@ -20,7 +20,7 @@ test('ordered creates use the server position and retain the assigned key', asyn
 });
 
 test('ordered moves retain the assigned server key', async () => {
-  const { applyElementOperation } = await import('../src/features/collaboration/lib/realtime/OrderedElementSession');
+  const { applyElementOperation } = await import('../apps/editor/src/features/collaboration/lib/realtime/OrderedElementSession');
   const result = applyElementOperation([text('a'), text('b')], { type: 'element:move', payload: { id: 'b', parentId: null, order: 0, orderKey: 'Zz' } });
   assert.deepEqual(result.map((element) => element.id), ['b', 'a']);
   assert.equal((result[0] as EditorElement & { orderKey?: string }).orderKey, 'Zz');
@@ -143,7 +143,7 @@ test('a lower snapshot sequence resets stale buffered operations', () => {
 });
 
 test('moving into an element that cannot contain children keeps the original tree', async () => {
-  const { applyElementOperation } = await import('../src/features/collaboration/lib/realtime/OrderedElementSession');
+  const { applyElementOperation } = await import('../apps/editor/src/features/collaboration/lib/realtime/OrderedElementSession');
   const elements = [text('moving'), text('target')];
   const result = applyElementOperation(elements, { type: 'element:move', payload: { id: 'moving', parentId: 'target', order: 0 } });
   assert.deepEqual(result.map((element) => element.id), ['moving', 'target']);

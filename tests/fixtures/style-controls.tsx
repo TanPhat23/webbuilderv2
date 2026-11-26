@@ -1,23 +1,23 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import "../../src/app/globals.css";
-import { Tabs, TabsList, TabsTrigger } from "../../src/components/ui/tabs";
-import { PositionSection } from "../../src/features/editor/components/sidebar/style/PositionSection";
-import { TooltipProvider } from "../../src/components/ui/tooltip";
-import { StylePropertyInput } from "../../src/features/editor/components/sidebar/style/PropInput";
-import { LayoutSection } from "../../src/features/editor/components/sidebar/style/LayoutSection";
-import { SpacingSection } from "../../src/features/editor/components/sidebar/style/SpacingSection";
-import { FillSection } from "../../src/features/editor/components/sidebar/style/FillSection";
-import { BorderSection } from "../../src/features/editor/components/sidebar/style/BorderSection";
-import { ShadowSection } from "../../src/features/editor/components/sidebar/style/ShadowSection";
-import { EffectsSection } from "../../src/features/editor/components/sidebar/style/EffectsSection";
-import { BreakpointButtons } from "../../src/features/editor/components/sidebar/style/BreakpointButtons";
+import "../../apps/editor/src/app/globals.css";
+import { Tabs, TabsList, TabsTrigger } from "../../apps/editor/src/components/ui/tabs";
+import { PositionSection } from "../../apps/editor/src/features/editor/components/sidebar/style/PositionSection";
+import { TooltipProvider } from "../../apps/editor/src/components/ui/tooltip";
+import { StylePropertyInput } from "../../apps/editor/src/features/editor/components/sidebar/style/PropInput";
+import { LayoutSection } from "../../apps/editor/src/features/editor/components/sidebar/style/LayoutSection";
+import { SpacingSection } from "../../apps/editor/src/features/editor/components/sidebar/style/SpacingSection";
+import { FillSection } from "../../apps/editor/src/features/editor/components/sidebar/style/FillSection";
+import { BorderSection } from "../../apps/editor/src/features/editor/components/sidebar/style/BorderSection";
+import { ShadowSection } from "../../apps/editor/src/features/editor/components/sidebar/style/ShadowSection";
+import { EffectsSection } from "../../apps/editor/src/features/editor/components/sidebar/style/EffectsSection";
+import { BreakpointButtons } from "../../apps/editor/src/features/editor/components/sidebar/style/BreakpointButtons";
 import {
   compactStyles,
   withoutKeys,
   type StyleMap,
-} from "../../src/features/editor/components/sidebar/style/styleModel";
-import type { StyleProps } from "../../src/features/editor/components/sidebar/style/useStyleProps";
+} from "../../apps/editor/src/features/editor/components/sidebar/style/styleModel";
+import type { StyleProps } from "../../apps/editor/src/features/editor/components/sidebar/style/useStyleProps";
 function Harness() {
   const visual = new URLSearchParams(location.search).has("visual");
   const [values, replace] = useState<StyleMap>({

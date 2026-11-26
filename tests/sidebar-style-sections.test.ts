@@ -3,11 +3,11 @@ import { test, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { render, cleanup, byLabel, maybeByLabel, click, type, keyDown, blur, focus, $q, $$q, React, win, act } from './support/sidebar-dom-harness';
 import { makeSp } from './support/sidebar-fixtures';
-import { ColorRow } from '../src/features/editor/components/sidebar/style/ColorRow';
-import { StylePropertyInput, StyleField } from '../src/features/editor/components/sidebar/style/PropInput';
-import { Section } from '../src/features/editor/components/sidebar/style/SectionHeader';
-import { AlignmentControl } from '../src/features/editor/components/sidebar/style/AlignmentControl';
-import { MoreToggle, Segmented, StyleSelect } from '../src/features/editor/components/sidebar/style/controls';
+import { ColorRow } from '../apps/editor/src/features/editor/components/sidebar/style/ColorRow';
+import { StylePropertyInput, StyleField } from '../apps/editor/src/features/editor/components/sidebar/style/PropInput';
+import { Section } from '../apps/editor/src/features/editor/components/sidebar/style/SectionHeader';
+import { AlignmentControl } from '../apps/editor/src/features/editor/components/sidebar/style/AlignmentControl';
+import { MoreToggle, Segmented, StyleSelect } from '../apps/editor/src/features/editor/components/sidebar/style/controls';
 
 after(cleanup);
 beforeEach(cleanup);

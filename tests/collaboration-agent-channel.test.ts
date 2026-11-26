@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AgentChannel } from "../src/features/collaboration/lib/realtime/AgentChannel";
-import type { AgentOutcome, AgentRequest } from "../src/features/agent/protocol";
+import { AgentChannel } from "../apps/editor/src/features/collaboration/lib/realtime/AgentChannel";
+import type { AgentOutcome, AgentRequest } from "../apps/editor/src/features/agent/protocol";
 
 const env = (type: string, extra: Record<string, unknown> = {}) => ({ type, projectId: "p", pageId: "home", payload: {}, ...extra }) as never;
 const tick = () => new Promise((r) => setTimeout(r, 0));

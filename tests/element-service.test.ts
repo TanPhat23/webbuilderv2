@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { elementService } from "../src/features/elements/services/element.service";
-import type { EditorElement } from "../src/types/global.type";
+import { elementService } from "../apps/editor/src/features/elements/services/element.service";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 interface RecordedFetch {
   url: string;

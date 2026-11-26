@@ -1,13 +1,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { InteractionHost } from '../../src/features/interactions/components/InteractionHost';
-import PreviewElementLoader from '../../src/features/preview/components/PreviewElementLoader';
-import { browserPlatform, createExecutors } from '../../src/features/interactions/runtime/executors';
-import { ComponentInstanceCanvas, ResolvedInstancesContext } from '../../src/features/editor/components/ComponentInstanceCanvas';
-import { EditorFlagsProvider } from '../../src/features/editor/components/context/EditorFlagsContext';
-import type { EditorElement } from '../../src/types/global.type';
-import { useScrollReveal } from '../../src/features/preview/hooks/useScrollReveal';
-import '../../src/features/interactions/runtime/animations.css';
+import { InteractionHost } from '@webbuilder/site-runtime/interactions/components/InteractionHost';
+import PreviewElementLoader from '@webbuilder/site-runtime/preview/PreviewElementLoader';
+import { browserPlatform, createExecutors } from '@webbuilder/site-runtime/interactions/runtime/executors';
+import { ComponentInstanceCanvas, ResolvedInstancesContext } from '../../apps/editor/src/features/editor/components/ComponentInstanceCanvas';
+import { EditorFlagsProvider } from '../../apps/editor/src/features/editor/components/context/EditorFlagsContext';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
+import { useScrollReveal } from '@webbuilder/site-runtime/preview/useScrollReveal';
+import '../../apps/editor/src/features/interactions/runtime/animations.css';
 
 const input = { id: 'email', type: 'Input', content: '', settings: { name: 'email', type: 'email' }, styles: {}, elements: [] } as any;
 const textarea = { id: 'message', type: 'Textarea', settings: { name: 'message', defaultValue: 'Hello' }, styles: {}, elements: [] } as any;

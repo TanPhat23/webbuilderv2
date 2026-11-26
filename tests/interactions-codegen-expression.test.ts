@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { compileExpression, expressionRuntime } from "../src/features/interactions/codegen/expression";
-import { evaluate } from "../src/features/interactions/runtime/expression";
+import { compileExpression, expressionRuntime } from "../apps/editor/src/features/interactions/codegen/expression";
+import { evaluate } from "@webbuilder/site-runtime/interactions/runtime/expression";
 
 test("compiled expressions match interpreter semantics", () => {
   const scope = { value: "7", num: 7, nested: { x: 2 }, key: "constructor", missing: null, flag: false };

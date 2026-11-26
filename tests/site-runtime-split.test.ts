@@ -21,7 +21,7 @@ import {
 import {
   buildDirectPreviewUrl,
   buildPreviewEnterUrl,
-} from "../src/features/preview/api/preview-ticket.api";
+} from "../apps/editor/src/features/preview/api/preview-ticket.api";
 
 test("compileProjectTailwindCss compiles utility classes during SSR and caches by class set", async () => {
   clearTailwindSsrCache();

@@ -12,11 +12,11 @@ redirectModules({
 
 const { authState } = await import('./support/test-clerk-stub');
 const { paramsState } = await import('./support/test-router-stub');
-const { CollaboratorRole } = await import('../src/types/collaboration');
-const { Permission, ROLE_PERMISSIONS } = await import('../src/features/auth/constants/rbac');
-const { collaboratorKeys } = await import('../src/features/collaboration/hooks/useCollaborators');
-const projectPerms = await import('../src/features/projects/hooks/useProjectPermissions');
-const editorPerms = await import('../src/features/editor/hooks/useEditorPermissions');
+const { CollaboratorRole } = await import('../apps/editor/src/types/collaboration');
+const { Permission, ROLE_PERMISSIONS } = await import('../apps/editor/src/features/auth/constants/rbac');
+const { collaboratorKeys } = await import('../apps/editor/src/features/collaboration/hooks/useCollaborators');
+const projectPerms = await import('../apps/editor/src/features/projects/hooks/useProjectPermissions');
+const editorPerms = await import('../apps/editor/src/features/editor/hooks/useEditorPermissions');
 
 type Collab = { userId: string; role: string; user?: { id: string } };
 

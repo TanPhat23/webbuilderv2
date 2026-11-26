@@ -29,7 +29,7 @@ async function setup() {
   const original = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   FakeWebSocket.instances = [];
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const errors: { message?: string; code?: string }[] = [];
   const state: any = { elements: [], setElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({

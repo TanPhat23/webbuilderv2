@@ -4,13 +4,13 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import {
   addInteraction, getInteractions, hasInteractions, newInteractionId, removeInteraction, updateInteraction,
-} from "../src/features/interactions/ops";
-import { commit, createOperations } from "../src/features/interactions/ops-store";
-import { emptySnapshot, useLogicStore } from "../src/features/interactions/logic-store";
-import { describe as describePage } from "../src/features/interactions/describe";
-import { buildJsonSchema } from "../src/features/interactions/schema-json";
-import { VERBS } from "../src/features/interactions/schema";
-import { createElementStore } from "../src/features/editor/store/element-store";
+} from "../apps/editor/src/features/interactions/ops";
+import { commit, createOperations } from "../apps/editor/src/features/interactions/ops-store";
+import { emptySnapshot, useLogicStore } from "../apps/editor/src/features/interactions/logic-store";
+import { describe as describePage } from "../apps/editor/src/features/interactions/describe";
+import { buildJsonSchema } from "../apps/editor/src/features/interactions/schema-json";
+import { VERBS } from "@webbuilder/site-runtime/interactions/schema";
+import { createElementStore } from "../apps/editor/src/features/editor/store/element-store";
 
 const el = (id: string, extra: Record<string, unknown> = {}) =>
   ({ id, type: "Frame", content: "", styles: {}, tailwindStyles: "", elements: [], pageId: "p", ...extra }) as any;
@@ -113,7 +113,7 @@ test("describe gives agents a flat, compact page", () => {
 
 test("the published JSON schema is up to date and covers every verb", () => {
   const built = buildJsonSchema() as any;
-  const committed = JSON.parse(readFileSync("public/interactions.schema.json", "utf8"));
+  const committed = JSON.parse(readFileSync("apps/editor/public/interactions.schema.json", "utf8"));
   assert.deepEqual(committed, built, "run `bun run interactions:schema`");
   assert.equal(built.$defs.step.oneOf.length, VERBS.length);
   const ifSchema = built.$defs.step.oneOf.find((s: any) => s.properties?.if);
@@ -147,7 +147,7 @@ test("published schema enforces event-specific options", async () => {
 });
 
 test("published schema declares the additional expression-validation contract", async () => {
-  const { validateInteractionMap } = await import("../src/features/interactions/schema");
+  const { validateInteractionMap } = await import("@webbuilder/site-runtime/interactions/schema");
   const bad = { ix_abcdefgh: { on: "click", do: [{ toast: "{{ 1 + }}" }] } };
   const schema: any = buildJsonSchema();
   assert.equal(schema["x-template-validation"].validator, "validateInteractionMap");

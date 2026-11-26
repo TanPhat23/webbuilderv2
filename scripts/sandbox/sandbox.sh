@@ -99,7 +99,7 @@ cmd_up() {
   alive mcp || { (cd "$S" && start_bg mcp env -i PATH="$PATH" HOME="$S" PORT=$MCP_PORT DATABASE_URL="$DB_URL" REDIS_URL="$REDIS_URL" ./bin/mcp); }
   wait_http "http://127.0.0.1:$MCP_PORT/health" mcp 30
 
-  alive vite || { (cd "$ROOT" && start_bg vite env GO_SERVER_URL="http://127.0.0.1:$API_PORT" VITE_GO_SERVER_URL="http://127.0.0.1:$API_PORT" \
+  alive vite || { (cd "$ROOT/apps/editor" && start_bg vite env GO_SERVER_URL="http://127.0.0.1:$API_PORT" VITE_GO_SERVER_URL="http://127.0.0.1:$API_PORT" \
     VITE_COLLAB_WS_URL="ws://127.0.0.1:$API_PORT" VITE_SOCKET_URL="ws://127.0.0.1:$API_PORT" VITE_BASE_URL="http://localhost:$WEB_PORT" \
     bunx vite dev --port $WEB_PORT --strictPort --host localhost); }
   wait_http "http://localhost:$WEB_PORT/" web 120 vite

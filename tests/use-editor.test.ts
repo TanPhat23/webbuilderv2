@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Page } from "../src/features/pages";
+import type { Page } from "../apps/editor/src/features/pages";
 import {
   isComponentPageId,
   resolveEditorAccess,
   resolveFallbackRoute,
   shouldRedirectDeletedProject,
   useEditor,
-} from "../src/features/editor/hooks/useEditor";
+} from "../apps/editor/src/features/editor/hooks/useEditor";
 
 function makePage(overrides: Partial<Page> & Pick<Page, "Id" | "Type">): Page {
   return {

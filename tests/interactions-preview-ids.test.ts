@@ -2,9 +2,9 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import { createElement } from "react";
 import { prerenderToNodeStream } from "react-dom/static";
-import { ALL_ELEMENT_TYPES } from "../src/features/editor/constants/elements";
-import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import type { EditorElement } from "../src/types/global.type";
+import { ALL_ELEMENT_TYPES } from "../apps/editor/src/features/editor/constants/elements";
+import PreviewElementLoader from "@webbuilder/site-runtime/preview/PreviewElementLoader";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 test("the preview loader puts interaction ids on rendered element roots", async () => {
   for (const type of ALL_ELEMENT_TYPES) {

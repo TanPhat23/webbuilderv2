@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { projectScopedKeys } from '../src/features/collaboration/hooks/projectScopedKeys';
+import { projectScopedKeys } from '../apps/editor/src/features/collaboration/hooks/projectScopedKeys';
 
 test('collaboration query keys retain their cache paths', () => {
   for (const root of ['invitations', 'collaborators']) {

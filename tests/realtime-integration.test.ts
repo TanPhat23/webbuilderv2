@@ -28,7 +28,7 @@ class FakeWebSocket {
 test('provider joins, handles remote messages, and resolves an acknowledged operation', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const applied: unknown[][] = [];
   const state = {
     elements: [], setElements: (...args: unknown[]) => { applied.push(['sync', ...args]); },
@@ -66,7 +66,7 @@ test('provider joins, handles remote messages, and resolves an acknowledged oper
 test('ordered server echoes confirm optimistic changes without duplicating them', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = {
     elements: [],
     setElements(elements: unknown[]) { state.elements = elements; },
@@ -100,7 +100,7 @@ test('ordered server echoes confirm optimistic changes without duplicating them'
 test('rejected local edits roll back without removing later pending edits', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const first = { id: 'first', type: 'Text', pageId: 'page', content: 'original' };
   const second = { id: 'second', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
@@ -131,7 +131,7 @@ test('rejected local edits roll back without removing later pending edits', asyn
 test('broadcasts received during initial join wait for the page snapshot', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd(element: unknown) { state.elements = [...state.elements, element]; }, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
@@ -149,7 +149,7 @@ test('broadcasts received during initial join wait for the page snapshot', async
 test('once sequencing is active an unsequenced mutation requests a snapshot', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd(element: unknown) { state.elements = [...state.elements, element]; }, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
   try {
@@ -166,7 +166,7 @@ test('once sequencing is active an unsequenced mutation requests a snapshot', as
 test('a locally rate-limited operation is rolled back without being sent', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
@@ -187,7 +187,7 @@ test('a locally rate-limited operation is rolled back without being sent', async
 test('reconnect rebases an uncertain local edit without automatically resending it', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
@@ -215,7 +215,7 @@ test('reconnect rebases an uncertain local edit without automatically resending 
 test('an edit queued before join is sent after join and rebased on the first snapshot', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const element = { id: 'item', type: 'Text', pageId: 'page', content: 'local' } as const;
   const state: any = { elements: [element], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
@@ -237,7 +237,7 @@ test('an edit queued before join is sent after join and rebased on the first sna
 test('an unsent queued edit rejected on disconnect is not sent after reconnect', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'original' };
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
@@ -264,7 +264,7 @@ test('an unsent queued edit rejected on disconnect is not sent after reconnect',
 test('provider reports pending operation counts as edits are acknowledged', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const counts: number[] = [];
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state, onPendingChange: (count: number) => counts.push(count) } as any);
@@ -286,7 +286,7 @@ test('provider reports pending operation counts as edits are acknowledged', asyn
 test('tracking a batch of optimistic creates keeps every local element intact', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const first = { id: 'first', type: 'Text', pageId: 'page', content: '' } as const;
   const second = { id: 'second', type: 'Text', pageId: 'page', content: '' } as const;
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
@@ -311,7 +311,7 @@ test('tracking a batch of optimistic creates keeps every local element intact', 
 test('a missing sequence requests a snapshot and then applies buffered changes', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const item = { id: 'item', type: 'Text', pageId: 'page', content: 'initial' };
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const provider = new RealtimeProvider({ url: 'ws://localhost:1234', projectId: 'project', pageId: 'page', userId: 'user', getTicket: async () => 'ticket', getElementState: () => state });
@@ -331,7 +331,7 @@ test('a missing sequence requests a snapshot and then applies buffered changes',
 test('a rejected page join reports an error state and recovers on a valid snapshot', async () => {
   const originalSocket = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], setElements(elements: unknown[]) { state.elements = elements; }, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const errors: string[] = [];
   const statuses: string[] = [];

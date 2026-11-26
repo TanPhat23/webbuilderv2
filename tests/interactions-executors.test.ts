@@ -1,10 +1,10 @@
 // tests/interactions-executors.test.ts
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { browserPlatform, createExecutors, elementScope, type Platform, type NodeLike } from "../src/features/interactions/runtime/executors";
-import { runInteraction, type RunLogEntry } from "../src/features/interactions/runtime/run";
-import { createVariableStore } from "../src/features/interactions/runtime/variables";
-import { evaluate } from "../src/features/interactions/runtime/expression";
+import { browserPlatform, createExecutors, elementScope, type Platform, type NodeLike } from "@webbuilder/site-runtime/interactions/runtime/executors";
+import { runInteraction, type RunLogEntry } from "@webbuilder/site-runtime/interactions/runtime/run";
+import { createVariableStore } from "@webbuilder/site-runtime/interactions/runtime/variables";
+import { evaluate } from "@webbuilder/site-runtime/interactions/runtime/expression";
 
 function node(tagName = "DIV", extra: Partial<NodeLike> = {}): NodeLike & { classes: Set<string>; attrs: Record<string, string> } {
   const classes = new Set<string>();

@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import CollaboratorsTable from '../src/features/collaboration/components/CollaboratorsTable';
-import InvitationsTable from '../src/features/collaboration/components/InvitationsTable';
-import ConfirmationDialogs from '../src/features/collaboration/components/ConfirmationDialogs';
-import { getRoleBadgeVariant, getRoleIcon } from '../src/features/collaboration/components/utils';
-import { CollaboratorRole } from '../src/features/collaboration/interfaces/collaboration.interface';
+import CollaboratorsTable from '../apps/editor/src/features/collaboration/components/CollaboratorsTable';
+import InvitationsTable from '../apps/editor/src/features/collaboration/components/InvitationsTable';
+import ConfirmationDialogs from '../apps/editor/src/features/collaboration/components/ConfirmationDialogs';
+import { getRoleBadgeVariant, getRoleIcon } from '../apps/editor/src/features/collaboration/components/utils';
+import { CollaboratorRole } from '../apps/editor/src/features/collaboration/interfaces/collaboration.interface';
 
 type Props = Record<string, any>;
 const h = React.createElement;

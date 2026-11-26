@@ -10,8 +10,8 @@ redirectModules({
 
 const { paramsState, searchState } = await import('./support/test-router-stub');
 const { disposeClients, makeClient, renderHook, runQuery } = await import('./support/test-hook-harness');
-const projects = await import('../src/features/projects/hooks/useProjects');
-const users = await import('../src/features/users/hooks/useUsers');
+const projects = await import('../apps/editor/src/features/projects/hooks/useProjects');
+const users = await import('../apps/editor/src/features/users/hooks/useUsers');
 
 after(disposeClients);
 

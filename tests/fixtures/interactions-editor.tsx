@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {StepForm} from '../../src/features/interactions/components/StepForm';
-import {StepList} from '../../src/features/interactions/components/StepList';
-import type {Step} from '../../src/features/interactions/schema';
-import '../../src/app/globals.css';
+import {StepForm} from '../../apps/editor/src/features/interactions/components/StepForm';
+import {StepList} from '../../apps/editor/src/features/interactions/components/StepList';
+import type {Step} from '@webbuilder/site-runtime/interactions/schema';
+import '../../apps/editor/src/app/globals.css';
 function App(){
  const [steps,setSteps]=useState<Step[]>([{scroll:'target',smooth:true},{call:'api',method:'GET',url:'/test'}]);
  const [list,setList]=useState<Step[]>([{toast:'First'}, {toast:'Second'}]);

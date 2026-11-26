@@ -9,8 +9,8 @@ import {
   React,
   render,
 } from './support/sidebar-dom-harness';
-import type { FrameElement, TextElement } from '../src/types/elements/elements';
-import type { DropPayload } from '../src/features/editor/utils/element/dragPayload';
+import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
+import type { DropPayload } from '../apps/editor/src/features/editor/utils/element/dragPayload';
 
 redirectModules({
   '@clerk/tanstack-react-start': './test-clerk-stub.ts',
@@ -19,22 +19,22 @@ redirectModules({
 
 const { authState } = await import('./support/test-clerk-stub');
 const { routerState } = await import('./support/editor-router-stub');
-const { useElementStore } = await import('../src/features/editor/store/element-store');
-const { useSelectionStore } = await import('../src/features/editor/store/selection-store');
-const { useEventModeStore } = await import('../src/features/editor/store/event-mode-store');
-const { usePickStore } = await import('../src/features/interactions/editing/pick-store');
-const { useCanvasElement } = await import('../src/features/editor/components/elements/shared/useCanvasElement');
-const { useCanvasPickMode } = await import('../src/features/editor/components/canvas/useCanvasPickMode');
-const { findElementNode, useElementRect } = await import('../src/features/editor/components/canvas/useElementRect');
-const { useCanvasRootDrop } = await import('../src/features/editor/hooks/useCanvasRootDrop');
-const { useEditor } = await import('../src/features/editor/hooks/useEditor');
-const { rememberPendingMaster, useProjectComponents } = await import('../src/features/editor/hooks/useProjectComponents');
-const { EditorContext } = await import('../src/features/editor/context/EditorContext');
-const { EditorFlagsProvider } = await import('../src/features/editor/components/context/EditorFlagsContext');
+const { useElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+const { useSelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
+const { useEventModeStore } = await import('../apps/editor/src/features/editor/store/event-mode-store');
+const { usePickStore } = await import('../apps/editor/src/features/interactions/editing/pick-store');
+const { useCanvasElement } = await import('../apps/editor/src/features/editor/components/elements/shared/useCanvasElement');
+const { useCanvasPickMode } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasPickMode');
+const { findElementNode, useElementRect } = await import('../apps/editor/src/features/editor/components/canvas/useElementRect');
+const { useCanvasRootDrop } = await import('../apps/editor/src/features/editor/hooks/useCanvasRootDrop');
+const { useEditor } = await import('../apps/editor/src/features/editor/hooks/useEditor');
+const { rememberPendingMaster, useProjectComponents } = await import('../apps/editor/src/features/editor/hooks/useProjectComponents');
+const { EditorContext } = await import('../apps/editor/src/features/editor/context/EditorContext');
+const { EditorFlagsProvider } = await import('../apps/editor/src/features/editor/components/context/EditorFlagsContext');
 const { editorValue } = await import('./support/sidebar-fixtures');
-const { projectKeys } = await import('../src/features/projects/hooks/useProjects');
-const { collaboratorKeys } = await import('../src/features/collaboration/hooks/useCollaborators');
-const { CollaboratorRole } = await import('../src/features/collaboration/interfaces/collaboration.interface');
+const { projectKeys } = await import('../apps/editor/src/features/projects/hooks/useProjects');
+const { collaboratorKeys } = await import('../apps/editor/src/features/collaboration/hooks/useCollaborators');
+const { CollaboratorRole } = await import('../apps/editor/src/features/collaboration/interfaces/collaboration.interface');
 
 const h = React.createElement;
 const realFetch = globalThis.fetch;

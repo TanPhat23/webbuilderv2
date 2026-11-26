@@ -28,7 +28,7 @@ test('project creation sends blank optional descriptions as null and preserves r
   assert.ok(address && typeof address !== 'string');
   process.env.GO_SERVER_URL = `http://127.0.0.1:${address.port}`;
   try {
-    const { projectService } = await import('../src/features/projects/services/project.service');
+    const { projectService } = await import('../apps/editor/src/features/projects/services/project.service');
     for (const [label, description, expected] of [
       ['empty', '', null],
       ['whitespace', ' \t\n ', null],

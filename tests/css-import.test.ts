@@ -5,7 +5,7 @@ import {
   formatCssPreview,
   isCssUploadFile,
   validateCssImport,
-} from "../src/features/editor/lib/cssImport";
+} from "../apps/editor/src/features/editor/lib/cssImport";
 
 test("validateCssImport enforces non-empty CSS, size bounds, and safe tags", () => {
   assert.equal(validateCssImport("", 1024), "CSS is empty");

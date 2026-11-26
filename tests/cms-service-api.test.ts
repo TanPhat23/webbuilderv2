@@ -8,10 +8,10 @@ redirectModules({
 });
 
 const { serverAuth } = await import('./support/test-clerk-server-stub');
-const { cmsService } = await import('../src/features/cms/services/cms.service');
-const api = await import('../src/features/cms/api/cms.api');
-const schema = await import('../src/features/cms/schema/cms');
-const cmsIndex = await import('../src/features/cms');
+const { cmsService } = await import('../apps/editor/src/features/cms/services/cms.service');
+const api = await import('../apps/editor/src/features/cms/api/cms.api');
+const schema = await import('../apps/editor/src/features/cms/schema/cms');
+const cmsIndex = await import('../apps/editor/src/features/cms');
 
 interface Recorded {
   url: URL;

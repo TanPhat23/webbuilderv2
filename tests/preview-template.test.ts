@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { generateDesignSystemCSS } from "../src/features/projectsettings/utils/designSystemUtils";
+import { generateDesignSystemCSS } from "../apps/editor/src/features/projectsettings/utils/designSystemUtils";
 import {
   generatePreviewHTML,
   resolvePreviewTokens,
-} from "../src/features/projectsettings/utils/previewTemplate";
+} from "../apps/editor/src/features/projectsettings/utils/previewTemplate";
 
 test("resolvePreviewTokens preserves zero metrics, clamps negatives, and sanitizes unsafe strings", () => {
   const zeroTokens = resolvePreviewTokens({

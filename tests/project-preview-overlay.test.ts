@@ -6,7 +6,7 @@ import {
   ProjectPreviewOverlay,
   buildOverlaySections,
   buildOverlaySwatches,
-} from "../src/features/projectsettings/components/ProjectPreviewOverlay";
+} from "../apps/editor/src/features/projectsettings/components/ProjectPreviewOverlay";
 
 test("buildOverlaySwatches and buildOverlaySections normalize optional design tokens", () => {
   assert.deepEqual(buildOverlaySwatches(undefined), []);

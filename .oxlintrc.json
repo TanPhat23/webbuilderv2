@@ -7,10 +7,11 @@
   },
   "ignorePatterns": [
     ".output/**",
+    "apps/*/.output/**",
     "coverage/**",
     "dist/**",
     "build/**",
-    "src/routeTree.gen.ts"
+    "apps/*/src/routeTree.gen.ts"
   ],
   "rules": {
     "react/self-closing-comp": "error",

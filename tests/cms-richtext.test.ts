@@ -5,12 +5,12 @@ import {
   sanitizeRichTextHtml,
   slugifyTitle,
   stripHtmlToPreview,
-} from "../src/features/cms/components/richTextUtils";
+} from "../apps/editor/src/features/cms/components/richTextUtils";
 import {
   FIELD_TYPE_META,
   getFieldTypeMeta,
-} from "../src/features/cms/components/fieldTypeMeta";
-import { FIELD_TYPES } from "../src/features/cms/components/types";
+} from "../apps/editor/src/features/cms/components/fieldTypeMeta";
+import { FIELD_TYPES } from "../apps/editor/src/features/cms/components/types";
 
 describe("richTextUtils", () => {
   it("sanitizeRichTextHtml strips scripts, event handlers, and javascript URLs while preserving safe markup", () => {

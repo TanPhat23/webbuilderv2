@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CollaboratorRole } from "../src/types/collaboration";
-import { Permission } from "../src/features/auth/constants/rbac";
+import { CollaboratorRole } from "../apps/editor/src/types/collaboration";
+import { Permission } from "../apps/editor/src/features/auth/constants/rbac";
 import {
   canChangeRole,
   canPerformAction,
@@ -12,7 +12,7 @@ import {
   hasAnyPermission,
   hasPermission,
   isHigherRole,
-} from "../src/features/auth/lib/permissions";
+} from "../apps/editor/src/features/auth/lib/permissions";
 
 test("role permission queries enforce viewer, editor, and owner boundaries", () => {
   assert.equal(hasPermission(CollaboratorRole.VIEWER, Permission.PROJECT_VIEW), true);

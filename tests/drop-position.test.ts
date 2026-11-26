@@ -5,8 +5,8 @@ import {
   isHorizontalFlow,
   isNoOpMove,
   resolveNearestChildSlot,
-} from '../src/features/editor/utils/element/dropPosition';
-import type { FrameElement, TextElement } from '../src/types/elements/elements';
+} from '../apps/editor/src/features/editor/utils/element/dropPosition';
+import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
 
 const text = (id: string, parentId?: string): TextElement => ({
   id,

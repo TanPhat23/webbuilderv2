@@ -7,7 +7,7 @@ import {
   parseTableColumnWidth,
   removeTableColumnAt,
   updateTableColumnAt,
-} from "../src/features/editor/lib/tableConfig";
+} from "../apps/editor/src/features/editor/lib/tableConfig";
 
 test("table column helpers create, update, reorder, and delete columns cleanly", () => {
   const c1 = createTableColumn(0, "col-1");

@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import { parse, parseExpression } from '@babel/parser';
 import * as t from '@babel/types';
 import { generate } from '@babel/generator';
-import { generateImports } from '../src/features/editor/lib/code/generateImports';
+import { generateImports } from '../apps/editor/src/features/editor/lib/code/generateImports';
 import {
   generateStrategies,
   generationOptions,
   ListGenerateStrategy,
   SelectGenerateStrategy,
   FrameGenerateStrategy,
-} from '../src/features/editor/lib/code/generatestrategies';
-import { codeGenerator } from '../src/features/editor/lib/code/generator';
-import { parseCode } from '../src/features/editor/lib/code/parseCode';
-import { locatePage } from '../src/features/editor/lib/code/extractPreamble';
+} from '../apps/editor/src/features/editor/lib/code/generatestrategies';
+import { codeGenerator } from '../apps/editor/src/features/editor/lib/code/generator';
+import { parseCode } from '../apps/editor/src/features/editor/lib/code/parseCode';
+import { locatePage } from '../apps/editor/src/features/editor/lib/code/extractPreamble';
 import {
   CodeError,
   attributeName,
@@ -27,7 +27,7 @@ import {
   stringAttributeValue,
   tagName,
   unparen,
-} from '../src/features/editor/lib/code/astLiterals';
+} from '../apps/editor/src/features/editor/lib/code/astLiterals';
 
 const warnings: unknown[][] = [];
 const errors: unknown[][] = [];

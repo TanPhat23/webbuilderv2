@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import { ApiError } from "../src/utils/errors/api-error";
-import { fetchPreviewSite } from "../src/features/preview/lib/preview-data";
-import type { ApiPage } from "../src/features/projects/services/project.service";
-import type { EditorElement } from "../src/types/global.type";
+import PreviewElementLoader from "@webbuilder/site-runtime/preview/PreviewElementLoader";
+import { ApiError } from "@webbuilder/site-runtime/api-error";
+import { fetchPreviewSite } from "@webbuilder/site-runtime/data";
+import type { ApiPage } from "../apps/editor/src/features/projects/services/project.service";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 const missing = new ApiError("Project not found", 404, "not_found");
 const denied = new ApiError("Access denied", 403, "forbidden");

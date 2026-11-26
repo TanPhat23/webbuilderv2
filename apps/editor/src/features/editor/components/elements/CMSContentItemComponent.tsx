@@ -1,0 +1,109 @@
+import FrameView from "@webbuilder/site-runtime/elements/views/FrameView";
+
+import React from "react";
+import DOMPurify from "isomorphic-dompurify";
+import { useCMSContentItem } from "@/features/cms/hooks/useCMSContent";
+import { EditorComponentProps } from "@/features/editor";
+import { CMSContentItemElement } from "@/features/editor";
+import { ContentItem } from "@/features/cms";
+import { ChildElements } from "../context/ChildElementLoaderContext";
+import { getFieldValue } from "@/features/cms/hooks/useCMSContent";
+import { useDynamicPagePreview } from "@/features/editor/hooks/useDynamicPagePreview";
+import { useCanvasElement, CMSEmptyState } from "./shared";
+
+const CMSContentItemComponent = ({ element, data }: EditorComponentProps) => {
+  const cmsElement = element as CMSContentItemElement;
+  const { rootProps } = useCanvasElement(cmsElement);
+  const dynamicPreview = useDynamicPagePreview();
+  const settings = cmsElement.settings || {};
+  const contentTypeId = settings.contentTypeId || dynamicPreview.contentTypeId || "";
+  const itemSlug = settings.itemSlug || dynamicPreview.selectedItem?.slug || "";
+
+  const { contentItem, isFetching } = useCMSContentItem(
+    contentTypeId,
+    settings.itemSlug ? itemSlug : "",
+  );
+
+  const itemToRender =
+    (settings.itemSlug ? contentItem : undefined) ||
+    dynamicPreview.selectedItem ||
+    (data as ContentItem | undefined) ||
+    contentItem;
+
+  if (!contentTypeId) {
+    return (
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content Item"
+        description="Configure content type and slug in settings"
+      />
+    );
+  }
+
+  if (!itemSlug) {
+    return (
+      <CMSEmptyState
+        {...rootProps}
+        title="CMS Content Item"
+        description="Select an item in settings"
+      />
+    );
+  }
+
+  return (
+    <FrameView element={cmsElement} rootProps={rootProps} mode="edit">
+      {cmsElement.elements?.length ? (
+        <ChildElements
+          elements={cmsElement.elements}
+          data={itemToRender as unknown as Record<string, unknown>}
+        />
+      ) : isFetching ? (
+        <div className="flex items-center justify-center p-8 text-muted-foreground text-sm">
+          Loading...
+        </div>
+      ) : itemToRender ? (
+        <article className="max-w-4xl mx-auto">
+          <header className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">{itemToRender.title}</h1>
+            <div className="text-sm text-gray-600">
+              By {getFieldValue(itemToRender, "author")} •{" "}
+              {itemToRender.createdAt
+                ? new Date(itemToRender.createdAt).toLocaleDateString()
+                : ""}
+            </div>
+          </header>
+
+          {getFieldValue(itemToRender, "excerpt") && (
+            <p className="text-lg text-gray-700 mb-6 italic">
+              {getFieldValue(itemToRender, "excerpt")}
+            </p>
+          )}
+
+          <div className="prose prose-lg max-w-none">
+            <div
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(
+                  getFieldValue(itemToRender, "content") ||
+                    "Sample content would be rendered here.",
+                ),
+              }}
+            />
+          </div>
+
+          <footer className="mt-8 pt-4 border-t border-gray-200">
+            <div className="text-sm text-gray-500">
+              Published: {itemToRender.published ? "Yes" : "No"} • Slug:{" "}
+              {itemToRender.slug}
+            </div>
+          </footer>
+        </article>
+      ) : (
+        <div className="flex items-center justify-center p-8 text-muted-foreground text-sm">
+          Item not found
+        </div>
+      )}
+    </FrameView>
+  );
+};
+
+export default CMSContentItemComponent;

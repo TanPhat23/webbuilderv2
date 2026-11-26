@@ -1,7 +1,7 @@
 import { after, afterEach, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { redirectModules } from './support/test-stub-modules';
-import type { ContentFieldValue, ContentItem } from '../src/features/cms/interfaces/cms.interface';
+import type { ContentFieldValue, ContentItem } from '../apps/editor/src/features/cms/interfaces/cms.interface';
 
 redirectModules({
   '@tanstack/react-start': './test-start-stub.ts',
@@ -13,10 +13,10 @@ const React = await import('react');
 const { QueryClientProvider } = await import('@tanstack/react-query');
 const { makeClient, disposeClients } = await import('./support/test-hook-harness');
 const { createCmsBackend } = await import('./support/cms-fake-backend');
-const { cmsKeys } = await import('../src/features/cms/query-keys');
-const hooks = await import('../src/features/cms/hooks');
-const { useCMSWorkspace } = await import('../src/features/cms/hooks/useCMSManager');
-const { CMSProvider, useCMSContext } = await import('../src/features/cms/provider/CMSProvider');
+const { cmsKeys } = await import('../apps/editor/src/features/cms/query-keys');
+const hooks = await import('../apps/editor/src/features/cms/hooks');
+const { useCMSWorkspace } = await import('../apps/editor/src/features/cms/hooks/useCMSManager');
+const { CMSProvider, useCMSContext } = await import('../apps/editor/src/features/cms/provider/CMSProvider');
 
 const h = React.createElement;
 const realError = console.error;

@@ -3,8 +3,8 @@ import { test } from "node:test";
 import {
   API_ENDPOINTS,
   NEXT_API_ENDPOINTS,
-} from "../src/utils/shared/constants/endpoints";
-import { URLBuilder } from "../src/utils/urlbuilder";
+} from "../apps/editor/src/utils/shared/constants/endpoints";
+import { URLBuilder } from "../apps/editor/src/utils/urlbuilder";
 
 test("endpoint builders produce clean API paths without undefined segments", () => {
   const urls = [

@@ -8,7 +8,7 @@ import {
   templateErrors,
   templateRefs,
   ExpressionError,
-} from "../src/features/interactions/runtime/expression";
+} from "@webbuilder/site-runtime/interactions/runtime/expression";
 
 const scope = {
   vars: { count: 2, user: { name: "Ada", tags: ["a", "b"] }, empty: "" },

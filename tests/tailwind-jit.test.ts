@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { test } from "node:test";
-import { collectClasses, createTailwindBuilder } from "../src/features/projects/lib/tailwind-jit";
+import { collectClasses, createTailwindBuilder } from "@webbuilder/site-runtime/projects/tailwind-jit";
 
 const require = createRequire(import.meta.url);
 const read = (id: string) => readFileSync(require.resolve(id), "utf8");

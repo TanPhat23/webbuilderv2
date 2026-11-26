@@ -16,7 +16,7 @@ storage.set(
 );
 
 const { DEFAULT_CHROME, sanitizeChrome, useEditorChromeStore } = await import(
-  '../src/features/editor/store/editor-chrome-store'
+  '../apps/editor/src/features/editor/store/editor-chrome-store'
 );
 
 const layout = () => {

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import {
   isChromeShortcut,
   isTypingTarget,
-} from '../src/features/editor/components/layout/isTypingTarget';
+} from '../apps/editor/src/features/editor/components/layout/isTypingTarget';
 
 const key = (k: string, mod = false) => ({ key: k, metaKey: mod, ctrlKey: false });
 

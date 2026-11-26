@@ -7,7 +7,7 @@ import {
   setElementTypeDrag,
   setMoveDrag,
   setTemplateDrag,
-} from '../src/features/editor/utils/element/dragPayload';
+} from '../apps/editor/src/features/editor/utils/element/dragPayload';
 
 /** Minimal DataTransfer: lowercases formats like browsers do. */
 function fakeDataTransfer(): DataTransfer {

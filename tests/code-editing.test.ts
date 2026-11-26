@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { codeGenerator } from "../src/features/editor/lib/code/generator";
-import { parseCode } from "../src/features/editor/lib/code/parseCode";
-import { diffTrees } from "../src/features/editor/utils/element/treeDiff";
-import type { EditorElement } from "../src/types/global.type";
+import { codeGenerator } from "../apps/editor/src/features/editor/lib/code/generator";
+import { parseCode } from "../apps/editor/src/features/editor/lib/code/parseCode";
+import { diffTrees } from "../apps/editor/src/features/editor/utils/element/treeDiff";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 const PAGE = "page_1";
 const el = (id: string, type: string, extra: Record<string, unknown> = {}) =>
@@ -263,7 +263,7 @@ test("removing a custom prop in the code removes it from the element", async () 
 });
 
 test("generated interactions leave the submit of a form that owns it alone", async () => {
-  const { toCode } = await import("../src/features/interactions/codegen/interactions");
+  const { toCode } = await import("../apps/editor/src/features/interactions/codegen/interactions");
   const withButton = (customSubmit: boolean) => ({
     elements: [
       {

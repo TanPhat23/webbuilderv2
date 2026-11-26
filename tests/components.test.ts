@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { EditorElement } from "../src/types/global.type";
-import { componentSetting, detach, isMissingComponent, resolveComponents, usageCount } from "../src/features/projects/lib/components";
-import { ComponentConversionUnconfirmed, persistComponentInstance } from "../src/features/editor/services/component-conversion";
-import { RealtimeRequestRejected } from "../src/features/collaboration/lib/realtime/MessageDispatcher";
-import { plainComponentSnapshot, resolveElements } from "../src/features/projects/lib/resolve-elements";
-import { diffTrees } from "../src/features/editor/utils/element/treeDiff";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { componentSetting, detach, isMissingComponent, resolveComponents, usageCount } from "@webbuilder/site-runtime/projects/components";
+import { ComponentConversionUnconfirmed, persistComponentInstance } from "../apps/editor/src/features/editor/services/component-conversion";
+import { RealtimeRequestRejected } from "../apps/editor/src/features/collaboration/lib/realtime/MessageDispatcher";
+import { plainComponentSnapshot, resolveElements } from "@webbuilder/site-runtime/projects/resolve-elements";
+import { diffTrees } from "../apps/editor/src/features/editor/utils/element/treeDiff";
 
 const text = (id: string, pageId: string, content = ""): EditorElement => ({ id, pageId, content, type: "Text" });
 const section = (id: string, pageId: string, elements: EditorElement[] = []): Extract<EditorElement, { type: "Section" }> => ({

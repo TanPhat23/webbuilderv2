@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 
 test("getChoiceConfigurationDefaults handles undefined settings safely", async () => {
   const { getChoiceConfigurationDefaults } = await import(
-    "../src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
+    "../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
   );
   const result = getChoiceConfigurationDefaults(undefined);
   assert.equal(result.name, "");
@@ -30,7 +30,7 @@ test("getChoiceConfigurationDefaults handles undefined settings safely", async (
 
 test("getChoiceConfigurationDefaults preserves configured values", async () => {
   const { getChoiceConfigurationDefaults } = await import(
-    "../src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
+    "../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
   );
   const result = getChoiceConfigurationDefaults({
     name: "terms",

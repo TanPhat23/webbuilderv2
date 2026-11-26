@@ -1,9 +1,9 @@
 /** Shared fixtures for sidebar component tests (fake StyleProps, editor context, store seeding). */
 import { React } from './sidebar-dom-harness';
-import type { StyleProps } from '../../src/features/editor/components/sidebar/style/useStyleProps';
-import type { StyleMap } from '../../src/features/editor/components/sidebar/style/styleModel';
-import type { EditorContextType } from '../../src/features/editor/context/EditorContext';
-import type { FrameElement } from '../../src/types/elements/elements';
+import type { StyleProps } from '../../apps/editor/src/features/editor/components/sidebar/style/useStyleProps';
+import type { StyleMap } from '../../apps/editor/src/features/editor/components/sidebar/style/styleModel';
+import type { EditorContextType } from '../../apps/editor/src/features/editor/context/EditorContext';
+import type { FrameElement } from '@webbuilder/site-runtime/types/elements/elements';
 
 export type Call = [string, ...unknown[]];
 

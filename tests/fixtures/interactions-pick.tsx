@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CanvasInteractionLayer } from '../../src/features/editor/components/canvas/CanvasInteractionLayer';
-import { EditorFlagsProvider } from '../../src/features/editor/components/context/EditorFlagsContext';
-import { ElementLabel } from '../../src/features/editor/components/resizehandler/ElementLabel';
-import { ElementRefInput } from '../../src/features/interactions/components/ElementRefInput';
-import { useSelectionStore } from '../../src/features/editor/store/selection-store';
-import { CollaboratorRole } from '../../src/features/collaboration';
-import type { EditorElement } from '../../src/types/global.type';
-import '../../src/app/globals.css';
+import { CanvasInteractionLayer } from '../../apps/editor/src/features/editor/components/canvas/CanvasInteractionLayer';
+import { EditorFlagsProvider } from '../../apps/editor/src/features/editor/components/context/EditorFlagsContext';
+import { ElementLabel } from '../../apps/editor/src/features/editor/components/resizehandler/ElementLabel';
+import { ElementRefInput } from '../../apps/editor/src/features/interactions/components/ElementRefInput';
+import { useSelectionStore } from '../../apps/editor/src/features/editor/store/selection-store';
+import { CollaboratorRole } from '../../apps/editor/src/features/collaboration';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
+import '../../apps/editor/src/app/globals.css';
 
 const element = { id: 'source', type: 'div', styles: { default: {} }, settings: { interactions: { ix_aaaaaaaa: { on: 'click', do: [] } } } } as unknown as EditorElement;
 function App() {

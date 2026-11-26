@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
   ApiError, errorMessage, isRetryable, networkError, parseErrorResponse,
-} from '../src/utils/errors/api-error';
-import { classifyClose, classifyServerError } from '../src/features/collaboration/lib/realtime/connectionErrors';
+} from '@webbuilder/site-runtime/api-error';
+import { classifyClose, classifyServerError } from '../apps/editor/src/features/collaboration/lib/realtime/connectionErrors';
 
 test('parses the Go error shape', () => {
   const e = parseErrorResponse(403, JSON.stringify({ error: 'Access denied', requestId: 'r1' }));

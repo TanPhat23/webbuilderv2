@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   PRELOAD_OPTIONS,
   resolveControlsValue,
-} from "../src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection";
+} from "../apps/editor/src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection";
 
 test("resolveControlsValue defaults controls to true when undefined", () => {
   assert.equal(resolveControlsValue("Audio", undefined), true);

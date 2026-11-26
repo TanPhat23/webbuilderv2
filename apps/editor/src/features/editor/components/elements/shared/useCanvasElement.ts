@@ -1,0 +1,66 @@
+import type React from "react";
+import { useCallback } from "react";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { useEventModeStore, useIsSelected, useUpdateElement } from "@/features/editor";
+import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
+import { eventsStyle } from "./eventsStyle";
+
+interface UseCanvasElementOptions {
+  /** Extra inline styles, applied over the element's own styles. */
+  style?: React.CSSProperties;
+}
+
+/**
+ * Root-node props shared by element renderers: data attributes, the
+ * element's own classes and styles, drag source and contentEditable state,
+ * plus element event handlers. Spread `rootProps` onto the element's root
+ * node.
+ *
+ * Hover, selection, drag & drop and the context menu are handled once for
+ * the whole canvas (see CanvasInteractionLayer), which finds elements through
+ * `data-element-id`. The root node is the element itself, with no editor
+ * wrapper, so it lays out exactly as in the preview.
+ */
+export function useCanvasElement(
+  element: EditorElement,
+  { style }: UseCanvasElementOptions = {},
+) {
+  const eventsActive = useEventModeStore(
+    (state) => state.isEventModeEnabled && !state.disabledElementEvents.has(element.id),
+  );
+  const canEdit = useEditorFlagsOptional()?.canEdit ?? false;
+  const isSelected = useIsSelected(element.id);
+  const updateElement = useUpdateElement();
+
+  const isEditing =
+    canEdit && isSelected && elementUtils.isEditableElement(element);
+
+  const onBlur = useCallback(
+    (e: React.FocusEvent<HTMLElement>) => {
+      if (!isEditing) return;
+      const content = e.currentTarget.textContent ?? "";
+      if (content !== element.content) {
+        updateElement(element.id, { content });
+      }
+    },
+    [isEditing, element.id, element.content, updateElement],
+  );
+
+  const rootProps = {
+    id: element.id,
+    "data-element-id": element.id,
+    "data-element-type": element.type,
+    className: element.tailwindStyles,
+    contentEditable: isEditing || undefined,
+    suppressContentEditableWarning: true,
+    onBlur,
+    style: {
+      ...elementUtils.getSafeStyles(element),
+      ...style,
+      ...eventsStyle(eventsActive),
+    } as React.CSSProperties,
+  };
+
+  return { rootProps, eventsActive, isEditing };
+}

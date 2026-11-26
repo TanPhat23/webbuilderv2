@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import type { EditorElement } from '../src/types/global.type';
-import { elementTree as T } from '../src/features/elements/lib/element-tree-helper';
-import { computeDropPosition, isHorizontalFlow } from '../src/features/editor/utils/element/dropPosition';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
+import { elementTree as T } from '@webbuilder/site-runtime/elements/lib/element-tree-helper';
+import { computeDropPosition, isHorizontalFlow } from '../apps/editor/src/features/editor/utils/element/dropPosition';
 
 const el = (id: string, type = 'Text', parentId?: string, elements?: EditorElement[]) =>
   ({ id, type, parentId, pageId: 'p', ...(elements ? { elements } : {}) }) as unknown as EditorElement;

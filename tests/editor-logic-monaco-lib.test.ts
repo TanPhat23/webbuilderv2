@@ -1,16 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { stubResolved } from './support/editor-logic-resolve-stubs';
+import { redirectModules } from './support/test-stub-modules';
 
-stubResolved({
-  'pkg:prettier/standalone': './editor-logic-prettier-stub.ts',
-  'pkg:prettier/parser-babel': './editor-logic-prettier-stub.ts',
+redirectModules({
+  'prettier/standalone': './editor-logic-prettier-stub.ts',
+  'prettier/parser-babel': './editor-logic-prettier-stub.ts',
 });
 
-const { DEFAULT_EDITOR_VALUE, MONACO_COMPILER_OPTIONS, MONACO_EXTERNAL_LIBS } = await import('../src/features/editor/lib/monaco/constants');
-const { contentChange } = await import('../src/features/editor/lib/monaco/content-change');
-const { registerPrettierFormatter } = await import('../src/features/editor/lib/monaco/format');
-const { loadMonacoTypes } = await import('../src/features/editor/lib/monaco/types');
+const { DEFAULT_EDITOR_VALUE, MONACO_COMPILER_OPTIONS, MONACO_EXTERNAL_LIBS } = await import('../apps/editor/src/features/editor/lib/monaco/constants');
+const { contentChange } = await import('../apps/editor/src/features/editor/lib/monaco/content-change');
+const { registerPrettierFormatter } = await import('../apps/editor/src/features/editor/lib/monaco/format');
+const { loadMonacoTypes } = await import('../apps/editor/src/features/editor/lib/monaco/types');
 const prettierStub = await import('./support/editor-logic-prettier-stub');
 
 test('monaco constants describe a React/TSX project with matching external typings', () => {

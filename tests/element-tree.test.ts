@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { elementTree } from '../src/features/elements/lib/element-tree-helper';
-import type { EditorElement } from '../src/types/global.type';
+import { elementTree } from '@webbuilder/site-runtime/elements/lib/element-tree-helper';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
 
 const element = (type: string, id: string, elements?: EditorElement[]): EditorElement =>
   ({ type, id, pageId: 'page', content: '', ...(elements ? { elements } : {}) }) as EditorElement;

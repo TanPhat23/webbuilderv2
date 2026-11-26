@@ -73,7 +73,7 @@ g.IS_REACT_ACT_ENVIRONMENT = true;
 
 const React = await import('react');
 const { createRoot } = await import('react-dom/client');
-const { TooltipProvider } = await import('../../src/components/ui/tooltip');
+const { TooltipProvider } = await import('../../apps/editor/src/components/ui/tooltip');
 export { React };
 
 type Root = ReturnType<typeof createRoot>;

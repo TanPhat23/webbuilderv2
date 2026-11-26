@@ -1,8 +1,9 @@
 .git
 node_modules
 .output
-apps/sites/.output
-apps/sites/node_modules
+apps/*/.output
+apps/*/node_modules
+apps/*/.tanstack
 dist
 coverage
 e2e
@@ -15,5 +16,4 @@ playwright-report
 .repowise
 .sandbox
 .superpowers
-repomix-output.md
 *.tsbuildinfo

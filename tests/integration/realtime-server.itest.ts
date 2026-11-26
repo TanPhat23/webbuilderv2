@@ -68,9 +68,9 @@ const until = async (cond: () => boolean, what: string, ms = 4000) => {
 };
 
 async function connect(user: string, pageId: string): Promise<Client> {
-  const { RealtimeProvider } = await import('../../src/features/collaboration/lib/realtime/RealtimeProvider');
-  const { sendElementOperation } = await import('../../src/features/collaboration/lib/realtime/sendElementOp');
-  const { createElementStore } = await import('../../src/features/editor/store/element-store');
+  const { RealtimeProvider } = await import('../../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { sendElementOperation } = await import('../../apps/editor/src/features/collaboration/lib/realtime/sendElementOp');
+  const { createElementStore } = await import('../../apps/editor/src/features/editor/store/element-store');
 
   const store = createElementStore();
   const errors: { code?: string; message?: string }[] = [];
@@ -167,7 +167,7 @@ test('editing an element a teammate just deleted is a soft failure', async () =>
   // Bob's edit was already in flight: send it straight to the server.
   await assert.rejects(b.provider.updateElement(uid('inner'), { content: 'late' }));
   await until(() => b.errors.length > 0, 'bob gets an error');
-  const { classifyServerError } = await import('../../src/features/collaboration/lib/realtime/connectionErrors');
+  const { classifyServerError } = await import('../../apps/editor/src/features/collaboration/lib/realtime/connectionErrors');
   const last = b.errors.at(-1)!;
   assert.equal(last.code, 'NOT_FOUND');
   const handling = classifyServerError(last.code!, last.message);
@@ -233,8 +233,8 @@ test('concurrent interaction additions, removal, and undo sync across clients', 
   a.store.getState().addElement(el('btn', { pageId: page }));
   await until(() => b.tree.length === 1, 'bob sees the element');
 
-  const { addInteraction, removeInteraction } = await import('../../src/features/interactions/ops');
-  const { commit } = await import('../../src/features/interactions/ops-store');
+  const { addInteraction, removeInteraction } = await import('../../apps/editor/src/features/interactions/ops');
+  const { commit } = await import('../../apps/editor/src/features/interactions/ops-store');
   const interactions = (tree: any[]) => tree[0]?.settings?.interactions ?? {};
 
   // Both clients submit their edits synchronously, before either can receive the other's update.

@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { setFlow, setVariable } from '../src/features/interactions/logic';
-import { countUsages, editLogic, emptySnapshot, findUsageLocations, mergedLogic, parseSnapshot, useLogicStore } from '../src/features/interactions/logic-store';
+import { setFlow, setVariable } from '@webbuilder/site-runtime/interactions/logic';
+import { countUsages, editLogic, emptySnapshot, findUsageLocations, mergedLogic, parseSnapshot, useLogicStore } from '../apps/editor/src/features/interactions/logic-store';
 
 test('edits one scope and refuses a name already used in another scope', () => {
   const first = editLogic(emptySnapshot(), 'project', (d) => setVariable(d, 'count', { type: 'number', default: 0 }));
@@ -109,7 +109,7 @@ test('usage locations preserve element ids for navigation', () => {
 });
 
 test('parses variable defaults typed into the panel', async () => {
-  const { parseDefault, defaultFor, formatDefault } = await import('../src/features/interactions/editing/logic-edit');
+  const { parseDefault, defaultFor, formatDefault } = await import('../apps/editor/src/features/interactions/editing/logic-edit');
   assert.deepEqual(parseDefault('number', '3.5'), { ok: true, value: 3.5 });
   assert.equal(parseDefault('number', '').ok, false);
   assert.equal(parseDefault('number', 'abc').ok, false);
@@ -124,7 +124,7 @@ test('parses variable defaults typed into the panel', async () => {
 });
 
 test('builds the preview snapshot from the public project and pages', async () => {
-  const { snapshotFromServer } = await import('../src/features/interactions/logic-store');
+  const { snapshotFromServer } = await import('../apps/editor/src/features/interactions/logic-store');
   const project = { v: 1, variables: { count: { type: 'number', default: 0 } }, flows: {} };
   const home = { v: 1, variables: {}, flows: { greet: { do: [{ toast: 'Hi' }] } } };
   const snapshot = snapshotFromServer(project, [
@@ -142,7 +142,7 @@ test('builds the preview snapshot from the public project and pages', async () =
 });
 
 test('drops published logic whose names collide across scopes', async () => {
-  const { snapshotFromServer } = await import('../src/features/interactions/logic-store');
+  const { snapshotFromServer } = await import('../apps/editor/src/features/interactions/logic-store');
   const doc = { v: 1, variables: { shared: { type: 'string', default: '' } }, flows: {} };
   assert.deepEqual(snapshotFromServer(doc, [{ id: 'home', logic: doc }]), emptySnapshot());
 });

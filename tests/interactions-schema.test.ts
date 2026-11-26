@@ -5,7 +5,7 @@ import {
   validateInteractionMap,
   verbOf,
   VERBS,
-} from "../src/features/interactions/schema";
+} from "@webbuilder/site-runtime/interactions/schema";
 
 const ok = (map: unknown) => assert.deepEqual(validateInteractionMap(map), []);
 

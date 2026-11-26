@@ -5,7 +5,7 @@ import {
   parseImageDecoding,
   parseImageLoading,
   parseObjectFit,
-} from "../src/features/editor/lib/imageConfig";
+} from "../apps/editor/src/features/editor/lib/imageConfig";
 
 test("image setting parsers accept known options and reject invalid values", () => {
   assert.equal(parseObjectFit("cover"), "cover");

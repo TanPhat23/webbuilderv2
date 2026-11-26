@@ -5,7 +5,7 @@ import {
   clampIconMetric,
   filterIconNames,
   isValidIconName,
-} from "../src/features/editor/lib/iconConfig";
+} from "../apps/editor/src/features/editor/lib/iconConfig";
 
 test("iconConfig validates icon names in O(1) and filters single-pass", () => {
   assert.equal(isValidIconName("star"), true);

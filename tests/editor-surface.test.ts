@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { fromSurface, toSurface } from '../src/features/editor/lib/editor-surface';
+import { fromSurface, toSurface } from '../apps/editor/src/features/editor/lib/editor-surface';
 
 test('toSurface maps the provider fields onto one switch', () => {
   assert.equal(toSurface('editor', 'visual'), 'design');

@@ -6,7 +6,7 @@ import type {
   ContainerElement,
   EditorElement,
   ElementTypeMap,
-} from "@/types/global.type";
+} from "@webbuilder/site-runtime/types/global.type";
 import { createExecutor, type AgentHost } from "@/features/agent/executor";
 import { createLiveEditPlayer } from "@/features/agent/liveEditPlayer";
 import { useAgentPlaybackStore } from "@/features/agent/playbackStore";

@@ -13,14 +13,14 @@ import {
   type,
   win,
 } from './support/sidebar-dom-harness';
-import LiveEditorDemo from '../src/features/landing/components/LiveEditorDemo';
-import { CollaborationSettingsPanel } from '../src/features/collaboration/components/CollaborationManager';
-import InvitationCard from '../src/features/collaboration/components/InvitationCard';
-import InviteMemberDialog from '../src/features/collaboration/components/InviteMemberDialog';
-import { CollaboratorRole } from '../src/features/collaboration/interfaces/collaboration.interface';
-import { collaboratorKeys } from '../src/features/collaboration/hooks/useCollaborators';
-import { invitationKeys } from '../src/features/collaboration/hooks/useInvitations';
-import { userKeys } from '../src/features/users/hooks/useUsers';
+import LiveEditorDemo from '../apps/editor/src/features/landing/components/LiveEditorDemo';
+import { CollaborationSettingsPanel } from '../apps/editor/src/features/collaboration/components/CollaborationManager';
+import InvitationCard from '../apps/editor/src/features/collaboration/components/InvitationCard';
+import InviteMemberDialog from '../apps/editor/src/features/collaboration/components/InviteMemberDialog';
+import { CollaboratorRole } from '../apps/editor/src/features/collaboration/interfaces/collaboration.interface';
+import { collaboratorKeys } from '../apps/editor/src/features/collaboration/hooks/useCollaborators';
+import { invitationKeys } from '../apps/editor/src/features/collaboration/hooks/useInvitations';
+import { userKeys } from '../apps/editor/src/features/users/hooks/useUsers';
 
 const h = React.createElement;
 

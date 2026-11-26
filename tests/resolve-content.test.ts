@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { resolveContent } from "../src/features/elements/lib/resolveContent";
+import { resolveContent } from "@webbuilder/site-runtime/elements/lib/resolveContent";
 
 test('content resolution keeps preview substitution and raw editing content', () => {
   assert.equal(resolveContent({ content: 'Hello {{name}}' }, { name: 'Ada' }, false), 'Hello Ada');

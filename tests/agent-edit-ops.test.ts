@@ -1,8 +1,8 @@
 // $WEB/tests/agent-edit-ops.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { applyEdits, MAX_OPS } from "../src/features/agent/editOps";
-import type { EditorElement } from "../src/types/global.type";
+import { applyEdits, MAX_OPS } from "../apps/editor/src/features/agent/editOps";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 const PAGE = "page_1";
 const el = (id: string, type: string, extra: Record<string, unknown> = {}) =>

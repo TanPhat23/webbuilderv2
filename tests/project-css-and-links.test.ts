@@ -1,19 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { LinkElement } from "../src/types/elements";
-import type { EditorElement } from "../src/types/global.type";
-import { previewLinkProps } from "../src/features/elements/lib/link-props";
-import { replacePlaceholders } from "../src/features/elements/lib/replacePlaceholders";
+import type { LinkElement } from "@webbuilder/site-runtime/types/elements";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { previewLinkProps } from "@webbuilder/site-runtime/elements/lib/link-props";
+import { replacePlaceholders } from "@webbuilder/site-runtime/elements/lib/replacePlaceholders";
 import {
   projectCssToStyleTag,
   sanitizeProjectCss,
-} from "../src/features/projects/lib/project-css";
+} from "@webbuilder/site-runtime/projects/project-css";
 import {
   isShareableSection,
   resolveSharedSections,
   sharedSectionSetting,
   sharedSectionSources,
-} from "../src/features/projects/lib/shared-sections";
+} from "@webbuilder/site-runtime/projects/shared-sections";
 
 test("sanitizeProjectCss and projectCssToStyleTag strip unsafe markup while preserving valid styles", () => {
   assert.equal(sanitizeProjectCss(null), "");

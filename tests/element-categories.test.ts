@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import elementHolders, { ALL_ELEMENT_TYPES } from "../src/features/editor/constants/elements";
+import elementHolders, { ALL_ELEMENT_TYPES } from "../apps/editor/src/features/editor/constants/elements";
 import {
   ELEMENT_CATEGORIES,
   getElementsForCategory,
-} from "../src/features/editor/constants/elementCategories";
+} from "../apps/editor/src/features/editor/constants/elementCategories";
 
 test("all elements in elementHolders are mapped in categories", () => {
   const allCategoryElements = new Set<string>();

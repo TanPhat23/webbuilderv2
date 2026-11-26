@@ -1,0 +1,51 @@
+FROM oven/bun:1-alpine AS builder
+WORKDIR /app
+
+COPY package.json bunfig.toml bun.lock ./
+COPY packages/site-runtime/package.json ./packages/site-runtime/package.json
+COPY apps/editor/package.json ./apps/editor/package.json
+COPY apps/sites/package.json ./apps/sites/package.json
+
+RUN bun install --frozen-lockfile
+
+COPY packages/site-runtime ./packages/site-runtime
+COPY apps/editor ./apps/editor
+
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_CLERK_SIGN_IN_URL
+ARG VITE_CLERK_SIGN_UP_URL
+ARG VITE_CLERK_AFTER_SIGN_IN_URL
+ARG VITE_CLERK_AFTER_SIGN_UP_URL
+ARG VITE_GO_SERVER_URL
+ARG VITE_API_URL
+ARG VITE_COLLAB_WS_URL
+ARG VITE_BASE_URL
+ARG VITE_PREVIEW_ORIGIN
+ARG VITE_SITE_DOMAIN
+ARG VITE_GOOGLE_FONTS_API_KEY
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_CLERK_SIGN_IN_URL=${VITE_CLERK_SIGN_IN_URL}
+ENV VITE_CLERK_SIGN_UP_URL=${VITE_CLERK_SIGN_UP_URL}
+ENV VITE_CLERK_AFTER_SIGN_IN_URL=${VITE_CLERK_AFTER_SIGN_IN_URL}
+ENV VITE_CLERK_AFTER_SIGN_UP_URL=${VITE_CLERK_AFTER_SIGN_UP_URL}
+ENV VITE_GO_SERVER_URL=${VITE_GO_SERVER_URL}
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_COLLAB_WS_URL=${VITE_COLLAB_WS_URL}
+ENV VITE_BASE_URL=${VITE_BASE_URL}
+ENV VITE_PREVIEW_ORIGIN=${VITE_PREVIEW_ORIGIN}
+ENV VITE_SITE_DOMAIN=${VITE_SITE_DOMAIN}
+ENV VITE_GOOGLE_FONTS_API_KEY=${VITE_GOOGLE_FONTS_API_KEY}
+ENV NITRO_PRESET=node-server
+
+RUN bun run --cwd apps/editor build
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+
+COPY --from=builder /app/apps/editor/.output ./.output
+
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]

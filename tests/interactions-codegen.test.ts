@@ -3,9 +3,9 @@ import path from "node:path";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { hasInteractionCode, toCode, type CodegenInput } from "../src/features/interactions/codegen/interactions";
-import { compileTemplate } from "../src/features/interactions/codegen/expression";
-import { VERBS, type Step } from "../src/features/interactions/schema";
+import { hasInteractionCode, toCode, type CodegenInput } from "../apps/editor/src/features/interactions/codegen/interactions";
+import { compileTemplate } from "../apps/editor/src/features/interactions/codegen/expression";
+import { VERBS, type Step } from "@webbuilder/site-runtime/interactions/schema";
 
 const kitchenSink: CodegenInput = {
   namespace: "demo",
@@ -231,7 +231,7 @@ test("a failing step stops that interaction and is reported, not swallowed", asy
 });
 
 test("the component generator tags elements and hooks up the interactions module", async () => {
-  const { codeGenerator } = await import("../src/features/editor/lib/code/generator");
+  const { codeGenerator } = await import("../apps/editor/src/features/editor/lib/code/generator");
   const button = {
     id: "el_btn", type: "Button", name: "Buy", content: "Buy", styles: {},
     settings: { interactions: { ix_aaaaaaaa: { on: "click", do: [{ toast: "hi" }] } }, label: "x" },

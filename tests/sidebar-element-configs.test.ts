@@ -13,20 +13,20 @@ import {
   type,
 } from './support/sidebar-dom-harness';
 import { editorValue, makeSp } from './support/sidebar-fixtures';
-import { Accordion } from '../src/components/ui/accordion';
-import { LayoutSection } from '../src/features/editor/components/sidebar/style/LayoutSection';
-import ButtonConfiguration from '../src/features/editor/components/sidebar/configurations/ButtonConfiguration';
-import { LinkConfigurationAccordion } from '../src/features/editor/components/sidebar/configurations/LinkConfiguration';
-import { FormConfigurationAccordion } from '../src/features/editor/components/sidebar/configurations/FormConfiguration';
-import TextareaConfiguration from '../src/features/editor/components/sidebar/configurations/TextareaConfiguration';
-import TableConfiguration from '../src/features/editor/components/sidebar/configurations/TableConfiguration';
-import { SelectConfigurationAccordion } from '../src/features/editor/components/sidebar/configurations/SelectConfiguration';
-import CMSConfiguration from '../src/features/editor/components/sidebar/configurations/CMSConfiguration';
-import { EditorContext } from '../src/features/editor/context/EditorContext';
-import { useElementStore } from '../src/features/editor/store/element-store';
-import { useSelectionStore } from '../src/features/editor/store/selection-store';
-import { projectKeys } from '../src/features/projects/hooks/useProjects';
-import { cmsKeys } from '../src/features/cms/query-keys';
+import { Accordion } from '../apps/editor/src/components/ui/accordion';
+import { LayoutSection } from '../apps/editor/src/features/editor/components/sidebar/style/LayoutSection';
+import ButtonConfiguration from '../apps/editor/src/features/editor/components/sidebar/configurations/ButtonConfiguration';
+import { LinkConfigurationAccordion } from '../apps/editor/src/features/editor/components/sidebar/configurations/LinkConfiguration';
+import { FormConfigurationAccordion } from '../apps/editor/src/features/editor/components/sidebar/configurations/FormConfiguration';
+import TextareaConfiguration from '../apps/editor/src/features/editor/components/sidebar/configurations/TextareaConfiguration';
+import TableConfiguration from '../apps/editor/src/features/editor/components/sidebar/configurations/TableConfiguration';
+import { SelectConfigurationAccordion } from '../apps/editor/src/features/editor/components/sidebar/configurations/SelectConfiguration';
+import CMSConfiguration from '../apps/editor/src/features/editor/components/sidebar/configurations/CMSConfiguration';
+import { EditorContext } from '../apps/editor/src/features/editor/context/EditorContext';
+import { useElementStore } from '../apps/editor/src/features/editor/store/element-store';
+import { useSelectionStore } from '../apps/editor/src/features/editor/store/selection-store';
+import { projectKeys } from '../apps/editor/src/features/projects/hooks/useProjects';
+import { cmsKeys } from '../apps/editor/src/features/cms/query-keys';
 import type {
   ButtonElement,
   CMSContentGridElement,
@@ -36,7 +36,7 @@ import type {
   SelectElement,
   TableElement,
   TextareaElement,
-} from '../src/types/elements/elements';
+} from '@webbuilder/site-runtime/types/elements/elements';
 
 const h = React.createElement;
 const realFetch = globalThis.fetch;

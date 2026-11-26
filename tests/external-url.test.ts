@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { isExternalLink, isExternalMedia } from '../src/features/editor/components/sidebar/configurations/_shared/externalUrl';
+import { isExternalLink, isExternalMedia } from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/externalUrl';
 
 test('external URL checks preserve link and media protocol rules', () => {
   for (const url of ['http://example.com', 'https://example.com']) {

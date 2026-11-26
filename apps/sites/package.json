@@ -7,7 +7,8 @@
     "dev": "vite dev --port 3001",
     "build": "vite build",
     "preview": "vite preview --port 3001",
-    "start": "node .output/server/index.mjs"
+    "start": "node .output/server/index.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tanstack/react-router": "1.170.46",

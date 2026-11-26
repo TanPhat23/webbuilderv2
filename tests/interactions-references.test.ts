@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { referenceWarnings } from "../src/features/interactions/references";
+import { referenceWarnings } from "../apps/editor/src/features/interactions/references";
 
 const ctx = { elementIds: new Set(["btn", "modal1"]), variables: new Set(["user"]), flows: new Set(["showError"]) };
 

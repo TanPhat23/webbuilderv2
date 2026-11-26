@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { API_ENDPOINTS } from "../src/utils/shared/constants/endpoints";
-import { buildPublicCollectionEndpoint } from "../src/features/cms/services/webhook.service";
+import { API_ENDPOINTS } from "../apps/editor/src/utils/shared/constants/endpoints";
+import { buildPublicCollectionEndpoint } from "../apps/editor/src/features/cms/services/webhook.service";
 
 describe("CMS webhooks & public collection endpoints", () => {
   it("builds project webhook routes cleanly", () => {

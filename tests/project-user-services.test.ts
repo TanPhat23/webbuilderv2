@@ -8,11 +8,11 @@ redirectModules({
 });
 
 const { serverAuth } = await import('./support/test-clerk-server-stub');
-const { projectService, mapApiPageToPage } = await import('../src/features/projects/services/project.service');
-const projectApi = await import('../src/features/projects/api/project.api');
-const { userService } = await import('../src/features/users/services/user.service');
-const { getAuthToken } = await import('../src/features/auth/lib/gettoken');
-const { default: getToken } = await import('../src/services/token');
+const { projectService, mapApiPageToPage } = await import('../apps/editor/src/features/projects/services/project.service');
+const projectApi = await import('../apps/editor/src/features/projects/api/project.api');
+const { userService } = await import('../apps/editor/src/features/users/services/user.service');
+const { getAuthToken } = await import('../apps/editor/src/features/auth/lib/gettoken');
+const { default: getToken } = await import('../apps/editor/src/services/token');
 
 interface Recorded {
   url: URL;

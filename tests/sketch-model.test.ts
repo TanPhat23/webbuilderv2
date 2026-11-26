@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import {
   cloneWithNewIds, dropTarget, groupByPage, toSketch, type PageItem,
-} from '../src/features/editor/components/wireframe/sketchModel';
+} from '../apps/editor/src/features/editor/components/wireframe/sketchModel';
 
 test('leaf elements map to sketch kinds', () => {
   assert.deepEqual(toSketch({ type: 'Heading', content: 'Hello' }), { kind: 'heading', width: 40 });

@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { DRAG_KEYS } from "../src/features/editor/utils/element/dragPayload";
+import { DRAG_KEYS } from "../apps/editor/src/features/editor/utils/element/dragPayload";
 import {
   hasElementDragPayload,
   isSameDropIndicator,
-} from "../src/features/editor/components/canvas/canvasDom";
-import { shouldBlockPickEvent } from "../src/features/editor/components/canvas/useCanvasPickMode";
+} from "../apps/editor/src/features/editor/components/canvas/canvasDom";
+import { shouldBlockPickEvent } from "../apps/editor/src/features/editor/components/canvas/useCanvasPickMode";
 
 test("isSameDropIndicator compares null and indicator fields accurately", () => {
   assert.equal(isSameDropIndicator(null, null), true);

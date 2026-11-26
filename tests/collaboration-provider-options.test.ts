@@ -16,8 +16,8 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 
 test('RealtimeProvider accepts injected getElementState without element store dependency', async () => {
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
-  type EditorElement = import('../src/types/global.type').EditorElement;
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
+  type EditorElement = import('@webbuilder/site-runtime/types/global.type').EditorElement;
 
   const mockElement: EditorElement = {
     id: 'el-1',
@@ -69,7 +69,7 @@ test('RealtimeProvider accepts injected getElementState without element store de
 });
 
 test('provider rejects a missing element state adapter before starting a connection', async () => {
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   let provider: InstanceType<typeof RealtimeProvider> | undefined;
   try {
     assert.throws(() => {

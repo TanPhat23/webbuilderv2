@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { validateLogic, validateLogicScopes, setVariable, setFlow, moveLogic } from '../src/features/interactions/logic';
+import { validateLogic, validateLogicScopes, setVariable, setFlow, moveLogic } from '@webbuilder/site-runtime/interactions/logic';
 
 const empty = () => ({ v: 1 as const, variables: {}, flows: {} });
 
@@ -39,7 +39,7 @@ test('operations validate and move definitions without mutating source documents
 });
 
 test('published schema describes logic documents and nested flow steps', async () => {
-  const { buildJsonSchema } = await import('../src/features/interactions/schema-json');
+  const { buildJsonSchema } = await import('../apps/editor/src/features/interactions/schema-json');
   const schema = buildJsonSchema() as any;
   assert.equal(schema.$defs.logic.properties.v.const, 1);
   assert.equal(schema.$defs.logic.properties.flows.additionalProperties.properties.do.items.$ref, '#/$defs/step');
@@ -48,7 +48,7 @@ test('published schema describes logic documents and nested flow steps', async (
 
 test('published logic variable schema enforces matching default types', async () => {
   const { createRequire } = await import('node:module');
-  const { buildJsonSchema } = await import('../src/features/interactions/schema-json');
+  const { buildJsonSchema } = await import('../apps/editor/src/features/interactions/schema-json');
   const schema: any = buildJsonSchema();
   delete schema.$schema;
   const Ajv = createRequire(import.meta.url)('ajv');

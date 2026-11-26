@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { LogicChannel } from '../src/features/collaboration/lib/realtime/LogicChannel';
+import { LogicChannel } from '../apps/editor/src/features/collaboration/lib/realtime/LogicChannel';
 
 function channel() {
   const settled: { id: string; ok: boolean; data: unknown }[] = [];

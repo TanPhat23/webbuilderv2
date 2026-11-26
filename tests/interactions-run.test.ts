@@ -1,8 +1,8 @@
 // tests/interactions-run.test.ts
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { runInteraction, skip, MAX_FLOW_DEPTH, type RunContext, type RunLogEntry } from "../src/features/interactions/runtime/run";
-import { createVariableStore } from "../src/features/interactions/runtime/variables";
+import { runInteraction, skip, MAX_FLOW_DEPTH, type RunContext, type RunLogEntry } from "@webbuilder/site-runtime/interactions/runtime/run";
+import { createVariableStore } from "@webbuilder/site-runtime/interactions/runtime/variables";
 
 function ctx(over: Partial<RunContext> = {}): RunContext & { logs: RunLogEntry[]; calls: string[] } {
   const logs: RunLogEntry[] = [];

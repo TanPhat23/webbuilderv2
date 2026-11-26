@@ -17,7 +17,7 @@ import assert from "node:assert/strict";
 
 test("sanitizeTextContent strips harmful script tags but preserves valid html", async () => {
   const { sanitizeTextContent } = await import(
-    "../src/features/editor/components/elements/shared/TextElementShell"
+    "../apps/editor/src/features/editor/components/elements/shared/TextElementShell"
   );
   const dirty = 'Hello <b>World</b><script>alert("xss")</script>';
   const clean = sanitizeTextContent(dirty);
@@ -26,7 +26,7 @@ test("sanitizeTextContent strips harmful script tags but preserves valid html", 
 
 test("sanitizeTextContent handles plain text strings without alteration", async () => {
   const { sanitizeTextContent } = await import(
-    "../src/features/editor/components/elements/shared/TextElementShell"
+    "../apps/editor/src/features/editor/components/elements/shared/TextElementShell"
   );
   const plain = "Simple plain text";
   assert.equal(sanitizeTextContent(plain), "Simple plain text");

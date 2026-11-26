@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {
   ElementStrategyMap,
   getElementStrategy,
-} from '../src/features/editor/utils/element/create/elementStrategyMap';
-import type { ElementType } from '../src/types/global.type';
+} from '../apps/editor/src/features/editor/utils/element/create/elementStrategyMap';
+import type { ElementType } from '@webbuilder/site-runtime/types/global.type';
 
 const ALL_TYPES = Object.keys(ElementStrategyMap) as ElementType[];
 

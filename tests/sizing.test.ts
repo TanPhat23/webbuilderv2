@@ -7,7 +7,7 @@ import {
   readSizeMode,
   sizeLabel,
   writeSizeMode,
-} from "../src/features/editor/utils/element/sizing";
+} from "../apps/editor/src/features/editor/utils/element/sizing";
 
 const ROW = { kind: "row", stretch: true } as const;
 const COLUMN = { kind: "column", stretch: true } as const;
@@ -131,7 +131,7 @@ test("adaptToParent turns 100% into fill only on a flex main axis", () => {
   });
 });
 
-import { handlesForSize } from "../src/features/editor/constants/direction";
+import { handlesForSize } from "../apps/editor/src/features/editor/constants/direction";
 
 test("small elements get only the handles that fit", () => {
   const all = ["n", "s", "e", "w", "ne", "nw", "se", "sw"] as any[];
@@ -145,8 +145,8 @@ test("small elements get only the handles that fit", () => {
   assert.deepEqual(handlesForSize(all, 16, 16), ["se"]);
 });
 
-import { isSizeClass } from "../src/features/editor/utils/element/sizing";
-import { elementUtils } from "../src/features/elements/lib/elementhelper";
+import { isSizeClass } from "../apps/editor/src/features/editor/utils/element/sizing";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
 
 test("isSizeClass matches one axis at one breakpoint", () => {
   assert.equal(isSizeClass("w-full", "width"), true);

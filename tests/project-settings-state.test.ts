@@ -7,13 +7,13 @@ import {
   RADIUS_SCALES,
   SPACING_MULTIPLIERS,
   parseImportedThemeJson,
-} from "../src/features/projectsettings/constants/themePresets";
+} from "../apps/editor/src/features/projectsettings/constants/themePresets";
 import {
   areProjectSettingsEqual,
   buildProjectUpdatePayload,
   extractProjectSettings,
   extractUpdateErrorMessage,
-} from "../src/features/projectsettings/utils/projectSettingsState";
+} from "../apps/editor/src/features/projectsettings/utils/projectSettingsState";
 
 test("extractProjectSettings falls back to defaults for missing or partial project styles", () => {
   const result = extractProjectSettings({

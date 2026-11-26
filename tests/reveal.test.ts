@@ -1,8 +1,8 @@
 // $WEB/tests/reveal.test.ts
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { collectReveals, readReveal, revealCss, REVEAL_NOSCRIPT_CSS } from "../src/features/preview/lib/reveal";
-import type { EditorElement } from "../src/types/global.type";
+import { collectReveals, readReveal, revealCss, REVEAL_NOSCRIPT_CSS } from "@webbuilder/site-runtime/preview/reveal";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 const el = (id: string, settings: unknown, kids: unknown[] = []) => ({ id, type: "Frame", settings, elements: kids }) as unknown as EditorElement;
 

@@ -8,7 +8,7 @@ import {
   readStoredPreamble,
   savePreamble,
   toPreamble,
-} from '../src/features/editor/lib/code/customCode';
+} from '../apps/editor/src/features/editor/lib/code/customCode';
 
 const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
 let store: Map<string, string>;

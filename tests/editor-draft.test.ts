@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { createEditorDraftStore } from '../src/features/editor/store/editor-draft';
+import { createEditorDraftStore } from '../apps/editor/src/features/editor/store/editor-draft';
 
 test('offline drafts are stored per user, project and page', () => {
   const values = new Map<string, string>();

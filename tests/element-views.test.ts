@@ -3,9 +3,9 @@ import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { prerenderToNodeStream } from "react-dom/static";
-import { ALL_ELEMENT_TYPES } from "../src/features/editor/constants/elements";
-import { getView } from "../src/features/elements/registry";
-import type { EditorElement } from "../src/types/global.type";
+import { ALL_ELEMENT_TYPES } from "../apps/editor/src/features/editor/constants/elements";
+import { getView } from "@webbuilder/site-runtime/elements/registry";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 for (const type of ALL_ELEMENT_TYPES) {
   test(`${type} shares markup across edit and preview`, async () => {

@@ -4,7 +4,8 @@ import path from "node:path";
 import { test } from "node:test";
 import ts from "typescript";
 
-const SRC_ROOT = path.resolve(import.meta.dirname, "../src");
+const REPO_ROOT = path.resolve(import.meta.dirname, "..");
+const SRC_ROOT = path.resolve(REPO_ROOT, "apps/editor/src");
 
 function walkSourceFiles(dir: string): string[] {
   const results: string[] = [];
@@ -118,16 +119,16 @@ test("boundary rule 3: src/features/projects/** never imports from src/features/
   assert.deepEqual(violations, [], `Forbidden imports from features/projects -> features/editor:\n${violations.join("\n")}`);
 });
 
-test("compatibility shims expose identical runtime exports to @/types/elements", async () => {
-  const canonical = await import("../src/types/elements");
-  const editorElementsConst = await import("../src/features/editor/constants/elements");
-  const editorEventsConst = await import("../src/features/editor/constants/events");
+test("editor element constants expose canonical @webbuilder/site-runtime exports", async () => {
+  const canonical = await import("@webbuilder/site-runtime/types/elements");
+  const editorElementsConst = await import("../apps/editor/src/features/editor/constants/elements");
+  const eventConstants = await import("@webbuilder/site-runtime/types/elements/event-constants");
 
   assert.strictEqual(editorElementsConst.CONTAINER_ELEMENT_TYPES, canonical.CONTAINER_ELEMENT_TYPES);
   assert.strictEqual(editorElementsConst.EDITABLE_ELEMENT_TYPES, canonical.EDITABLE_ELEMENT_TYPES);
   assert.strictEqual(editorElementsConst.ALL_ELEMENT_TYPES, canonical.ALL_ELEMENT_TYPES);
-  assert.strictEqual(editorEventsConst.EVENT_TYPES, canonical.EVENT_TYPES);
-  assert.strictEqual(editorEventsConst.ACTION_TYPES, canonical.ACTION_TYPES);
+  assert.strictEqual(eventConstants.EVENT_TYPES, canonical.EVENT_TYPES);
+  assert.strictEqual(eventConstants.ACTION_TYPES, canonical.ACTION_TYPES);
 });
 
 test("boundary rule 2: src/features/elements/** never imports from any other src/features/<other>/**", () => {
@@ -140,11 +141,11 @@ test("boundary rule 2: src/features/elements/** never imports from any other src
 });
 
 test("isolated loading of types, elements registry, and projects/components has no circular init errors", async () => {
-  const globalTypes = await import("../src/types/global.type");
-  const elementsDomain = await import("../src/types/elements");
-  const registry = await import("../src/features/elements/registry");
-  const projectsComponents = await import("../src/features/projects/lib/components");
-  const resolveMod = await import("../src/features/elements/lib/resolveContent");
+  const globalTypes = await import("@webbuilder/site-runtime/types/global.type");
+  const elementsDomain = await import("@webbuilder/site-runtime/types/elements");
+  const registry = await import("@webbuilder/site-runtime/elements/registry");
+  const projectsComponents = await import("@webbuilder/site-runtime/projects/components");
+  const resolveMod = await import("@webbuilder/site-runtime/elements/lib/resolveContent");
 
   assert.ok(globalTypes);
   assert.ok(elementsDomain.ALL_ELEMENT_TYPES.length > 0);
@@ -389,8 +390,8 @@ function collectSiteRuntimeViolations(
       const escapesIntoEditor =
         specifier.includes("features/editor") ||
         specifier.includes("features/collaboration") ||
-        specifier.includes("../../src/") ||
-        specifier.includes("../../../src/");
+        specifier.includes("apps/editor") ||
+        specifier.includes("@webbuilder/editor");
       const extraForbidden = extraCheck ? extraCheck(rel, specifier) : false;
       if (forbiddenPkg || escapesIntoEditor || extraForbidden) {
         violations.push(`${label}/${rel} -> ${specifier}`);
@@ -398,6 +399,13 @@ function collectSiteRuntimeViolations(
     }
   }
   return violations;
+}
+
+function isClientImportingServerTailwind(rel: string, specifier: string): boolean {
+  return (
+    !rel.startsWith("server/") &&
+    (specifier.includes("tailwind-ssr") || specifier.includes("tailwind-jit") || specifier === "tailwindcss")
+  );
 }
 
 test("boundary rule 8: packages/site-runtime/** and apps/sites/** stay strictly isolated from Clerk, Editor, Collaboration, and heavy builder deps", () => {
@@ -409,15 +417,55 @@ test("boundary rule 8: packages/site-runtime/** and apps/sites/** stay strictly 
   const appViolations = collectSiteRuntimeViolations(
     SITES_APP_ROOT,
     "apps/sites/src",
-    (rel, specifier) =>
-      // Client routes/components must never pull server-only tailwind-ssr or tailwind-jit compiler.
-      !rel.startsWith("server/") &&
-      (specifier.includes("tailwind-ssr") || specifier.includes("tailwind-jit") || specifier === "tailwindcss"),
+    isClientImportingServerTailwind,
   );
   const allViolations = [...pkgViolations, ...appViolations];
   assert.deepEqual(
     allViolations,
     [],
     `Forbidden imports in Site Runtime:\n${allViolations.join("\n")}`,
+  );
+});
+
+function isPureSiteRuntimeShim(filePath: string): boolean {
+  const lines = fs
+    .readFileSync(filePath, "utf8")
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  return (
+    lines.length > 0 &&
+    lines.every((line) =>
+      /^export\s+(?:\*|\{\s*default\s*\})\s+from\s+["']@webbuilder\/site-runtime(?:\/[^"']+)["'];?$/.test(
+        line,
+      ),
+    )
+  );
+}
+
+test("boundary rule 9: symmetric monorepo keeps root free of src/ and runtime deps, and apps/editor free of site-runtime shims", () => {
+  assert.equal(
+    fs.existsSync(path.join(REPO_ROOT, "src")),
+    false,
+    "Root src/ must not exist; Editor source lives under apps/editor/src",
+  );
+
+  const rootPkg = JSON.parse(
+    fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"),
+  ) as { dependencies?: Record<string, string> };
+  assert.deepEqual(
+    Object.keys(rootPkg.dependencies ?? {}),
+    [],
+    "Root package.json must not declare runtime dependencies; place app deps in apps/*/package.json",
+  );
+
+  const shims = walkSourceFiles(SRC_ROOT)
+    .filter(isPureSiteRuntimeShim)
+    .map((full) => toPosix(path.relative(REPO_ROOT, full)));
+  assert.deepEqual(
+    shims,
+    [],
+    `Pure @webbuilder/site-runtime re-export shims are forbidden:\n${shims.join("\n")}`,
   );
 });

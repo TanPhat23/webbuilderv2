@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { chainIds, enteredIds, indexInteractions, plan, visibleTargets, createVisibleTracker } from "../src/features/interactions/runtime/dispatch";
-import { useRunLogStore, RUN_LOG_LIMIT } from "../src/features/interactions/runtime/run-log-store";
+import { chainIds, enteredIds, indexInteractions, plan, visibleTargets, createVisibleTracker } from "@webbuilder/site-runtime/interactions/runtime/dispatch";
+import { useRunLogStore, RUN_LOG_LIMIT } from "@webbuilder/site-runtime/interactions/runtime/run-log-store";
 
 const tree = [
   {

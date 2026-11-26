@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { CollaboratorRole } from "../src/types/collaboration";
+import { CollaboratorRole } from "../apps/editor/src/types/collaboration";
 import {
   collaboratorKeys,
   resolveCollaboratorScopeKey,
@@ -11,7 +11,7 @@ import {
   useProjectCollaborators,
   useRemoveCollaborator,
   useUpdateCollaboratorRole,
-} from "../src/features/collaboration/hooks/useCollaborators";
+} from "../apps/editor/src/features/collaboration/hooks/useCollaborators";
 import {
   getProjectInvitations,
   invitationKeys,
@@ -22,7 +22,7 @@ import {
   useDeleteInvitation,
   useProjectInvitations,
   useUpdateInvitationStatus,
-} from "../src/features/collaboration/hooks/useInvitations";
+} from "../apps/editor/src/features/collaboration/hooks/useInvitations";
 
 interface HookHandles {
   createInvitation: ReturnType<typeof useCreateInvitation>;

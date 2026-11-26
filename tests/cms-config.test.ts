@@ -9,7 +9,7 @@ import {
   parseCMSSortOrder,
   readCMSSettings,
   toggleCMSField,
-} from "../src/features/editor/lib/cmsConfig";
+} from "../apps/editor/src/features/editor/lib/cmsConfig";
 
 test("readCMSSettings validates fields and rejects non-objects", () => {
   assert.deepEqual(readCMSSettings(null), {});

@@ -3,11 +3,11 @@ import { strict as assert } from "node:assert";
 import { test } from "node:test";
 import {
   defaultStep, getStep, insertStep, issuePath, moveStep, removeStep, replaceStep, stepIdsBefore, summarize,
-} from "../src/features/interactions/editing/steps-edit";
-import { FIELDS, VERB_LABELS, formatHeaders, menuVerbs, parseHeaders } from "../src/features/interactions/editing/fields";
-import { suggest } from "../src/features/interactions/editing/suggest";
-import { usePickStore } from "../src/features/interactions/editing/pick-store";
-import { VERBS, VERB_SCHEMAS, validateInteractionMap } from "../src/features/interactions/schema";
+} from "../apps/editor/src/features/interactions/editing/steps-edit";
+import { FIELDS, VERB_LABELS, formatHeaders, menuVerbs, parseHeaders } from "../apps/editor/src/features/interactions/editing/fields";
+import { suggest } from "../apps/editor/src/features/interactions/editing/suggest";
+import { usePickStore } from "../apps/editor/src/features/interactions/editing/pick-store";
+import { VERBS, VERB_SCHEMAS, validateInteractionMap } from "@webbuilder/site-runtime/interactions/schema";
 
 const steps: any[] = [
   { id: "r", call: "api", method: "GET", url: "/a" },
@@ -116,7 +116,7 @@ test("headers preserve special keys as own properties", () => {
 });
 
 test("element suggestions generate valid expressions for UUID element IDs", async () => {
-  const { parseExpression } = await import("../src/features/interactions/runtime/expression");
+  const { parseExpression } = await import("@webbuilder/site-runtime/interactions/runtime/expression");
   const ctx = { variables: [], stepIds: [], elements: [{ id: "0194aabc-1234-7000-a000-123456789abc", name: "Email" }] };
   const item = suggest("{{ el.Em", 8, ctx)!.items[0];
   assert.equal(item.insert, "el['0194aabc-1234-7000-a000-123456789abc'].");
@@ -125,7 +125,7 @@ test("element suggestions generate valid expressions for UUID element IDs", asyn
 });
 
 test("form root suggestion inserts a complete expression", async () => {
-  const { parseExpression } = await import("../src/features/interactions/runtime/expression");
+  const { parseExpression } = await import("@webbuilder/site-runtime/interactions/runtime/expression");
   const items = suggest("{{ fo", 5, { variables: [], stepIds: [], elements: [] })!.items;
   const form = items.find((item) => item.label === "form")!;
   assert.equal(form.insert, "form");

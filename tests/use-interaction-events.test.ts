@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { InteractionMap } from "../src/features/interactions/schema";
-import type { Planned } from "../src/features/interactions/runtime/dispatch";
-import type { HostRunner } from "../src/features/interactions/runtime/hostDom";
-import type { NodeLike, Platform } from "../src/features/interactions/runtime/executors";
+import type { InteractionMap } from "@webbuilder/site-runtime/interactions/schema";
+import type { Planned } from "@webbuilder/site-runtime/interactions/runtime/dispatch";
+import type { HostRunner } from "@webbuilder/site-runtime/interactions/runtime/hostDom";
+import type { NodeLike, Platform } from "@webbuilder/site-runtime/interactions/runtime/executors";
 import {
   dispatchImageError,
   dispatchPendingLoads,
@@ -12,7 +12,7 @@ import {
   pruneStaleLoadHistory,
   resolveNativeTargetIds,
   type ImageErrorState,
-} from "../src/features/interactions/hooks/useInteractionEvents";
+} from "@webbuilder/site-runtime/interactions/hooks/useInteractionEvents";
 
 class FakeElement {
   parentElement: FakeElement | null = null;

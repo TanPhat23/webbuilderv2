@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import { SiteNavigationProvider } from "../src/features/elements/context/SiteNavigationContext";
-import { fetchPreviewSite, fetchSubdomainSite } from "../src/features/preview/lib/preview-data";
+import PreviewElementLoader from "@webbuilder/site-runtime/preview/PreviewElementLoader";
+import { SiteNavigationProvider } from "@webbuilder/site-runtime/elements/context/SiteNavigationContext";
+import { fetchPreviewSite, fetchSubdomainSite } from "@webbuilder/site-runtime/data";
 import {
   buildPublicSiteUrl,
   defaultSampleParams,
@@ -17,9 +17,9 @@ import {
   resolveSiteHref,
   slugifyPageName,
   validatePageSlugPattern,
-} from "../src/lib/site-routing";
-import type { ApiPage } from "../src/features/projects/services/project.service";
-import { ApiError } from "../src/utils/errors/api-error";
+} from "@webbuilder/site-runtime/routing";
+import type { ApiPage } from "../apps/editor/src/features/projects/services/project.service";
+import { ApiError } from "@webbuilder/site-runtime/api-error";
 
 const pages: ApiPage[] = [
   { id: "p-home", projectId: "proj-1", name: "Home", slug: "", type: "sp", createdAt: "", updatedAt: "" },

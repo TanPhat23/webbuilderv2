@@ -6,8 +6,8 @@ import { test } from "node:test";
 import path from "node:path";
 import { runInNewContext } from "node:vm";
 import ts from "typescript";
-import { toCode, type CodegenElement, type CodegenInput } from "../src/features/interactions/codegen/interactions";
-import { codegenRequestErrors } from "../src/features/interactions/codegen/validate";
+import { toCode, type CodegenElement, type CodegenInput } from "../apps/editor/src/features/interactions/codegen/interactions";
+import { codegenRequestErrors } from "../apps/editor/src/features/interactions/codegen/validate";
 
 const LS = " ";
 const PS = " ";

@@ -4,7 +4,7 @@ import type {
   ContainerElement,
   EditorElement,
   ElementTypeMap,
-} from "@/types/global.type";
+} from "@webbuilder/site-runtime/types/global.type";
 import {
   applyTreeOpsLocally,
   planChoreographySteps,

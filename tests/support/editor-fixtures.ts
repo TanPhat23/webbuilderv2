@@ -8,13 +8,13 @@ import { routerState } from './editor-router-stub';
 
 export { routerState };
 
-const { default: ElementRenderer } = await import('../../src/features/editor/components/ElementRenderer');
-const { ChildElementLoaderProvider } = await import('../../src/features/editor/components/context/ChildElementLoaderContext');
-const { EditorFlagsProvider } = await import('../../src/features/editor/components/context/EditorFlagsContext');
-const { useElementStore } = await import('../../src/features/editor/store/element-store');
-const { useSelectionStore } = await import('../../src/features/editor/store/selection-store');
-const { useEventModeStore } = await import('../../src/features/editor/store/event-mode-store');
-const { projectKeys } = await import('../../src/features/projects/hooks/useProjects');
+const { default: ElementRenderer } = await import('../../apps/editor/src/features/editor/components/ElementRenderer');
+const { ChildElementLoaderProvider } = await import('../../apps/editor/src/features/editor/components/context/ChildElementLoaderContext');
+const { EditorFlagsProvider } = await import('../../apps/editor/src/features/editor/components/context/EditorFlagsContext');
+const { useElementStore } = await import('../../apps/editor/src/features/editor/store/element-store');
+const { useSelectionStore } = await import('../../apps/editor/src/features/editor/store/selection-store');
+const { useEventModeStore } = await import('../../apps/editor/src/features/editor/store/event-mode-store');
+const { projectKeys } = await import('../../apps/editor/src/features/projects/hooks/useProjects');
 const { toast } = await import('sonner');
 
 export { ElementRenderer, ChildElementLoaderProvider, EditorFlagsProvider, useElementStore, useSelectionStore, useEventModeStore, projectKeys };

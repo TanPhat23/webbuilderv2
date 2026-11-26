@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { EditorElement } from "../src/types/global.type";
-import { ElementStore } from "../src/features/editor/store/element-store";
-import { SelectionStore } from "../src/features/editor/store/selection-store";
-import { ElementKeyboardActions } from "../src/features/editor/lib/keyBoardEvents";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { ElementStore } from "../apps/editor/src/features/editor/store/element-store";
+import { SelectionStore } from "../apps/editor/src/features/editor/store/selection-store";
+import { ElementKeyboardActions } from "../apps/editor/src/features/editor/lib/keyBoardEvents";
 
 function installSessionStorage(): () => void {
   const prev = Object.getOwnPropertyDescriptor(globalThis, "sessionStorage");

@@ -16,7 +16,7 @@ import {
   withoutKeys,
   writeAxis,
   writeSide,
-} from "../src/features/editor/components/sidebar/style/styleModel";
+} from "../apps/editor/src/features/editor/components/sidebar/style/styleModel";
 
 test("normalizeCssInput accepts lengths, keywords and functions", () => {
   assert.deepEqual(normalizeCssInput("16", "px"), { ok: true, value: "16px" });

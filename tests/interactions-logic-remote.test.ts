@@ -1,8 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { beforeEach, test } from 'node:test';
-import { setFlow, setVariable } from '../src/features/interactions/logic';
-import { diffPatch } from '../src/features/interactions/logicPatch';
-import { applyPatch, encodeLogicPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
+import { setFlow, setVariable } from '@webbuilder/site-runtime/interactions/logic';
+import { diffPatch } from '@webbuilder/site-runtime/interactions/logicPatch';
+import { applyPatch, encodeLogicPatch, emptySnapshot, useLogicStore, type LogicRemote } from '../apps/editor/src/features/interactions/logic-store';
 
 const num = (n = 0) => ({ type: 'number' as const, default: n });
 const doc = (variables: Record<string, unknown> = {}, flows: Record<string, unknown> = {}) => ({ v: 1, variables, flows });

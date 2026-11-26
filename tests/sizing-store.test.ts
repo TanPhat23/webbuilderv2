@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { useElementStore } from "../src/features/editor/store/element-store";
-import { elementUtils } from "../src/features/elements/lib/elementhelper";
+import { useElementStore } from "../apps/editor/src/features/editor/store/element-store";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
 
 const el = (id: string, extra: Record<string, unknown> = {}) =>
   ({

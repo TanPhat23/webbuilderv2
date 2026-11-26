@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { validateLogic } from '../src/features/interactions/logic';
+import { validateLogic } from '@webbuilder/site-runtime/interactions/logic';
 
 const here = join(import.meta.dirname, 'fixtures', 'logic-parity.json');
 const fixtures = JSON.parse(readFileSync(here, 'utf8')) as { cases: { name: string; accept: boolean; doc: unknown }[] };

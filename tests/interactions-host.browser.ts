@@ -8,7 +8,7 @@ test("host prevents submit reload, limits self events and stops native propagati
   const server = await createServer({
     configFile: false,
     esbuild: { jsx: "automatic" },
-    resolve: { alias: { "@": resolve("src") } },
+    resolve: { alias: { "@": resolve("apps/editor/src") } },
     server: { port: 0 },
   });
   await server.listen();

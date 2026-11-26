@@ -13,13 +13,13 @@ Object.defineProperty(globalThis, 'localStorage', {
   },
 });
 
-const { useEventModeStore } = await import('../src/features/editor/store/event-mode-store');
-const { MouseStore, useMouseStore } = await import('../src/features/editor/store/mouse-store');
-const { useImageStore } = await import('../src/features/images/store/image-store');
-const { useElementStore } = await import('../src/features/editor/store/element-store');
-const { useSelectionStore } = await import('../src/features/editor/store/selection-store');
-const selectors = await import('../src/features/editor/store/selectors/selection-selectors');
-const { elementTree } = await import('../src/features/elements/lib/element-tree-helper');
+const { useEventModeStore } = await import('../apps/editor/src/features/editor/store/event-mode-store');
+const { MouseStore, useMouseStore } = await import('../apps/editor/src/features/editor/store/mouse-store');
+const { useImageStore } = await import('../apps/editor/src/features/images/store/image-store');
+const { useElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+const { useSelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
+const selectors = await import('../apps/editor/src/features/editor/store/selectors/selection-selectors');
+const { elementTree } = await import('@webbuilder/site-runtime/elements/lib/element-tree-helper');
 const { disposeClients, renderHook } = await import('./support/test-hook-harness');
 
 after(disposeClients);

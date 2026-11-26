@@ -2,8 +2,8 @@
 // the client reads server data must keep it too (see tests/fixtures/logic-parity.json).
 import { strict as assert } from 'node:assert';
 import { beforeEach, test } from 'node:test';
-import { setVariable } from '../src/features/interactions/logic';
-import { emptySnapshot, mergedLogic, parseSnapshot, snapshotFromServer, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
+import { setVariable } from '@webbuilder/site-runtime/interactions/logic';
+import { emptySnapshot, mergedLogic, parseSnapshot, snapshotFromServer, useLogicStore, type LogicRemote } from '../apps/editor/src/features/interactions/logic-store';
 
 const draftFlow = { do: [{ show: '' }] };
 const brokenTemplate = { do: [{ toast: '{{ vars.count + }}' }] };

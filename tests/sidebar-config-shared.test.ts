@@ -11,37 +11,37 @@ import {
   render,
   type,
 } from './support/sidebar-dom-harness';
-import { Accordion } from '../src/components/ui/accordion';
+import { Accordion } from '../apps/editor/src/components/ui/accordion';
 import {
   AccordionSection,
   SectionDivider,
-} from '../src/features/editor/components/sidebar/configurations/_shared/AccordionSection';
+} from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/AccordionSection';
 import {
   ConfigEmpty,
   ConfigField,
   ConfigSection,
-} from '../src/features/editor/components/sidebar/configurations/_shared/ConfigField';
+} from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ConfigField';
 import {
   ConfigNumberInput,
   ConfigSelectInput,
   ConfigSwitch,
-} from '../src/features/editor/components/sidebar/configurations/_shared/ConfigInputs';
-import { ConfigPanel } from '../src/features/editor/components/sidebar/configurations/_shared/ConfigPanel';
+} from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ConfigInputs';
+import { ConfigPanel } from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ConfigPanel';
 import {
   AutocompleteSetting,
   FieldNameSetting,
   FieldValidationSection,
   NamedFieldConfigPanel,
-} from '../src/features/editor/components/sidebar/configurations/_shared/TextControlSections';
+} from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/TextControlSections';
 import {
   MediaPlaybackSection,
   type SharedMediaPlaybackSettings,
-} from '../src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection';
-import ChoiceConfigurationShell from '../src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection';
-import ValidationConfiguration from '../src/features/editor/components/sidebar/configurations/ValidationConfiguration';
-import { useElementStore } from '../src/features/editor/store/element-store';
-import { useSelectionStore } from '../src/features/editor/store/selection-store';
-import type { InputElement } from '../src/types/elements/elements';
+} from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection';
+import ChoiceConfigurationShell from '../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection';
+import ValidationConfiguration from '../apps/editor/src/features/editor/components/sidebar/configurations/ValidationConfiguration';
+import { useElementStore } from '../apps/editor/src/features/editor/store/element-store';
+import { useSelectionStore } from '../apps/editor/src/features/editor/store/selection-store';
+import type { InputElement } from '@webbuilder/site-runtime/types/elements/elements';
 
 after(cleanup);
 beforeEach(() => {

@@ -9,12 +9,12 @@ import {
   React,
   render,
 } from './support/sidebar-dom-harness';
-import type { FrameElement, TextElement } from '../src/types/elements/elements';
+import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
 import type {
   CollaborationContextValue,
   WSCollaborationConfig,
-} from '../src/features/collaboration/interfaces/websocket';
-import type { ElementComment } from '../src/features/comments/interfaces/elementcomment.interface';
+} from '../apps/editor/src/features/collaboration/interfaces/websocket';
+import type { ElementComment } from '../apps/editor/src/features/comments/interfaces/elementcomment.interface';
 
 redirectModules({
   '@clerk/tanstack-react-start': './test-clerk-stub.ts',
@@ -25,19 +25,19 @@ redirectModules({
 
 const { authState, userState } = await import('./support/test-clerk-stub');
 const { routerState } = await import('./support/editor-router-stub');
-const { useElementComments, useProjectComments, elementCommentKeys } = await import('../src/features/comments/hooks/useElementComments');
-const { useCollabRoom } = await import('../src/providers/collaboration/useCollabRoom');
-const { useComponentActions } = await import('../src/features/editor/hooks/useComponentActions');
-const { useInteractionEvents } = await import('../src/features/interactions/hooks/useInteractionEvents');
-const { extractFormValues } = await import('../src/features/interactions/runtime/hostDom');
-const { createVariableStore } = await import('../src/features/interactions/runtime/variables');
-const { CollaborationContext } = await import('../src/features/collaboration/context/CollaborationContext');
-const { EditorContext } = await import('../src/features/editor/context/EditorContext');
+const { useElementComments, useProjectComments, elementCommentKeys } = await import('../apps/editor/src/features/comments/hooks/useElementComments');
+const { useCollabRoom } = await import('../apps/editor/src/providers/collaboration/useCollabRoom');
+const { useComponentActions } = await import('../apps/editor/src/features/editor/hooks/useComponentActions');
+const { useInteractionEvents } = await import('@webbuilder/site-runtime/interactions/hooks/useInteractionEvents');
+const { extractFormValues } = await import('@webbuilder/site-runtime/interactions/runtime/hostDom');
+const { createVariableStore } = await import('@webbuilder/site-runtime/interactions/runtime/variables');
+const { CollaborationContext } = await import('../apps/editor/src/features/collaboration/context/CollaborationContext');
+const { EditorContext } = await import('../apps/editor/src/features/editor/context/EditorContext');
 const { editorValue } = await import('./support/sidebar-fixtures');
-const { useElementStore } = await import('../src/features/editor/store/element-store');
-const { projectKeys } = await import('../src/features/projects/hooks/useProjects');
-const { collaboratorKeys } = await import('../src/features/collaboration/hooks/useCollaborators');
-const { CollaboratorRole } = await import('../src/features/collaboration/interfaces/collaboration.interface');
+const { useElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+const { projectKeys } = await import('../apps/editor/src/features/projects/hooks/useProjects');
+const { collaboratorKeys } = await import('../apps/editor/src/features/collaboration/hooks/useCollaborators');
+const { CollaboratorRole } = await import('../apps/editor/src/features/collaboration/interfaces/collaboration.interface');
 
 const h = React.createElement;
 const realFetch = globalThis.fetch;

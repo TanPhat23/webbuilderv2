@@ -14,7 +14,7 @@ import {
   formatFileSize,
   shouldShowSlashPalette,
   validateAttachmentFile,
-} from "../src/features/ai/utils/aiChatUtils";
+} from "../apps/editor/src/features/ai/utils/aiChatUtils";
 
 describe("aiChatUtils", () => {
   it("shows and filters slash commands only before the first space", () => {

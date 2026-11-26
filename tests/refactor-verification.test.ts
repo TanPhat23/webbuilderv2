@@ -17,9 +17,9 @@ import assert from "node:assert/strict";
 
 test("RealtimeProvider options and element state injection", async () => {
   const { RealtimeProvider } = await import(
-    "../src/features/collaboration/lib/realtime/RealtimeProvider"
+    "../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider"
   );
-  type EditorElement = import("../src/types/global.type").EditorElement;
+  type EditorElement = import("@webbuilder/site-runtime/types/global.type").EditorElement;
 
   const mockElement: EditorElement = {
     id: "el-integration",
@@ -73,7 +73,7 @@ test("RealtimeProvider options and element state injection", async () => {
 
 test("getChoiceConfigurationDefaults handles undefined and custom configurations", async () => {
   const { getChoiceConfigurationDefaults } = await import(
-    "../src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
+    "../apps/editor/src/features/editor/components/sidebar/configurations/_shared/ChoiceConfigurationSection"
   );
 
   const defaults = getChoiceConfigurationDefaults(undefined);
@@ -105,7 +105,7 @@ test("resolveControlsValue and PRELOAD_OPTIONS for media playback", async () => 
     PRELOAD_OPTIONS,
     resolveControlsValue,
   } = await import(
-    "../src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection"
+    "../apps/editor/src/features/editor/components/sidebar/configurations/_shared/MediaPlaybackSection"
   );
 
   assert.equal(resolveControlsValue("Audio", undefined), true);
@@ -120,7 +120,7 @@ test("resolveControlsValue and PRELOAD_OPTIONS for media playback", async () => 
 
 test("sanitizeTextContent sanitizes dangerous HTML while preserving safe formatting", async () => {
   const { sanitizeTextContent } = await import(
-    "../src/features/editor/components/elements/shared/TextElementShell"
+    "../apps/editor/src/features/editor/components/elements/shared/TextElementShell"
   );
 
   const scriptPayload = '<p>Hello <strong>Antigravity</strong><script>alert("hacked")</script></p>';

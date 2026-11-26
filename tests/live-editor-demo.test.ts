@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   buildCode,
   highlight,
-} from "../src/features/landing/components/LiveEditorDemo";
+} from "../apps/editor/src/features/landing/components/LiveEditorDemo";
 
 test("buildCode reflects state options for size, alignment, and button fill", () => {
   const filledLines = buildCode({

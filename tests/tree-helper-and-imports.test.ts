@@ -2,20 +2,20 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as t from '@babel/types';
 import { generate } from '@babel/generator';
-import { elementTree as H } from '../src/features/elements/lib/element-tree-helper';
+import { elementTree as H } from '@webbuilder/site-runtime/elements/lib/element-tree-helper';
 import {
   generateImports,
   getAvailableComponentImports,
   getComponentImport,
   getComponentImports,
   registerComponentImport,
-} from '../src/features/editor/lib/code/generateImports';
+} from '../apps/editor/src/features/editor/lib/code/generateImports';
 import {
   CMSContentGridGenerateStrategy,
   CMSContentItemGenerateStrategy,
   CMSContentListGenerateStrategy,
   generateStrategies,
-} from '../src/features/editor/lib/code/generatestrategies';
+} from '../apps/editor/src/features/editor/lib/code/generatestrategies';
 
 const n = (id: string, type = 'Frame', elements?: unknown[]) =>
   ({ id, type, content: '', pageId: 'p', ...(elements ? { elements } : {}) }) as never;

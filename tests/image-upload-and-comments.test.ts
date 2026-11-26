@@ -6,18 +6,18 @@ import {
   ImageFileSchema,
   ImagesArraySchema,
   ImageUploadResponseSchema,
-} from "../src/features/images/schema/imageupload";
-import { ApiError } from "../src/utils/errors/api-error";
+} from "../apps/editor/src/features/images/schema/imageupload";
+import { ApiError } from "@webbuilder/site-runtime/api-error";
 import {
   PERMISSION_ERRORS,
   showErrorToast,
   showSuccessToast,
-} from "../src/utils/errors/errorToast";
+} from "../apps/editor/src/utils/errors/errorToast";
 import {
   getErrorMessage,
   createMutationErrorHandler,
   createMutationSuccessHandler,
-} from "../src/hooks/utils/mutationUtils";
+} from "../apps/editor/src/hooks/utils/mutationUtils";
 
 test("image upload schemas validate MIME types, byte limits, base64 URIs, and drag payloads", () => {
   const validPng = new File([new Uint8Array([1, 2, 3])], "pic.png", { type: "image/png" });
@@ -87,7 +87,7 @@ test("useElementCommentStore manages visibility, active element, filter, and sor
 
   try {
     const { useElementCommentStore } = await import(
-      "../src/features/editor/store/element-comment-store"
+      "../apps/editor/src/features/editor/store/element-comment-store"
     );
     const s = useElementCommentStore.getState();
     assert.equal(s.isCommentsVisible, true);

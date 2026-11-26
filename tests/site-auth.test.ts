@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import { SiteNavigationProvider } from "../src/features/elements/context/SiteNavigationContext";
+import PreviewElementLoader from "@webbuilder/site-runtime/preview/PreviewElementLoader";
+import { SiteNavigationProvider } from "@webbuilder/site-runtime/elements/context/SiteNavigationContext";
 import {
   AuthRedirectError,
   fetchPreviewSite,
   fetchSubdomainSite,
-} from "../src/features/preview/lib/preview-data";
+} from "@webbuilder/site-runtime/data";
 import {
   buildLoginRedirectHref,
   parseProjectAuthConfig,
@@ -16,9 +16,9 @@ import {
   shouldRenderForAuthVisibility,
   validateSupabaseAnonKey,
   validateSupabaseUrl,
-} from "../src/lib/site-auth";
-import type { ApiPage } from "../src/features/projects/services/project.service";
-import type { EditorElement } from "../src/types/global.type";
+} from "@webbuilder/site-runtime/auth";
+import type { ApiPage } from "../apps/editor/src/features/projects/services/project.service";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 function makeJwt(role: string): string {
   const h = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");

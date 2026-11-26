@@ -8,7 +8,7 @@ import {
   React,
   render,
 } from './support/sidebar-dom-harness';
-import type { FrameElement, TextElement } from '../src/types/elements/elements';
+import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
 
 redirectModules({
   '@clerk/tanstack-react-start': './test-clerk-stub.ts',
@@ -18,13 +18,13 @@ redirectModules({
 });
 
 const { useCanvasManipulation } = await import(
-  '../src/features/editor/components/canvas/useCanvasManipulation'
+  '../apps/editor/src/features/editor/components/canvas/useCanvasManipulation'
 );
 const { useElementStore } = await import(
-  '../src/features/editor/store/element-store'
+  '../apps/editor/src/features/editor/store/element-store'
 );
 const { useSelectionStore } = await import(
-  '../src/features/editor/store/selection-store'
+  '../apps/editor/src/features/editor/store/selection-store'
 );
 
 const h = React.createElement;

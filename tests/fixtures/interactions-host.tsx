@@ -1,7 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { InteractionHost } from "../../src/features/interactions/components/InteractionHost";
-import { useRunLogStore } from "../../src/features/interactions/runtime/run-log-store";
+import { InteractionHost } from "@webbuilder/site-runtime/interactions/components/InteractionHost";
+import { useRunLogStore } from "@webbuilder/site-runtime/interactions/runtime/run-log-store";
 
 const interaction = (on: string, text: string, rest = {}) => ({
   on,

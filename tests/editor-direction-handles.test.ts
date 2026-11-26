@@ -8,7 +8,7 @@ import {
   hasMargin,
   hasPadding,
   type ResizeDirection,
-} from '../src/features/editor/constants/direction';
+} from '../apps/editor/src/features/editor/constants/direction';
 
 const CORNERS_AND_EDGES: ResizeDirection[] = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
 

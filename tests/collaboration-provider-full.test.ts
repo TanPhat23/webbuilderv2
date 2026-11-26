@@ -9,7 +9,7 @@ const loader = `export async function load(url, context, nextLoad) {
 }`;
 register('data:text/javascript,' + encodeURIComponent(loader));
 
-const { PresenceController } = await import('../src/features/collaboration/lib/realtime/AwarenessController');
+const { PresenceController } = await import('../apps/editor/src/features/collaboration/lib/realtime/AwarenessController');
 
 class FakeWebSocket {
   static OPEN = 1;
@@ -34,7 +34,7 @@ async function setup(extra: Record<string, unknown> = {}) {
   const original = globalThis.WebSocket;
   globalThis.WebSocket = FakeWebSocket as unknown as typeof WebSocket;
   FakeWebSocket.instances = [];
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   const state: any = { elements: [], setElements() {}, remoteAdd() {}, remoteUpdate() {}, remoteMove() {}, remoteDelete() {} };
   const events: Record<string, unknown[]> = { sync: [], changed: [], users: [], errors: [] };
   const provider = new RealtimeProvider({
@@ -116,7 +116,7 @@ test('pruneStale drops only presences older than the limit', () => {
 // ---------------------------------------------------------------- Provider
 
 test('constructing without getElementState is rejected', async () => {
-  const { RealtimeProvider } = await import('../src/features/collaboration/lib/realtime/RealtimeProvider');
+  const { RealtimeProvider } = await import('../apps/editor/src/features/collaboration/lib/realtime/RealtimeProvider');
   assert.throws(() => new RealtimeProvider({ url: 'ws://x', projectId: 'p', pageId: 'pg', userId: 'u' } as never), /getElementState is required/);
 });
 

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {
   ElementFactory,
   ElementFactoryError,
-} from '../src/features/editor/lib/ElementFactory';
-import { SelectionStore } from '../src/features/editor/store/selection-store';
-import { ElementStrategyMap } from '../src/features/editor/utils/element/create/elementStrategyMap';
+} from '../apps/editor/src/features/editor/lib/ElementFactory';
+import { SelectionStore } from '../apps/editor/src/features/editor/store/selection-store';
+import { ElementStrategyMap } from '../apps/editor/src/features/editor/utils/element/create/elementStrategyMap';
 
 const factory = ElementFactory.getInstance();
 const errors: unknown[][] = [];

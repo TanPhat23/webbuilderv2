@@ -2,9 +2,9 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { applyEdits } from "../src/features/agent/editOps";
-import PreviewElementLoader from "../src/features/preview/components/PreviewElementLoader";
-import type { EditorElement } from "../src/types/global.type";
+import { applyEdits } from "../apps/editor/src/features/agent/editOps";
+import PreviewElementLoader from "@webbuilder/site-runtime/preview/PreviewElementLoader";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 const pageId = "home";
 const preview = (elements: EditorElement[]) =>

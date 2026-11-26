@@ -4,8 +4,8 @@ import {
   collectPageIds,
   extractEventScope,
   resolveImageErrorKey,
-} from "../src/features/interactions/runtime/hostDom";
-import type { EditorElement } from "../src/types/global.type";
+} from "@webbuilder/site-runtime/interactions/runtime/hostDom";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 test("extractEventScope returns null for null events and extracts input/key fields", () => {
   assert.equal(extractEventScope(null), null);

@@ -6,7 +6,7 @@ import {
   codexCommand,
   connectionStatus,
   openCodeConfig,
-} from "../src/features/agent/connectCommands";
+} from "../apps/editor/src/features/agent/connectCommands";
 
 test("the Claude Code command registers an HTTP server with a bearer header", () => {
   assert.equal(

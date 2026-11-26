@@ -1,7 +1,7 @@
 // tests/interactions-variables.test.ts
 import { strict as assert } from "node:assert";
 import { test } from "node:test";
-import { createVariableStore, safeStorage } from "../src/features/interactions/runtime/variables";
+import { createVariableStore, safeStorage } from "@webbuilder/site-runtime/interactions/runtime/variables";
 
 const memStorage = () => {
   const m = new Map<string, string>();

@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import {
   computeTailwindFromStyles,
   computeTailwindFromStylesSingle,
-} from "../src/features/elements/lib/computeTailwindFromStyles";
+} from "@webbuilder/site-runtime/elements/lib/computeTailwindFromStyles";
 
 test("empty or undefined styles produce an empty class string", () => {
   assert.equal(computeTailwindFromStyles(undefined), "");

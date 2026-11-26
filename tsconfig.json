@@ -1,23 +1,20 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "types": ["vite/client"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
     "paths": {
-      "@/*": ["./src/*"],
+      "@/*": ["./apps/editor/src/*"],
       "tests/*": ["./tests/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "tests/**/*.tsx", "packages/site-runtime/src/**/*.ts", "packages/site-runtime/src/**/*.tsx", "vite.config.ts"],
-  "exclude": ["node_modules", ".output", ".vinxi", "apps"]
+  "include": [
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "scripts/**/*.ts",
+    "apps/editor/src/**/*.ts",
+    "apps/editor/src/**/*.tsx",
+    "packages/site-runtime/src/**/*.ts",
+    "packages/site-runtime/src/**/*.tsx"
+  ],
+  "exclude": ["node_modules", ".output", ".vinxi", "apps/sites"]
 }

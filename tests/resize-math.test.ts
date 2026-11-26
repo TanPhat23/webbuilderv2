@@ -5,7 +5,7 @@ import {
   detectLengthUnit,
   resizeCursor,
   type ResizeOrigin,
-} from '../src/features/editor/utils/element/resizeMath';
+} from '../apps/editor/src/features/editor/utils/element/resizeMath';
 
 function makeRect(left: number, top: number, width: number, height: number): DOMRectReadOnly {
   return {

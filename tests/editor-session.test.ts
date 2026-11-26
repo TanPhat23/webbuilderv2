@@ -5,8 +5,8 @@ const loader = `export async function load(url, context, nextLoad) { const resul
 register('data:text/javascript,' + encodeURIComponent(loader));
 
 test('changing pages clears the previous page history and selection', async () => {
-  const { ElementStore } = await import('../src/features/editor/store/element-store');
-  const { SelectionStore } = await import('../src/features/editor/store/selection-store');
+  const { ElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+  const { SelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
   const a = { id: 'a', type: 'Text', pageId: 'a', content: 'original' } as const;
   const b = { id: 'b', type: 'Text', pageId: 'b', content: 'second' } as const;
   ElementStore.getState().beginPage('project', 'a');
@@ -21,9 +21,9 @@ test('changing pages clears the previous page history and selection', async () =
 });
 
 test('selected element resolves current remote changes and disappears after deletion', async () => {
-  const { ElementStore } = await import('../src/features/editor/store/element-store');
-  const { SelectionStore } = await import('../src/features/editor/store/selection-store');
-  const { getSelectedOrHoveredElement } = await import('../src/features/editor/store/selected-element');
+  const { ElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+  const { SelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
+  const { getSelectedOrHoveredElement } = await import('../apps/editor/src/features/editor/store/selected-element');
   const element = { id: 'item', type: 'Text', pageId: 'page', content: 'old' } as const;
   ElementStore.getState().beginPage('project', 'page');
   ElementStore.getState().setElements([element], true);

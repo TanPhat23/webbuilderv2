@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { EditorElement } from "../src/types/global.type";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import {
   addSelectOption,
   moveSelectOption,
@@ -9,7 +9,7 @@ import {
   resolveSelectOptions,
   toggleDefaultSelectOption,
   updateSelectOptionField,
-} from "../src/features/editor/lib/selectOptions";
+} from "../apps/editor/src/features/editor/lib/selectOptions";
 
 test("readSelectSettings safely extracts select configuration fields", () => {
   assert.deepEqual(readSelectSettings(null), {});

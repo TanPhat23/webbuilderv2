@@ -3,8 +3,8 @@ import { test } from "node:test";
 import {
   diffTrees,
   patchWithDeletions,
-} from "../src/features/editor/utils/element/treeDiff";
-import { useElementStore } from "../src/features/editor/store/element-store";
+} from "../apps/editor/src/features/editor/utils/element/treeDiff";
+import { useElementStore } from "../apps/editor/src/features/editor/store/element-store";
 
 const el = (id: string, elements: any[] = [], extra: Record<string, unknown> = {}) =>
   ({ id, type: "Frame", content: "", styles: {}, tailwindStyles: "", elements, pageId: "p", ...extra }) as any;

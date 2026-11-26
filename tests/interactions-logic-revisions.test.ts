@@ -3,7 +3,7 @@
 // the store ignores anything older than what it already has.
 import { strict as assert } from 'node:assert';
 import { beforeEach, test } from 'node:test';
-import { emptySnapshot, useLogicStore, type LogicRemote } from '../src/features/interactions/logic-store';
+import { emptySnapshot, useLogicStore, type LogicRemote } from '../apps/editor/src/features/interactions/logic-store';
 
 const num = (n = 0) => ({ type: 'number' as const, default: n });
 const doc = (variables: Record<string, unknown> = {}) => ({ v: 1, variables, flows: {} });

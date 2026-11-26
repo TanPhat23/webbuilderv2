@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { QueryClient } from '@tanstack/react-query';
-import { cmsKeys } from '../src/features/cms/query-keys';
+import { cmsKeys } from '../apps/editor/src/features/cms/query-keys';
 
 test('invalidating public CMS content reaches lists and individual items', async () => {
   const client = new QueryClient();

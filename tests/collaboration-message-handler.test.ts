@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { ElementMessageHandler } from '../src/features/collaboration/lib/realtime/ElementMessageHandler';
-import type { EditorElement } from '../src/types/global.type';
+import { ElementMessageHandler } from '../apps/editor/src/features/collaboration/lib/realtime/ElementMessageHandler';
+import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
 
 test('remote updates use the injected current element state and merge settings', () => {
   const element = { id: 'child', type: 'Text', pageId: 'page', content: '', settings: { existing: 'kept' } } as unknown as EditorElement;

@@ -5,7 +5,7 @@ import { chromium } from '@playwright/test';
 import { resolve } from 'node:path';
 
 test('preview inputs submit, lazy canvas instances reveal and remain draggable, and animation durations are honored', async () => {
-  const server = await createServer({ configFile: false, esbuild: { jsx: 'automatic' }, resolve: { alias: { '@': resolve('src') } }, server: { port: 0 } });
+  const server = await createServer({ configFile: false, esbuild: { jsx: 'automatic' }, resolve: { alias: { '@': resolve('apps/editor/src') } }, server: { port: 0 } });
   await server.listen();
   const browser = await chromium.launch({ headless: true });
   try {

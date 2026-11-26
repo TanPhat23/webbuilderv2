@@ -5,7 +5,7 @@ import {
   readComputedSpacing,
   spacingCursor,
   type ComputedSpacing,
-} from '../src/features/editor/utils/element/spacingMath';
+} from '../apps/editor/src/features/editor/utils/element/spacingMath';
 
 const baseSpacing: ComputedSpacing = {
   padding: { top: 16, right: 20, bottom: 16, left: 20 },

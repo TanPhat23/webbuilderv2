@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 
 test('logic deletion warns before removal and supports cancel and undo', async () => {
-  const server = await createServer({ configFile: false, define: { 'process.env': '{}' }, optimizeDeps: { entries: ['tests/fixtures/logic-panel.html'] }, plugins: [tailwindcss()], esbuild: { jsx: 'automatic' }, resolve: { alias: [{ find: /^@\/features\/editor$/, replacement: resolve('tests/fixtures/logic-editor-shim.ts') }, { find: '@', replacement: resolve('src') }] }, server: { port: 0 } });
+  const server = await createServer({ configFile: false, define: { 'process.env': '{}' }, optimizeDeps: { entries: ['tests/fixtures/logic-panel.html'] }, plugins: [tailwindcss()], esbuild: { jsx: 'automatic' }, resolve: { alias: [{ find: /^@\/features\/editor$/, replacement: resolve('tests/fixtures/logic-editor-shim.ts') }, { find: '@', replacement: resolve('apps/editor/src') }] }, server: { port: 0 } });
   await server.listen();
   const browser = await chromium.launch({ headless: true });
   try {

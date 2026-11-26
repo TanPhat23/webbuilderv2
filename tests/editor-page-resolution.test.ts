@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { Page } from "../src/features/pages";
+import type { Page } from "../apps/editor/src/features/pages";
 import {
   isEventOverElement,
   resolveFallbackPage,
-} from "../src/features/editor/lib/editorPage";
+} from "../apps/editor/src/features/editor/lib/editorPage";
 
 function makePage(overrides: Partial<Page> & Pick<Page, "Id" | "Name" | "Type">): Page {
   return {

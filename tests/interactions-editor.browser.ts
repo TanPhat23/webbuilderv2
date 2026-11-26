@@ -5,7 +5,7 @@ import {chromium} from '@playwright/test';
 import {resolve} from 'node:path';
 import tailwindcss from '@tailwindcss/vite';
 test('interaction editor preserves drafts and supports scroll targets', async()=>{
- const server=await createServer({configFile:false,plugins:[tailwindcss()],esbuild:{jsx:'automatic'},resolve:{alias:{'@':resolve('src')}},server:{port:0}}); await server.listen();
+ const server=await createServer({configFile:false,plugins:[tailwindcss()],esbuild:{jsx:'automatic'},resolve:{alias:{'@':resolve('apps/editor/src')}},server:{port:0}}); await server.listen();
  const browser=await chromium.launch({headless:true});
  try {const page=await browser.newPage(); await page.goto(`${server.resolvedUrls!.local[0]}tests/fixtures/interactions-editor.html`);
  await page.getByLabel('Smooth').click(); assert.equal(await page.evaluate(()=>(window as any).steps[0].smooth),false);

@@ -2,14 +2,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import * as card from '../src/components/ui/card';
-import * as table from '../src/components/ui/table';
-import * as dialog from '../src/components/ui/dialog';
-import * as alertDialog from '../src/components/ui/alert-dialog';
-import * as select from '../src/components/ui/select';
-import * as command from '../src/components/ui/command';
-import * as tooltip from '../src/components/ui/tooltip';
-import * as accordion from '../src/components/ui/accordion';
+import * as card from '../apps/editor/src/components/ui/card';
+import * as table from '../apps/editor/src/components/ui/table';
+import * as dialog from '../apps/editor/src/components/ui/dialog';
+import * as alertDialog from '../apps/editor/src/components/ui/alert-dialog';
+import * as select from '../apps/editor/src/components/ui/select';
+import * as command from '../apps/editor/src/components/ui/command';
+import * as tooltip from '../apps/editor/src/components/ui/tooltip';
+import * as accordion from '../apps/editor/src/components/ui/accordion';
 
 type Props = Record<string, unknown>;
 

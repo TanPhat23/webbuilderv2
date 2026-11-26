@@ -12,7 +12,7 @@ import {
   React,
   render,
 } from './support/sidebar-dom-harness';
-import type { FrameElement, TextElement } from '../src/types/elements/elements';
+import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
 
 redirectModules({
   '@clerk/tanstack-react-start': './test-clerk-stub.ts',
@@ -23,13 +23,13 @@ redirectModules({
 
 const { authState } = await import('./support/test-clerk-stub');
 const { routerState } = await import('./support/editor-router-stub');
-const { useCanvasDragDrop } = await import('../src/features/editor/components/canvas/useCanvasDragDrop');
-const VersionHistoryPanel = (await import('../src/features/editor/components/sidebar/SnapshotManager')).default;
-const { useElementStore } = await import('../src/features/editor/store/element-store');
-const { useSelectionStore } = await import('../src/features/editor/store/selection-store');
-const { projectKeys } = await import('../src/features/projects/hooks/useProjects');
-const { collaboratorKeys } = await import('../src/features/collaboration/hooks/useCollaborators');
-const { CollaboratorRole } = await import('../src/features/collaboration/interfaces/collaboration.interface');
+const { useCanvasDragDrop } = await import('../apps/editor/src/features/editor/components/canvas/useCanvasDragDrop');
+const VersionHistoryPanel = (await import('../apps/editor/src/features/editor/components/sidebar/SnapshotManager')).default;
+const { useElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+const { useSelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
+const { projectKeys } = await import('../apps/editor/src/features/projects/hooks/useProjects');
+const { collaboratorKeys } = await import('../apps/editor/src/features/collaboration/hooks/useCollaborators');
+const { CollaboratorRole } = await import('../apps/editor/src/features/collaboration/interfaces/collaboration.interface');
 
 const h = React.createElement;
 const realFetch = globalThis.fetch;
@@ -165,7 +165,7 @@ test('useCanvasDragDrop computes drop indicators and handles sidebar insert drop
     const updatedParent = useElementStore.getState().elements.find((el) => el.id === 'el-parent') as FrameElement | undefined;
     assert.ok(updatedParent?.elements?.some((el) => el.type === 'Heading'));
 
-    const { setElementTypeDrag, getActiveDragPayload } = await import('../src/features/editor/utils/element/dragPayload');
+    const { setElementTypeDrag, getActiveDragPayload } = await import('../apps/editor/src/features/editor/utils/element/dragPayload');
     const emptyDt = {
       types: ['elementtype'],
       dropEffect: 'none',

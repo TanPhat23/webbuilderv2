@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { codeGenerator } from "../src/features/editor/lib/code/generator";
+import { codeGenerator } from "../apps/editor/src/features/editor/lib/code/generator";
 
 const el = (type: string, extra: Record<string, unknown> = {}) => ({
   id: `el_${Math.random().toString(36).slice(2)}`,
