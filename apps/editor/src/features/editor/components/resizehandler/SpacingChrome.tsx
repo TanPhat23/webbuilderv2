@@ -9,10 +9,16 @@ import {
   type SpacingSide,
 } from "@/features/editor/utils/element/spacingMath";
 import type { ManipulationSession } from "../canvas/canvasTypes";
-import type { ElementRect } from "../canvas/useElementRect";
+import type { ElementRect } from "../canvas/rectTracker";
 
 export interface SpacingChromeProps {
+  /** Element box in stage pixels (already scaled by the canvas zoom). */
   readonly rect: ElementRect;
+  /**
+   * Effective canvas zoom. Bands are drawn at `px * zoom` so they cover the
+   * scaled element, while pills show true CSS px and handles stay 1:1.
+   */
+  readonly zoom: number;
   readonly element: EditorElement;
   readonly node: HTMLElement | null;
   readonly session: ManipulationSession;
@@ -131,6 +137,7 @@ export const SpacingChrome = memo(function SpacingChrome({
   session,
   canEdit,
   showAllSpacing,
+  zoom,
   onStartSpacing,
 }: SpacingChromeProps): React.ReactElement | null {
   const [hoveredHandle, setHoveredHandle] = useState<SpacingHandleId | null>(null);
@@ -173,9 +180,16 @@ export const SpacingChrome = memo(function SpacingChrome({
   const canShowVerticalSides = rect.height >= MIN_BOX_FOR_SPACING;
   const canShowHorizontalSides = rect.width >= MIN_BOX_FOR_SPACING;
 
-  const gapSlot = isFlexOrGrid
+  const measuredGapSlot = isFlexOrGrid
     ? measureFirstGapSlot(node, computed.gapAxis)
     : null;
+  const gapSlot: GapSlotRect | null = measuredGapSlot && {
+    axis: measuredGapSlot.axis,
+    left: measuredGapSlot.left * zoom,
+    top: measuredGapSlot.top * zoom,
+    width: measuredGapSlot.width * zoom,
+    height: measuredGapSlot.height * zoom,
+  };
   const showGapBand =
     gapSlot !== null &&
     (showAllSpacing || activeKind === "gap" || hoveredHandle === "gap");
@@ -196,7 +210,7 @@ export const SpacingChrome = memo(function SpacingChrome({
                   ? "pointer-events-none absolute z-10 bg-emerald-500/20"
                   : "pointer-events-none absolute z-10 bg-emerald-500/12"
               }
-              style={paddingBandStyle(side, px)}
+              style={paddingBandStyle(side, px * zoom)}
             >
               {px >= 14 && (
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-emerald-600/90 px-1 py-px font-mono text-[9px] leading-none font-semibold text-white">
@@ -221,7 +235,7 @@ export const SpacingChrome = memo(function SpacingChrome({
                   ? "pointer-events-none absolute z-10 bg-amber-500/20"
                   : "pointer-events-none absolute z-10 bg-amber-500/12"
               }
-              style={marginBandStyle(side, px)}
+              style={marginBandStyle(side, px * zoom)}
             >
               {px >= 14 && (
                 <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded bg-amber-600/90 px-1 py-px font-mono text-[9px] leading-none font-semibold text-white">
@@ -246,7 +260,7 @@ export const SpacingChrome = memo(function SpacingChrome({
             data-spacing-handle={handleId}
             className="pointer-events-auto absolute z-35 flex items-center justify-center p-1.5"
             style={{
-              ...paddingHandlePosition(side, padding[side]),
+              ...paddingHandlePosition(side, padding[side] * zoom),
               cursor: spacingCursor(handleId, computed.gapAxis),
             }}
             onPointerEnter={() => setHoveredHandle(handleId)}
@@ -292,7 +306,7 @@ export const SpacingChrome = memo(function SpacingChrome({
             data-spacing-handle={handleId}
             className="pointer-events-auto absolute z-35 flex items-center justify-center p-1.5"
             style={{
-              ...marginHandlePosition(side, px),
+              ...marginHandlePosition(side, px * zoom),
               cursor: spacingCursor(handleId, computed.gapAxis),
             }}
             onPointerEnter={() => setHoveredHandle(handleId)}

@@ -57,8 +57,8 @@ export default function EditorProvider({
       setEditingMode,
       pageId,
       renderAiPanel: (onClose: () => void) => <AiChatPanel onClose={onClose} />,
-      renderAgentCanvasOverlay: (root: HTMLElement) => (
-        <AgentCanvasOverlay root={root} />
+      renderAgentCanvasOverlay: (siteRoot, projectRect) => (
+        <AgentCanvasOverlay root={siteRoot} projectRect={projectRect} />
       ),
       renderAgentPlaybackHud: () => <AgentPlaybackHud />,
       renderMcpConnectPanel: () => <ConnectCliPanel />,

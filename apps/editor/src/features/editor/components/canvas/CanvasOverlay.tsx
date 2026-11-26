@@ -111,6 +111,7 @@ function SelectionBox({
             rect={rect}
             element={element}
             node={node}
+            zoom={1}
             session={session}
             canEdit={canEdit}
             showAllSpacing={showAllSpacing}

@@ -41,7 +41,19 @@ export interface EditorContextType {
   setEditingMode: (mode: "visual" | "code") => void;
   pageId: string;
   renderAiPanel?: (onClose: () => void) => ReactNode;
-  renderAgentCanvasOverlay?: (root: HTMLElement) => ReactNode;
+  /**
+   * Agent presence drawn inside the canvas HUD. `projectRect` maps a node in
+   * the site root to stage pixels; without it rects are relative to the root.
+   */
+  renderAgentCanvasOverlay?: (
+    siteRoot: HTMLElement,
+    projectRect?: (node: HTMLElement) => {
+      readonly left: number;
+      readonly top: number;
+      readonly width: number;
+      readonly height: number;
+    } | null,
+  ) => ReactNode;
   renderAgentPlaybackHud?: () => ReactNode;
   renderMcpConnectPanel?: () => ReactNode;
 }

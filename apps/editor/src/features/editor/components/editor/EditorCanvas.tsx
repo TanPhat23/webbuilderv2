@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState, memo } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import ElementLoader from "@/features/editor/components/ElementLoader";
 import { useCollaborationOptional } from "@/features/collaboration/context/CollaborationContext";
 import { useEditorShortcuts } from "@/features/editor/hooks/useEditorShortcuts";
-import RemoteCursorsOverlay from "@/features/editor/components/editor/RemoteCursorsOverlay";
 import AddSectionDivider from "@/features/editor/components/editor/AddSectionDivider";
 import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStarter";
 import { useElementStore } from "@/features/editor/store/element-store";
@@ -35,7 +34,6 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
   isLoading,
   selectedElement,
   addNewSection,
-  userId,
   isReadOnly = false,
   isLocked = false,
   showAddSectionButton = true,
@@ -57,7 +55,6 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const innerContentRef = useRef<HTMLDivElement>(null);
-  const [scrollOffset, setScrollOffset] = useState({ x: 0, y: 0 });
 
   // Keyboard shortcut management extracted to hook
   useEditorShortcuts({
@@ -75,24 +72,6 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
     };
   }, [collab]);
 
-  // Keep scroll offsets synced for collaborative cursors
-  useEffect(() => {
-    const container = innerContentRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      setScrollOffset({
-        x: container.scrollLeft,
-        y: container.scrollTop,
-      });
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
   return (
     <div
       ref={canvasRef}
@@ -106,8 +85,6 @@ const EditorCanvas: React.FC<EditorCanvasProps> = ({
       id="canvas"
       tabIndex={0}
     >
-      <RemoteCursorsOverlay userId={userId} scrollOffset={scrollOffset} />
-
       <div
         ref={innerContentRef}
         className="overflow-y-auto overflow-x-hidden flex-1 w-full scrollbar-hide p-4"

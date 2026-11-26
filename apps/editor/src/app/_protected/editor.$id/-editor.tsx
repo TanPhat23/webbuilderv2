@@ -1,6 +1,5 @@
-import React, { useMemo } from "react";
-import PreviewContainer from "@/features/editor/components/editor/PreviewContainer";
-import EditorCanvas from "@/features/editor/components/editor/EditorCanvas";
+import React from "react";
+import CanvasStage from "@/features/editor/components/canvas/CanvasStage";
 import CodeSplit from "@/features/editor/components/editor/CodeSplit";
 import { DynamicPagePreviewBar } from "@/features/editor/components/editor/DynamicPagePreviewBar";
 import { useEditorContext } from "@/providers/editorprovider";
@@ -13,64 +12,15 @@ type EditorProps = {
   id: string;
 };
 
-const PreviewChild = React.memo(function PreviewChild({
-  iframeRef,
-}: {
-  iframeRef?: React.RefObject<HTMLIFrameElement>;
-}) {
-  const { editor, editingMode } = useEditorContext();
-
-  const {
-    isDraggingOver,
-    isLoading,
-    selectedElement,
-    handleDrop,
-    handleDragOver,
-    handleDragLeave,
-    addNewSection,
-    isReadOnly,
-    isLocked,
-    userId,
-  } = editor;
-
-  const isCodeMode = editingMode === "code";
-  const effectiveUserId = userId ?? "guest";
-
-  return (
-    <div className="h-full w-full transition-opacity duration-200 ease-in-out">
-      <EditorCanvas
-        isDraggingOver={isDraggingOver}
-        handleDrop={handleDrop}
-        handleDragOver={handleDragOver}
-        handleDragLeave={handleDragLeave}
-        isLoading={isLoading}
-        selectedElement={selectedElement ?? null}
-        addNewSection={addNewSection}
-        userId={effectiveUserId}
-        iframeRef={iframeRef}
-        isReadOnly={isReadOnly || isCodeMode}
-        isLocked={isLocked || isCodeMode}
-        showAddSectionButton={!isCodeMode}
-      />
-    </div>
-  );
-});
-
-PreviewChild.displayName = "PreviewChild";
+const previewContent = (
+  <div className="h-full w-full">
+    <CanvasStage />
+  </div>
+);
 
 export default function Editor(_props: EditorProps) {
-  const { editor, editingMode, mode } = useEditorContext();
-  const { currentView, isLoading } = editor;
+  const { editingMode, mode } = useEditorContext();
   const isCodeMode = editingMode === "code";
-
-  const previewContent = useMemo(
-    () => (
-      <PreviewContainer currentView={currentView} isLoading={isLoading}>
-        <PreviewChild />
-      </PreviewContainer>
-    ),
-    [currentView, isLoading],
-  );
 
   return (
     <div className="flex-1 w-full h-full flex flex-col bg-background text-foreground relative">

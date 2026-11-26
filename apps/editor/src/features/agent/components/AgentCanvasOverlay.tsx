@@ -12,12 +12,19 @@ import type { RemoteAgentPresence } from "@/features/collaboration/interfaces/we
 import {
   findElementNode,
   type ElementRect,
-} from "@/features/editor/components/canvas/useElementRect";
+} from "@/features/editor/components/canvas/rectTracker";
+import { useCanvasViewportStore } from "@/features/editor/store/canvas-viewport-store";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useAgentPlaybackStore } from "../playbackStore";
 
+/** Maps a node in the site root to HUD (stage) pixels. */
+type ProjectRect = (node: HTMLElement) => ElementRect | null;
+
 interface AgentCanvasOverlayProps {
+  /** `#wb-site-root` inside the preview iframe. */
   readonly root: HTMLElement;
+  /** When given, rects are drawn in stage pixels instead of root-relative ones. */
+  readonly projectRect?: ProjectRect;
 }
 
 interface AgentCursorDescriptor {
@@ -41,7 +48,10 @@ interface MeasuredAgentState {
 function measureRelativeRect(
   root: HTMLElement,
   node: HTMLElement,
+  projectRect: ProjectRect | undefined,
 ): ElementRect {
+  const projected = projectRect?.(node);
+  if (projected) return projected;
   const nodeRect = node.getBoundingClientRect();
   const rootRect = root.getBoundingClientRect();
   return {
@@ -60,7 +70,17 @@ function isOutsideViewport(node: HTMLElement): boolean {
   return rect.top < margin || rect.bottom > view.innerHeight - margin;
 }
 
-function defaultStartPoint(root: HTMLElement): CursorPoint {
+function defaultStartPoint(
+  root: HTMLElement,
+  projectRect: ProjectRect | undefined,
+): CursorPoint {
+  const rootRect = projectRect?.(root);
+  if (rootRect) {
+    return {
+      x: rootRect.left + Math.max(24, Math.round(rootRect.width * 0.5)),
+      y: rootRect.top + 48,
+    };
+  }
   return {
     x: Math.max(24, Math.round(root.clientWidth * 0.5)),
     y: 48,
@@ -78,11 +98,19 @@ const EMPTY_REMOTE_AGENTS: readonly RemoteAgentPresence[] = [];
 
 export function AgentCanvasOverlay({
   root,
+  projectRect,
 }: AgentCanvasOverlayProps): ReactElement | null {
   const playback = useAgentPlaybackStore((s) => s.playback);
   const pruneTouched = useAgentPlaybackStore((s) => s.pruneTouched);
   const collab = useCollaborationOptional();
   const elements = useElementStore((s) => s.elements);
+  // Camera moves (zoom, pan, width, stage size) and iframe scrolls shift every
+  // projected rect, so they re-measure just like element edits do.
+  const cameraKey = useCanvasViewportStore(
+    (s) =>
+      `${s.frameWidthPx}:${s.zoomMode}:${s.manualZoom}:${s.stageWidthPx}:${s.stageHeightPx}:${s.panX}:${s.panY}`,
+  );
+  const [scrollTick, setScrollTick] = useState(0);
 
   const remoteAgents = collab?.remoteAgents ?? EMPTY_REMOTE_AGENTS;
   const lastPointsRef = useRef<Map<string, CursorPoint>>(new Map());
@@ -139,6 +167,15 @@ export function AgentCanvasOverlay({
     };
   }, [playback.status, root]);
 
+  // Re-measure when the iframe document scrolls (rects are viewport-relative).
+  useEffect(() => {
+    if (!projectRect) return;
+    const doc = root.ownerDocument;
+    const onScroll = (): void => setScrollTick((tick) => tick + 1);
+    doc.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => doc.removeEventListener("scroll", onScroll, true);
+  }, [root, projectRect]);
+
   // Periodically prune recentlyTouched glow badges so they fade cleanly.
   useEffect(() => {
     if (touchedIds.length === 0) return;
@@ -166,7 +203,7 @@ export function AgentCanvasOverlay({
           ? findElementNode(root, cursor.targetElementId)
           : null;
         if (node) {
-          const rect = measureRelativeRect(root, node);
+          const rect = measureRelativeRect(root, node, projectRect);
           const point = pointForRect(rect);
           lastPointsRef.current.set(cursor.key, point);
           nextMeasured[cursor.key] = { rect, point };
@@ -176,7 +213,8 @@ export function AgentCanvasOverlay({
           }
         } else {
           const fallback =
-            lastPointsRef.current.get(cursor.key) ?? defaultStartPoint(root);
+            lastPointsRef.current.get(cursor.key) ??
+            defaultStartPoint(root, projectRect);
           lastPointsRef.current.set(cursor.key, fallback);
           nextMeasured[cursor.key] = { rect: null, point: fallback };
         }
@@ -192,7 +230,7 @@ export function AgentCanvasOverlay({
       for (const id of touchedIds) {
         const node = findElementNode(root, id);
         if (node) {
-          nextTouched[id] = measureRelativeRect(root, node);
+          nextTouched[id] = measureRelativeRect(root, node, projectRect);
         }
       }
 
@@ -204,7 +242,7 @@ export function AgentCanvasOverlay({
     return () => {
       window.cancelAnimationFrame(rafId);
     };
-  }, [activeCursors, elements, root, touchedIds]);
+  }, [activeCursors, elements, root, touchedIds, projectRect, cameraKey, scrollTick]);
 
   if (activeCursors.length === 0 && touchedIds.length === 0) {
     return null;
@@ -231,7 +269,7 @@ export function AgentCanvasOverlay({
 
       {activeCursors.map((cursor) => {
         const state = measured[cursor.key];
-        const point = state?.point ?? defaultStartPoint(root);
+        const point = state?.point ?? defaultStartPoint(root, projectRect);
         const rect = state?.rect ?? null;
 
         return (

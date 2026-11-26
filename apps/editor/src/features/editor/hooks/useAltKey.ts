@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import type React from "react";
 
 export function useAltKey(
-  iframeRef?: React.RefObject<HTMLIFrameElement>,
+  iframeRef?: React.RefObject<HTMLIFrameElement | null>,
 ): boolean {
   const [altPressed, setAltPressed] = useState(false);
 

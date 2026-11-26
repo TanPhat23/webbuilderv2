@@ -23,7 +23,7 @@ export interface EditorFlags {
   readonly canCreate: boolean;
 
   /** Ref to the iframe the canvas renders into, for cross-frame listeners. */
-  readonly iframeRef?: React.RefObject<HTMLIFrameElement>;
+  readonly iframeRef?: React.RefObject<HTMLIFrameElement | null>;
 }
 
 const EditorFlagsContext = createContext<EditorFlags | null>(null);

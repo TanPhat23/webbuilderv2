@@ -5,9 +5,10 @@ import {
   type DimensionDirection,
 } from "@/features/editor/utils/element/resizeMath";
 import type { ManipulationSession } from "../canvas/canvasTypes";
-import type { ElementRect } from "../canvas/useElementRect";
+import type { ElementRect } from "../canvas/rectTracker";
 
 export interface ResizeChromeProps {
+  /** Element box in stage pixels (already scaled by the canvas zoom). */
   readonly rect: ElementRect;
   readonly element: EditorElement;
   readonly node: HTMLElement | null;
