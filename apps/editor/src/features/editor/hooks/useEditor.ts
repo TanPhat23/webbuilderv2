@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, type SetStateAction } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@clerk/tanstack-react-start";
@@ -6,6 +6,10 @@ import type { Page } from "@/features/pages";
 import { useProject, useProjectPages } from "@/features/projects/hooks/useProjects";
 import type { Viewport, UseEditorReturn } from "../context/EditorContext";
 import { resolveFallbackPage } from "../lib/editorPage";
+import {
+  useCanvasViewportStore,
+  viewportFromState,
+} from "../store/canvas-viewport-store";
 import { useElementStore } from "../store/element-store";
 import { useAddElement } from "../store/selectors/element-selectors";
 import { useSelectedElement } from "../store/selectors/selection-selectors";
@@ -106,7 +110,12 @@ export const useEditor = (
   pageId: string,
   options?: UseEditorOptions,
 ): UseEditorReturn => {
-  const [currentView, setCurrentView] = useState<Viewport>("desktop");
+  const currentView = useCanvasViewportStore(viewportFromState);
+  const setCurrentView = useCallback((next: SetStateAction<Viewport>): void => {
+    const prev = viewportFromState(useCanvasViewportStore.getState());
+    const resolved = typeof next === "function" ? next(prev) : next;
+    useCanvasViewportStore.getState().setPreset(resolved);
+  }, []);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { userId } = useAuth();
@@ -180,6 +189,7 @@ export const useEditor = (
     }),
     [
       currentView,
+      setCurrentView,
       dropState.isDraggingOver,
       isLoading,
       selectedElement,

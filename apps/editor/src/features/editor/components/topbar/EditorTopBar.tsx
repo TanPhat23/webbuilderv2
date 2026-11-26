@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactElement } from "react";
 import { ExternalLink, HelpCircle, Loader2, Play } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useEditorContext } from "@/features/editor/context/EditorContext";
 import { PageNavigationCommand } from "../editor/PageNavigationCommand";
 import ProjectBreadcrumb from "../editor/header/ProjectBreadcrumb";
 import ViewportControls from "../editor/header/ViewportControls";
@@ -32,8 +31,7 @@ interface EditorTopBarProps {
 export default function EditorTopBar({
   projectId,
   onShowShortcuts,
-}: EditorTopBarProps) {
-  const { editor } = useEditorContext();
+}: EditorTopBarProps): ReactElement {
   const currentPage = useCurrentPage();
   const { previewPath } = useDynamicPagePreview();
   const { data: project } = useProject(projectId);
@@ -89,10 +87,7 @@ export default function EditorTopBar({
 
       <div className="flex shrink-0 items-center gap-2">
         <ModeSwitch />
-        <ViewportControls
-          currentView={editor.currentView}
-          setCurrentView={editor.setCurrentView}
-        />
+        <ViewportControls />
       </div>
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">

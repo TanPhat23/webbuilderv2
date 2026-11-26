@@ -1,8 +1,9 @@
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useState, type ReactElement } from "react";
 import { PanelRightClose } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useSelectedElement } from "@/features/editor";
+import { useCanvasViewportStore } from "@/features/editor/store/canvas-viewport-store";
 import { useEditorChromeStore } from "@/features/editor/store/editor-chrome-store";
 import { componentSetting } from "@webbuilder/site-runtime/projects/components";
 import { ComponentConfiguration } from "./configurations/ComponentConfiguration";
@@ -12,7 +13,6 @@ import { ensureInteractionsEditorBridge } from "@/features/editor/lib/registerIn
 import { BreakpointButtons } from "./style/BreakpointButtons";
 
 ensureInteractionsEditorBridge();
-import type { Breakpoint } from "./style/styleModel";
 
 const Settings = React.lazy(() => import("./configurations/Settings"));
 const StyleTab = React.lazy(() => import("./style/StyleTab"));
@@ -51,10 +51,11 @@ function CollapseButton() {
   );
 }
 
-export default function Inspector() {
+export default function Inspector(): ReactElement {
   const selected = useSelectedElement();
   const [tab, setTab] = useState("style");
-  const [breakpoint, setBreakpoint] = useState<Breakpoint>("default");
+  const breakpoint = useCanvasViewportStore((s) => s.activeBreakpoint);
+  const setBreakpoint = useCanvasViewportStore((s) => s.setActiveBreakpoint);
 
   return (
     <aside
