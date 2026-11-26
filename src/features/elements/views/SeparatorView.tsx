@@ -1,6 +1,2 @@
-import React from "react";
-import type { ViewProps } from "../view-props";
-
-export default function SeparatorView({ rootProps }: ViewProps) {
-  return <hr {...rootProps} />;
-}
+export * from "@webbuilder/site-runtime/elements/views/SeparatorView";
+export { default } from "@webbuilder/site-runtime/elements/views/SeparatorView";

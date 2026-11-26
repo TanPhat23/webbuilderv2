@@ -1,44 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getPreviewSite } from "@/features/preview/api/preview.api";
-import { SitePageView } from "@/features/preview/components/SitePageView";
-import { errorMessage } from "@/utils/errors/api-error";
+import {
+  buildDirectPreviewUrl,
+  mintPreviewLaunchUrl,
+  resolvePreviewOrigin,
+} from "@/features/preview/api/preview-ticket.api";
+
+const SAFE_PROJECT_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 export const Route = createFileRoute("/preview/$id/")({
-  validateSearch: (search: Record<string, unknown>): { page?: string } => ({
-    page: typeof search.page === "string" ? search.page : undefined,
-  }),
-  loaderDeps: ({ search }) => ({ pageTarget: search.page }),
-  loader: ({ params, deps }) =>
-    getPreviewSite({ data: { id: params.id, pageTarget: deps.pageTarget } }),
-  headers: () => ({ "Cache-Control": "private, no-store" }),
-  pendingComponent: () => (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-lg">Loading preview...</div>
-    </div>
-  ),
-  errorComponent: ({ error }) => (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-lg text-destructive">
-        Error loading preview: {errorMessage(error)}
-      </div>
-    </div>
-  ),
-  notFoundComponent: () => (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-lg">Preview page not found</div>
-    </div>
-  ),
-  component: PreviewHomePage,
-});
+  server: {
+    handlers: {
+      GET: async ({ params, request }) => {
+        const projectId = params.id?.trim() ?? "";
+        if (!SAFE_PROJECT_ID.test(projectId)) {
+          return new Response("Invalid project ID", { status: 400 });
+        }
 
-function PreviewHomePage() {
-  const { id } = Route.useParams();
-  const data = Route.useLoaderData();
-  return (
-    <SitePageView
-      data={data}
-      mode={{ kind: "preview", projectId: id }}
-      showRunLog
-    />
-  );
-}
+        const url = new URL(request.url);
+        const pageParam = url.searchParams.get("page")?.trim();
+        const nextPath = pageParam ? `/${pageParam.replace(/^\/+/, "")}` : "/";
+
+        try {
+          const launched = await mintPreviewLaunchUrl(projectId, nextPath);
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: launched.url,
+              "Cache-Control": "private, no-store",
+              "Referrer-Policy": "no-referrer",
+            },
+          });
+        } catch {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              Location: buildDirectPreviewUrl(
+                resolvePreviewOrigin(),
+                projectId,
+                nextPath,
+              ),
+              "Cache-Control": "private, no-store",
+              "Referrer-Policy": "no-referrer",
+            },
+          });
+        }
+      },
+    },
+  },
+});

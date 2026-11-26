@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { ExternalLink, HelpCircle, Play } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { ExternalLink, HelpCircle, Loader2, Play } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -20,6 +20,8 @@ import CommentsToggle from "./CommentsToggle";
 import { useCurrentPage, useProject } from "@/features/projects/hooks/useProjects";
 import { useDynamicPagePreview } from "@/features/editor/hooks/useDynamicPagePreview";
 import { buildPublicSiteUrl } from "@/lib/site-routing";
+import { createPreviewLaunchUrl } from "@/features/preview/api/preview-ticket.api";
+import { errorMessage } from "@/utils/errors/api-error";
 import PublishButton from "./PublishButton";
 
 interface EditorTopBarProps {
@@ -33,15 +35,39 @@ export default function EditorTopBar({
 }: EditorTopBarProps) {
   const { editor } = useEditorContext();
   const currentPage = useCurrentPage();
-  const { previewPath, previewSplat } = useDynamicPagePreview();
+  const { previewPath } = useDynamicPagePreview();
   const { data: project } = useProject(projectId);
   const isMaster = currentPage?.Type === "cp";
-  const currentSlug = previewSplat;
   const liveSiteUrl =
     project?.published && project.subdomain
       ? buildPublicSiteUrl(project.subdomain, previewPath)
       : null;
   const [navOpen, setNavOpen] = useState(false);
+  const [openingPreview, setOpeningPreview] = useState(false);
+
+  const handleOpenPreview = useCallback(async (): Promise<void> => {
+    if (openingPreview) return;
+    setOpeningPreview(true);
+    const previewTab = window.open("about:blank", "_blank");
+    try {
+      const { url } = await createPreviewLaunchUrl({
+        data: { projectId, path: previewPath },
+      });
+      if (previewTab && !previewTab.closed) {
+        previewTab.opener = null;
+        previewTab.location.replace(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+    } catch (error: unknown) {
+      if (previewTab && !previewTab.closed) {
+        previewTab.close();
+      }
+      toast.error(errorMessage(error, "Unable to open preview."));
+    } finally {
+      setOpeningPreview(false);
+    }
+  }, [openingPreview, previewPath, projectId]);
 
   // Cmd/Ctrl+K opens page navigation.
   useEffect(() => {
@@ -95,32 +121,19 @@ export default function EditorTopBar({
         <CollaborationButton projectId={projectId} />
         {!isMaster && (
           <Button
-            asChild
+            type="button"
             variant="outline"
             size="sm"
+            disabled={openingPreview}
+            onClick={() => void handleOpenPreview()}
             className="h-7 gap-1.5 px-2.5 text-xs font-medium"
           >
-            {currentSlug ? (
-              <Link
-                to="/preview/$id/$"
-                params={{ id: projectId, _splat: currentSlug }}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Play className="h-3 w-3" />
-                Preview
-              </Link>
+            {openingPreview ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
-              <Link
-                to="/preview/$id"
-                params={{ id: projectId }}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Play className="h-3 w-3" />
-                Preview
-              </Link>
+              <Play className="h-3 w-3" />
             )}
+            Preview
           </Button>
         )}
         {!isMaster && liveSiteUrl && (

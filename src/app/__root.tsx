@@ -4,7 +4,6 @@ import {
   HeadContent,
   Scripts,
   Link,
-  useMatches,
 } from "@tanstack/react-router";
 import type { QueryClient } from "@tanstack/react-query";
 import RootProviders from "@/providers/rootprovider";
@@ -41,23 +40,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootLayout() {
-  const matches = useMatches();
-  const isPublishedSubdomainSite = matches.some((match) =>
-    match.routeId.startsWith("/sites/"),
-  );
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
       <body>
-        <RootProviders skipAuth={isPublishedSubdomainSite}>
+        <RootProviders>
           <Outlet />
         </RootProviders>
-        {!isPublishedSubdomainSite && (
-          <Toaster position="top-right" richColors closeButton />
-        )}
+        <Toaster position="top-right" richColors closeButton />
         <Scripts />
       </body>
     </html>

@@ -18,7 +18,7 @@ const { imageService } = await import('../src/features/images/services/image.ser
 const { notificationService } = await import('../src/features/notifications/services/notification.service');
 const { notificationsServer } = await import('../src/features/notifications/server/notifications.server');
 const { subscriptionService } = await import('../src/features/subscription/services/subscription.service');
-const { getPreviewSite } = await import('../src/features/preview/api/preview.api');
+const { createPreviewLaunchUrl } = await import('../src/features/preview/api/preview-ticket.api');
 const { createPage, deleteProjectPage, renameComponentPage } = await import('../src/features/projects/api/page.api');
 const { sendElementOperation } = await import('../src/features/collaboration/lib/realtime/sendElementOp');
 const { useAgentActivity } = await import('../src/features/agent/activity');
@@ -227,54 +227,30 @@ test('subscriptionService hits status, list, payment and cancel routes', async (
   assert.equal(new Set(calls.map((c) => c.url.pathname)).size, 4);
 });
 
-// ---- preview.api ---------------------------------------------------------
+// ---- preview-ticket.api --------------------------------------------------
 
 const apiPage = (over: Record<string, unknown>) => ({
   id: 'pg1', projectId: 'p1', name: '', type: 'sp', createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z', ...over,
 });
 
-function previewRoutes(opts: { projectStatus?: number } = {}) {
-  net.respond = (r) => {
-    const p = r.url.pathname;
-    if (p.includes('/pages')) return Response.json([apiPage({})]);
-    if (p.includes('/elements')) return Response.json([]);
-    if (p.includes('/projects/')) {
-      if (opts.projectStatus && !r.headers.Authorization) return new Response('nf', { status: opts.projectStatus });
-      return Response.json({ id: 'p1', name: 'Site' });
-    }
-    return Response.json([]);
-  };
-}
-
-test('getPreviewSite validates ids, disables caching and serves public data to anonymous users', async () => {
-  serverAuth.userId = null;
-  previewRoutes();
-  await assert.rejects(getPreviewSite({ data: { id: 'bad id' } } as never));
-  await assert.rejects(getPreviewSite({ data: { id: 'p1', pageId: 'no/slash' } } as never));
-  const result = (await getPreviewSite({ data: { id: 'p1' } } as never)) as { project: { id: string }; page: { id: string } };
+test('createPreviewLaunchUrl validates ids, disables caching and mints a cross-origin ticket URL for signed-in users', async () => {
+  net.respond = () => Response.json({ ticket: 'tkt-abc', expiresIn: 60 }, { status: 201 });
+  await assert.rejects(createPreviewLaunchUrl({ data: { projectId: 'bad id' } } as never));
+  const result = await createPreviewLaunchUrl({ data: { projectId: 'p1', path: '/blog/hello' } } as never);
   assert.equal(responseHeaders['Cache-Control'], 'private, no-store');
-  assert.equal(result.project.id, 'p1');
-  assert.equal(result.page.id, 'pg1');
-  for (const r of net.api()) assert.equal(r.headers.Authorization, undefined);
-  assert.ok(net.api().some((r) => r.url.searchParams.get('previewCache') === '1'));
+  assert.equal(result.authenticated, true);
+  assert.equal(last().method, 'POST');
+  assert.equal(last().url.pathname, '/api/v1/projects/p1/preview-ticket');
+  assert.equal(last().headers.Authorization, 'Bearer tok-1');
+  assert.match(result.url, /\/api\/preview\/enter\?ticket=tkt-abc&projectId=p1&next=%2Fblog%2Fhello$/);
 });
 
-test('getPreviewSite falls back to the signed-in draft read and maps a missing page to not-found', async () => {
-  previewRoutes({ projectStatus: 404 });
-  const result = (await getPreviewSite({ data: { id: 'p1', pageId: 'pg1' } } as never)) as { page: { id: string } };
-  assert.equal(result.page.id, 'pg1');
-  assert.ok(net.api().some((r) => r.headers.Authorization === 'Bearer tok-1'));
-  assert.ok(net.api().every((r) => r.url.searchParams.get('previewCache') === null || !r.headers.Authorization));
-
-  // 404 for a page that does not exist becomes the router's notFound().
-  await assert.rejects(getPreviewSite({ data: { id: 'p1', pageId: 'missing' } } as never), (e: unknown) => {
-    assert.ok(typeof e === 'object' && e !== null && 'isNotFound' in e);
-    return true;
-  });
-
-  // Non-404 failures propagate untouched.
-  net.respond = () => new Response('boom', { status: 500 });
-  await assert.rejects(getPreviewSite({ data: { id: 'p1' } } as never), (e: unknown) => !(typeof e === 'object' && e !== null && 'isNotFound' in e));
+test('createPreviewLaunchUrl falls back to a direct preview URL when anonymous', async () => {
+  serverAuth.userId = null;
+  const result = await createPreviewLaunchUrl({ data: { projectId: 'p1', path: '//evil.com' } } as never);
+  assert.equal(result.authenticated, false);
+  assert.equal(net.api().length, 0);
+  assert.match(result.url, /\/preview\/p1$/);
 });
 
 // ---- page.api ------------------------------------------------------------

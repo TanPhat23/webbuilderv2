@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
     GET_PUBLIC_BY_SUBDOMAIN: (subdomain: string) =>
       `/api/v1/projects/public/by-subdomain/${encodeURIComponent(subdomain)}`,
     ACCESS: (id: string) => `/api/v1/projects/${id}/access`,
+    PREVIEW_TICKET: (id: string) => `/api/v1/projects/${id}/preview-ticket`,
   },
   PAGES: {
     CREATE: (projectId: string) => `/api/v1/pages/${projectId}`,

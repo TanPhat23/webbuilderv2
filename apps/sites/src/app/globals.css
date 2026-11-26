@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@webbuilder/site-runtime/animations.css";
+
+@custom-variant dark (&:is(.dark *));
+
+html,
+body {
+  height: auto;
+  overflow-y: auto;
+  background-color: #ffffff;
+  color: #18181b;
+}

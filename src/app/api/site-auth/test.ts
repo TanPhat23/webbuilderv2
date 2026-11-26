@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@clerk/tanstack-react-start/server";
-import { parseProjectAuthConfig } from "@/lib/site-auth";
+import { parseProjectAuthConfig } from "@webbuilder/site-runtime/auth";
 import {
   supabaseTestConnection,
   verifySameOriginRequest,
-} from "@/features/preview/lib/supabase-site-auth.server";
+} from "@webbuilder/site-runtime/supabase-auth";
 
 export const Route = createFileRoute("/api/site-auth/test")({
   server: {

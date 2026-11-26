@@ -1,0 +1,37 @@
+{
+  "name": "@webbuilder/sites",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 3001",
+    "build": "vite build",
+    "preview": "vite preview --port 3001",
+    "start": "node .output/server/index.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-start": "1.169.5",
+    "@webbuilder/site-runtime": "workspace:*",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "isomorphic-dompurify": "^2.36.0",
+    "lodash-es": "^4.18.1",
+    "lucide-react": "^0.574.0",
+    "nitro": "^3.0.261103-rc",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "sonner": "^2.0.8",
+    "tailwindcss": "^4.3.5",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^24.19.2",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8"
+  }
+}

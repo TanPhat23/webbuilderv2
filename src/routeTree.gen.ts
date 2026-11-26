@@ -29,20 +29,10 @@ import { Route as ProtectedNotificationsIndexRouteImport } from './app/_protecte
 import { Route as ProtectedProfileIndexRouteImport } from './app/_protected/profile/index'
 import { Route as ApiNotificationsIndexRouteImport } from './app/api/notifications/index'
 import { Route as ApiNotificationsProfileUpdateRouteImport } from './app/api/notifications/profile-update'
-import { Route as ApiSiteAuthCallbackRouteImport } from './app/api/site-auth/callback'
-import { Route as ApiSiteAuthLoginRouteImport } from './app/api/site-auth/login'
-import { Route as ApiSiteAuthLogoutRouteImport } from './app/api/site-auth/logout'
-import { Route as ApiSiteAuthMagicLinkRouteImport } from './app/api/site-auth/magic-link'
-import { Route as ApiSiteAuthSessionRouteImport } from './app/api/site-auth/session'
-import { Route as ApiSiteAuthSignupRouteImport } from './app/api/site-auth/signup'
 import { Route as ApiSiteAuthTestRouteImport } from './app/api/site-auth/test'
 import { Route as PreviewIdIndexRouteImport } from './app/preview/$id/index'
 import { Route as PreviewIdSplatRouteImport } from './app/preview/$id/$'
-import { Route as SitesSubdomainIndexRouteImport } from './app/sites/$subdomain/index'
-import { Route as SitesSubdomainSplatRouteImport } from './app/sites/$subdomain/$'
 import { Route as ProtectedEditorIdIndexRouteImport } from './app/_protected/editor.$id/index'
-import { Route as ApiCmsContentTypeIdIndexRouteImport } from './app/api/cms/$contentTypeId/index'
-import { Route as ApiCmsContentTypeIdItemSplatRouteImport } from './app/api/cms/$contentTypeId/item/$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -146,36 +136,6 @@ const ApiNotificationsProfileUpdateRoute =
     path: '/api/notifications/profile-update',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiSiteAuthCallbackRoute = ApiSiteAuthCallbackRouteImport.update({
-  id: '/api/site-auth/callback',
-  path: '/api/site-auth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSiteAuthLoginRoute = ApiSiteAuthLoginRouteImport.update({
-  id: '/api/site-auth/login',
-  path: '/api/site-auth/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSiteAuthLogoutRoute = ApiSiteAuthLogoutRouteImport.update({
-  id: '/api/site-auth/logout',
-  path: '/api/site-auth/logout',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSiteAuthMagicLinkRoute = ApiSiteAuthMagicLinkRouteImport.update({
-  id: '/api/site-auth/magic-link',
-  path: '/api/site-auth/magic-link',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSiteAuthSessionRoute = ApiSiteAuthSessionRouteImport.update({
-  id: '/api/site-auth/session',
-  path: '/api/site-auth/session',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiSiteAuthSignupRoute = ApiSiteAuthSignupRouteImport.update({
-  id: '/api/site-auth/signup',
-  path: '/api/site-auth/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiSiteAuthTestRoute = ApiSiteAuthTestRouteImport.update({
   id: '/api/site-auth/test',
   path: '/api/site-auth/test',
@@ -191,33 +151,11 @@ const PreviewIdSplatRoute = PreviewIdSplatRouteImport.update({
   path: '/preview/$id/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitesSubdomainIndexRoute = SitesSubdomainIndexRouteImport.update({
-  id: '/sites/$subdomain/',
-  path: '/sites/$subdomain/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitesSubdomainSplatRoute = SitesSubdomainSplatRouteImport.update({
-  id: '/sites/$subdomain/$',
-  path: '/sites/$subdomain/$',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProtectedEditorIdIndexRoute = ProtectedEditorIdIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ProtectedEditorIdRoute,
 } as any)
-const ApiCmsContentTypeIdIndexRoute =
-  ApiCmsContentTypeIdIndexRouteImport.update({
-    id: '/api/cms/$contentTypeId/',
-    path: '/api/cms/$contentTypeId/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiCmsContentTypeIdItemSplatRoute =
-  ApiCmsContentTypeIdItemSplatRouteImport.update({
-    id: '/api/cms/$contentTypeId/item/$',
-    path: '/api/cms/$contentTypeId/item/$',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -235,24 +173,14 @@ export interface FileRoutesByFullPath {
   '/sign-up/': typeof SignUpIndexRoute
   '/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/api/site-auth/callback': typeof ApiSiteAuthCallbackRoute
-  '/api/site-auth/login': typeof ApiSiteAuthLoginRoute
-  '/api/site-auth/logout': typeof ApiSiteAuthLogoutRoute
-  '/api/site-auth/magic-link': typeof ApiSiteAuthMagicLinkRoute
-  '/api/site-auth/session': typeof ApiSiteAuthSessionRoute
-  '/api/site-auth/signup': typeof ApiSiteAuthSignupRoute
   '/api/site-auth/test': typeof ApiSiteAuthTestRoute
   '/preview/$id/$': typeof PreviewIdSplatRoute
-  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/dashboard/': typeof ProtectedDashboardIndexRoute
   '/notifications/': typeof ProtectedNotificationsIndexRoute
   '/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/preview/$id/': typeof PreviewIdIndexRoute
-  '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/editor/$id/': typeof ProtectedEditorIdIndexRoute
-  '/api/cms/$contentTypeId/': typeof ApiCmsContentTypeIdIndexRoute
-  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -266,24 +194,14 @@ export interface FileRoutesByTo {
   '/sign-in': typeof SignInIndexRoute
   '/sign-up': typeof SignUpIndexRoute
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/api/site-auth/callback': typeof ApiSiteAuthCallbackRoute
-  '/api/site-auth/login': typeof ApiSiteAuthLoginRoute
-  '/api/site-auth/logout': typeof ApiSiteAuthLogoutRoute
-  '/api/site-auth/magic-link': typeof ApiSiteAuthMagicLinkRoute
-  '/api/site-auth/session': typeof ApiSiteAuthSessionRoute
-  '/api/site-auth/signup': typeof ApiSiteAuthSignupRoute
   '/api/site-auth/test': typeof ApiSiteAuthTestRoute
   '/preview/$id/$': typeof PreviewIdSplatRoute
-  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/dashboard': typeof ProtectedDashboardIndexRoute
   '/notifications': typeof ProtectedNotificationsIndexRoute
   '/profile': typeof ProtectedProfileIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/preview/$id': typeof PreviewIdIndexRoute
-  '/sites/$subdomain': typeof SitesSubdomainIndexRoute
   '/editor/$id': typeof ProtectedEditorIdIndexRoute
-  '/api/cms/$contentTypeId': typeof ApiCmsContentTypeIdIndexRoute
-  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -303,24 +221,14 @@ export interface FileRoutesById {
   '/sign-up/': typeof SignUpIndexRoute
   '/_protected/editor/$id': typeof ProtectedEditorIdRouteWithChildren
   '/api/notifications/profile-update': typeof ApiNotificationsProfileUpdateRoute
-  '/api/site-auth/callback': typeof ApiSiteAuthCallbackRoute
-  '/api/site-auth/login': typeof ApiSiteAuthLoginRoute
-  '/api/site-auth/logout': typeof ApiSiteAuthLogoutRoute
-  '/api/site-auth/magic-link': typeof ApiSiteAuthMagicLinkRoute
-  '/api/site-auth/session': typeof ApiSiteAuthSessionRoute
-  '/api/site-auth/signup': typeof ApiSiteAuthSignupRoute
   '/api/site-auth/test': typeof ApiSiteAuthTestRoute
   '/preview/$id/$': typeof PreviewIdSplatRoute
-  '/sites/$subdomain/$': typeof SitesSubdomainSplatRoute
   '/_protected/dashboard/': typeof ProtectedDashboardIndexRoute
   '/_protected/notifications/': typeof ProtectedNotificationsIndexRoute
   '/_protected/profile/': typeof ProtectedProfileIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/preview/$id/': typeof PreviewIdIndexRoute
-  '/sites/$subdomain/': typeof SitesSubdomainIndexRoute
   '/_protected/editor/$id/': typeof ProtectedEditorIdIndexRoute
-  '/api/cms/$contentTypeId/': typeof ApiCmsContentTypeIdIndexRoute
-  '/api/cms/$contentTypeId/item/$': typeof ApiCmsContentTypeIdItemSplatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -340,24 +248,14 @@ export interface FileRouteTypes {
     | '/sign-up/'
     | '/editor/$id'
     | '/api/notifications/profile-update'
-    | '/api/site-auth/callback'
-    | '/api/site-auth/login'
-    | '/api/site-auth/logout'
-    | '/api/site-auth/magic-link'
-    | '/api/site-auth/session'
-    | '/api/site-auth/signup'
     | '/api/site-auth/test'
     | '/preview/$id/$'
-    | '/sites/$subdomain/$'
     | '/dashboard/'
     | '/notifications/'
     | '/profile/'
     | '/api/notifications/'
     | '/preview/$id/'
-    | '/sites/$subdomain/'
     | '/editor/$id/'
-    | '/api/cms/$contentTypeId/'
-    | '/api/cms/$contentTypeId/item/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -371,24 +269,14 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/api/notifications/profile-update'
-    | '/api/site-auth/callback'
-    | '/api/site-auth/login'
-    | '/api/site-auth/logout'
-    | '/api/site-auth/magic-link'
-    | '/api/site-auth/session'
-    | '/api/site-auth/signup'
     | '/api/site-auth/test'
     | '/preview/$id/$'
-    | '/sites/$subdomain/$'
     | '/dashboard'
     | '/notifications'
     | '/profile'
     | '/api/notifications'
     | '/preview/$id'
-    | '/sites/$subdomain'
     | '/editor/$id'
-    | '/api/cms/$contentTypeId'
-    | '/api/cms/$contentTypeId/item/$'
   id:
     | '__root__'
     | '/'
@@ -407,24 +295,14 @@ export interface FileRouteTypes {
     | '/sign-up/'
     | '/_protected/editor/$id'
     | '/api/notifications/profile-update'
-    | '/api/site-auth/callback'
-    | '/api/site-auth/login'
-    | '/api/site-auth/logout'
-    | '/api/site-auth/magic-link'
-    | '/api/site-auth/session'
-    | '/api/site-auth/signup'
     | '/api/site-auth/test'
     | '/preview/$id/$'
-    | '/sites/$subdomain/$'
     | '/_protected/dashboard/'
     | '/_protected/notifications/'
     | '/_protected/profile/'
     | '/api/notifications/'
     | '/preview/$id/'
-    | '/sites/$subdomain/'
     | '/_protected/editor/$id/'
-    | '/api/cms/$contentTypeId/'
-    | '/api/cms/$contentTypeId/item/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -438,20 +316,10 @@ export interface RootRouteChildren {
   SignInIndexRoute: typeof SignInIndexRoute
   SignUpIndexRoute: typeof SignUpIndexRoute
   ApiNotificationsProfileUpdateRoute: typeof ApiNotificationsProfileUpdateRoute
-  ApiSiteAuthCallbackRoute: typeof ApiSiteAuthCallbackRoute
-  ApiSiteAuthLoginRoute: typeof ApiSiteAuthLoginRoute
-  ApiSiteAuthLogoutRoute: typeof ApiSiteAuthLogoutRoute
-  ApiSiteAuthMagicLinkRoute: typeof ApiSiteAuthMagicLinkRoute
-  ApiSiteAuthSessionRoute: typeof ApiSiteAuthSessionRoute
-  ApiSiteAuthSignupRoute: typeof ApiSiteAuthSignupRoute
   ApiSiteAuthTestRoute: typeof ApiSiteAuthTestRoute
   PreviewIdSplatRoute: typeof PreviewIdSplatRoute
-  SitesSubdomainSplatRoute: typeof SitesSubdomainSplatRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   PreviewIdIndexRoute: typeof PreviewIdIndexRoute
-  SitesSubdomainIndexRoute: typeof SitesSubdomainIndexRoute
-  ApiCmsContentTypeIdIndexRoute: typeof ApiCmsContentTypeIdIndexRoute
-  ApiCmsContentTypeIdItemSplatRoute: typeof ApiCmsContentTypeIdItemSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -596,48 +464,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiNotificationsProfileUpdateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/site-auth/callback': {
-      id: '/api/site-auth/callback'
-      path: '/api/site-auth/callback'
-      fullPath: '/api/site-auth/callback'
-      preLoaderRoute: typeof ApiSiteAuthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/site-auth/login': {
-      id: '/api/site-auth/login'
-      path: '/api/site-auth/login'
-      fullPath: '/api/site-auth/login'
-      preLoaderRoute: typeof ApiSiteAuthLoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/site-auth/logout': {
-      id: '/api/site-auth/logout'
-      path: '/api/site-auth/logout'
-      fullPath: '/api/site-auth/logout'
-      preLoaderRoute: typeof ApiSiteAuthLogoutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/site-auth/magic-link': {
-      id: '/api/site-auth/magic-link'
-      path: '/api/site-auth/magic-link'
-      fullPath: '/api/site-auth/magic-link'
-      preLoaderRoute: typeof ApiSiteAuthMagicLinkRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/site-auth/session': {
-      id: '/api/site-auth/session'
-      path: '/api/site-auth/session'
-      fullPath: '/api/site-auth/session'
-      preLoaderRoute: typeof ApiSiteAuthSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/site-auth/signup': {
-      id: '/api/site-auth/signup'
-      path: '/api/site-auth/signup'
-      fullPath: '/api/site-auth/signup'
-      preLoaderRoute: typeof ApiSiteAuthSignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/site-auth/test': {
       id: '/api/site-auth/test'
       path: '/api/site-auth/test'
@@ -659,40 +485,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreviewIdSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sites/$subdomain/': {
-      id: '/sites/$subdomain/'
-      path: '/sites/$subdomain'
-      fullPath: '/sites/$subdomain/'
-      preLoaderRoute: typeof SitesSubdomainIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sites/$subdomain/$': {
-      id: '/sites/$subdomain/$'
-      path: '/sites/$subdomain/$'
-      fullPath: '/sites/$subdomain/$'
-      preLoaderRoute: typeof SitesSubdomainSplatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_protected/editor/$id/': {
       id: '/_protected/editor/$id/'
       path: '/'
       fullPath: '/editor/$id/'
       preLoaderRoute: typeof ProtectedEditorIdIndexRouteImport
       parentRoute: typeof ProtectedEditorIdRoute
-    }
-    '/api/cms/$contentTypeId/': {
-      id: '/api/cms/$contentTypeId/'
-      path: '/api/cms/$contentTypeId'
-      fullPath: '/api/cms/$contentTypeId/'
-      preLoaderRoute: typeof ApiCmsContentTypeIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/cms/$contentTypeId/item/$': {
-      id: '/api/cms/$contentTypeId/item/$'
-      path: '/api/cms/$contentTypeId/item/$'
-      fullPath: '/api/cms/$contentTypeId/item/$'
-      preLoaderRoute: typeof ApiCmsContentTypeIdItemSplatRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -777,20 +575,10 @@ const rootRouteChildren: RootRouteChildren = {
   SignInIndexRoute: SignInIndexRoute,
   SignUpIndexRoute: SignUpIndexRoute,
   ApiNotificationsProfileUpdateRoute: ApiNotificationsProfileUpdateRoute,
-  ApiSiteAuthCallbackRoute: ApiSiteAuthCallbackRoute,
-  ApiSiteAuthLoginRoute: ApiSiteAuthLoginRoute,
-  ApiSiteAuthLogoutRoute: ApiSiteAuthLogoutRoute,
-  ApiSiteAuthMagicLinkRoute: ApiSiteAuthMagicLinkRoute,
-  ApiSiteAuthSessionRoute: ApiSiteAuthSessionRoute,
-  ApiSiteAuthSignupRoute: ApiSiteAuthSignupRoute,
   ApiSiteAuthTestRoute: ApiSiteAuthTestRoute,
   PreviewIdSplatRoute: PreviewIdSplatRoute,
-  SitesSubdomainSplatRoute: SitesSubdomainSplatRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   PreviewIdIndexRoute: PreviewIdIndexRoute,
-  SitesSubdomainIndexRoute: SitesSubdomainIndexRoute,
-  ApiCmsContentTypeIdIndexRoute: ApiCmsContentTypeIdIndexRoute,
-  ApiCmsContentTypeIdItemSplatRoute: ApiCmsContentTypeIdItemSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

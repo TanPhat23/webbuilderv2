@@ -345,3 +345,79 @@ test("boundary rule 7: zero file-level cycles across handwritten src/**", () => 
     `File-level cycles detected:\n${cycles.map((c) => c.join(" <-> ")).join("\n")}`,
   );
 });
+
+const SITE_RUNTIME_ROOT = path.resolve(import.meta.dirname, "../packages/site-runtime/src");
+const SITES_APP_ROOT = path.resolve(import.meta.dirname, "../apps/sites/src");
+
+const FORBIDDEN_SITE_RUNTIME_PACKAGES = [
+  "@clerk/",
+  "@babel/",
+  "@monaco-editor/",
+  "@radix-ui/",
+  "@base-ui/",
+  "radix-ui",
+  "prettier",
+  "reactflow",
+  "recharts",
+  "xlsx",
+  "cmdk",
+  "vaul",
+  "zustand",
+  "framer-motion",
+  "lenis",
+  "moment",
+  "react-colorful",
+  "react-day-picker",
+  "react-hook-form",
+  "react-resizable-panels",
+];
+
+function collectSiteRuntimeViolations(
+  rootDir: string,
+  label: string,
+  extraCheck?: (rel: string, specifier: string) => boolean,
+): string[] {
+  const violations: string[] = [];
+  for (const fullPath of walkSourceFiles(rootDir)) {
+    const rel = toPosix(path.relative(rootDir, fullPath));
+    if (rel === "routeTree.gen.ts") continue;
+    const text = fs.readFileSync(fullPath, "utf8");
+    for (const specifier of extractModuleSpecifiers(text, fullPath)) {
+      const forbiddenPkg = FORBIDDEN_SITE_RUNTIME_PACKAGES.some((pkg) =>
+        pkg.endsWith("/") ? specifier.startsWith(pkg) : specifier === pkg || specifier.startsWith(`${pkg}/`),
+      );
+      const escapesIntoEditor =
+        specifier.includes("features/editor") ||
+        specifier.includes("features/collaboration") ||
+        specifier.includes("../../src/") ||
+        specifier.includes("../../../src/");
+      const extraForbidden = extraCheck ? extraCheck(rel, specifier) : false;
+      if (forbiddenPkg || escapesIntoEditor || extraForbidden) {
+        violations.push(`${label}/${rel} -> ${specifier}`);
+      }
+    }
+  }
+  return violations;
+}
+
+test("boundary rule 8: packages/site-runtime/** and apps/sites/** stay strictly isolated from Clerk, Editor, Collaboration, and heavy builder deps", () => {
+  const pkgViolations = collectSiteRuntimeViolations(
+    SITE_RUNTIME_ROOT,
+    "packages/site-runtime/src",
+    (_rel, specifier) => specifier.startsWith("@/"),
+  );
+  const appViolations = collectSiteRuntimeViolations(
+    SITES_APP_ROOT,
+    "apps/sites/src",
+    (rel, specifier) =>
+      // Client routes/components must never pull server-only tailwind-ssr or tailwind-jit compiler.
+      !rel.startsWith("server/") &&
+      (specifier.includes("tailwind-ssr") || specifier.includes("tailwind-jit") || specifier === "tailwindcss"),
+  );
+  const allViolations = [...pkgViolations, ...appViolations];
+  assert.deepEqual(
+    allViolations,
+    [],
+    `Forbidden imports in Site Runtime:\n${allViolations.join("\n")}`,
+  );
+});

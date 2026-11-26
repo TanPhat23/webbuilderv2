@@ -1,0 +1,53 @@
+{
+  "name": "@webbuilder/site-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./data": "./src/preview/preview-data.ts",
+    "./routing": "./src/lib/site-routing.ts",
+    "./auth": "./src/lib/site-auth.ts",
+    "./supabase-auth": "./src/preview/supabase-site-auth.ts",
+    "./tailwind-ssr": "./src/projects/tailwind-ssr.ts",
+    "./api-error": "./src/lib/api-error.ts",
+    "./animations.css": "./src/interactions/runtime/animations.css",
+    "./types/site": "./src/types/site.ts",
+    "./types/global.type": "./src/types/global.type.ts",
+    "./types/elements": "./src/types/elements/index.ts",
+    "./types/elements/*": "./src/types/elements/*.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./projects/*": "./src/projects/*.ts",
+    "./elements/context/SiteNavigationContext": "./src/elements/context/SiteNavigationContext.tsx",
+    "./elements/views/*": "./src/elements/views/*.tsx",
+    "./elements/*": "./src/elements/*.ts",
+    "./elements/lib/*": "./src/elements/lib/*.ts",
+    "./elements/utils/*": "./src/elements/utils/*.ts",
+    "./interactions/components/*": "./src/interactions/components/*.tsx",
+    "./interactions/hooks/*": "./src/interactions/hooks/*.ts",
+    "./interactions/runtime/*": "./src/interactions/runtime/*.ts",
+    "./interactions/*": "./src/interactions/*.ts",
+    "./preview/SitePageView": "./src/preview/SitePageView.tsx",
+    "./preview/PreviewElementLoader": "./src/preview/PreviewElementLoader.tsx",
+    "./preview/PreviewCMSContent": "./src/preview/PreviewCMSContent.tsx",
+    "./preview/PreviewCMSFeedback": "./src/preview/PreviewCMSFeedback.tsx",
+    "./preview/*": "./src/preview/*.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
+    "isomorphic-dompurify": "^2.36.0",
+    "lodash-es": "^4.18.1",
+    "lucide-react": "^0.574.0",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.5",
+    "uuid": "^13.0.2",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}
