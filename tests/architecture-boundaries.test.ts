@@ -468,4 +468,14 @@ test("boundary rule 9: symmetric monorepo keeps root free of src/ and runtime de
     [],
     `Pure @webbuilder/site-runtime re-export shims are forbidden:\n${shims.join("\n")}`,
   );
+
+  for (const appName of ["editor", "sites"]) {
+    const dockerfilePath = path.join(REPO_ROOT, "apps", appName, "Dockerfile");
+    const dockerfileText = fs.readFileSync(dockerfilePath, "utf8");
+    assert.match(
+      dockerfileText,
+      /^COPY\s+.*tsconfig\.base\.json/m,
+      `apps/${appName}/Dockerfile must copy tsconfig.base.json for Vite/Rolldown builds`,
+    );
+  }
 });

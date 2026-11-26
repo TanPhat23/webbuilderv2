@@ -8,6 +8,7 @@ COPY apps/sites/package.json ./apps/sites/package.json
 
 RUN bun install --frozen-lockfile
 
+COPY tsconfig.base.json tsconfig.json ./
 COPY packages/site-runtime ./packages/site-runtime
 COPY apps/editor ./apps/editor
 
