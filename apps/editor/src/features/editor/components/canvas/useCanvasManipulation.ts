@@ -1,7 +1,10 @@
 import type React from "react";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
-import { CONTAINER_ELEMENT_TYPES, type ResponsiveStyles } from "@webbuilder/site-runtime/types/elements";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
+import type { Breakpoint, ResponsiveStyles } from "@webbuilder/site-runtime/types/elements";
+import { useCanvasViewportStore } from "@/features/editor/store/canvas-viewport-store";
 import { useElementStore } from "@/features/editor/store/element-store";
 import {
   computeResizePreview,
@@ -18,23 +21,25 @@ import {
   type SpacingHandleId,
   type SpacingPreview,
 } from "@/features/editor/utils/element/spacingMath";
-import {
-  computeDropPosition,
-  isHorizontalFlow,
-  isNoOpMove,
-  resolveNearestChildSlot,
-  type ChildDropCandidate,
-} from "@/features/editor/utils/element/dropPosition";
-import type { SizeAxis } from "@/features/editor/utils/element/sizing";
+import { isSizeClass, type SizeAxis } from "@/features/editor/utils/element/sizing";
 import type { DropIndicatorState, ManipulationSession } from "./canvasTypes";
 import { findElementNodeFromTarget, setCanvasSelection } from "./canvasDom";
+import { resolveCanvasDropTarget } from "./canvasHitTest";
+import { parentClientToIframeClient } from "./rectTracker";
 
 export type { ManipulationSession };
 
 export interface UseCanvasManipulationOptions {
-  readonly root: HTMLDivElement | null;
+  /** The site root (`#wb-site-root`) the canvas manipulates. */
+  readonly root: HTMLElement | null;
   readonly canEdit: boolean;
   readonly picking: boolean;
+  /** Effective canvas zoom; defaults to 1 (unscaled canvas). */
+  readonly getZoom?: () => number;
+  /** Canvas stage element hosting the (scaled) iframe. */
+  readonly stageEl?: HTMLElement | null;
+  /** The preview iframe; its screen rect anchors parent-space pointers. */
+  readonly iframeRef?: React.RefObject<HTMLIFrameElement | null>;
 }
 
 export interface UseCanvasManipulationResult {
@@ -56,8 +61,8 @@ export interface UseCanvasManipulationResult {
 }
 
 const IDLE_SESSION: ManipulationSession = { kind: "idle" };
+/** Click-vs-drag slop, in screen pixels. */
 const MOVE_THRESHOLD_PX = 4;
-const CONTAINER_TYPE_SET: ReadonlySet<string> = new Set(CONTAINER_ELEMENT_TYPES);
 
 const MANAGED_STYLE_PROPS = [
   "width",
@@ -143,24 +148,58 @@ function isPointerLikeEvent(event: Event): event is PointerEvent {
   return "clientX" in event && "clientY" in event;
 }
 
+export interface ClientPoint {
+  readonly clientX: number;
+  readonly clientY: number;
+  /** The window the event was dispatched in (`event.view`). */
+  readonly view?: unknown;
+}
+
+export interface IframeGeometry {
+  readonly iframeWin: Window | null;
+  readonly frameEl: Element | null;
+  readonly zoom: number;
+}
+
+/**
+ * Maps a pointer to unscaled iframe CSS pixels. Browsers already report
+ * `clientX/Y` inside a CSS-scaled iframe in its own unscaled pixels, so events
+ * dispatched in the iframe realm pass through; events from the parent realm
+ * are screen pixels and are projected through the frame rect and zoom.
+ */
+export function clientToIframeClient(
+  point: ClientPoint,
+  geometry: IframeGeometry,
+): { readonly x: number; readonly y: number } {
+  const { iframeWin, frameEl, zoom } = geometry;
+  if (iframeWin !== null && iframeWin !== window && point.view === iframeWin) {
+    return { x: point.clientX, y: point.clientY };
+  }
+  const frameRect = frameEl?.getBoundingClientRect() ?? { left: 0, top: 0 };
+  return parentClientToIframeClient(point.clientX, point.clientY, frameRect, zoom);
+}
+
+export function readGeometry(
+  iframeWin: Window,
+  iframeRef: React.RefObject<HTMLIFrameElement | null> | undefined,
+  getZoom: (() => number) | undefined,
+): IframeGeometry {
+  const frameElement = iframeWin.frameElement;
+  return {
+    iframeWin,
+    frameEl: iframeRef?.current ?? (frameElement instanceof Element ? frameElement : null),
+    zoom: getZoom?.() ?? 1,
+  };
+}
+
 function normalizePointerEvent(
   event: PointerEvent,
-  iframeWin: Window,
+  geometry: IframeGeometry,
 ): NormalizedPointer {
-  let clientX = event.clientX;
-  let clientY = event.clientY;
-  if (
-    iframeWin !== window &&
-    event.view === window &&
-    iframeWin.frameElement instanceof Element
-  ) {
-    const frameRect = iframeWin.frameElement.getBoundingClientRect();
-    clientX -= frameRect.left;
-    clientY -= frameRect.top;
-  }
+  const { x, y } = clientToIframeClient(event, geometry);
   return {
-    clientX,
-    clientY,
+    clientX: x,
+    clientY: y,
     shiftKey: Boolean(event.shiftKey),
     altKey: Boolean(event.altKey),
   };
@@ -209,6 +248,8 @@ function attachDualWindowListeners(
   handlers: {
     readonly onMove: (e: PointerEvent) => void;
     readonly onUp: (e: PointerEvent) => void;
+    /** Pointer cancelled or window lost focus mid-gesture: abort cleanly. */
+    readonly onCancel: () => void;
     readonly onKeyDown: (e: KeyboardEvent) => void;
   },
 ): () => void {
@@ -218,6 +259,7 @@ function attachDualWindowListeners(
   const upListener = (e: Event): void => {
     if (isPointerLikeEvent(e)) handlers.onUp(e);
   };
+  const cancelListener = (): void => handlers.onCancel();
   const keyListener = (e: Event): void => {
     if (e instanceof KeyboardEvent || "key" in e) {
       handlers.onKeyDown(e as KeyboardEvent);
@@ -228,14 +270,16 @@ function attachDualWindowListeners(
   for (const win of targets) {
     win.addEventListener("pointermove", moveListener, true);
     win.addEventListener("pointerup", upListener, true);
-    win.addEventListener("pointercancel", upListener, true);
+    win.addEventListener("pointercancel", cancelListener, true);
+    win.addEventListener("blur", cancelListener);
     win.addEventListener("keydown", keyListener, true);
   }
   return () => {
     for (const win of targets) {
       win.removeEventListener("pointermove", moveListener, true);
       win.removeEventListener("pointerup", upListener, true);
-      win.removeEventListener("pointercancel", upListener, true);
+      win.removeEventListener("pointercancel", cancelListener, true);
+      win.removeEventListener("blur", cancelListener);
       win.removeEventListener("keydown", keyListener, true);
     }
   };
@@ -249,7 +293,7 @@ function detectParentMainAxis(node: HTMLElement, view: Window): SizeAxis | null 
   return cs.flexDirection.startsWith("column") ? "height" : "width";
 }
 
-function isEditableOrBlockedTarget(target: EventTarget | null): boolean {
+export function isEditableOrBlockedTarget(target: EventTarget | null): boolean {
   if (target === null || typeof target !== "object") return false;
   const el =
     "closest" in target && typeof target.closest === "function"
@@ -267,106 +311,84 @@ function isEditableOrBlockedTarget(target: EventTarget | null): boolean {
   return false;
 }
 
-function hitTestDropTarget(
-  root: HTMLDivElement,
+function findParentId(elements: EditorElement[], id: string): string | undefined {
+  return elementUtils.findLocation(elements, id)?.parentId ?? undefined;
+}
+
+/** Style set a gesture previews against: the breakpoint's styles over what it inherits. */
+function effectiveStylesAt(
+  styles: ResponsiveStyles | undefined,
+  breakpoint: Breakpoint,
+): CSSProperties {
+  const own = styles?.[breakpoint] ?? {};
+  return breakpoint === "default" ? own : { ...styles?.default, ...own };
+}
+
+/**
+ * Folds a previewed style set back into one breakpoint's own styles: managed
+ * props the preview cleared are removed, changed or already-owned ones are
+ * written, and inherited values the gesture left alone stay inherited.
+ */
+function toBreakpointStyles(
+  own: CSSProperties,
+  effective: CSSProperties,
+  previewed: CSSProperties | undefined,
+  managedProps: readonly ManagedStyleProp[],
+): CSSProperties {
+  const next: Record<string, unknown> = { ...own };
+  for (const prop of managedProps) {
+    const value = previewed?.[prop];
+    if (value === undefined) {
+      delete next[prop];
+    } else if (prop in own || value !== effective[prop]) {
+      next[prop] = value;
+    }
+  }
+  return next as unknown as CSSProperties;
+}
+
+function commitBreakpointStyles(
+  element: EditorElement,
+  breakpoint: Breakpoint,
+  styles: CSSProperties,
+  dropClass?: (cls: string) => boolean,
+): void {
+  elementUtils.updateElementStyle(
+    element,
+    styles,
+    breakpoint,
+    useElementStore.getState().updateElement,
+    dropClass,
+  );
+}
+
+function resolveMoveTarget(
+  root: HTMLElement,
   draggedNode: HTMLElement,
   movingId: string,
   clientX: number,
   clientY: number,
 ): DropIndicatorState | null {
-  const doc = root.ownerDocument;
-  const view = doc.defaultView ?? window;
-  if (typeof doc.elementsFromPoint !== "function") return null;
-
-  const stack = doc.elementsFromPoint(clientX, clientY);
-  let candidate: HTMLElement | null = null;
-  for (const el of stack) {
-    if (el.closest("[data-canvas-overlay]")) continue;
-    const resolved = findElementNodeFromTarget(root, el);
-    if (!resolved) continue;
-    if (resolved === draggedNode || draggedNode.contains(resolved)) continue;
-    candidate = resolved;
-    break;
-  }
-
-  if (!candidate) return null;
-  const targetId = candidate.dataset.elementId;
-  if (!targetId) return null;
-
-  const parent = (candidate.closest("[data-component-instance]") ?? candidate).parentElement;
-  const parentStyle = parent ? view.getComputedStyle(parent) : null;
-  const horizontal = parentStyle
-    ? isHorizontalFlow({
-        display: parentStyle.display,
-        flexDirection: parentStyle.flexDirection,
-        gridTemplateColumns: parentStyle.gridTemplateColumns,
-      })
-    : false;
-  const elementType = candidate.dataset.elementType;
-  const isContainer =
-    !candidate.closest("[data-component-instance]") &&
-    elementType !== undefined &&
-    CONTAINER_TYPE_SET.has(elementType);
-
-  const position = computeDropPosition(
-    candidate.getBoundingClientRect(),
-    { x: clientX, y: clientY },
-    { isContainer, horizontal },
-  );
-
-  let resolvedTargetId = targetId;
-  let resolvedPosition = position;
-  let resolvedHorizontal = horizontal;
-
-  if (position === "inside" && isContainer) {
-    const childCandidates: ChildDropCandidate[] = [];
-    for (const child of Array.from(candidate.children)) {
-      const childId = child.getAttribute("data-element-id");
-      if (!childId || child === draggedNode || draggedNode.contains(child)) continue;
-      childCandidates.push({ id: childId, box: child.getBoundingClientRect() });
-    }
-    if (childCandidates.length > 0) {
-      const containerStyle = view.getComputedStyle(candidate);
-      const containerHorizontal = isHorizontalFlow({
-        display: containerStyle.display,
-        flexDirection: containerStyle.flexDirection,
-        gridTemplateColumns: containerStyle.gridTemplateColumns,
-      });
-      const slot = resolveNearestChildSlot(
-        childCandidates,
-        { x: clientX, y: clientY },
-        containerHorizontal,
-      );
-      if (slot) {
-        resolvedTargetId = slot.targetId;
-        resolvedPosition = slot.position;
-        resolvedHorizontal = containerHorizontal;
-      }
-    }
-  }
-
-  if (
-    isNoOpMove(
-      useElementStore.getState().elements,
-      movingId,
-      resolvedTargetId,
-      resolvedPosition,
-    )
-  ) {
-    return null;
-  }
-
-  return {
-    targetId: resolvedTargetId,
-    position: resolvedPosition,
-    horizontal: resolvedHorizontal,
-  };
+  const { elements, isComponentPage } = useElementStore.getState();
+  const resolution = resolveCanvasDropTarget({
+    siteRoot: root,
+    doc: root.ownerDocument,
+    iframeClientX: clientX,
+    iframeClientY: clientY,
+    elements,
+    isComponentPage,
+    movingElementId: movingId,
+    draggedNode,
+  });
+  return resolution?.kind === "relative" ? resolution.indicator : null;
 }
 
 export function useCanvasManipulation({
   root,
   canEdit,
   picking,
+  getZoom,
+  iframeRef,
 }: UseCanvasManipulationOptions): UseCanvasManipulationResult {
   const [session, setSession] = useState<ManipulationSession>(IDLE_SESSION);
   const disposeRef = useRef<(() => void) | null>(null);
@@ -398,6 +420,12 @@ export function useCanvasManipulation({
 
       const doc = node.ownerDocument;
       const view = doc.defaultView ?? window;
+      const geometry = (): IframeGeometry => readGeometry(view, iframeRef, getZoom);
+      const bp = useCanvasViewportStore.getState().activeBreakpoint;
+      const ownStyles = element.styles?.[bp] ?? {};
+      const effective = effectiveStylesAt(element.styles, bp);
+      const previewBase: ResponsiveStyles = { ...element.styles, default: effective };
+
       const rect = node.getBoundingClientRect();
       const parentEl = node.parentElement ?? root ?? doc.body;
       const parentRect = parentEl.getBoundingClientRect();
@@ -407,21 +435,22 @@ export function useCanvasManipulation({
         parentWidth: parentRect.width,
         parentHeight: parentRect.height,
         mainAxis: detectParentMainAxis(node, view),
-        widthUnit: detectLengthUnit(element.styles?.default?.width),
-        heightUnit: detectLengthUnit(element.styles?.default?.height),
+        widthUnit: detectLengthUnit(effective.width),
+        heightUnit: detectLengthUnit(effective.height),
       };
 
+      const start = clientToIframeClient(event, geometry());
       const snapshot = snapshotInlineStyles(node);
       let latestPreview: ResizePreview = computeResizePreview(
         direction,
         origin,
         {
-          clientX: event.clientX,
-          clientY: event.clientY,
+          clientX: start.x,
+          clientY: start.y,
           shiftKey: Boolean(event.shiftKey),
           altKey: Boolean(event.altKey),
         },
-        element.styles,
+        previewBase,
       );
       let moved = false;
       let pendingPointer: NormalizedPointer | null = null;
@@ -440,7 +469,7 @@ export function useCanvasManipulation({
         const pt = pendingPointer;
         pendingPointer = null;
         moved = true;
-        latestPreview = computeResizePreview(direction, origin, pt, element.styles);
+        latestPreview = computeResizePreview(direction, origin, pt, previewBase);
         applyPreviewStylesToNode(node, latestPreview.styles, RESIZE_STYLE_PROPS);
         setSession({
           kind: "resizing",
@@ -452,41 +481,56 @@ export function useCanvasManipulation({
 
       const frame = createFrameScheduler(flushFrame);
       let finished = false;
-      const cleanup = (restoreDom: boolean): void => {
+      // The preview only ever lives on node.style; both commit and cancel
+      // restore it, so the committed styles are the single source of truth.
+      const cleanup = (): void => {
         if (finished) return;
         finished = true;
         frame.cancel();
         removeListeners();
         unlockCursor();
-        if (restoreDom) restoreInlineStyles(node, snapshot);
+        restoreInlineStyles(node, snapshot);
         if (disposeRef.current === cancelCurrent) disposeRef.current = null;
       };
 
       const cancelCurrent = (): void => {
-        cleanup(true);
+        cleanup();
         setSession(IDLE_SESSION);
       };
 
       const removeListeners = attachDualWindowListeners(view, {
         onMove: (e: PointerEvent) => {
-          pendingPointer = normalizePointerEvent(e, view);
+          pendingPointer = normalizePointerEvent(e, geometry());
           frame.schedule();
         },
         onUp: (e: PointerEvent) => {
           if (pendingPointer !== null) {
             flushFrame();
           } else if (moved) {
-            pendingPointer = normalizePointerEvent(e, view);
+            pendingPointer = normalizePointerEvent(e, geometry());
             flushFrame();
           }
-          cleanup(false);
+          cleanup();
           setSession(IDLE_SESSION);
           if (moved) {
-            useElementStore
-              .getState()
-              .updateElement(element.id, { styles: latestPreview.styles });
+            const resizesWidth = direction.includes("e") || direction.includes("w");
+            const resizesHeight = direction.includes("n") || direction.includes("s");
+            commitBreakpointStyles(
+              element,
+              bp,
+              toBreakpointStyles(
+                ownStyles,
+                effective,
+                latestPreview.styles.default,
+                RESIZE_STYLE_PROPS,
+              ),
+              (cls) =>
+                (resizesWidth && isSizeClass(cls, "width", bp)) ||
+                (resizesHeight && isSizeClass(cls, "height", bp)),
+            );
           }
         },
+        onCancel: cancelCurrent,
         onKeyDown: (e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -497,7 +541,7 @@ export function useCanvasManipulation({
 
       disposeRef.current = cancelCurrent;
     },
-    [canEdit, root, teardown],
+    [canEdit, root, teardown, iframeRef, getZoom],
   );
 
   const startSpacing = useCallback(
@@ -514,9 +558,14 @@ export function useCanvasManipulation({
 
       const doc = node.ownerDocument;
       const view = doc.defaultView ?? window;
+      const geometry = (): IframeGeometry => readGeometry(view, iframeRef, getZoom);
+      const bp = useCanvasViewportStore.getState().activeBreakpoint;
+      const ownStyles = element.styles?.[bp] ?? {};
+      const effective = effectiveStylesAt(element.styles, bp);
+      const previewBase: ResponsiveStyles = { ...element.styles, default: effective };
+
       const initial = readComputedSpacing(view.getComputedStyle(node));
-      const startX = event.clientX;
-      const startY = event.clientY;
+      const start = clientToIframeClient(event, geometry());
       const snapshot = snapshotInlineStyles(node);
 
       let latestPreview: SpacingPreview = computeSpacingPreview(
@@ -528,7 +577,7 @@ export function useCanvasManipulation({
           shiftKey: Boolean(event.shiftKey),
           altKey: Boolean(event.altKey),
         },
-        element.styles,
+        previewBase,
       );
       let moved = false;
       let pendingPointer: NormalizedPointer | null = null;
@@ -554,12 +603,12 @@ export function useCanvasManipulation({
           handle,
           initial,
           {
-            dx: pt.clientX - startX,
-            dy: pt.clientY - startY,
+            dx: pt.clientX - start.x,
+            dy: pt.clientY - start.y,
             shiftKey: pt.shiftKey,
             altKey: pt.altKey,
           },
-          element.styles,
+          previewBase,
         );
         applyPreviewStylesToNode(node, latestPreview.styles, SPACING_STYLE_PROPS);
         setSession({
@@ -572,41 +621,49 @@ export function useCanvasManipulation({
 
       const frame = createFrameScheduler(flushFrame);
       let finished = false;
-      const cleanup = (restoreDom: boolean): void => {
+      const cleanup = (): void => {
         if (finished) return;
         finished = true;
         frame.cancel();
         removeListeners();
         unlockCursor();
-        if (restoreDom) restoreInlineStyles(node, snapshot);
+        restoreInlineStyles(node, snapshot);
         if (disposeRef.current === cancelCurrent) disposeRef.current = null;
       };
 
       const cancelCurrent = (): void => {
-        cleanup(true);
+        cleanup();
         setSession(IDLE_SESSION);
       };
 
       const removeListeners = attachDualWindowListeners(view, {
         onMove: (e: PointerEvent) => {
-          pendingPointer = normalizePointerEvent(e, view);
+          pendingPointer = normalizePointerEvent(e, geometry());
           frame.schedule();
         },
         onUp: (e: PointerEvent) => {
           if (pendingPointer !== null) {
             flushFrame();
           } else if (moved) {
-            pendingPointer = normalizePointerEvent(e, view);
+            pendingPointer = normalizePointerEvent(e, geometry());
             flushFrame();
           }
-          cleanup(false);
+          cleanup();
           setSession(IDLE_SESSION);
           if (moved) {
-            useElementStore
-              .getState()
-              .updateElement(element.id, { styles: latestPreview.styles });
+            commitBreakpointStyles(
+              element,
+              bp,
+              toBreakpointStyles(
+                ownStyles,
+                effective,
+                latestPreview.styles.default,
+                SPACING_STYLE_PROPS,
+              ),
+            );
           }
         },
+        onCancel: cancelCurrent,
         onKeyDown: (e: KeyboardEvent) => {
           if (e.key === "Escape") {
             e.preventDefault();
@@ -617,7 +674,7 @@ export function useCanvasManipulation({
 
       disposeRef.current = cancelCurrent;
     },
-    [canEdit, teardown],
+    [canEdit, teardown, iframeRef, getZoom],
   );
 
   const handleCanvasPointerDown = useCallback(
@@ -634,8 +691,9 @@ export function useCanvasManipulation({
       const elementLabel = node.dataset.elementType ?? "Element";
       const doc = root.ownerDocument;
       const view = doc.defaultView ?? window;
-      const startX = event.clientX;
-      const startY = event.clientY;
+      const geometry = (): IframeGeometry => readGeometry(view, iframeRef, getZoom);
+      const start = clientToIframeClient(event, geometry());
+      const selectParent = Boolean(event.altKey);
 
       let active = false;
       let unlockCursor: (() => void) | null = null;
@@ -644,7 +702,7 @@ export function useCanvasManipulation({
       let finished = false;
 
       const updateMovePreview = (pt: NormalizedPointer): void => {
-        const target = hitTestDropTarget(root, node, elementId, pt.clientX, pt.clientY);
+        const target = resolveMoveTarget(root, node, elementId, pt.clientX, pt.clientY);
         latestTarget = target;
         const rootRect = root.getBoundingClientRect();
         setSession({
@@ -664,9 +722,9 @@ export function useCanvasManipulation({
         const pt = pendingPointer;
         pendingPointer = null;
         if (!active) {
-          if (Math.hypot(pt.clientX - startX, pt.clientY - startY) <= MOVE_THRESHOLD_PX) {
-            return;
-          }
+          const screenDistance =
+            Math.hypot(pt.clientX - start.x, pt.clientY - start.y) * geometry().zoom;
+          if (screenDistance <= MOVE_THRESHOLD_PX) return;
           active = true;
           node.setAttribute("data-dragging", "true");
           setCanvasSelection({ draggingElementId: elementId, hoveredElementId: undefined });
@@ -699,24 +757,37 @@ export function useCanvasManipulation({
 
       const removeListeners = attachDualWindowListeners(view, {
         onMove: (e: PointerEvent) => {
-          pendingPointer = normalizePointerEvent(e, view);
+          pendingPointer = normalizePointerEvent(e, geometry());
           frame.schedule();
         },
         onUp: (e: PointerEvent) => {
           if (pendingPointer !== null) {
             flushFrame();
           } else if (active) {
-            updateMovePreview(normalizePointerEvent(e, view));
+            updateMovePreview(normalizePointerEvent(e, geometry()));
           }
-          const commitTarget = active ? latestTarget : null;
+          const wasDrag = active;
+          const commitTarget = wasDrag ? latestTarget : null;
           cleanup();
           setSession(IDLE_SESSION);
+          if (!wasDrag) {
+            // A click (within the slop): select, or Alt+click the parent.
+            const parentId = selectParent
+              ? findParentId(useElementStore.getState().elements, elementId)
+              : undefined;
+            setCanvasSelection({
+              selectedElementId: parentId ?? elementId,
+              editingElementId: undefined,
+            });
+            return;
+          }
           if (commitTarget !== null) {
             useElementStore
               .getState()
               .moveElement(elementId, commitTarget.targetId, commitTarget.position);
           }
         },
+        onCancel: cancelCurrent,
         onKeyDown: (e: KeyboardEvent) => {
           if (e.key === "Escape" && active) {
             e.preventDefault();
@@ -727,7 +798,7 @@ export function useCanvasManipulation({
 
       disposeRef.current = cancelCurrent;
     },
-    [root, canEdit, picking, teardown],
+    [root, canEdit, picking, teardown, iframeRef, getZoom],
   );
 
   return {

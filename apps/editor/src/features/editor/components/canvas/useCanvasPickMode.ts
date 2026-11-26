@@ -11,7 +11,7 @@ export function shouldBlockPickEvent(
   return hasPendingPick || (suppressMultiClick && detail > 1);
 }
 
-export function useCanvasPickMode(root: HTMLDivElement | null): {
+export function useCanvasPickMode(root: HTMLElement | null): {
   picking: boolean;
   blockPickPointer: (event: React.MouseEvent) => void;
   handleClickCapture: (event: React.MouseEvent) => void;

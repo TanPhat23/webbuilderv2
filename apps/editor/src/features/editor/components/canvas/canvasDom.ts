@@ -51,10 +51,19 @@ export function findElement(id: string): EditorElement | undefined {
 
 export function setCanvasSelection(patch: {
   selectedElementId?: string | undefined;
+  editingElementId?: string | undefined;
   hoveredElementId?: string | undefined;
   draggingElementId?: string | undefined;
 }): void {
-  useSelectionStore.setState(patch);
+  const changesSelection =
+    "selectedElementId" in patch &&
+    patch.selectedElementId !== useSelectionStore.getState().selectedElementId;
+  // Selecting a different element leaves text editing unless told otherwise.
+  useSelectionStore.setState(
+    changesSelection && !("editingElementId" in patch)
+      ? { ...patch, editingElementId: undefined }
+      : patch,
+  );
 }
 
 export function hasElementDragPayload(dt: Pick<DataTransfer, "types">): boolean {

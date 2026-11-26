@@ -99,7 +99,7 @@ beforeEach(() => {
   globalThis.cancelAnimationFrame = (() => {}) as typeof cancelAnimationFrame;
   useElementStore.getState().beginPage('proj-1', 'page-1', false);
   useElementStore.getState().setElements([], true);
-  useSelectionStore.getState().setSelectedElement(undefined);
+  useSelectionStore.getState().clearSelection();
 });
 
 afterEach(async () => {
@@ -391,4 +391,106 @@ test('startSpacing seeds from getComputedStyle, reverts inline "" on Escape, and
   } finally {
     view.getComputedStyle = origGetComputedStyle;
   }
+});
+
+test('pointer drag aborts without committing on pointercancel and window blur', async () => {
+  const box = makeFrame('box', []);
+  useElementStore.getState().setElements([box], true);
+
+  const apiRef: { current: ReturnType<typeof useCanvasManipulation> | undefined } = {
+    current: undefined,
+  };
+
+  function Host() {
+    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
+    apiRef.current = useCanvasManipulation({ root, canEdit: true, picking: false });
+    return h(
+      'div',
+      { ref: setRoot, 'data-canvas-root': true },
+      h('div', { 'data-element-id': 'box', 'data-element-type': 'Frame' }),
+    );
+  }
+
+  const r = await render(h(Host));
+  const rootNode = $q<HTMLElement>(r.container, '[data-canvas-root]');
+  const boxNode = $q<HTMLElement>(r.container, '[data-element-id="box"]');
+  rootNode.getBoundingClientRect = () => makeRect(0, 0, 1000, 600);
+  boxNode.getBoundingClientRect = () => makeRect(100, 100, 200, 100);
+
+  for (const abort of [
+    () => window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 360, clientY: 150 })),
+    () => window.dispatchEvent(new Event('blur')),
+  ]) {
+    await act(() => {
+      apiRef.current?.startResize(box, boxNode, 'e', {
+        button: 0,
+        clientX: 300,
+        clientY: 150,
+        preventDefault() {},
+        stopPropagation() {},
+      } as unknown as React.PointerEvent);
+      window.dispatchEvent(makePointerEvent('pointermove', { clientX: 360, clientY: 150 }));
+    });
+    assert.equal(boxNode.style.width, '260px');
+    await act(() => {
+      abort();
+    });
+    assert.equal(apiRef.current?.session.kind, 'idle');
+    assert.equal(boxNode.style.width, '');
+    assert.equal(useElementStore.getState().elements[0]?.styles?.default?.width, undefined);
+    // The listeners are gone: a later pointerup must not commit anything.
+    await act(() => {
+      window.dispatchEvent(makePointerEvent('pointerup', { clientX: 360, clientY: 150 }));
+    });
+    assert.equal(useElementStore.getState().elements[0]?.styles?.default?.width, undefined);
+  }
+});
+
+test('click selects the element and Alt+click selects its parent, clearing text editing', async () => {
+  const child = makeText('child', 'parent');
+  const parent = makeFrame('parent', [child]);
+  useElementStore.getState().setElements([parent], true);
+  useSelectionStore.setState({ selectedElementId: 'other', editingElementId: 'other' });
+
+  const apiRef: { current: ReturnType<typeof useCanvasManipulation> | undefined } = {
+    current: undefined,
+  };
+
+  function Host() {
+    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
+    apiRef.current = useCanvasManipulation({ root, canEdit: true, picking: false });
+    return h(
+      'div',
+      { ref: setRoot, 'data-canvas-root': true },
+      h(
+        'div',
+        { 'data-element-id': 'parent', 'data-element-type': 'Frame' },
+        h('div', { 'data-element-id': 'child', 'data-element-type': 'Text' }, 'child'),
+      ),
+    );
+  }
+
+  const r = await render(h(Host));
+  const childNode = $q<HTMLElement>(r.container, '[data-element-id="child"]');
+  const click = async (altKey: boolean) => {
+    await act(() => {
+      apiRef.current?.handleCanvasPointerDown({
+        button: 0,
+        clientX: 10,
+        clientY: 10,
+        altKey,
+        target: childNode,
+        preventDefault() {},
+        stopPropagation() {},
+      } as unknown as React.PointerEvent);
+      window.dispatchEvent(makePointerEvent('pointerup', { clientX: 10, clientY: 10 }));
+    });
+  };
+
+  await click(false);
+  assert.equal(useSelectionStore.getState().selectedElementId, 'child');
+  assert.equal(useSelectionStore.getState().editingElementId, undefined);
+
+  await click(true);
+  assert.equal(useSelectionStore.getState().selectedElementId, 'parent');
 });

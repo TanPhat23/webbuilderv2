@@ -22,6 +22,8 @@ export const useIsSelected = (id: string) =>
   useSelectionStore((s) => s.selectedElementId === id);
 export const useIsHovered = (id: string) =>
   useSelectionStore((s) => s.hoveredElementId === id);
+export const useIsEditingElement = (id: string): boolean =>
+  useSelectionStore((s) => s.editingElementId === id);
 
 /** Looks up an element by id; re-renders when that element changes. */
 export const useElementById = (id: string | undefined): EditorElement | undefined =>

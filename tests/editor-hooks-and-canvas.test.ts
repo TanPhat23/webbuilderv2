@@ -111,6 +111,7 @@ test('useCanvasElement builds editable rootProps and updates changed text on blu
   const item = makeText('t-edit', 'Original');
   useElementStore.getState().setElements([item], true);
   useSelectionStore.getState().setSelectedElement(item);
+  useSelectionStore.getState().setEditingElementId('t-edit');
 
   let propsRef: ReturnType<typeof useCanvasElement> | undefined;
   function Probe() {

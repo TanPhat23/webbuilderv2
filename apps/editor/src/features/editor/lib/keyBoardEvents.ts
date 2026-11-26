@@ -1,4 +1,3 @@
-import { getSelectedOrHoveredElement } from "../store/selected-element";
 import { ElementStore } from "../store/element-store";
 import { SelectionStore } from "../store/selection-store";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
@@ -7,7 +6,20 @@ import {
   componentSetting,
   visitComponentTree,
 } from "@webbuilder/site-runtime/projects/components";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
 import { toast } from "sonner";
+
+/**
+ * The selected element, and nothing else. Destructive and clipboard actions
+ * must never fall back to the hovered element: the pointer resting over an
+ * element is not an intent to delete it.
+ */
+function getSelectedElement(): EditorElement | undefined {
+  return elementUtils.findById(
+    ElementStore.getState().elements,
+    SelectionStore.getState().selectedElementId ?? "",
+  );
+}
 
 export class ElementKeyboardActions {
   private isReadOnly = false;
@@ -22,7 +34,7 @@ export class ElementKeyboardActions {
   };
 
   public copyElement = (): void => {
-    const selectedElement = getSelectedOrHoveredElement();
+    const selectedElement = getSelectedElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
     sessionStorage.setItem(
@@ -39,7 +51,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement = getSelectedOrHoveredElement();
+    const selectedElement = getSelectedElement();
     if (!selectedElement) return;
     sessionStorage.setItem("copiedElement", JSON.stringify(selectedElement));
     sessionStorage.setItem(
@@ -79,7 +91,18 @@ export class ElementKeyboardActions {
       );
       return;
     }
-    state.addElement(cloneComponentTree(elementData, activePage.pageId));
+    const pasted = cloneComponentTree(elementData, activePage.pageId);
+    const selected = getSelectedElement();
+    if (!selected) {
+      state.addElement(pasted);
+      return;
+    }
+    // Into a selected container, otherwise right after the selected leaf.
+    state.insertElementRelative(
+      pasted,
+      selected.id,
+      elementUtils.isContainerElement(selected) ? "inside" : "after",
+    );
   };
 
   public bringToFront = (): void => {
@@ -90,7 +113,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement = getSelectedOrHoveredElement();
+    const selectedElement = getSelectedElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -112,7 +135,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement = getSelectedOrHoveredElement();
+    const selectedElement = getSelectedElement();
     if (!selectedElement) return;
     const elementState = ElementStore.getState();
     const elements = elementState.elements;
@@ -134,7 +157,7 @@ export class ElementKeyboardActions {
       return;
     }
 
-    const selectedElement = getSelectedOrHoveredElement();
+    const selectedElement = getSelectedElement();
     if (!selectedElement) return;
     ElementStore.getState().deleteElement(selectedElement.id);
     SelectionStore.getState().setSelectedElement(undefined);
@@ -142,6 +165,31 @@ export class ElementKeyboardActions {
 
   public deselectAll = (): void => {
     SelectionStore.getState().setSelectedElement(undefined);
+  };
+
+  /**
+   * Escape hierarchy: leave inline text editing, then select the parent, then
+   * clear the selection.
+   */
+  public stepOutSelection = (): void => {
+    const selection = SelectionStore.getState();
+    if (selection.editingElementId !== undefined) {
+      selection.setEditingElementId(undefined);
+      return;
+    }
+    const { selectedElementId } = selection;
+    if (selectedElementId === undefined) {
+      selection.clearSelection();
+      return;
+    }
+    const elements = ElementStore.getState().elements;
+    const parentId = elementUtils.findLocation(elements, selectedElementId)?.parentId;
+    const parent = parentId ? elementUtils.findById(elements, parentId) : undefined;
+    if (parent) {
+      selection.setSelectedElement(parent);
+      return;
+    }
+    selection.clearSelection();
   };
 
   public undo = (): void => {
