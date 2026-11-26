@@ -34,6 +34,7 @@ export interface CreatePageOptions {
   readonly type?: "sp" | "dp";
   readonly slug?: string;
   readonly contentTypeId?: string;
+  readonly requireAuth?: boolean;
 }
 
 export interface CreatedPageSummary {
@@ -42,6 +43,7 @@ export interface CreatedPageSummary {
   readonly slug?: string;
   readonly type?: string;
   readonly contentTypeId?: string | null;
+  readonly requireAuth?: boolean;
 }
 
 interface AgentComponents extends ComponentSource {
@@ -155,12 +157,24 @@ export function createExecutor(host: AgentHost) {
         }
       }
 
+      let requireAuth: boolean | undefined;
+      if (args.requireAuth !== undefined) {
+        if (typeof args.requireAuth !== "boolean") {
+          return error("invalid_edit", "Nothing was done.", [{ path: "requireAuth", message: "must be true or false" }]);
+        }
+        requireAuth = args.requireAuth;
+      }
+
       const options: CreatePageOptions | undefined =
-        pageType !== undefined || normalizedSlug !== undefined || contentTypeId !== undefined
+        pageType !== undefined ||
+        normalizedSlug !== undefined ||
+        contentTypeId !== undefined ||
+        requireAuth !== undefined
           ? {
               ...(pageType !== undefined ? { type: pageType } : {}),
               ...(normalizedSlug !== undefined ? { slug: normalizedSlug } : {}),
               ...(contentTypeId !== undefined ? { contentTypeId } : {}),
+              ...(requireAuth !== undefined ? { requireAuth } : {}),
             }
           : undefined;
 
@@ -177,6 +191,7 @@ export function createExecutor(host: AgentHost) {
           ...(page.slug !== undefined ? { slug: page.slug } : {}),
           ...(page.type !== undefined ? { type: page.type } : {}),
           ...(page.contentTypeId ? { contentTypeId: page.contentTypeId } : {}),
+          ...(page.requireAuth ? { requireAuth: true } : {}),
           opened,
           note: opened
             ? "The editor is loading the new page. If the next call says editor_not_ready or no_editor_session, wait a moment and retry."

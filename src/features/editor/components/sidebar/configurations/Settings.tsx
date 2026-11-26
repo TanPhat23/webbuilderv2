@@ -76,6 +76,7 @@ const TableConfiguration = React.lazy(() => import("./TableConfiguration"));
 
 const ButtonConfiguration = React.lazy(() => import("./ButtonConfiguration"));
 const SharedSectionConfiguration = React.lazy(() => import("./SharedSectionConfiguration"));
+const AuthVisibilityConfiguration = React.lazy(() => import("./AuthVisibilityConfiguration"));
 
 /**
  * Lightweight loading placeholder shown while a configuration panel chunk
@@ -170,19 +171,14 @@ export default function Settings() {
 
   const content = renderChildElement(selectedElement.type);
 
-  if (!content) {
-    return (
-      <div className="p-4 text-center text-sm text-muted-foreground">
-        No configurations available for this element.
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
       <Accordion type="multiple" className="w-full">
         <Suspense fallback={<ConfigurationFallback />}>
-          <React.Fragment key={selectedElement.id}>{content}</React.Fragment>
+          <React.Fragment key={selectedElement.id}>
+            {content}
+            <AuthVisibilityConfiguration />
+          </React.Fragment>
         </Suspense>
       </Accordion>
     </div>

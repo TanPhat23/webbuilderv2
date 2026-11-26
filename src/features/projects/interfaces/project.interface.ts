@@ -1,3 +1,5 @@
+import type { ProjectAuthConfig } from "@/lib/site-auth";
+
 interface Header {
   cssStyles?: string;
 }
@@ -17,6 +19,7 @@ export interface Project {
   ownerId: string;
   styles?: JsonObject | null;
   header?: Header | null;
+  authConfig?: ProjectAuthConfig | null;
   /** Project-wide interaction logic (variables and flows); absent until it has some. */
   logic?: JsonObject | null;
   createdAt: string;

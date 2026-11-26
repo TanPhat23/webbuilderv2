@@ -4,6 +4,7 @@ import type { EmblaOptionsType } from "embla-carousel";
 import type { ComponentSetting } from "./component-setting";
 import type { ElementEvents } from "./events";
 import type { ValidationRule } from "./validation";
+import type { AuthVisibility, FormAuthAction } from "@/lib/site-auth";
 
 export type CSSStyles = CSSProperties;
 export type Breakpoint = "default" | "sm" | "md" | "lg" | "xl";
@@ -27,7 +28,7 @@ export interface Element<
   src?: string;
   parentId?: string;
   readonly pageId: string;
-  settings?: (Settings & { component?: ComponentSetting }) | null;
+  settings?: (Settings & { component?: ComponentSetting; authVisibility?: AuthVisibility }) | null;
   order?: number;
   orderKey?: string;
   events?: ElementEvents;
@@ -152,7 +153,17 @@ export interface LinkElement extends Element<"Link"> {
   elements?: EditorElement[];
 }
 
-export interface ButtonElement extends Element<"Button"> {
+export interface ButtonSettings {
+  buttonType?: "button" | "submit" | "reset";
+  authAction?: "logout";
+  target?: string;
+  rel?: string;
+  nofollow?: boolean;
+  noopener?: boolean;
+  noreferrer?: boolean;
+}
+
+export interface ButtonElement extends Element<"Button", ButtonSettings> {
   href?: string;
 }
 
@@ -283,6 +294,8 @@ export interface FormSettings {
   projectId?: string;
   /** Message displayed after a successful managed form submission. */
   successMessage?: string;
+  /** Built-in Supabase Auth flow executed on form submit. */
+  authAction?: FormAuthAction;
 }
 
 export interface FormElement extends Element<"Form", FormSettings> {

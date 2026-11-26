@@ -10,6 +10,7 @@ import {
   Palette,
   RotateCcw,
   Save,
+  ShieldCheck,
   SlidersHorizontal,
   Type,
   X,
@@ -39,12 +40,17 @@ import {
   type ProjectSettingsState,
 } from "../utils/projectSettingsState";
 import { ProjectPreview } from "./ProjectPreview";
+import { AuthTab } from "./tabs/AuthTab";
 import { ColorsTab } from "./tabs/ColorsTab";
 import { CustomCssTab } from "./tabs/CustomCssTab";
 import { GeneralTab } from "./tabs/GeneralTab";
 import { LayoutTab } from "./tabs/LayoutTab";
 import { TokensMcpTab } from "./tabs/TokensMcpTab";
 import { TypographyTab } from "./tabs/TypographyTab";
+import {
+  validateSupabaseAnonKey,
+  validateSupabaseUrl,
+} from "@/lib/site-auth";
 
 const SETTINGS_TABS = [
   { value: "general", label: "General", icon: SlidersHorizontal },
@@ -52,6 +58,7 @@ const SETTINGS_TABS = [
   { value: "typography", label: "Type", icon: Type },
   { value: "layout", label: "Layout", icon: Layers },
   { value: "css", label: "CSS", icon: Code2 },
+  { value: "auth", label: "Auth", icon: ShieldCheck },
   { value: "tokens", label: "MCP", icon: Braces },
 ] as const;
 
@@ -178,6 +185,18 @@ export function ProjectSettings({
     if (state.projectName.trim().length === 0) {
       showErrorToast("Project name is required");
       return;
+    }
+    if (state.authEnabled && canManageSubdomain) {
+      const checkedUrl = validateSupabaseUrl(state.supabaseUrl ?? "");
+      if (!checkedUrl.valid) {
+        showErrorToast(checkedUrl.error);
+        return;
+      }
+      const checkedKey = validateSupabaseAnonKey(state.supabaseAnonKey ?? "");
+      if (!checkedKey.valid) {
+        showErrorToast(checkedKey.error);
+        return;
+      }
     }
 
     const payload = buildProjectUpdatePayload({
@@ -314,7 +333,7 @@ export function ProjectSettings({
             )}
           >
             <Tabs defaultValue="colors" className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 {SETTINGS_TABS.map(({ value, label, icon: Icon }) => (
                   <TabsTrigger
                     key={value}
@@ -400,6 +419,32 @@ export function ProjectSettings({
                   disabled={!canEdit}
                   onCustomCSSChange={(customCSS) =>
                     updateState((prev) => ({ ...prev, customCSS }))
+                  }
+                />
+              </TabsContent>
+
+              <TabsContent value="auth" className="mt-4">
+                <AuthTab
+                  authEnabled={Boolean(state.authEnabled)}
+                  supabaseUrl={state.supabaseUrl ?? ""}
+                  supabaseAnonKey={state.supabaseAnonKey ?? ""}
+                  loginPath={state.authLoginPath ?? "/login"}
+                  afterLoginPath={state.authAfterLoginPath ?? "/"}
+                  disabled={!canManageSubdomain}
+                  onAuthEnabledChange={(authEnabled) =>
+                    updateState((prev) => ({ ...prev, authEnabled }))
+                  }
+                  onSupabaseUrlChange={(supabaseUrl) =>
+                    updateState((prev) => ({ ...prev, supabaseUrl }))
+                  }
+                  onSupabaseAnonKeyChange={(supabaseAnonKey) =>
+                    updateState((prev) => ({ ...prev, supabaseAnonKey }))
+                  }
+                  onLoginPathChange={(authLoginPath) =>
+                    updateState((prev) => ({ ...prev, authLoginPath }))
+                  }
+                  onAfterLoginPathChange={(authAfterLoginPath) =>
+                    updateState((prev) => ({ ...prev, authAfterLoginPath }))
                   }
                 />
               </TabsContent>

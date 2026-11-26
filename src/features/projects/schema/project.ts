@@ -21,6 +21,14 @@ const headerShape = {
 
 const headerSchema = z.object(headerShape);
 
+const projectAuthConfigSchema = z.object({
+  provider: z.literal("supabase"),
+  supabaseUrl: z.string().min(1).max(255),
+  supabaseAnonKey: z.string().min(1).max(1024),
+  loginPath: z.string().max(200).optional(),
+  afterLoginPath: z.string().max(200).optional(),
+});
+
 const projectShape = {
   Id: z.string().optional(),
   Name: z.string().min(1, "Name is required"),
@@ -52,6 +60,7 @@ const projectUpdateFieldsShape = {
   subdomain: z.string().nullable().optional(),
   styles: jsonRecordSchema.nullable().optional(),
   header: headerSchema.nullable().optional(),
+  authConfig: projectAuthConfigSchema.nullable().optional(),
 } satisfies z.ZodRawShape;
 
 const updateProjectShape = {

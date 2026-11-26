@@ -66,6 +66,9 @@ export default function ButtonConfiguration() {
   const target =
     (selectedElement.settings as Record<string, unknown> | null)?.target ??
     "_self";
+  const buttonType =
+    element.settings?.buttonType ?? "button";
+  const buttonAuthAction = element.settings?.authAction ?? "__none__";
 
   const getLinkTypeLabel = () => {
     if (isMailto) return "Email link";
@@ -222,6 +225,56 @@ export default function ButtonConfiguration() {
         )}
 
         {/* ── Summary ── */}
+        <SectionDivider />
+        <ConfigSection title="Form & Auth Action" icon={<MousePointerClick className="h-3 w-3" />}>
+          <ConfigField
+            label="Button Type"
+            htmlFor="button-type"
+            hint="Use Submit for buttons inside Login, Sign Up, or CMS Forms."
+          >
+            <Select
+              value={buttonType}
+              onValueChange={(value) => updateSetting("buttonType", value)}
+            >
+              <SelectTrigger
+                id="button-type"
+                className="h-7 w-[120px] px-2 text-[11px] rounded-md"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="button">Button</SelectItem>
+                <SelectItem value="submit">Submit</SelectItem>
+                <SelectItem value="reset">Reset</SelectItem>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+
+          <ConfigField
+            label="Auth Action"
+            htmlFor="button-auth-action"
+            hint="Turn this button into a 1-click Supabase Sign Out button."
+          >
+            <Select
+              value={buttonAuthAction}
+              onValueChange={(value) =>
+                updateSetting("authAction", value === "__none__" ? undefined : value)
+              }
+            >
+              <SelectTrigger
+                id="button-auth-action"
+                className="h-7 w-[120px] px-2 text-[11px] rounded-md"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
+                <SelectItem value="logout">Sign Out</SelectItem>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+        </ConfigSection>
+
         <SectionDivider />
         <div className="flex items-center gap-1.5 flex-wrap pl-0.5 animate-in fade-in-0 duration-150">
           <span className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">

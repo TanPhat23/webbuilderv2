@@ -1,9 +1,25 @@
 import type { ApiPage } from "@/features/projects/services/project.service";
 import type { Project } from "@/features/projects";
 import type { EditorElement } from "@/types/global.type";
+import type { SiteAuthUser } from "@/lib/site-auth";
 import { resolveElements } from "@/features/projects/lib/resolve-elements";
 import { ApiError, isApiError } from "@/utils/errors/api-error";
 import { resolveRoutePage } from "@/lib/site-routing";
+
+export class AuthRedirectError extends Error {
+  readonly location: string;
+
+  constructor(location: string) {
+    super("Authentication required");
+    this.name = "AuthRedirectError";
+    this.location = location;
+  }
+}
+
+export interface ResolvedSiteAuthResult {
+  readonly user: SiteAuthUser | null;
+  readonly redirectTo?: string;
+}
 
 interface PreviewReads {
   draftToken: () => Promise<string | null | undefined>;
@@ -15,6 +31,11 @@ interface PreviewReads {
     slug: string,
     token?: string,
   ) => Promise<Record<string, unknown> | null>;
+  resolveAuth?: (
+    project: Project,
+    page: ApiPage,
+    matchedPath: string,
+  ) => Promise<ResolvedSiteAuthResult>;
 }
 
 interface SubdomainSiteReads {
@@ -25,6 +46,11 @@ interface SubdomainSiteReads {
     contentTypeId: string,
     slug: string,
   ) => Promise<Record<string, unknown> | null>;
+  resolveAuth?: (
+    project: Project,
+    page: ApiPage,
+    matchedPath: string,
+  ) => Promise<ResolvedSiteAuthResult>;
 }
 
 export interface LoadedSitePageData {
@@ -36,6 +62,7 @@ export interface LoadedSitePageData {
   readonly itemSlug?: string;
   readonly matchedPath?: string;
   readonly cmsItem?: Record<string, unknown>;
+  readonly user?: SiteAuthUser | null;
 }
 
 async function readProjectWithDraftFallback(
@@ -86,6 +113,7 @@ function resolvePageTree(
   hasToken: boolean,
   target?: string,
   cmsItem?: Record<string, unknown>,
+  user?: SiteAuthUser | null,
 ): LoadedSitePageData {
   const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
   const matched = resolveRoutePage(pages, target);
@@ -110,6 +138,7 @@ function resolvePageTree(
     ...(itemSlug ? { itemSlug } : {}),
     matchedPath,
     ...(cmsItem ? { cmsItem } : {}),
+    ...(user !== undefined ? { user } : {}),
   };
 }
 
@@ -123,6 +152,19 @@ export async function fetchPreviewSite(
   const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
   const matched = resolveRoutePage(pages, pageTarget);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
+
+  let user: SiteAuthUser | null | undefined;
+  if (reads.resolveAuth) {
+    const authOutcome = await reads.resolveAuth(
+      project,
+      matched.page,
+      matched.matchedPath,
+    );
+    if (authOutcome.redirectTo) {
+      throw new AuthRedirectError(authOutcome.redirectTo);
+    }
+    user = authOutcome.user;
+  }
 
   let cmsItem: Record<string, unknown> | undefined;
   if (
@@ -148,6 +190,7 @@ export async function fetchPreviewSite(
     Boolean(token),
     pageTarget,
     cmsItem,
+    user,
   );
 }
 
@@ -164,6 +207,19 @@ export async function fetchSubdomainSite(
   const pages = allPages.filter((page) => !page.deletedAt && page.type !== "cp");
   const matched = resolveRoutePage(pages, pathname);
   if (!matched) throw new ApiError("Page not found", 404, "not_found");
+
+  let user: SiteAuthUser | null | undefined;
+  if (reads.resolveAuth) {
+    const authOutcome = await reads.resolveAuth(
+      project,
+      matched.page,
+      matched.matchedPath,
+    );
+    if (authOutcome.redirectTo) {
+      throw new AuthRedirectError(authOutcome.redirectTo);
+    }
+    user = authOutcome.user;
+  }
 
   let cmsItem: Record<string, unknown> | undefined;
   if (
@@ -188,5 +244,6 @@ export async function fetchSubdomainSite(
     false,
     pathname,
     cmsItem,
+    user,
   );
 }

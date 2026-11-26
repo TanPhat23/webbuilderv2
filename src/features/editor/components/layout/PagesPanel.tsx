@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { FileText, Database, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { FileText, Database, Lock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProjectRoutePages } from "@/features/projects/hooks/useProjects";
 import { useEditorPermissions } from "@/features/editor/hooks/useEditorPermissions";
@@ -93,6 +93,12 @@ export default function PagesPanel() {
                 >
                   <Icon className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{page.Name || "Home"}</span>
+                  {page.RequireAuth && (
+                    <Lock
+                      className="h-3 w-3 shrink-0 text-amber-500"
+                      aria-label="Login required"
+                    />
+                  )}
                   <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground/70">
                     {routePath}
                   </span>

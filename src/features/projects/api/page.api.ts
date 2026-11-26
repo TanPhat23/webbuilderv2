@@ -27,6 +27,7 @@ export const createPage = createServerFn({ method: "POST" })
         ...(data.Slug !== undefined ? { slug: data.Slug } : {}),
         type: data.Type,
         ...(data.ContentTypeId ? { contentTypeId: data.ContentTypeId } : {}),
+        ...(data.RequireAuth !== undefined ? { requireAuth: data.RequireAuth } : {}),
         styles: (data.Styles ?? {}) as JsonRecord,
       },
       token,
@@ -41,6 +42,7 @@ const updatePageSchema = z.object({
   slug: z.string().trim().max(200).optional(),
   type: PageTypeSchema.exclude(["cp"]).optional(),
   contentTypeId: z.string().max(255).nullable().optional(),
+  requireAuth: z.boolean().optional(),
 });
 
 export const updateProjectPage = createServerFn({ method: "POST" })
@@ -52,6 +54,7 @@ export const updateProjectPage = createServerFn({ method: "POST" })
       slug?: string;
       type?: "sp" | "dp";
       contentTypeId?: string | null;
+      requireAuth?: boolean;
     }) => updatePageSchema.parse(data),
   )
   .handler(async ({ data }): Promise<Page> => {
@@ -66,6 +69,7 @@ export const updateProjectPage = createServerFn({ method: "POST" })
         ...(data.contentTypeId !== undefined
           ? { contentTypeId: data.contentTypeId ?? "" }
           : {}),
+        ...(data.requireAuth !== undefined ? { requireAuth: data.requireAuth } : {}),
       },
       token,
     );

@@ -254,11 +254,12 @@ test("create_page supports dynamic :param, catch-all *, and CMS collection optio
     name: "Docs Fallback",
     type: "dp",
     slug: "docs/*path",
+    requireAuth: true,
   }, { pageId: undefined }));
   assert.equal(catchAll.ok, true);
   assert.deepEqual(createdCalls[1], {
     name: "Docs Fallback",
-    options: { type: "dp", slug: "docs/*path" },
+    options: { type: "dp", slug: "docs/*path", requireAuth: true },
   });
 
   for (const bad of [

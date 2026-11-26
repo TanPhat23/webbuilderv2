@@ -3,6 +3,11 @@ import type {
   JsonRecord,
   ProjectUpdateFields,
 } from "@/features/projects/schema/project";
+import {
+  parseProjectAuthConfig,
+  sanitizeRedirectPath,
+  type ProjectAuthConfig,
+} from "@/lib/site-auth";
 import { COLOR_FIELDS, DEFAULT_COLORS } from "../constants/themePresets";
 import type { ColorScheme } from "./designSystemUtils";
 
@@ -18,6 +23,11 @@ export interface ProjectSettingsState {
   borderRadius: number;
   spacing: number;
   shadowStyle: string;
+  authEnabled?: boolean;
+  supabaseUrl?: string;
+  supabaseAnonKey?: string;
+  authLoginPath?: string;
+  authAfterLoginPath?: string;
 }
 
 export interface ProjectSettingsSource {
@@ -27,6 +37,7 @@ export interface ProjectSettingsSource {
   subdomain?: string | null;
   header?: { cssStyles?: string | null } | null;
   styles?: unknown;
+  authConfig?: unknown;
 }
 
 export const INITIAL_PROJECT_SETTINGS_STATE: ProjectSettingsState = {
@@ -41,6 +52,11 @@ export const INITIAL_PROJECT_SETTINGS_STATE: ProjectSettingsState = {
   borderRadius: 8,
   spacing: 4,
   shadowStyle: "md",
+  authEnabled: false,
+  supabaseUrl: "",
+  supabaseAnonKey: "",
+  authLoginPath: "/login",
+  authAfterLoginPath: "/",
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -73,6 +89,7 @@ export function extractProjectSettings(
     project.header && typeof project.header.cssStyles === "string"
       ? project.header.cssStyles
       : "";
+  const parsedAuth = parseProjectAuthConfig(project.authConfig);
 
   return {
     projectName: project.name || "",
@@ -86,6 +103,11 @@ export function extractProjectSettings(
     borderRadius: readNumber(styles, "borderRadius", 8),
     spacing: readNumber(styles, "spacing", 4),
     shadowStyle: readString(styles, "shadowStyle", "md"),
+    authEnabled: parsedAuth !== null,
+    supabaseUrl: parsedAuth?.supabaseUrl ?? "",
+    supabaseAnonKey: parsedAuth?.supabaseAnonKey ?? "",
+    authLoginPath: parsedAuth?.loginPath ?? "/login",
+    authAfterLoginPath: parsedAuth?.afterLoginPath ?? "/",
   };
 }
 
@@ -102,6 +124,7 @@ export interface BuiltProjectUpdatePayload<
   readonly description: string | null;
   readonly published?: boolean;
   readonly subdomain?: string | null;
+  readonly authConfig?: ProjectAuthConfig | null;
   readonly header: Partial<THeader> & { cssStyles: string };
   readonly styles: JsonRecord;
 }
@@ -125,7 +148,12 @@ export function areProjectSettingsEqual(
     a.letterTracking !== b.letterTracking ||
     a.borderRadius !== b.borderRadius ||
     a.spacing !== b.spacing ||
-    a.shadowStyle !== b.shadowStyle
+    a.shadowStyle !== b.shadowStyle ||
+    Boolean(a.authEnabled) !== Boolean(b.authEnabled) ||
+    (a.supabaseUrl ?? "") !== (b.supabaseUrl ?? "") ||
+    (a.supabaseAnonKey ?? "") !== (b.supabaseAnonKey ?? "") ||
+    (a.authLoginPath ?? "/login") !== (b.authLoginPath ?? "/login") ||
+    (a.authAfterLoginPath ?? "/") !== (b.authAfterLoginPath ?? "/")
   ) {
     return false;
   }
@@ -154,6 +182,18 @@ export function buildProjectUpdatePayload<
   const baseHeader: Partial<THeader> = existingHeader ?? {};
   const includePublished = permissions === undefined || permissions.canPublish === true;
   const includeSubdomain = permissions === undefined || permissions.canManageSettings === true;
+  const includeAuthConfig =
+    includeSubdomain && state.authEnabled !== undefined;
+
+  const builtAuthConfig: ProjectAuthConfig | null = state.authEnabled
+    ? {
+        provider: "supabase",
+        supabaseUrl: (state.supabaseUrl ?? "").trim(),
+        supabaseAnonKey: (state.supabaseAnonKey ?? "").trim(),
+        loginPath: sanitizeRedirectPath(state.authLoginPath, "/login"),
+        afterLoginPath: sanitizeRedirectPath(state.authAfterLoginPath, "/"),
+      }
+    : null;
 
   return {
     id: projectId,
@@ -161,6 +201,7 @@ export function buildProjectUpdatePayload<
     description: state.projectDescription || null,
     ...(includePublished ? { published: state.isPublished } : {}),
     ...(includeSubdomain ? { subdomain: normalizeSubdomain(state.subdomain) } : {}),
+    ...(includeAuthConfig ? { authConfig: builtAuthConfig } : {}),
     header: {
       ...baseHeader,
       cssStyles: sanitizeProjectCss(state.customCSS),

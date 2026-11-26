@@ -4,6 +4,11 @@ import { getView } from "@/features/elements/registry";
 import { getViewChildren } from "@/features/elements/element-children";
 import { elementUtils } from "@/features/elements/lib/elementhelper";
 import { isMissingComponent } from "@/features/projects/lib/components";
+import { useSiteNavigationOptional } from "@/features/elements/context/SiteNavigationContext";
+import {
+  readElementAuthVisibility,
+  shouldRenderForAuthVisibility,
+} from "@/lib/site-auth";
 import { PreviewCMSCollection, PreviewCMSItem } from "./PreviewCMSContent";
 
 const MissingComponentContext = createContext(false);
@@ -22,6 +27,16 @@ function PreviewElement({ element, data, draggableRoot }: {
   draggableRoot?: boolean;
 }) {
   const showMissing = useContext(MissingComponentContext);
+  const siteNav = useSiteNavigationOptional();
+  if (
+    siteNav &&
+    !shouldRenderForAuthVisibility(
+      readElementAuthVisibility(element.settings),
+      Boolean(siteNav.user),
+    )
+  ) {
+    return null;
+  }
   if (isMissingComponent(element)) {
     return showMissing ? <div data-element-id={element.id} draggable={draggableRoot} className="min-h-10 rounded border border-dashed border-border bg-muted px-2 py-1.5 text-xs text-muted-foreground">Missing component</div> : null;
   }

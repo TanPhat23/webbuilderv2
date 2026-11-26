@@ -1,16 +1,81 @@
 import { auth } from "@clerk/tanstack-react-start/server";
-import { notFound } from "@tanstack/react-router";
+import { notFound, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { setResponseHeader } from "@tanstack/react-start/server";
+import {
+  appendResponseHeader,
+  getRequestHeader,
+  getRequestProtocol,
+  setResponseHeader,
+} from "@tanstack/react-start/server";
 import { elementService } from "@/features/elements/services/element.service";
-import { projectService } from "@/features/projects/services/project.service";
+import {
+  projectService,
+  type ApiPage,
+} from "@/features/projects/services/project.service";
+import type { Project } from "@/features/projects";
 import {
   cmsService,
   flattenContentItemRecord,
 } from "@/features/cms/services/cms.service";
 import { isApiError } from "@/utils/errors/api-error";
-import { fetchPreviewSite, fetchSubdomainSite } from "../lib/preview-data";
-import { isValidSubdomainLabel } from "@/lib/site-routing";
+import {
+  AuthRedirectError,
+  fetchPreviewSite,
+  fetchSubdomainSite,
+  type ResolvedSiteAuthResult,
+} from "../lib/preview-data";
+import {
+  buildSiteHref,
+  isValidSubdomainLabel,
+  type SiteRoutingMode,
+} from "@/lib/site-routing";
+import {
+  buildLoginRedirectHref,
+  parseProjectAuthConfig,
+} from "@/lib/site-auth";
+import { resolveSiteSessionFromCookie } from "../lib/supabase-site-auth.server";
+
+async function resolveSiteAuthForRequest(
+  project: Project,
+  page: ApiPage,
+  matchedPath: string,
+  mode: SiteRoutingMode,
+): Promise<ResolvedSiteAuthResult> {
+  const cfg = parseProjectAuthConfig(project.authConfig);
+  if (!cfg || !project.id) {
+    return { user: null };
+  }
+
+  setResponseHeader("Cache-Control", "private, no-store");
+  const cookieHeader = getRequestHeader("cookie");
+  const forwardedProto = getRequestHeader("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim()
+    .toLowerCase();
+  const secure =
+    forwardedProto === "https" ||
+    (!forwardedProto && getRequestProtocol() === "https");
+
+  const session = await resolveSiteSessionFromCookie(
+    cfg,
+    project.id,
+    cookieHeader,
+    secure,
+  );
+  if (session.setCookieHeader) {
+    appendResponseHeader("Set-Cookie", session.setCookieHeader);
+  }
+
+  if (page.requireAuth && !session.user) {
+    const loginHref = buildLoginRedirectHref(mode, cfg.loginPath, matchedPath);
+    const currentHref = buildSiteHref(mode, matchedPath);
+    if (loginHref !== currentHref) {
+      return { user: null, redirectTo: loginHref };
+    }
+  }
+
+  return { user: session.user };
+}
 
 const isId = (value: unknown): value is string =>
   typeof value === "string" && /^[A-Za-z0-9_-]+$/.test(value);
@@ -64,8 +129,16 @@ export const getPreviewSite = createServerFn({ method: "GET", strict: { output: 
             }
           }
         },
+        resolveAuth: (project, page, matchedPath) =>
+          resolveSiteAuthForRequest(project, page, matchedPath, {
+            kind: "preview",
+            projectId: id,
+          }),
       }, pageTarget ?? pageId);
     } catch (error) {
+      if (error instanceof AuthRedirectError) {
+        throw redirect({ href: error.location });
+      }
       if (isApiError(error) && error.status === 404) throw notFound();
       throw error;
     }
@@ -94,8 +167,16 @@ export const getSubdomainSite = createServerFn({ method: "GET", strict: { output
             throw error;
           }
         },
+        resolveAuth: (project, page, matchedPath) =>
+          resolveSiteAuthForRequest(project, page, matchedPath, {
+            kind: "domain",
+            subdomain,
+          }),
       }, pathname);
     } catch (error) {
+      if (error instanceof AuthRedirectError) {
+        throw redirect({ href: error.location });
+      }
       if (isApiError(error) && error.status === 404) throw notFound();
       throw error;
     }

@@ -11,6 +11,7 @@ export interface Page {
   Slug?: string;
   Type: PageType;
   ContentTypeId?: string | null;
+  RequireAuth?: boolean;
   Styles: JsonRecord | null;
   ProjectId: string;
   CreatedAt: Date;

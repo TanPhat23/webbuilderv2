@@ -134,6 +134,7 @@ export function AgentHost() {
             Name: name,
             ...(options?.slug !== undefined ? { Slug: options.slug } : {}),
             ...(options?.contentTypeId !== undefined ? { ContentTypeId: options.contentTypeId } : {}),
+            ...(options?.requireAuth !== undefined ? { RequireAuth: options.requireAuth } : {}),
             ProjectId: id,
             Styles: {},
             Type: options?.type ?? "sp",
@@ -147,6 +148,7 @@ export function AgentHost() {
           slug: page.Slug,
           type: page.Type,
           contentTypeId: page.ContentTypeId,
+          requireAuth: page.RequireAuth,
         };
       },
       openPage: async (pageId) => {

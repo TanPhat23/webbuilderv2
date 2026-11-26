@@ -47,7 +47,7 @@ export function SitePageView({
   showRunLog = false,
 }: SitePageViewProps): React.JSX.Element {
   const routerNavigate = useNavigate();
-  const { project, page, pages, elements, params, itemSlug, matchedPath, cmsItem } = data;
+  const { project, page, pages, elements, params, itemSlug, matchedPath, cmsItem, user } = data;
   const projectId = project.id ?? "";
 
   const cmsItemUrl =
@@ -63,12 +63,13 @@ export function SitePageView({
 
   const pageRootData = useMemo<Record<string, unknown> | undefined>(() => {
     const hasParams = params && Object.keys(params).length > 0;
-    if (!hasParams && !boundCmsItem) return undefined;
+    if (!hasParams && !boundCmsItem && !user) return undefined;
     return {
       ...(params ?? {}),
       ...(boundCmsItem ?? {}),
+      ...(user ? { user } : {}),
     };
-  }, [params, boundCmsItem]);
+  }, [params, boundCmsItem, user]);
 
   const logic = useMemo(
     () => mergedLogic(snapshotFromServer(project.logic, [page])),
@@ -165,14 +166,17 @@ export function SitePageView({
   const navValue = useMemo<SiteNavigationContextValue>(
     () => ({
       mode,
+      projectId,
       pages,
       currentPath,
       params,
       itemSlug,
       contentTypeId: page.contentTypeId ?? undefined,
+      user: user ?? null,
+      authEnabled: Boolean(project.authConfig),
       navigate: handleSiteNavigate,
     }),
-    [mode, pages, currentPath, params, itemSlug, page.contentTypeId, handleSiteNavigate],
+    [mode, projectId, pages, currentPath, params, itemSlug, page.contentTypeId, user, project.authConfig, handleSiteNavigate],
   );
 
   const sitePlatform: PlatformFactory = useCallback(

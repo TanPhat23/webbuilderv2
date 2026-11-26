@@ -31,6 +31,7 @@ export interface RoutePageSummary {
   readonly slug?: string;
   readonly type: string;
   readonly contentTypeId?: string | null;
+  readonly requireAuth?: boolean;
 }
 
 export interface ResolvedRouteMatch<T extends RoutePageSummary> {

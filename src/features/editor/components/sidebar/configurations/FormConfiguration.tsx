@@ -118,6 +118,93 @@ export const FormConfigurationAccordion = () => {
           icon={<Globe />}
           nested
         >
+          {/* Supabase Auth Flow Binding */}
+          <ConfigField
+            label="Supabase Auth Action"
+            htmlFor="form-authAction"
+            hint="Wire this form directly to Supabase Auth (configure your Supabase URL and Anon Key in Project Settings → Auth)."
+          >
+            <Select
+              value={settings.authAction || "__none__"}
+              onValueChange={(value) => {
+                const nextAction = value === "__none__" ? undefined : value;
+                updateElement(selectedElement.id, {
+                  settings: {
+                    ...settings,
+                    authAction: nextAction as FormSettings["authAction"],
+                    ...(nextAction ? { collectionId: "" } : {}),
+                    ...(nextAction && projectId ? { projectId } : {}),
+                  },
+                });
+              }}
+            >
+              <SelectTrigger
+                id="form-authAction"
+                className="h-7 w-[150px] px-2 text-[11px] rounded-md"
+              >
+                <SelectValue placeholder="None" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="__none__">None</SelectItem>
+                  <SelectItem value="login">Sign In (Email &amp; Password)</SelectItem>
+                  <SelectItem value="signup">Sign Up</SelectItem>
+                  <SelectItem value="magic-link">Magic Link (Email)</SelectItem>
+                  <SelectItem value="logout">Sign Out</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </ConfigField>
+
+          {settings.authAction && (
+            <div className="rounded-md border border-border bg-muted/40 px-2.5 py-2 text-[10px] text-muted-foreground space-y-1">
+              <p className="font-medium text-foreground">Expected input names:</p>
+              {settings.authAction === "login" && (
+                <p>
+                  <code className="font-mono">email</code> and{" "}
+                  <code className="font-mono">password</code> + a Submit button.
+                </p>
+              )}
+              {settings.authAction === "signup" && (
+                <p>
+                  <code className="font-mono">email</code>,{" "}
+                  <code className="font-mono">password</code>, optional{" "}
+                  <code className="font-mono">name</code> + a Submit button.
+                </p>
+              )}
+              {settings.authAction === "magic-link" && (
+                <p>
+                  <code className="font-mono">email</code> + a Submit button.
+                </p>
+              )}
+              {settings.authAction === "logout" && (
+                <p>Just a Submit button — clears the visitor&apos;s session cookie.</p>
+              )}
+            </div>
+          )}
+
+          {settings.authAction &&
+            (settings.authAction === "signup" ||
+              settings.authAction === "magic-link") && (
+              <ConfigTextInput
+                label="Success Message"
+                hint="Shown inline after sending a magic link or confirmation email."
+                vertical
+                id="form-authSuccessMessage"
+                name="successMessage"
+                value={settings.successMessage || ""}
+                onValueChange={(value) => updateSetting("successMessage", value)}
+                placeholder={
+                  settings.authAction === "magic-link"
+                    ? "Check your email for a sign-in link."
+                    : "Check your email to confirm your account."
+                }
+                className="h-7 w-full px-2 text-[11px] rounded-md"
+              />
+            )}
+
+          <SectionDivider />
+
           {/* Managed CMS Collection Binding */}
           <ConfigField
             label="Submit to Collection"
@@ -128,10 +215,14 @@ export const FormConfigurationAccordion = () => {
               value={settings.collectionId || "__none__"}
               onValueChange={(value) => {
                 const nextId = value === "__none__" ? "" : value;
-                updateSetting("collectionId", nextId);
-                if (nextId && projectId) {
-                  updateSetting("projectId", projectId);
-                }
+                updateElement(selectedElement.id, {
+                  settings: {
+                    ...settings,
+                    collectionId: nextId,
+                    ...(nextId ? { authAction: undefined } : {}),
+                    ...(nextId && projectId ? { projectId } : {}),
+                  },
+                });
               }}
             >
               <SelectTrigger

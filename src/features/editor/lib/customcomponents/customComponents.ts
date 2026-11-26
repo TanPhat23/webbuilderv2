@@ -31,6 +31,11 @@ import {
   sidebarRightComponent4,
 } from "./sidebar/sidebarRightComponents";
 import { formComponent1, formComponent2 } from "./form/formComponents";
+import {
+  loginFormComponent,
+  magicLinkFormComponent,
+  signupFormComponent,
+} from "./form/authFormComponents";
 import { landingPageSections } from "./landingpage/landingPageComponents";
 
 import type { CustomComponent } from "./types";
@@ -60,6 +65,9 @@ const customComponents: CustomComponent[] = [
   sidebarRightComponent4,
   formComponent1,
   formComponent2,
+  loginFormComponent,
+  signupFormComponent,
+  magicLinkFormComponent,
   ...landingPageSections,
   ...siteTemplates,
 ];
@@ -83,6 +91,6 @@ export const sectionTemplateGroups: SectionTemplateGroup[] = [
   { id: "header", label: "Header", templates: templatesOf([headerComponent, headerComponent2, headerComponent3]) },
   { id: "landing", label: "Hero & landing", templates: templatesOf(landingPageSections) },
   { id: "sidebar", label: "Sidebar", templates: templatesOf([sidebarLeftComponent, sidebarLeftComponent2, sidebarLeftComponent3, sidebarLeftComponent4, sidebarRightComponent, sidebarRightComponent2, sidebarRightComponent3, sidebarRightComponent4]) },
-  { id: "form", label: "Form", templates: templatesOf([formComponent1, formComponent2]) },
+  { id: "form", label: "Form", templates: templatesOf([formComponent1, formComponent2, loginFormComponent, signupFormComponent, magicLinkFormComponent]) },
   { id: "footer", label: "Footer", templates: templatesOf([footerComponent, footerComponent2, footerComponent3, footerComponent4]) },
 ];

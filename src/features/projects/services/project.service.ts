@@ -20,6 +20,7 @@ export interface ApiPage {
   slug?: string;
   type: Page["Type"];
   contentTypeId?: string | null;
+  requireAuth?: boolean;
   styles?: Page["Styles"];
   /** Interaction logic (variables and flows); absent until the page has some. */
   logic?: unknown;
@@ -36,6 +37,7 @@ export function mapApiPageToPage(page: ApiPage): Page {
     Slug: page.slug,
     Type: page.type,
     ContentTypeId: page.contentTypeId ?? null,
+    RequireAuth: Boolean(page.requireAuth),
     Styles: page.styles ?? null,
     ProjectId: page.projectId,
     CreatedAt: new Date(page.createdAt),
@@ -174,6 +176,7 @@ export const projectService = {
       slug?: string;
       type: Page["Type"];
       contentTypeId?: string | null;
+      requireAuth?: boolean;
       styles?: unknown;
     },
     token: string,
@@ -194,7 +197,13 @@ export const projectService = {
   updatePage: (
     projectId: string,
     pageId: string,
-    updates: { name?: string; slug?: string; type?: Page["Type"]; contentTypeId?: string | null },
+    updates: {
+      name?: string;
+      slug?: string;
+      type?: Page["Type"];
+      contentTypeId?: string | null;
+      requireAuth?: boolean;
+    },
     token: string,
   ): Promise<ApiPage> => {
     const url = new URLBuilder("api")

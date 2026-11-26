@@ -37,6 +37,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -63,6 +64,7 @@ const createPageSchema = z.object({
   slug: z.string().max(200).optional(),
   type: PageTypeSchema.exclude(["cp"]),
   contentTypeId: z.string().max(255).optional(),
+  requireAuth: z.boolean().optional(),
 });
 type CreatePageFormValues = z.infer<typeof createPageSchema>;
 
@@ -79,6 +81,7 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
       slug: "",
       type: "sp",
       contentTypeId: NONE_COLLECTION,
+      requireAuth: false,
     },
   });
 
@@ -108,6 +111,7 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
       Name: data.name,
       ...(cleanSlug !== undefined ? { Slug: cleanSlug } : {}),
       ...(boundCollection !== undefined ? { ContentTypeId: boundCollection } : {}),
+      ...(data.requireAuth ? { RequireAuth: true } : {}),
       ProjectId: id as string,
       Styles: {},
       Type: data.type,
@@ -255,6 +259,26 @@ export function CreatePageDialog({ trigger }: { trigger?: React.ReactNode } = {}
                 )}
               />
             )}
+            <FormField
+              control={form.control}
+              name="requireAuth"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-xs">Require Login</FormLabel>
+                    <p className="text-[11px] text-muted-foreground">
+                      Redirect unauthenticated visitors to your Supabase login page.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={Boolean(field.value)}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button
                 type="button"
@@ -359,6 +383,7 @@ const editPageSchema = z.object({
   slug: z.string().trim().max(200),
   type: PageTypeSchema.exclude(["cp"]),
   contentTypeId: z.string().max(255).optional(),
+  requireAuth: z.boolean().optional(),
 });
 type EditPageFormValues = z.infer<typeof editPageSchema>;
 
@@ -381,6 +406,7 @@ export function EditPageDialog({
       slug: initialSlug,
       type: initialType,
       contentTypeId: page.ContentTypeId || NONE_COLLECTION,
+      requireAuth: Boolean(page.RequireAuth),
     },
   });
 
@@ -398,6 +424,7 @@ export function EditPageDialog({
         slug: page.Slug ?? slugifyPageName(page.Name),
         type: page.Type === "dp" ? "dp" : "sp",
         contentTypeId: page.ContentTypeId || NONE_COLLECTION,
+        requireAuth: Boolean(page.RequireAuth),
       });
     }
   };
@@ -424,6 +451,7 @@ export function EditPageDialog({
           slug: cleanSlug,
           type: values.type,
           contentTypeId: nextContentTypeId,
+          requireAuth: Boolean(values.requireAuth),
         },
       });
       queryClient.setQueryData<Page[]>(
@@ -558,6 +586,26 @@ export function EditPageDialog({
                 )}
               />
             )}
+            <FormField
+              control={form.control}
+              name="requireAuth"
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-xs">Require Login</FormLabel>
+                    <p className="text-[11px] text-muted-foreground">
+                      Redirect unauthenticated visitors to your Supabase login page.
+                    </p>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={Boolean(field.value)}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button
                 type="button"

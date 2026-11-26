@@ -18,6 +18,7 @@ const pageShape = {
   Slug: z.string().optional(),
   Type: PageTypeSchema,
   ContentTypeId: z.string().nullable().optional(),
+  RequireAuth: z.boolean().optional().default(false),
   Styles: flatJsonRecordSchema.nullable(),
   ProjectId: z.string(),
   CreatedAt: z.date().optional(),
@@ -31,6 +32,7 @@ const createPageShape = {
   Slug: z.string().max(255).optional(),
   Type: PageTypeSchema.default("sp"),
   ContentTypeId: z.string().max(255).nullable().optional(),
+  RequireAuth: z.boolean().optional(),
   Styles: flatJsonRecordSchema.nullable().default(null),
   ProjectId: z.string(),
 } satisfies z.ZodRawShape;
