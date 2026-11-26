@@ -50,7 +50,27 @@ const UNITLESS_NUMBER_PROPS: ReadonlySet<string> = new Set([
 ]);
 
 const CAMEL_PROP_RE = /^[a-z][a-zA-Z0-9]*$/;
-const UNSAFE_VALUE_RE = /[;{}]|<\/style|javascript\s*:|expression\s*\(/i;
+const UNSAFE_VALUE_RE = /[;{}]|\/\*|\*\/|\\$|<\/style|javascript\s*:|expression\s*\(/i;
+
+function hasBalancedQuotes(value: string): boolean {
+  let activeQuote: '"' | "'" | null = null;
+  for (let i = 0; i < value.length; i += 1) {
+    const ch = value[i];
+    if (ch === "\\") {
+      i += 1;
+      if (i >= value.length) return false;
+      continue;
+    }
+    if (activeQuote === null) {
+      if (ch === '"' || ch === "'") {
+        activeQuote = ch;
+      }
+    } else if (ch === activeQuote) {
+      activeQuote = null;
+    }
+  }
+  return activeQuote === null;
+}
 
 /** Escapes an element ID for safe use inside a `[data-element-id="..."]` CSS selector. */
 export function escapeElementIdSelector(id: string): string {
@@ -76,6 +96,7 @@ function formatCssValue(prop: string, raw: unknown): string | null {
   const trimmed = raw.trim();
   if (!trimmed || UNSAFE_VALUE_RE.test(trimmed)) return null;
   if (/[\r\n]/.test(trimmed)) return null;
+  if (!hasBalancedQuotes(trimmed)) return null;
   return trimmed;
 }
 

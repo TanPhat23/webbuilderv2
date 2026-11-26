@@ -88,6 +88,31 @@ test("rejects CSS breakout, style-tag breakout, javascript urls, and prototype k
   assert.ok(!css.includes("injected"));
 });
 
+test("rejects unclosed comments, unbalanced quotes, and trailing backslashes while preserving valid quoted values", () => {
+  const css = compileElementStylesCss([
+    makeElement("quote-1", {
+      default: {
+        color: "red /*",
+        borderColor: "*/",
+        content: '"unclosed',
+        backgroundColor: "'unclosed",
+        outlineColor: "red\\",
+        fontFamily: '"Inter", sans-serif',
+        backgroundImage: 'url("https://example.com/bg.jpg")',
+      },
+    }),
+  ]);
+
+  assert.equal(
+    css,
+    '[data-element-id="quote-1"]{font-family:"Inter", sans-serif;background-image:url("https://example.com/bg.jpg");}',
+  );
+  assert.ok(!css.includes("/*"));
+  assert.ok(!css.includes("*/"));
+  assert.ok(!css.includes("unclosed"));
+  assert.ok(!css.includes("red\\"));
+});
+
 test("handles unitless properties, zero, non-finite numbers, empty input, and runtime exports", () => {
   assert.equal(compileElementStylesCss(undefined), "");
   assert.equal(compileElementStylesCss([]), "");
