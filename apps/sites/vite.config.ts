@@ -18,6 +18,7 @@ export default defineConfig({
       },
     }),
     nitro({
+      preset: "node-server",
       traceDeps: [
         "isomorphic-dompurify*",
         "jsdom*",
