@@ -1,13 +1,31 @@
 import { after, afterEach, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { redirectModules } from './support/test-stub-modules';
 import { act, cleanup, React, render } from './support/sidebar-dom-harness';
 import type { FrameElement, TextElement } from '@webbuilder/site-runtime/types/elements/elements';
 import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
+
+redirectModules({
+  '@clerk/tanstack-react-start': './test-clerk-stub.ts',
+  '@clerk/tanstack-react-start/server': './test-clerk-server-stub.ts',
+  '@tanstack/react-start': './test-start-stub.ts',
+  '@tanstack/react-router': './editor-router-stub.ts',
+});
 
 const { ElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
 const { SelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
 const { ElementKeyboardActions } = await import('../apps/editor/src/features/editor/lib/keyBoardEvents');
 const { useEditorShortcuts } = await import('../apps/editor/src/features/editor/hooks/useEditorShortcuts');
+
+const { useCanvasElement } = await import(
+  '../apps/editor/src/features/editor/components/elements/shared/useCanvasElement'
+);
+const { EditorFlagsProvider } = await import(
+  '../apps/editor/src/features/editor/components/context/EditorFlagsContext'
+);
+const { CollaboratorRole } = await import(
+  '../apps/editor/src/features/collaboration/interfaces/collaboration.interface'
+);
 
 const h = React.createElement;
 
@@ -271,4 +289,41 @@ test('Ctrl+Shift+Z and Meta+Shift+Z redo, Ctrl+Z undoes', async () => {
   } finally {
     ElementStore.setState(original);
   }
+});
+
+test('Escape on a focused contentEditable node commits the text, leaves editing, and keeps the selection', async () => {
+  const child = makeText('child', 'parent');
+  ElementStore.getState().setElements([makeFrame('parent', [child])], true);
+  SelectionStore.getState().setSelectedElement(child);
+  SelectionStore.getState().setEditingElementId('child');
+
+  function Editable(): React.ReactElement {
+    const { rootProps } = useCanvasElement(child);
+    return h('div', { ...rootProps, tabIndex: 0 }, 'child');
+  }
+  const r = await render(
+    h(EditorFlagsProvider, {
+      canEdit: true,
+      isReadOnly: false,
+      isLocked: false,
+      permissionsRole: CollaboratorRole.OWNER,
+      canCreate: true,
+      children: h(React.Fragment, null, h(Shortcuts), h(Editable)),
+    }),
+  );
+  const node = r.container.querySelector<HTMLElement>('[data-element-id="child"]');
+  assert.ok(node);
+  assert.equal(node.getAttribute('contenteditable'), 'true');
+  assert.equal(document.activeElement, node, 'editing focuses the node');
+
+  node.textContent = 'Edited';
+  await act(() => {
+    pressKey(node, 'Escape');
+  });
+
+  assert.equal(SelectionStore.getState().editingElementId, undefined);
+  assert.equal(SelectionStore.getState().selectedElementId, 'child', 'selection is kept, not stepped up to the parent');
+  const saved = childrenOf(ElementStore.getState().elements[0])[0];
+  assert.equal(saved?.content, 'Edited');
+  assert.equal(node.getAttribute('contenteditable'), null);
 });

@@ -42,10 +42,13 @@ export function useEditorShortcuts({
         if (!editing && isTypingTarget(e.target)) return;
         e.preventDefault();
         if (editing) {
+          // Escape leaves text editing only; the element stays selected.
           // Blur first so the editable node commits its text.
           const doc = (e.target as Node | null)?.ownerDocument ?? document;
           const active = doc.activeElement;
           if (active && "blur" in active) (active as HTMLElement).blur();
+          SelectionStore.getState().setEditingElementId(undefined);
+          return;
         }
         kb.stepOutSelection();
         return;

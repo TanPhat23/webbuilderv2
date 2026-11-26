@@ -102,6 +102,16 @@ function isScreenPointEvent(event: Event): event is Event & ScreenPoint {
   return "screenX" in event && "screenY" in event;
 }
 
+const ACTIVATABLE_SELECTOR =
+  "button, a[href], summary, select, [role='button'], [role='menuitem'], [role='checkbox'], [role='switch'], [role='tab'], [role='option'], [role='radio'], [role='link']";
+
+/** True for controls that use Space to activate (buttons, menu items, ...). */
+function isActivatableTarget(target: EventTarget | null): boolean {
+  if (target === null || typeof target !== "object") return false;
+  if (!("closest" in target) || typeof target.closest !== "function") return false;
+  return (target as Element).closest(ACTIVATABLE_SELECTOR) !== null;
+}
+
 function isSpaceKey(event: KeyboardEvent): boolean {
   return event.code === "Space" || event.key === " ";
 }
@@ -137,7 +147,7 @@ export function useCanvasController({
     stageEl,
     iframeRef,
   });
-  const { session, handleCanvasPointerDown } = manipulation;
+  const { session, handleCanvasPointerDown, refreshMove } = manipulation;
 
   const iframeWin = siteRoot?.ownerDocument.defaultView ?? null;
   const geometry = useCallback(
@@ -147,6 +157,7 @@ export function useCanvasController({
 
   // ---- Space + drag pan, Ctrl/Cmd + wheel zoom --------------------------
   const spaceHeldRef = useRef(false);
+  const pointerOverCanvasRef = useRef(false);
   const stopPanRef = useRef<(() => void) | null>(null);
 
   const startPan = useCallback(
@@ -193,14 +204,24 @@ export function useCanvasController({
 
     const onKeyDown = (event: KeyboardEvent): void => {
       if (!isSpaceKey(event)) return;
+      // Space only pans while the pointer is over the canvas, and never takes
+      // the key from typing or from activatable chrome (buttons, menu items).
       if (
+        !pointerOverCanvasRef.current ||
         isTypingTarget(event.target) ||
+        isActivatableTarget(event.target) ||
         useSelectionStore.getState().editingElementId !== undefined
       ) {
         return;
       }
       spaceHeldRef.current = true;
       event.preventDefault();
+    };
+    const onEnter = (): void => {
+      pointerOverCanvasRef.current = true;
+    };
+    const onLeave = (): void => {
+      pointerOverCanvasRef.current = false;
     };
     const onKeyUp = (event: KeyboardEvent): void => {
       if (isSpaceKey(event)) spaceHeldRef.current = false;
@@ -226,8 +247,22 @@ export function useCanvasController({
     for (const target of wheelTargets) {
       target.addEventListener("wheel", onWheel as EventListener, { passive: false });
     }
+    // The iframe document is not inside the stage in DOM terms, so its root
+    // element reports hover separately.
+    const hoverTargets: EventTarget[] = [];
+    if (stageEl) hoverTargets.push(stageEl);
+    if (siteRoot) hoverTargets.push(siteRoot.ownerDocument.documentElement);
+    for (const target of hoverTargets) {
+      target.addEventListener("pointerenter", onEnter);
+      target.addEventListener("pointerleave", onLeave);
+    }
     return () => {
       spaceHeldRef.current = false;
+      pointerOverCanvasRef.current = false;
+      for (const target of hoverTargets) {
+        target.removeEventListener("pointerenter", onEnter);
+        target.removeEventListener("pointerleave", onLeave);
+      }
       for (const doc of docs) {
         doc.removeEventListener("keydown", onKeyDown, true);
         doc.removeEventListener("keyup", onKeyUp, true);
@@ -401,9 +436,13 @@ export function useCanvasController({
   }, [isMoving, iframeWin, parentPointerY]);
 
   const refreshDropAfterScroll = useCallback((): void => {
+    if (isMoving) {
+      refreshMove();
+      return;
+    }
     const point = lastDragPointRef.current;
     if (point) updateDrop(resolveDropAt(point));
-  }, [resolveDropAt, updateDrop]);
+  }, [isMoving, refreshMove, resolveDropAt, updateDrop]);
 
   useAutoScroll(
     iframeRef,

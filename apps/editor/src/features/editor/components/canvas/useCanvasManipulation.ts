@@ -57,6 +57,8 @@ export interface UseCanvasManipulationResult {
     event: React.PointerEvent,
   ) => void;
   readonly handleCanvasPointerDown: (event: React.PointerEvent) => void;
+  /** Re-runs drop hit-testing at the last pointer position (after auto-scroll). */
+  readonly refreshMove: () => void;
   readonly cancel: () => void;
 }
 
@@ -260,26 +262,45 @@ function attachDualWindowListeners(
     if (isPointerLikeEvent(e)) handlers.onUp(e);
   };
   const cancelListener = (): void => handlers.onCancel();
+  const targets: Window[] = iframeWin === window ? [iframeWin] : [iframeWin, window];
+
+  // Moving focus between the parent and the iframe blurs the losing window
+  // right after pointerdown. Only abort once, a frame later, neither realm
+  // has focus (the user really left the page).
+  let blurFrame: number | null = null;
+  const blurListener = (): void => {
+    if (blurFrame !== null) return;
+    let ranSync = false;
+    const id = requestAnimationFrame(() => {
+      ranSync = true;
+      blurFrame = null;
+      if (!targets.some((win) => win.document.hasFocus())) handlers.onCancel();
+    });
+    if (!ranSync) blurFrame = id;
+  };
   const keyListener = (e: Event): void => {
     if (e instanceof KeyboardEvent || "key" in e) {
       handlers.onKeyDown(e as KeyboardEvent);
     }
   };
 
-  const targets: Window[] = iframeWin === window ? [iframeWin] : [iframeWin, window];
   for (const win of targets) {
     win.addEventListener("pointermove", moveListener, true);
     win.addEventListener("pointerup", upListener, true);
     win.addEventListener("pointercancel", cancelListener, true);
-    win.addEventListener("blur", cancelListener);
+    win.addEventListener("blur", blurListener);
     win.addEventListener("keydown", keyListener, true);
   }
   return () => {
+    if (blurFrame !== null) {
+      cancelAnimationFrame(blurFrame);
+      blurFrame = null;
+    }
     for (const win of targets) {
       win.removeEventListener("pointermove", moveListener, true);
       win.removeEventListener("pointerup", upListener, true);
       win.removeEventListener("pointercancel", cancelListener, true);
-      win.removeEventListener("blur", cancelListener);
+      win.removeEventListener("blur", blurListener);
       win.removeEventListener("keydown", keyListener, true);
     }
   };
@@ -392,6 +413,10 @@ export function useCanvasManipulation({
 }: UseCanvasManipulationOptions): UseCanvasManipulationResult {
   const [session, setSession] = useState<ManipulationSession>(IDLE_SESSION);
   const disposeRef = useRef<(() => void) | null>(null);
+  const refreshMoveRef = useRef<(() => void) | null>(null);
+  const refreshMove = useCallback((): void => {
+    refreshMoveRef.current?.();
+  }, []);
 
   const teardown = useCallback((): void => {
     const fn = disposeRef.current;
@@ -699,6 +724,7 @@ export function useCanvasManipulation({
       let unlockCursor: (() => void) | null = null;
       let latestTarget: DropIndicatorState | null = null;
       let pendingPointer: NormalizedPointer | null = null;
+      let lastPoint: NormalizedPointer | null = null;
       let finished = false;
 
       const updateMovePreview = (pt: NormalizedPointer): void => {
@@ -721,6 +747,7 @@ export function useCanvasManipulation({
         if (!pendingPointer) return;
         const pt = pendingPointer;
         pendingPointer = null;
+        lastPoint = pt;
         if (!active) {
           const screenDistance =
             Math.hypot(pt.clientX - start.x, pt.clientY - start.y) * geometry().zoom;
@@ -748,11 +775,16 @@ export function useCanvasManipulation({
           setCanvasSelection({ draggingElementId: undefined });
         }
         if (disposeRef.current === cancelCurrent) disposeRef.current = null;
+        if (refreshMoveRef.current === refreshCurrent) refreshMoveRef.current = null;
       };
 
       const cancelCurrent = (): void => {
         cleanup();
         setSession(IDLE_SESSION);
+      };
+
+      const refreshCurrent = (): void => {
+        if (active && lastPoint !== null) updateMovePreview(lastPoint);
       };
 
       const removeListeners = attachDualWindowListeners(view, {
@@ -797,6 +829,7 @@ export function useCanvasManipulation({
       });
 
       disposeRef.current = cancelCurrent;
+      refreshMoveRef.current = refreshCurrent;
     },
     [root, canEdit, picking, teardown, iframeRef, getZoom],
   );
@@ -806,6 +839,7 @@ export function useCanvasManipulation({
     startResize,
     startSpacing,
     handleCanvasPointerDown,
+    refreshMove,
     cancel,
   };
 }

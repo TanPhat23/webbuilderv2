@@ -280,3 +280,55 @@ test('clientToIframeClient divides parent-space pointers by zoom and passes ifra
   );
   assert.deepEqual(fromIframe, { x: 400, y: 200 });
 });
+
+test('Space pans only while the pointer is over the canvas and never steals activation keys', async () => {
+  const stage = document.createElement('div');
+  const button = document.createElement('button');
+  document.body.append(stage, button);
+  const queryClient = new QueryClient();
+  const iframeRef = { current: null };
+
+  function Host(): React.ReactElement {
+    const [siteRoot, setSiteRoot] = React.useState<HTMLDivElement | null>(null);
+    useCanvasController({
+      siteRoot,
+      stageEl: stage,
+      iframeRef,
+      canEdit: true,
+      canCreate: true,
+      queryClient,
+      projectId: 'proj-1',
+      userId: null,
+    });
+    return h('div', { ref: setSiteRoot, id: 'wb-site-root' });
+  }
+  await render(h(Host));
+
+  const pressSpace = (target: EventTarget): KeyboardEvent => {
+    const event = new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true });
+    target.dispatchEvent(event);
+    return event;
+  };
+
+  try {
+    // Pointer is not over the canvas: Space belongs to the page chrome.
+    assert.equal(pressSpace(document.body).defaultPrevented, false);
+    assert.equal(pressSpace(button).defaultPrevented, false);
+
+    await act(() => {
+      stage.dispatchEvent(new Event('pointerenter'));
+    });
+    // Over the canvas, a bare Space enters pan mode...
+    assert.equal(pressSpace(document.body).defaultPrevented, true);
+    // ...but an activatable control keeps its Space.
+    assert.equal(pressSpace(button).defaultPrevented, false);
+
+    await act(() => {
+      stage.dispatchEvent(new Event('pointerleave'));
+    });
+    assert.equal(pressSpace(document.body).defaultPrevented, false);
+  } finally {
+    stage.remove();
+    button.remove();
+  }
+});

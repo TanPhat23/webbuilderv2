@@ -25,6 +25,24 @@ function focusWithCaretAtEnd(node: HTMLElement): void {
   selection.addRange(range);
 }
 
+export type CanvasElementRootProps = {
+  id: string;
+  ref: React.RefCallback<HTMLElement>;
+  "data-element-id": string;
+  "data-element-type": string;
+  className: string | undefined;
+  contentEditable: true | undefined;
+  suppressContentEditableWarning: true;
+  onBlur: (e: React.FocusEvent<HTMLElement>) => void;
+  style: React.CSSProperties;
+};
+
+export interface UseCanvasElementResult {
+  rootProps: CanvasElementRootProps;
+  eventsActive: boolean;
+  isEditing: boolean;
+}
+
 /**
  * Root-node props shared by element renderers: data attributes, the
  * element's own classes and styles, drag source and contentEditable state,
@@ -42,7 +60,7 @@ function focusWithCaretAtEnd(node: HTMLElement): void {
 export function useCanvasElement(
   element: EditorElement,
   { style }: UseCanvasElementOptions = {},
-) {
+): UseCanvasElementResult {
   const eventsActive = useEventModeStore(
     (state) => state.isEventModeEnabled && !state.disabledElementEvents.has(element.id),
   );
@@ -74,7 +92,7 @@ export function useCanvasElement(
     [isEditing, element.id, element.content, updateElement],
   );
 
-  const rootProps = {
+  const rootProps: CanvasElementRootProps = {
     id: element.id,
     ref: setNode,
     "data-element-id": element.id,

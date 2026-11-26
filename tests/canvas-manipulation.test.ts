@@ -419,7 +419,10 @@ test('pointer drag aborts without committing on pointercancel and window blur', 
 
   for (const abort of [
     () => window.dispatchEvent(makePointerEvent('pointercancel', { clientX: 360, clientY: 150 })),
-    () => window.dispatchEvent(new Event('blur')),
+    () => {
+      document.hasFocus = () => false;
+      window.dispatchEvent(new Event('blur'));
+    },
   ]) {
     await act(() => {
       apiRef.current?.startResize(box, boxNode, 'e', {
@@ -493,4 +496,141 @@ test('click selects the element and Alt+click selects its parent, clearing text 
 
   await click(true);
   assert.equal(useSelectionStore.getState().selectedElementId, 'parent');
+});
+
+test('refreshMove re-runs drop hit-testing at the last pointer position without a new pointermove', async () => {
+  const a = makeText('a');
+  const b = makeText('b');
+  const c = makeText('c');
+  useElementStore.getState().setElements([a, b, c], true);
+
+  const apiRef: { current: ReturnType<typeof useCanvasManipulation> | undefined } = {
+    current: undefined,
+  };
+
+  function Host() {
+    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
+    apiRef.current = useCanvasManipulation({ root, canEdit: true, picking: false });
+    return h(
+      'div',
+      { ref: setRoot, 'data-canvas-root': true },
+      h('div', { 'data-element-id': 'a', 'data-element-type': 'Text' }, 'a'),
+      h('div', { 'data-element-id': 'b', 'data-element-type': 'Text' }, 'b'),
+      h('div', { 'data-element-id': 'c', 'data-element-type': 'Text' }, 'c'),
+    );
+  }
+
+  const r = await render(h(Host));
+  const nodeA = $q<HTMLElement>(r.container, '[data-element-id="a"]');
+  const nodeB = $q<HTMLElement>(r.container, '[data-element-id="b"]');
+  const nodeC = $q<HTMLElement>(r.container, '[data-element-id="c"]');
+  nodeA.getBoundingClientRect = () => makeRect(0, 0, 200, 40);
+  nodeB.getBoundingClientRect = () => makeRect(0, 50, 200, 40);
+  nodeC.getBoundingClientRect = () => makeRect(0, 100, 200, 40);
+
+  const doc = nodeA.ownerDocument as Document & {
+    elementsFromPoint?: (x: number, y: number) => Element[];
+  };
+  const prevEfp = doc.elementsFromPoint;
+  let stack: Element[] = [nodeC];
+  doc.elementsFromPoint = () => stack;
+
+  try {
+    await act(() => {
+      apiRef.current?.handleCanvasPointerDown({
+        button: 0,
+        clientX: 20,
+        clientY: 20,
+        target: nodeA,
+        preventDefault() {},
+        stopPropagation() {},
+      } as unknown as React.PointerEvent);
+    });
+    await act(() => {
+      window.dispatchEvent(makePointerEvent('pointermove', { clientX: 20, clientY: 135 }));
+    });
+    const before = apiRef.current?.session;
+    assert.equal(before?.kind === 'moving' ? before.target?.targetId : undefined, 'c');
+
+    // The page scrolled under a still pointer: a different element is now hit.
+    stack = [nodeB];
+    await act(() => {
+      apiRef.current?.refreshMove();
+    });
+    const after = apiRef.current?.session;
+    assert.equal(after?.kind === 'moving' ? after.target?.targetId : undefined, 'b');
+
+    await act(() => {
+      window.dispatchEvent(makePointerEvent('pointercancel'));
+    });
+    assert.equal(apiRef.current?.session.kind, 'idle');
+    // No gesture left: refreshMove is a harmless no-op.
+    await act(() => {
+      apiRef.current?.refreshMove();
+    });
+    assert.equal(apiRef.current?.session.kind, 'idle');
+  } finally {
+    doc.elementsFromPoint = prevEfp;
+  }
+});
+
+test('blur from cross-realm focus transfer does not cancel a gesture; losing focus everywhere does', async () => {
+  const box = makeFrame('box', []);
+  useElementStore.getState().setElements([box], true);
+
+  const apiRef: { current: ReturnType<typeof useCanvasManipulation> | undefined } = {
+    current: undefined,
+  };
+  function Host() {
+    apiRef.current = useCanvasManipulation({ root: null, canEdit: true, picking: false });
+    return null;
+  }
+  await render(h(Host));
+
+  const iframe = document.createElement('iframe');
+  document.body.appendChild(iframe);
+  const iframeDoc = iframe.contentDocument;
+  assert.ok(iframeDoc, 'jsdom iframe document');
+  const node = iframeDoc.createElement('div');
+  iframeDoc.body.appendChild(node);
+  node.getBoundingClientRect = () => makeRect(100, 100, 200, 100);
+  const prevParentFocus = document.hasFocus;
+  const prevIframeFocus = iframeDoc.hasFocus;
+
+  try {
+    await act(() => {
+      apiRef.current?.startResize(box, node, 'e', {
+        button: 0,
+        clientX: 300,
+        clientY: 150,
+        preventDefault() {},
+        stopPropagation() {},
+      } as unknown as React.PointerEvent);
+      window.dispatchEvent(makePointerEvent('pointermove', { clientX: 360, clientY: 150 }));
+    });
+    assert.equal(apiRef.current?.session.kind, 'resizing');
+    assert.equal(node.style.width, '260px');
+
+    // Focus moved from the parent into the iframe: the parent blurs, the iframe has focus.
+    document.hasFocus = () => false;
+    iframeDoc.hasFocus = () => true;
+    await act(() => {
+      window.dispatchEvent(new Event('blur'));
+    });
+    assert.equal(apiRef.current?.session.kind, 'resizing');
+    assert.equal(node.style.width, '260px');
+
+    // Neither realm has focus any more: abort cleanly.
+    iframeDoc.hasFocus = () => false;
+    await act(() => {
+      window.dispatchEvent(new Event('blur'));
+    });
+    assert.equal(apiRef.current?.session.kind, 'idle');
+    assert.equal(node.style.width, '');
+    assert.equal(useElementStore.getState().elements[0]?.styles?.default?.width, undefined);
+  } finally {
+    document.hasFocus = prevParentFocus;
+    iframeDoc.hasFocus = prevIframeFocus;
+    iframe.remove();
+  }
 });
