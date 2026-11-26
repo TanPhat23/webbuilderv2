@@ -9,11 +9,16 @@ import type {
 } from "@/features/editor/utils/element/spacingMath";
 
 export interface DropIndicatorState {
-  targetId: string;
-  position: DropPosition;
+  readonly targetId: string;
+  readonly position: DropPosition;
   /** Siblings flow left-to-right, so before/after are vertical bars. */
-  horizontal: boolean;
+  readonly horizontal: boolean;
 }
+
+export type CanvasDropResolution =
+  | { readonly kind: "root" }
+  | { readonly kind: "relative"; readonly indicator: DropIndicatorState }
+  | null;
 
 export type ManipulationSession =
   | { readonly kind: "idle" }

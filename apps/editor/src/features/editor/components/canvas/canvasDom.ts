@@ -7,7 +7,7 @@ import {
   getActiveDragPayload,
 } from "@/features/editor/utils/element/dragPayload";
 import type { DropIndicatorState } from "./canvasTypes";
-import { findElementNode } from "./useElementRect";
+import { findElementNode } from "./rectTracker";
 
 function hasClosest(value: unknown): value is Element {
   return (
