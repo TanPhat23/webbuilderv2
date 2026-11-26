@@ -1,5 +1,6 @@
 export { SitePageView, type SitePageViewProps, type SiteRouteNavigationTarget } from "./preview/SitePageView";
 export { default as PreviewElementLoader } from "./preview/PreviewElementLoader";
+export { compileElementStylesCss } from "./elements/lib/compileElementStylesCss";
 export { InteractionHost } from "./interactions/components/InteractionHost";
 export { getView } from "./elements/registry";
 export {

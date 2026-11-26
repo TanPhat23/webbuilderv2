@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from "react";
 import { collectReveals, revealCss, REVEAL_NOSCRIPT_CSS } from "./reveal";
 import { useScrollReveal } from "./useScrollReveal";
 import { sanitizeProjectCss } from "../projects/project-css";
+import { compileElementStylesCss } from "../elements/lib/compileElementStylesCss";
 import PreviewElementLoader from "./PreviewElementLoader";
 import { InteractionHost } from "../interactions/components/InteractionHost";
 import { mergedLogic, snapshotFromServer } from "../interactions/logicSnapshot";
@@ -94,6 +95,11 @@ export function SitePageView({
   const logic = useMemo(
     () => mergedLogic(snapshotFromServer(project.logic, [page])),
     [project.logic, page],
+  );
+
+  const elementStylesCss = useMemo(
+    () => compileElementStylesCss(elements),
+    [elements],
   );
 
   const reveals = useMemo(() => collectReveals(elements), [elements]);
@@ -221,7 +227,7 @@ export function SitePageView({
       <div className="min-h-screen min-w-screen bg-white">
         <style
           dangerouslySetInnerHTML={{
-            __html: `${generatedCss}\n${sanitizeProjectCss(project.header?.cssStyles)}\n${revealCss(reveals)}`,
+            __html: `${generatedCss}\n${elementStylesCss}\n${sanitizeProjectCss(project.header?.cssStyles)}\n${revealCss(reveals)}`,
           }}
         />
         {reveals.length > 0 && (

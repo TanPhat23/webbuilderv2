@@ -3,34 +3,14 @@ import { EditorElement, ElementType } from "../../types/global.type";
 import { elementTree } from "./element-tree-helper";
 import { ALL_ELEMENT_TYPES, type ResponsiveStyles } from "../../types/elements";
 import computeTailwindFromStyles from "./computeTailwindFromStyles";
+import { compileElementStylesCss } from "./compileElementStylesCss";
 import React from "react";
 import { cn } from "../../lib/utils";
 import { twMerge } from "tailwind-merge";
 
 type Breakpoint = "default" | "sm" | "md" | "lg" | "xl";
 
-const BREAKPOINTS: readonly Breakpoint[] = ["default", "sm", "md", "lg", "xl"];
-
-const getSafeStyles = (element: EditorElement): React.CSSProperties => {
-  if (
-    !element.styles ||
-    typeof element.styles !== "object" ||
-    Array.isArray(element.styles)
-  ) {
-    return {};
-  }
-
-  const merged: React.CSSProperties = {};
-  const styles = element.styles as Record<string, React.CSSProperties>;
-
-  for (const bp of BREAKPOINTS) {
-    if (styles[bp]) {
-      Object.assign(merged, styles[bp]);
-    }
-  }
-
-  return merged;
-};
+const getSafeStyles = (_element: EditorElement): React.CSSProperties => ({});
 
 const getElementSettings = (element: EditorElement): string | null => {
   if (!element || typeof element !== "object" || element.settings == null) {
@@ -88,6 +68,7 @@ export const elementUtils = {
   getSafeStyles,
   updateElementStyle,
   computeTailwindFromStyles,
+  compileElementStylesCss,
   // content
   replacePlaceholders,
   getElementSettings,

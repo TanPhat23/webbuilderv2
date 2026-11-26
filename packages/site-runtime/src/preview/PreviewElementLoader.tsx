@@ -43,11 +43,12 @@ function PreviewElement({ element, data, draggableRoot }: {
 
   const View = getView(element.type);
   if (!View) return null;
+  const safeStyles = elementUtils.getSafeStyles(element);
   const rootProps = {
     id: element.id,
     "data-element-id": element.id,
     className: element.tailwindStyles,
-    style: elementUtils.getSafeStyles(element),
+    style: Object.keys(safeStyles).length > 0 ? safeStyles : undefined,
     draggable: draggableRoot,
   };
   const props = { rootProps, mode: "preview" as const };
