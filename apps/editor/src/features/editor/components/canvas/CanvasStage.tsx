@@ -30,11 +30,9 @@ import EmptyPageStarter from "@/features/editor/components/editor/EmptyPageStart
 import ElementLoading from "@/features/editor/components/skeleton/ElementLoading";
 import { CanvasHud } from "./CanvasHud";
 import { SiteFrame, useFrameLayout, type FrameLayout, type SiteFrameHandle } from "./SiteFrame";
+import { routeSiteContextMenu } from "./contextMenuRetarget";
 import { useCanvasController } from "./useCanvasController";
-
-const HANDLE_GAP_PX = 12;
-const HANDLE_WIDTH_PX = 8;
-const HANDLE_HEIGHT_PX = 48;
+import { WidthScrubHandle } from "./WidthScrubHandle";
 
 /** True for events dispatched in the editor document (not inside the site iframe). */
 function isParentRealmEvent(event: React.SyntheticEvent): boolean {
@@ -54,69 +52,6 @@ function parentRealmOnly(handler: DragHandler): DragHandler {
   return (event) => {
     if (isParentRealmEvent(event)) handler(event);
   };
-}
-
-function WidthScrubHandle({
-  side,
-  layout,
-}: {
-  readonly side: "left" | "right";
-  readonly layout: FrameLayout;
-}): ReactElement {
-  const dragRef = useRef<{ startX: number; startWidth: number; zoom: number } | null>(null);
-  const left =
-    side === "left"
-      ? layout.left - HANDLE_GAP_PX - HANDLE_WIDTH_PX
-      : layout.left + layout.scaledWidth + HANDLE_GAP_PX;
-  const direction = side === "left" ? -1 : 1;
-
-  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const state = useCanvasViewportStore.getState();
-    dragRef.current = {
-      startX: event.clientX,
-      startWidth: state.frameWidthPx,
-      zoom: computeEffectiveZoom(state),
-    };
-  };
-  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>): void => {
-    const drag = dragRef.current;
-    if (!drag) return;
-    // The frame is centered, so one edge moving by dx moves the width by 2 * dx.
-    const dx = (event.clientX - drag.startX) * direction;
-    useCanvasViewportStore
-      .getState()
-      .scrubFrameWidth(drag.startWidth + Math.round((dx * 2) / drag.zoom));
-  };
-  const endDrag = (event: React.PointerEvent<HTMLDivElement>): void => {
-    dragRef.current = null;
-    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
-    }
-  };
-
-  return (
-    <div
-      role="separator"
-      aria-orientation="vertical"
-      aria-label={`Resize frame width (${side})`}
-      data-width-handle={side}
-      className="pointer-events-auto absolute z-[1001] cursor-ew-resize touch-none rounded-full bg-border transition-colors hover:bg-primary/60 active:bg-primary"
-      style={{
-        left,
-        top: layout.top + layout.scaledHeight / 2 - HANDLE_HEIGHT_PX / 2,
-        width: HANDLE_WIDTH_PX,
-        height: HANDLE_HEIGHT_PX,
-      }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    />
-  );
 }
 
 /** Positions an editor-DOM overlay over the (scaled) page frame. */
@@ -221,19 +156,16 @@ export default function CanvasStage(): ReactElement {
   }, [siteRoot, picking]);
 
   const { siteHandlers, stageHandlers } = controller;
+  const menuEnabled = access.permissionsRole !== CollaboratorRole.VIEWER;
   const onSiteContextMenuCapture = (event: React.MouseEvent): void => {
-    // The menu opens in the editor document, but a click inside the iframe
-    // reports iframe-viewport coordinates: map them to screen pixels first.
-    const iframeEl = iframeRef.current;
-    if (iframeEl && !isParentRealmEvent(event)) {
-      const frameRect = iframeEl.getBoundingClientRect();
-      const zoom = computeEffectiveZoom(useCanvasViewportStore.getState());
-      Object.assign(event, {
-        clientX: frameRect.left + event.clientX * zoom,
-        clientY: frameRect.top + event.clientY * zoom,
-      });
-    }
-    siteHandlers.onContextMenuCapture(event);
+    // The menu opens in the editor document, so the retarget supplies
+    // editor-window coordinates to the trigger (see contextMenuRetarget).
+    routeSiteContextMenu(event, {
+      iframeEl: iframeRef.current,
+      zoom: computeEffectiveZoom(useCanvasViewportStore.getState()),
+      menuEnabled,
+      handlers: siteHandlers,
+    });
   };
 
   const siteFrame = (
@@ -274,13 +206,10 @@ export default function CanvasStage(): ReactElement {
       onDrop={parentRealmOnly(siteHandlers.onDrop)}
       onDragEnd={siteHandlers.onDragEnd}
     >
-      {access.permissionsRole === CollaboratorRole.VIEWER ? (
-        siteFrame
-      ) : (
-        <EditorContextMenu isReadOnly={isReadOnly} isLocked={isLocked}>
-          {siteFrame}
-        </EditorContextMenu>
-      )}
+      {/* Same tree for every role: swapping wrappers would remount the iframe. */}
+      <EditorContextMenu isReadOnly={isReadOnly} isLocked={isLocked} disabled={!menuEnabled}>
+        {siteFrame}
+      </EditorContextMenu>
 
       {editor.isLoading && (
         <FrameOverlay layout={layout} className="absolute overflow-hidden bg-card">

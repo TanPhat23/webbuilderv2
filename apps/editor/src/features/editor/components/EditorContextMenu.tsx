@@ -19,6 +19,7 @@ import {
   SendToBack,
   Trash2,
 } from "lucide-react";
+import { CONTEXT_MENU_TRIGGER_ATTR } from "@/features/editor/components/canvas/contextMenuRetarget";
 import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 
 import { useComponentActions } from "@/features/editor/hooks/useComponentActions";
@@ -32,6 +33,8 @@ interface EditorContextMenuProps {
   children: React.ReactNode;
   isReadOnly?: boolean;
   isLocked?: boolean;
+  /** Keeps the tree shape but turns the menu off (e.g. for viewers). */
+  disabled?: boolean;
 }
 
 const keyboardEventHandler = new ElementKeyboardActions();
@@ -50,6 +53,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   children,
   isReadOnly = false,
   isLocked = false,
+  disabled = false,
 }) => {
   const [saveElement, setSaveElement] = React.useState<EditorElement>();
   const [source, setSource] = React.useState<EditorElement>();
@@ -133,8 +137,10 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
           }
         }}
       >
-        <ContextMenuTrigger asChild>
-          <div ref={triggerRef}>{children}</div>
+        <ContextMenuTrigger asChild disabled={disabled}>
+          <div ref={triggerRef} {...{ [CONTEXT_MENU_TRIGGER_ATTR]: "" }}>
+            {children}
+          </div>
         </ContextMenuTrigger>
         {portalContainer && (
           <ContextMenuPortal container={portalContainer}>

@@ -3,7 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { after, afterEach, beforeEach, test } from "node:test";
 import { redirectModules } from "./support/test-stub-modules";
-import { $q, $$q, cleanup, React, render } from "./support/sidebar-dom-harness";
+import { $q, $$q, cleanup, React, render, win } from "./support/sidebar-dom-harness";
+import * as ReactDOM from "react-dom";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 redirectModules({
@@ -33,6 +34,18 @@ const { SpacingChrome } = await import(
 const { ResizeChrome } = await import(
   "../apps/editor/src/features/editor/components/resizehandler/ResizeChrome"
 );
+const { routeSiteContextMenu, CONTEXT_MENU_TRIGGER_ATTR } = await import(
+  `${CANVAS_DIR}/contextMenuRetarget`
+);
+const { WidthScrubHandle } = await import(`${CANVAS_DIR}/WidthScrubHandle`);
+const { EditorContextMenu } = await import(
+  "../apps/editor/src/features/editor/components/EditorContextMenu"
+);
+const { EditorContext } = await import(
+  "../apps/editor/src/features/editor/context/EditorContext"
+);
+const { editorValue, withEditor } = await import("./support/sidebar-fixtures");
+const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { useCanvasViewportStore } = await import(
   "../apps/editor/src/features/editor/store/canvas-viewport-store"
 );
@@ -270,4 +283,198 @@ test("ResizeChrome aligns edge strips and corner handles with the zoom-projected
   const east = $q<HTMLElement>(r.container, '[data-resize-handle="e"]');
   assert.equal(east.style.width, "8px", "edge strips stay 8 UI px at any zoom");
   node.remove();
+});
+
+function fakeRect(left: number, top: number, width: number, height: number): DOMRect {
+  return {
+    left, top, width, height, right: left + width, bottom: top + height, x: left, y: top,
+    toJSON: () => ({}),
+  };
+}
+
+test("context menu trigger receives editor-window coordinates for a scaled frame", async () => {
+  const received: { x: number; y: number }[] = [];
+  const order: string[] = [];
+  const iframeRef = React.createRef<HTMLIFrameElement>();
+  const zoom = 0.5;
+
+  function Harness(): React.ReactElement {
+    const [container, setContainer] = React.useState<HTMLElement | null>(null);
+    React.useLayoutEffect(() => {
+      const el = iframeRef.current;
+      if (!el) return;
+      el.getBoundingClientRect = () => fakeRect(100, 50, 720, 400);
+      setContainer(el.contentDocument?.body ?? null);
+    }, []);
+    return h(
+      "div",
+      {
+        [CONTEXT_MENU_TRIGGER_ATTR]: "",
+        // Stands in for Radix's trigger: it reads clientX/clientY in the bubble phase.
+        onContextMenu: (e: React.MouseEvent) => {
+          order.push("trigger");
+          received.push({ x: e.clientX, y: e.clientY });
+        },
+      },
+      h(
+        "div",
+        {
+          onContextMenuCapture: (e: React.MouseEvent) =>
+            routeSiteContextMenu(e, {
+              iframeEl: iframeRef.current,
+              zoom,
+              menuEnabled: true,
+              handlers: {
+                onContextMenuCapture: () => order.push("capture"),
+                onContextMenu: () => order.push("select"),
+              },
+            }),
+        },
+        h("iframe", { ref: iframeRef }),
+        container ? ReactDOM.createPortal(h("span", { id: "hit" }, "x"), container) : null,
+      ),
+    );
+  }
+  await render(h(Harness));
+  const iframe = iframeRef.current as HTMLIFrameElement;
+  const doc = iframe.contentDocument as Document;
+  const hit = doc.getElementById("hit");
+  assert.ok(hit, "portal content rendered inside the iframe document");
+
+  const native = new (doc.defaultView as unknown as typeof win).MouseEvent("contextmenu", {
+    bubbles: true,
+    cancelable: true,
+    clientX: 240,
+    clientY: 120,
+  });
+  await React.act(async () => {
+    hit.dispatchEvent(native);
+  });
+
+  // 100 + 240 * 0.5, 50 + 120 * 0.5; never the raw iframe-viewport (240, 120).
+  assert.deepEqual(received, [{ x: 220, y: 110 }], "one retargeted event, projected to screen px");
+  assert.deepEqual(order, ["capture", "select", "trigger"]);
+  assert.equal(native.defaultPrevented, true, "native iframe menu is suppressed");
+});
+
+test("context menu: a hit with nothing selectable opens nothing, not even a raw bubble", async () => {
+  const received: { x: number; y: number }[] = [];
+  const iframeRef = React.createRef<HTMLIFrameElement>();
+  function Harness(): React.ReactElement {
+    const [container, setContainer] = React.useState<HTMLElement | null>(null);
+    React.useLayoutEffect(() => {
+      const el = iframeRef.current;
+      if (!el) return;
+      el.getBoundingClientRect = () => fakeRect(30, 40, 500, 300);
+      setContainer(el.contentDocument?.body ?? null);
+    }, []);
+    return h(
+      "div",
+      {
+        [CONTEXT_MENU_TRIGGER_ATTR]: "",
+        onContextMenu: (e: React.MouseEvent) => received.push({ x: e.clientX, y: e.clientY }),
+      },
+      h(
+        "div",
+        {
+          onContextMenuCapture: (e: React.MouseEvent) =>
+            routeSiteContextMenu(e, {
+              iframeEl: iframeRef.current,
+              zoom: 0.25,
+              menuEnabled: true,
+              handlers: { onContextMenuCapture: () => {}, onContextMenu: (ev: React.MouseEvent) => ev.preventDefault() },
+            }),
+        },
+        h("iframe", { ref: iframeRef }),
+        container ? ReactDOM.createPortal(h("span", { id: "hit" }, "x"), container) : null,
+      ),
+    );
+  }
+  await render(h(Harness));
+  const doc = (iframeRef.current as HTMLIFrameElement).contentDocument as Document;
+  await React.act(async () => {
+    doc.getElementById("hit")?.dispatchEvent(
+      new (doc.defaultView as unknown as typeof win).MouseEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        clientX: 400,
+        clientY: 400,
+      }),
+    );
+  });
+  assert.deepEqual(received, [], "a suppressed hit (no element) opens nothing, with no raw bubble either");
+});
+
+test("flipping the role (menu disabled) keeps the exact same iframe node", async () => {
+  const iframeRef = React.createRef<HTMLIFrameElement>();
+  // Infinite gcTime: no gc timer may keep the test process alive.
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity, retry: false } },
+  });
+  const tree = (disabled: boolean): React.ReactElement =>
+    h(
+      QueryClientProvider,
+      { client: queryClient },
+      withEditor(
+        editorValue(),
+        h(
+          EditorContextMenu,
+          { disabled, children: h(SiteFrame, { iframeRef, elements: [], onReady: () => {} }) },
+        ),
+        EditorContext,
+      ),
+    );
+  const r = await render(tree(false));
+  const first = $q<HTMLIFrameElement>(r.container, "#preview-iframe");
+  await r.rerender(tree(true));
+  assert.equal($q<HTMLIFrameElement>(r.container, "#preview-iframe"), first, "viewer flip");
+  await r.rerender(tree(false));
+  assert.equal($q<HTMLIFrameElement>(r.container, "#preview-iframe"), first, "editor flip");
+  assert.equal($$q(r.container, "iframe").length, 1);
+
+  const stage = fs.readFileSync(
+    path.join(REPO_ROOT, "apps/editor/src/features/editor/components/canvas/CanvasStage.tsx"),
+    "utf8",
+  );
+  assert.ok(!/permissionsRole === CollaboratorRole\.VIEWER \?/.test(stage), "no role-based tree swap");
+  await cleanup();
+  queryClient.clear();
+});
+
+test("width scrub keeps the dragged edge under the pointer while fit zoom would change", async () => {
+  const store = useCanvasViewportStore;
+  store.getState().setStageBounds(1064, 700);
+  store.getState().scrubFrameWidth(1400); // fit zoom = 1000 / 1400
+  const startZoom = 1000 / 1400;
+  const layoutOf = (): ReturnType<typeof computeFrameLayout> => computeFrameLayout(store.getState());
+  const before = layoutOf();
+
+  const r = await render(h(WidthScrubHandle, { side: "right", layout: before }));
+  const handle = $q(r.container, '[data-width-handle="right"]');
+  const fire = async (type: string, clientX: number): Promise<void> => {
+    await React.act(async () => {
+      handle.dispatchEvent(
+        new win.MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX } as MouseEventInit),
+      );
+    });
+  };
+
+  await fire("pointerdown", 500);
+  assert.equal(store.getState().zoomMode, "manual", "zoom is pinned during the scrub");
+  assert.ok(Math.abs(store.getState().manualZoom - startZoom) < 1e-9);
+
+  await fire("pointermove", 540); // right edge +40 screen px
+  const mid = layoutOf();
+  const rightBefore = before.left + before.scaledWidth;
+  const rightMid = mid.left + mid.scaledWidth;
+  // Edge moves by dx on the right and by -dx on the left (centered frame), so
+  // the right edge gains exactly the pointer delta.
+  assert.ok(Math.abs(rightMid - rightBefore - 40) < 1.5, "edge tracks pointer: " + (rightMid - rightBefore));
+
+  await fire("pointermove", 600);
+  const late = layoutOf();
+  assert.ok(Math.abs(late.left + late.scaledWidth - rightBefore - 100) < 1.5, "still tracking after more moves");
+
+  await fire("pointerup", 600);
+  assert.equal(store.getState().zoomMode, "fit", "fit mode is restored on release");
 });
