@@ -1,4 +1,4 @@
-import { elementTree } from "@webbuilder/site-runtime/elements/lib/element-tree-helper";
+import { getAncestorChain } from "../utils/element/ancestors";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 /** Longest element text copied into an agent reference. */
@@ -17,19 +17,10 @@ function label(element: EditorElement): string {
   return name ? `${element.type} "${name}"` : element.type;
 }
 
-/** Root-to-element chain, following the parentId links (cycle-safe). */
+/** Root-to-element chain; just the element when it is not in the tree. */
 function ancestry(element: EditorElement, elements: EditorElement[]): EditorElement[] {
-  const chain: EditorElement[] = [element];
-  const seen = new Set<string>([element.id]);
-  let parentId = element.parentId;
-  while (parentId && !seen.has(parentId)) {
-    seen.add(parentId);
-    const parent = elementTree.findById(elements, parentId);
-    if (!parent) break;
-    chain.unshift(parent);
-    parentId = parent.parentId;
-  }
-  return chain;
+  const chain = getAncestorChain(elements, element.id).reverse();
+  return chain.length > 0 ? chain : [element];
 }
 
 /**

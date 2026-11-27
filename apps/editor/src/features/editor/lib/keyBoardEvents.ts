@@ -7,6 +7,7 @@ import {
   visitComponentTree,
 } from "@webbuilder/site-runtime/projects/components";
 import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
+import { findParentElement } from "../utils/element/ancestors";
 import { toast } from "sonner";
 
 /**
@@ -188,8 +189,7 @@ export class ElementKeyboardActions {
       return;
     }
     const elements = ElementStore.getState().elements;
-    const parentId = elementUtils.findLocation(elements, selectedElementId)?.parentId;
-    const parent = parentId ? elementUtils.findById(elements, parentId) : undefined;
+    const parent = findParentElement(elements, selectedElementId);
     if (parent) {
       selection.setSelectedElement(parent);
       return;

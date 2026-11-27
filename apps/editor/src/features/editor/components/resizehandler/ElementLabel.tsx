@@ -1,10 +1,13 @@
 
 import React, { memo } from "react";
-import { X, Plus, Zap } from "lucide-react";
+import { CornerLeftUp, X, Plus, Zap } from "lucide-react";
 import { hasInteractions } from "@/features/interactions/ops";
 import { cn } from "@webbuilder/site-runtime/lib/utils";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { useParentLayout } from "@/features/editor/hooks/useParentLayout";
+import { useElementStore } from "@/features/editor/store/element-store";
+import { SelectionStore } from "@/features/editor/store/selection-store";
+import { findParentElement } from "@/features/editor/utils/element/ancestors";
 import {
   sizeLabel,
   type SizingStyles,
@@ -22,6 +25,7 @@ export const ElementLabel = memo(function ElementLabel({
   onToggleSpacing,
 }: ElementLabelProps) {
   const layout = useParentLayout(element);
+  const parent = useElementStore((s) => findParentElement(s.elements, element.id));
   const base = (element.styles?.default ?? {}) as SizingStyles;
   return (
     <div
@@ -36,6 +40,27 @@ export const ElementLabel = memo(function ElementLabel({
         transform: "translateY(-100%) translateY(-10px)",
       }}
     >
+      {parent && (
+        <button
+          type="button"
+          data-action="select-parent"
+          aria-label="Select parent"
+          title="Select parent (Esc)"
+          // The label sits over the canvas: keep the press from reselecting the
+          // child or starting a drag.
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            SelectionStore.getState().setSelectedElement(parent);
+          }}
+          className={cn(
+            "-ml-1 p-0.5 rounded hover:bg-black/10 transition-colors pointer-events-auto cursor-pointer",
+            showSpacingInfo ? "text-orange-700" : "text-white",
+          )}
+        >
+          <CornerLeftUp size={12} strokeWidth={3} />
+        </button>
+      )}
       <span className="font-semibold truncate max-w-25">{element.type}</span>
       {hasInteractions(element) && (
         <Zap size={10} strokeWidth={3} aria-label="Has interactions" className="shrink-0" />

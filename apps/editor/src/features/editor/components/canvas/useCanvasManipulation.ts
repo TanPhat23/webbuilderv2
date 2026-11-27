@@ -6,6 +6,8 @@ import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelpe
 import type { Breakpoint, ResponsiveStyles } from "@webbuilder/site-runtime/types/elements";
 import { useCanvasViewportStore } from "@/features/editor/store/canvas-viewport-store";
 import { useElementStore } from "@/features/editor/store/element-store";
+import { useSelectionStore } from "@/features/editor/store/selection-store";
+import { resolveClickSelection } from "@/features/editor/utils/element/clickSelection";
 import {
   computeResizePreview,
   detectLengthUnit,
@@ -330,10 +332,6 @@ export function isEditableOrBlockedTarget(target: EventTarget | null): boolean {
   if (el.closest("[inert]")) return true;
   if ("isContentEditable" in el && (el as HTMLElement).isContentEditable) return true;
   return false;
-}
-
-function findParentId(elements: EditorElement[], id: string): string | undefined {
-  return elementUtils.findLocation(elements, id)?.parentId ?? undefined;
 }
 
 /** Style set a gesture previews against: the breakpoint's styles over what it inherits. */
@@ -718,7 +716,8 @@ export function useCanvasManipulation({
       const view = doc.defaultView ?? window;
       const geometry = (): IframeGeometry => readGeometry(view, iframeRef, getZoom);
       const start = clientToIframeClient(event, geometry());
-      const selectParent = Boolean(event.altKey);
+      const altClick = Boolean(event.altKey);
+      const modClick = Boolean(event.ctrlKey || event.metaKey);
 
       let active = false;
       let unlockCursor: (() => void) | null = null;
@@ -803,12 +802,18 @@ export function useCanvasManipulation({
           cleanup();
           setSession(IDLE_SESSION);
           if (!wasDrag) {
-            // A click (within the slop): select, or Alt+click the parent.
-            const parentId = selectParent
-              ? findParentId(useElementStore.getState().elements, elementId)
-              : undefined;
+            // A click (within the slop): select, Alt+click the parent, or
+            // Ctrl/Cmd+click to climb to the selection's parent.
             setCanvasSelection({
-              selectedElementId: parentId ?? elementId,
+              selectedElementId: resolveClickSelection(
+                useElementStore.getState().elements,
+                {
+                  clickedId: elementId,
+                  selectedId: useSelectionStore.getState().selectedElementId,
+                  alt: altClick,
+                  mod: modClick,
+                },
+              ),
               editingElementId: undefined,
             });
             return;

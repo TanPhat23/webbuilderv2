@@ -498,6 +498,50 @@ test('click selects the element and Alt+click selects its parent, clearing text 
   assert.equal(useSelectionStore.getState().selectedElementId, 'parent');
 });
 
+test('Ctrl/Cmd+click climbs one level per click from the selection and Alt+click still wins', async () => {
+  const text = makeText('child', 'inner');
+  const inner = makeFrame('inner', [text]);
+  const outer = { ...makeFrame('outer'), elements: [inner] } as unknown as FrameElement;
+  useElementStore.getState().setElements([outer], true);
+  useSelectionStore.setState({ selectedElementId: undefined, editingElementId: undefined });
+
+  const apiRef: { current: ReturnType<typeof useCanvasManipulation> | undefined } = { current: undefined };
+  function Host() {
+    const [root, setRoot] = React.useState<HTMLDivElement | null>(null);
+    apiRef.current = useCanvasManipulation({ root, canEdit: true, picking: false });
+    return h('div', { ref: setRoot, 'data-canvas-root': true },
+      h('div', { 'data-element-id': 'outer', 'data-element-type': 'Frame' },
+        h('div', { 'data-element-id': 'inner', 'data-element-type': 'Frame' },
+          h('div', { 'data-element-id': 'child', 'data-element-type': 'Text' }, 'child'))));
+  }
+  const r = await render(h(Host));
+  const childNode = $q<HTMLElement>(r.container, '[data-element-id="child"]');
+  const click = async (mods: { ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean }) => {
+    await act(() => {
+      apiRef.current?.handleCanvasPointerDown({
+        button: 0, clientX: 10, clientY: 10, ctrlKey: false, metaKey: false, altKey: false, ...mods,
+        target: childNode, preventDefault() {}, stopPropagation() {},
+      } as unknown as React.PointerEvent);
+      window.dispatchEvent(makePointerEvent('pointerup', { clientX: 10, clientY: 10 }));
+    });
+  };
+  const selected = () => useSelectionStore.getState().selectedElementId;
+
+  await click({ ctrlKey: true });
+  assert.equal(selected(), 'child', 'no selection yet: a normal click');
+  await click({ ctrlKey: true });
+  assert.equal(selected(), 'inner');
+  await click({ metaKey: true });
+  assert.equal(selected(), 'outer');
+  await click({ ctrlKey: true });
+  assert.equal(selected(), 'outer', 'the root has no parent');
+  await click({});
+  assert.equal(selected(), 'child', 'a plain click still selects the clicked element');
+  await click({ altKey: true, ctrlKey: true });
+  assert.equal(selected(), 'inner', 'Alt+click keeps selecting the parent of the clicked element');
+  assert.equal(apiRef.current?.session.kind, 'idle');
+});
+
 test('refreshMove re-runs drop hit-testing at the last pointer position without a new pointermove', async () => {
   const a = makeText('a');
   const b = makeText('b');
