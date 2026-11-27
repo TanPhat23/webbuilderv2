@@ -44,6 +44,7 @@ export class ElementKeyboardActions {
   };
 
   public cutElement = (): void => {
+    if (!getSelectedElement()) return;
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot cut elements - editor is in read-only mode", {
         duration: 2000,
@@ -63,6 +64,7 @@ export class ElementKeyboardActions {
   };
 
   public pasteElement = (): void => {
+    if (!sessionStorage.getItem("copiedElement")) return;
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot paste elements - editor is in read-only mode", {
         duration: 2000,
@@ -106,6 +108,7 @@ export class ElementKeyboardActions {
   };
 
   public bringToFront = (): void => {
+    if (!getSelectedElement()) return;
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot reorder elements - editor is in read-only mode", {
         duration: 2000,
@@ -128,6 +131,7 @@ export class ElementKeyboardActions {
   };
 
   public sendToBack = (): void => {
+    if (!getSelectedElement()) return;
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot reorder elements - editor is in read-only mode", {
         duration: 2000,
@@ -150,6 +154,7 @@ export class ElementKeyboardActions {
   };
 
   public deleteElement = (): void => {
+    if (!getSelectedElement()) return;
     if (this.isReadOnly || this.isLocked) {
       toast.error("Cannot delete elements - editor is in read-only mode", {
         duration: 2000,

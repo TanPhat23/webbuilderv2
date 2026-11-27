@@ -72,12 +72,21 @@ function hasBalancedQuotes(value: string): boolean {
   return activeQuote === null;
 }
 
-/** Escapes an element ID for safe use inside a `[data-element-id="..."]` CSS selector. */
+// eslint-disable-next-line no-control-regex -- control characters are exactly what must be escaped
+const SELECTOR_STRING_ESCAPE_RE = /["\\\x00-\x1f\x7f]/g;
+
+/**
+ * Escapes an element ID for use inside the quoted attribute selector
+ * `[data-element-id="..."]`. Inside a CSS string only quotes, backslashes and
+ * control characters need escaping, so this is pure string work with no
+ * `CSS.escape`: the server and the browser must emit identical style text.
+ */
 export function escapeElementIdSelector(id: string): string {
-  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
-    return CSS.escape(id);
-  }
-  return id.replace(/[^a-zA-Z0-9_-]/g, (ch) => `\\${ch}`);
+  return id.replace(SELECTOR_STRING_ESCAPE_RE, (ch) =>
+    ch === '"' || ch === "\\"
+      ? `\\${ch}`
+      : `\\${ch.charCodeAt(0).toString(16)} `,
+  );
 }
 
 function toKebabProperty(prop: string): string | null {

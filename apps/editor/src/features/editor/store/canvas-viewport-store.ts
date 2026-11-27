@@ -27,6 +27,12 @@ const BREAKPOINT_MIN_WIDTH: Readonly<Record<Breakpoint, number | null>> = {
   xl: 1280,
 };
 
+/** A point in stage-local pixels (origin at the stage's top-left corner). */
+export interface StagePoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface CanvasViewportData {
   readonly frameWidthPx: number;
   readonly preset: ViewportPreset | "custom";
@@ -44,7 +50,11 @@ export interface CanvasViewportStoreState extends CanvasViewportData {
   scrubFrameWidth: (widthPx: number) => void;
   setActiveBreakpoint: (bp: Breakpoint) => void;
   setStageBounds: (widthPx: number, heightPx: number) => void;
-  zoomByWheel: (deltaY: number) => void;
+  /**
+   * Zooms by a wheel delta. With a stage-local `anchor`, pan is adjusted so
+   * the page point under that cursor stays fixed on screen.
+   */
+  zoomByWheel: (deltaY: number, anchor?: StagePoint) => void;
   setManualZoom: (zoom: number) => void;
   resetZoomToFit: () => void;
   panBy: (dx: number, dy: number) => void;
@@ -53,6 +63,17 @@ export interface CanvasViewportStoreState extends CanvasViewportData {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+function frameLeft(
+  s: Pick<CanvasViewportData, "frameWidthPx" | "stageWidthPx" | "panX">,
+  zoom: number,
+): number {
+  return (s.stageWidthPx - s.frameWidthPx * zoom) / 2 + s.panX;
+}
+
+function frameTop(s: Pick<CanvasViewportData, "panY">): number {
+  return STAGE_TOP_GUTTER_PX + s.panY;
 }
 
 export function computeFitZoom(frameWidthPx: number, stageWidthPx: number): number {
@@ -146,11 +167,27 @@ export const useCanvasViewportStore = create<CanvasViewportStoreState>((set) => 
         : { stageWidthPx: widthPx, stageHeightPx: heightPx },
     ),
 
-  zoomByWheel: (deltaY) =>
+  zoomByWheel: (deltaY, anchor) =>
     set((s) => {
       const base = computeEffectiveZoom(s);
       const next = clamp(base * Math.exp(-deltaY * 0.0015), MIN_ZOOM, MAX_ZOOM);
-      return { zoomMode: "manual", manualZoom: Math.round(next * 1000) / 1000 };
+      const zoom = Math.round(next * 1000) / 1000;
+      if (!anchor || zoom === base) {
+        return { zoomMode: "manual", manualZoom: zoom };
+      }
+      // frame.left = (stageW - frameW * zoom) / 2 + panX and frame.top =
+      // TOP_GUTTER + panY, so solving "the page point under the anchor does
+      // not move" for the pan gives the two lines below.
+      const pageX = (anchor.x - frameLeft(s, base)) / base;
+      const pageY = (anchor.y - frameTop(s)) / base;
+      const nextLeft = anchor.x - pageX * zoom;
+      const nextTop = anchor.y - pageY * zoom;
+      return {
+        zoomMode: "manual",
+        manualZoom: zoom,
+        panX: nextLeft - (s.stageWidthPx - s.frameWidthPx * zoom) / 2,
+        panY: nextTop - STAGE_TOP_GUTTER_PX,
+      };
     }),
 
   setManualZoom: (zoom) =>

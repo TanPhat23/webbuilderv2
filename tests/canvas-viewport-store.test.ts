@@ -27,6 +27,9 @@ const {
   useCanvasViewportStore,
   viewportFromState,
 } = await import("../apps/editor/src/features/editor/store/canvas-viewport-store");
+const { computeFrameLayout } = await import(
+  "../apps/editor/src/features/editor/components/canvas/SiteFrame"
+);
 const { EditorContext } = await import("../apps/editor/src/features/editor/context/EditorContext");
 const { useEditor } = await import("../apps/editor/src/features/editor/hooks/useEditor");
 const { useElementStore } = await import("../apps/editor/src/features/editor/store/element-store");
@@ -233,4 +236,79 @@ test("useEditor currentView and setCurrentView stay synchronized with useCanvasV
     client.clear();
     globalThis.fetch = realFetch;
   }
+});
+
+function frameLayoutNow(): ReturnType<typeof computeFrameLayout> {
+  return computeFrameLayout(useCanvasViewportStore.getState());
+}
+
+test("zoomByWheel zooms in on negative deltaY, out on positive, and switches to manual mode", () => {
+  const store = useCanvasViewportStore.getState();
+  store.setStageBounds(1200, 800);
+  store.setPreset("mobile");
+  store.setManualZoom(1);
+
+  useCanvasViewportStore.getState().zoomByWheel(-100, { x: 600, y: 400 });
+  const zoomedIn = useCanvasViewportStore.getState();
+  assert.equal(zoomedIn.zoomMode, "manual");
+  assert.ok(zoomedIn.manualZoom > 1, "wheel up zooms in");
+
+  useCanvasViewportStore.getState().setManualZoom(1);
+  useCanvasViewportStore.getState().zoomByWheel(100, { x: 600, y: 400 });
+  assert.ok(useCanvasViewportStore.getState().manualZoom < 1, "wheel down zooms out");
+});
+
+test("zoomByWheel clamps to the zoom range and leaves pan alone once clamped", () => {
+  const store = useCanvasViewportStore.getState();
+  store.setStageBounds(1200, 800);
+  store.setPreset("mobile");
+
+  store.setManualZoom(1.9);
+  useCanvasViewportStore.getState().zoomByWheel(-100000, { x: 100, y: 100 });
+  assert.equal(useCanvasViewportStore.getState().manualZoom, 2);
+  const atMax = useCanvasViewportStore.getState();
+  useCanvasViewportStore.getState().zoomByWheel(-100, { x: 300, y: 300 });
+  assert.equal(useCanvasViewportStore.getState().manualZoom, 2);
+  assert.equal(useCanvasViewportStore.getState().panX, atMax.panX);
+  assert.equal(useCanvasViewportStore.getState().panY, atMax.panY);
+
+  useCanvasViewportStore.getState().zoomByWheel(100000, { x: 100, y: 100 });
+  assert.equal(useCanvasViewportStore.getState().manualZoom, 0.25);
+});
+
+test("zoomByWheel keeps the page point under the cursor fixed", () => {
+  const store = useCanvasViewportStore.getState();
+  store.setStageBounds(1200, 800);
+  store.setPreset("tablet");
+  store.setManualZoom(0.8);
+  store.panBy(35, -20);
+
+  for (const anchor of [
+    { x: 300, y: 200 },
+    { x: 900, y: 650 },
+    { x: 600, y: 40 },
+  ]) {
+    for (const deltaY of [-240, 120, -60]) {
+      const before = frameLayoutNow();
+      const pageX = (anchor.x - before.left) / before.zoom;
+      const pageY = (anchor.y - before.top) / before.zoom;
+
+      useCanvasViewportStore.getState().zoomByWheel(deltaY, anchor);
+
+      const after = frameLayoutNow();
+      assert.notEqual(after.zoom, before.zoom, "zoom changed");
+      assert.ok(Math.abs(after.left + pageX * after.zoom - anchor.x) < 1e-6, "x anchor is stable");
+      assert.ok(Math.abs(after.top + pageY * after.zoom - anchor.y) < 1e-6, "y anchor is stable");
+    }
+  }
+});
+
+test("zoomByWheel anchored at the frame centre column only moves pan vertically", () => {
+  const store = useCanvasViewportStore.getState();
+  store.setStageBounds(1000, 800);
+  store.setPreset("tablet");
+  store.setManualZoom(1);
+  useCanvasViewportStore.getState().zoomByWheel(-200, { x: 500, y: 300 });
+  assert.equal(useCanvasViewportStore.getState().panX, 0);
+  assert.ok(useCanvasViewportStore.getState().panY !== 0);
 });

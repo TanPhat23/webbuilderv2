@@ -327,3 +327,174 @@ test('Escape on a focused contentEditable node commits the text, leaves editing,
   assert.equal(saved?.content, 'Edited');
   assert.equal(node.getAttribute('contenteditable'), null);
 });
+
+
+function ScopedShortcuts({ mountNode, readOnly = false }: { mountNode?: HTMLElement | null; readOnly?: boolean }): React.ReactElement {
+  const stageRef = React.useRef<HTMLElement | null>(null);
+  useEditorShortcuts({ stageRef, mountNode: mountNode ?? null, isReadOnly: readOnly, isLocked: false });
+  return h(
+    'div',
+    null,
+    h('button', { id: 'sidebar-btn' }, 'sidebar'),
+    h('p', { id: 'outside-text' }, 'some page text'),
+    h('div', { role: 'dialog', id: 'dlg' }, h('span', { id: 'dlg-child' }, 'dialog')),
+    h('div', { role: 'menu', id: 'menu' }, h('span', { id: 'menu-item', role: 'menuitem' }, 'item')),
+    h('div', { role: 'listbox', id: 'listbox' }, 'list'),
+    h('section', { ref: stageRef as React.RefObject<HTMLElement>, id: 'stage' }, h('span', { id: 'stage-child' }, 'canvas text')),
+  );
+}
+
+function selectElementText(el: Element): void {
+  const selection = window.getSelection();
+  assert.ok(selection);
+  selection.removeAllRanges();
+  selection.selectAllChildren(el);
+}
+
+test('Delete and Backspace only act on the canvas, not on sidebar controls or the document at large', async () => {
+  const el = makeText('el-1');
+  ElementStore.getState().setElements([el], true);
+  SelectionStore.getState().setSelectedElement(el);
+  const r = await render(h(ScopedShortcuts));
+  const sidebar = r.container.querySelector('#sidebar-btn')!;
+
+  let event!: KeyboardEvent;
+  await act(() => {
+    event = pressKey(sidebar, 'Backspace');
+    pressKey(sidebar, 'Delete');
+  });
+  assert.equal(event.defaultPrevented, false);
+  assert.deepEqual(ids(ElementStore.getState().elements), ['el-1']);
+
+  // Control: a key press from inside the stage deletes the selected element.
+  await act(() => {
+    pressKey(r.container.querySelector('#stage-child')!, 'Delete');
+  });
+  assert.deepEqual(ids(ElementStore.getState().elements), []);
+
+  // Control: a key press with nothing focused (document.body) is canvas-scoped.
+  ElementStore.getState().setElements([el], true);
+  SelectionStore.getState().setSelectedElement(el);
+  await act(() => {
+    pressKey(document.body, 'Backspace');
+  });
+  assert.deepEqual(ids(ElementStore.getState().elements), []);
+});
+
+test('keys from dialogs, menus, listboxes and menu items are ignored, including Escape', async () => {
+  const child = makeText('child', 'parent');
+  ElementStore.getState().setElements([makeFrame('parent', [child])], true);
+  SelectionStore.getState().setSelectedElement(child);
+  const r = await render(h(ScopedShortcuts));
+
+  await act(() => {
+    for (const sel of ['#dlg-child', '#dlg', '#menu-item', '#menu', '#listbox']) {
+      const node = r.container.querySelector(sel)!;
+      pressKey(node, 'Escape');
+      pressKey(node, 'Delete');
+    }
+  });
+  assert.equal(SelectionStore.getState().selectedElementId, 'child', 'Escape in an overlay does not step out');
+  assert.equal(childrenOf(ElementStore.getState().elements[0]).length, 1);
+
+  // Control: Escape from the body steps out one level.
+  await act(() => {
+    pressKey(document.body, 'Escape');
+  });
+  assert.equal(SelectionStore.getState().selectedElementId, 'parent');
+});
+
+test('events another handler already prevented are ignored', async () => {
+  const el = makeText('el-1');
+  ElementStore.getState().setElements([el], true);
+  SelectionStore.getState().setSelectedElement(el);
+  const r = await render(h(ScopedShortcuts));
+  const stageChild = r.container.querySelector('#stage-child')!;
+  const stop = (e: Event): void => e.preventDefault();
+  // Registered on the element, so it runs before the document-level handler.
+  stageChild.addEventListener('keydown', stop);
+  await act(() => {
+    pressKey(stageChild, 'Delete');
+  });
+  stageChild.removeEventListener('keydown', stop);
+  assert.deepEqual(ids(ElementStore.getState().elements), ['el-1']);
+});
+
+test('copy and cut keep the native behaviour when text is selected outside the canvas', async () => {
+  const el = makeText('el-1');
+  ElementStore.getState().setElements([el], true);
+  SelectionStore.getState().setSelectedElement(el);
+  const r = await render(h(ScopedShortcuts));
+
+  selectElementText(r.container.querySelector('#outside-text')!);
+  let copy!: KeyboardEvent;
+  let cut!: KeyboardEvent;
+  await act(() => {
+    copy = pressKey(document.body, 'c', { ctrlKey: true });
+    cut = pressKey(document.body, 'x', { metaKey: true });
+  });
+  assert.equal(copy.defaultPrevented, false);
+  assert.equal(cut.defaultPrevented, false);
+  assert.equal(sessionStorage.getItem('copiedElement'), null);
+  assert.deepEqual(ids(ElementStore.getState().elements), ['el-1']);
+
+  // A collapsed selection is not "text selected": copy acts on the element.
+  window.getSelection()!.removeAllRanges();
+  await act(() => {
+    copy = pressKey(document.body, 'c', { ctrlKey: true });
+  });
+  assert.equal(copy.defaultPrevented, true);
+  assert.ok(sessionStorage.getItem('copiedElement'));
+
+  // Text selected inside the stage is canvas text, so the element is copied.
+  sessionStorage.removeItem('copiedElement');
+  selectElementText(r.container.querySelector('#stage-child')!);
+  await act(() => {
+    pressKey(document.body, 'c', { ctrlKey: true });
+  });
+  assert.ok(sessionStorage.getItem('copiedElement'));
+  window.getSelection()!.removeAllRanges();
+});
+
+test('shortcuts from the iframe document act on the canvas', async () => {
+  const el = makeText('el-1');
+  ElementStore.getState().setElements([el], true);
+  SelectionStore.getState().setSelectedElement(el);
+  const frameDoc = document.implementation.createHTMLDocument('frame');
+  const mount = frameDoc.createElement('div');
+  frameDoc.body.appendChild(mount);
+  await render(h(ScopedShortcuts, { mountNode: mount }));
+
+  await act(() => {
+    pressKey(mount, 'Delete');
+  });
+  assert.deepEqual(ids(ElementStore.getState().elements), []);
+});
+
+test('read-only shortcuts stay silent when nothing is selected and toast when something is', async () => {
+  const el = makeText('el-1');
+  ElementStore.getState().setElements([el], true);
+  const toastMod = await import('sonner');
+  const original = toastMod.toast.error;
+  const calls: unknown[] = [];
+  (toastMod.toast as { error: unknown }).error = (...args: unknown[]) => {
+    calls.push(args[0]);
+  };
+  try {
+    const kb = new ElementKeyboardActions();
+    kb.setReadOnly(true);
+    kb.deleteElement();
+    kb.cutElement();
+    kb.bringToFront();
+    kb.sendToBack();
+    kb.pasteElement();
+    assert.deepEqual(calls, [], 'no toasts with nothing selected or copied');
+
+    SelectionStore.getState().setSelectedElement(el);
+    kb.deleteElement();
+    assert.equal(calls.length, 1);
+    assert.deepEqual(ids(ElementStore.getState().elements), ['el-1']);
+  } finally {
+    (toastMod.toast as { error: unknown }).error = original;
+  }
+});

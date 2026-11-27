@@ -76,6 +76,29 @@ export function parentClientToIframeClient(
   };
 }
 
+/**
+ * A wheel/pointer point as stage-local pixels. Events from the editor document
+ * report screen pixels; events from the scaled iframe report its own unscaled
+ * pixels, which grow from the frame's corner at `zoom` screen px per CSS px.
+ */
+export function wheelPointToStage(
+  point: { readonly clientX: number; readonly clientY: number },
+  realm: "parent" | "iframe",
+  params: StageProjectionParams,
+): { readonly x: number; readonly y: number } {
+  if (realm === "parent") {
+    return {
+      x: point.clientX - params.stageRect.left,
+      y: point.clientY - params.stageRect.top,
+    };
+  }
+  const zoom = safeZoomValue(params.zoom);
+  return {
+    x: params.frameRect.left - params.stageRect.left + point.clientX * zoom,
+    y: params.frameRect.top - params.stageRect.top + point.clientY * zoom,
+  };
+}
+
 export function iframeDocPointToStage(
   docX: number,
   docY: number,

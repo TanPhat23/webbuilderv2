@@ -23,7 +23,7 @@ import { CONTEXT_MENU_TRIGGER_ATTR } from "@/features/editor/components/canvas/c
 import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 
 import { useComponentActions } from "@/features/editor/hooks/useComponentActions";
-import { getSelectedOrHoveredElement } from "@/features/editor/store/selected-element";
+import { getSelectedElement } from "@/features/editor/store/selected-element";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { ComponentNameDialog } from "./ComponentNameDialog";
 import { SaveElementDialog } from "./SaveElementDialog";
@@ -67,7 +67,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   const handleBringToFront = () => keyboardEventHandler.bringToFront();
   const handleSendToBack = () => keyboardEventHandler.sendToBack();
   const handleDelete = () => keyboardEventHandler.deleteElement();
-  const handleSave = () => setSaveElement(getSelectedOrHoveredElement());
+  const handleSave = () => setSaveElement(getSelectedElement());
 
   const triggerRef = React.useRef<HTMLDivElement | null>(null);
 
@@ -183,7 +183,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
 
               <ContextMenuSeparator />
 
-              <ContextMenuItem disabled={!canReplace || !canEdit} onSelect={() => setSource(getSelectedOrHoveredElement())}>
+              <ContextMenuItem disabled={!canReplace || !canEdit} onSelect={() => setSource(getSelectedElement())}>
                 <Component />
                 Create component…
               </ContextMenuItem>

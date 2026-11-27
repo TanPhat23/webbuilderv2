@@ -6,21 +6,53 @@ import { useSelectionStore } from "@/features/editor/store/selection-store";
 import { useEditorFlagsOptional } from "@/features/editor/components/context/EditorFlagsContext";
 import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
 import { eventsStyle } from "./eventsStyle";
+import { takeCaretRequest, type CaretPoint } from "./caretRequest";
 
 interface UseCanvasElementOptions {
   /** Extra inline styles, applied over the element's own styles. */
   style?: React.CSSProperties;
 }
 
-/** Focuses `node` and parks the caret after its last character. */
-function focusWithCaretAtEnd(node: HTMLElement): void {
+type CaretDocument = Document & {
+  caretPositionFromPoint?: (
+    x: number,
+    y: number,
+  ) => { offsetNode: Node; offset: number } | null;
+  caretRangeFromPoint?: (x: number, y: number) => Range | null;
+};
+
+/** The collapsed range under `point`, when it falls inside `node`. */
+function caretRangeAt(node: HTMLElement, point: CaretPoint): Range | null {
+  const doc = node.ownerDocument as CaretDocument;
+  let range: Range | null = null;
+  if (typeof doc.caretPositionFromPoint === "function") {
+    const position = doc.caretPositionFromPoint(point.x, point.y);
+    if (position) {
+      range = doc.createRange();
+      range.setStart(position.offsetNode, position.offset);
+      range.collapse(true);
+    }
+  } else if (typeof doc.caretRangeFromPoint === "function") {
+    range = doc.caretRangeFromPoint(point.x, point.y);
+  }
+  return range && node.contains(range.startContainer) ? range : null;
+}
+
+/**
+ * Focuses `node` and parks the caret under `point` when the document can
+ * resolve it, otherwise after its last character.
+ */
+function focusWithCaret(node: HTMLElement, point: CaretPoint | null): void {
   node.focus();
   const view = node.ownerDocument.defaultView;
   const selection = view?.getSelection();
   if (!selection) return;
-  const range = node.ownerDocument.createRange();
-  range.selectNodeContents(node);
-  range.collapse(false);
+  let range = point ? caretRangeAt(node, point) : null;
+  if (!range) {
+    range = node.ownerDocument.createRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+  }
   selection.removeAllRanges();
   selection.addRange(range);
 }
@@ -73,8 +105,10 @@ export function useCanvasElement(
     canEdit && isEditingThis && elementUtils.isEditableElement(element);
 
   useEffect(() => {
-    if (isEditing && nodeRef.current) focusWithCaretAtEnd(nodeRef.current);
-  }, [isEditing]);
+    if (isEditing && nodeRef.current) {
+      focusWithCaret(nodeRef.current, takeCaretRequest(element.id));
+    }
+  }, [isEditing, element.id]);
 
   const setNode = useCallback((node: HTMLElement | null) => {
     nodeRef.current = node;

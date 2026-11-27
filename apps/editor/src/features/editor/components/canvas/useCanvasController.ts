@@ -25,7 +25,10 @@ import {
   setCanvasSelection,
 } from "./canvasDom";
 import { resolveCanvasDropTarget } from "./canvasHitTest";
+import { requestCaretAtPoint } from "@/features/editor/components/elements/shared/caretRequest";
+import { wheelPointToStage } from "./rectTracker";
 import { useAutoScroll } from "./useAutoScroll";
+import { useFrameThrottledValue } from "./useFrameThrottledValue";
 import { useCanvasPickMode } from "./useCanvasPickMode";
 import {
   clientToIframeClient,
@@ -232,7 +235,23 @@ export function useCanvasController({
     const onWheel = (event: WheelEvent): void => {
       if (!event.ctrlKey && !event.metaKey) return;
       event.preventDefault();
-      useCanvasViewportStore.getState().zoomByWheel(event.deltaY);
+      const frameEl = iframeRef.current;
+      if (!stageEl || !frameEl) {
+        useCanvasViewportStore.getState().zoomByWheel(event.deltaY);
+        return;
+      }
+      const target = event.target;
+      const inIframe =
+        target !== null &&
+        typeof target === "object" &&
+        "ownerDocument" in target &&
+        target.ownerDocument !== stageEl.ownerDocument;
+      const anchor = wheelPointToStage(event, inIframe ? "iframe" : "parent", {
+        stageRect: stageEl.getBoundingClientRect(),
+        frameRect: frameEl.getBoundingClientRect(),
+        zoom: computeEffectiveZoom(useCanvasViewportStore.getState()),
+      });
+      useCanvasViewportStore.getState().zoomByWheel(event.deltaY, anchor);
     };
 
     const wheelTargets: EventTarget[] = [];
@@ -272,12 +291,12 @@ export function useCanvasController({
         target.removeEventListener("wheel", onWheel as EventListener);
       }
     };
-  }, [siteRoot, stageEl]);
+  }, [siteRoot, stageEl, iframeRef]);
 
   // ---- Sidebar HTML5 drag-and-drop --------------------------------------
   const [drop, setDrop] = useState<CanvasDropResolution>(null);
   const dropRef = useRef<CanvasDropResolution>(null);
-  const [sidebarPointerY, setSidebarPointerY] = useState<number | null>(null);
+  const [sidebarPointerY, setSidebarPointerY] = useFrameThrottledValue();
   const lastDragPointRef = useRef<ClientPoint | null>(null);
 
   const updateDrop = useCallback((next: CanvasDropResolution): void => {
@@ -291,7 +310,7 @@ export function useCanvasController({
     lastDragPointRef.current = null;
     setSidebarPointerY(null);
     updateDrop(null);
-  }, [updateDrop]);
+  }, [updateDrop, setSidebarPointerY]);
 
   const resolveDropAt = useCallback(
     (point: ClientPoint): CanvasDropResolution => {
@@ -410,7 +429,7 @@ export function useCanvasController({
   };
 
   // ---- Edge auto-scroll while dragging (sidebar drag or element move) ---
-  const [movingPointerY, setMovingPointerY] = useState<number | null>(null);
+  const [movingPointerY, setMovingPointerY] = useFrameThrottledValue();
   const isMoving = session.kind === "moving";
 
   useEffect(() => {
@@ -433,7 +452,7 @@ export function useCanvasController({
       for (const win of wins) win.removeEventListener("pointermove", onMove, true);
       setMovingPointerY(null);
     };
-  }, [isMoving, iframeWin, parentPointerY]);
+  }, [isMoving, iframeWin, parentPointerY, setMovingPointerY]);
 
   const refreshDropAfterScroll = useCallback((): void => {
     if (isMoving) {
@@ -511,6 +530,13 @@ export function useCanvasController({
     }
     const element = findElement(id);
     const editable = element !== undefined && elementUtils.isEditableElement(element);
+    if (editable) {
+      const point = clientToIframeClient(
+        { clientX: event.clientX, clientY: event.clientY, view: event.view },
+        geometry(),
+      );
+      requestCaretAtPoint(id, point);
+    }
     setCanvasSelection({
       selectedElementId: id,
       editingElementId: editable ? id : undefined,

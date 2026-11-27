@@ -19,7 +19,7 @@ const { SITE_IFRAME_SRCDOC, SiteFrame, computeFrameLayout } = await import(
   `${CANVAS_DIR}/SiteFrame`
 );
 const { computeClipInset } = await import(`${CANVAS_DIR}/CanvasHud`);
-const { projectIframeRectToStage, parentClientToIframeClient } = await import(
+const { projectIframeRectToStage, parentClientToIframeClient, wheelPointToStage } = await import(
   `${CANVAS_DIR}/rectTracker`
 );
 const { computeBroadcastDocPoint } = await import(
@@ -48,6 +48,13 @@ const { editorValue, withEditor } = await import("./support/sidebar-fixtures");
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { useCanvasViewportStore } = await import(
   "../apps/editor/src/features/editor/store/canvas-viewport-store"
+);
+
+const { useElementStore } = await import(
+  "../apps/editor/src/features/editor/store/element-store"
+);
+const { useSelectionStore } = await import(
+  "../apps/editor/src/features/editor/store/selection-store"
 );
 
 const h = React.createElement;
@@ -477,4 +484,80 @@ test("width scrub keeps the dragged edge under the pointer while fit zoom would 
 
   await fire("pointerup", 600);
   assert.equal(store.getState().zoomMode, "fit", "fit mode is restored on release");
+});
+
+test("wheelPointToStage maps parent-realm and scaled iframe-realm wheel points to stage-local pixels", () => {
+  const params = {
+    stageRect: { left: 100, top: 50, width: 900, height: 700 },
+    frameRect: { left: 200, top: 90, width: 400, height: 600 },
+    zoom: 0.5,
+  };
+  // Parent realm: screen pixels relative to the stage's own corner.
+  assert.deepEqual(wheelPointToStage({ clientX: 350, clientY: 200 }, "parent", params), {
+    x: 250,
+    y: 150,
+  });
+  // Iframe realm: unscaled iframe pixels, scaled by zoom from the frame's corner.
+  assert.deepEqual(wheelPointToStage({ clientX: 100, clientY: 40 }, "iframe", params), {
+    x: 200 - 100 + 100 * 0.5,
+    y: 90 - 50 + 40 * 0.5,
+  });
+});
+
+test("context menu Save to my library and Create component act on the selection, never the hovered element", async () => {
+  const el = {
+    id: "hov",
+    type: "Text",
+    content: "hov",
+    pageId: "page-1",
+    styles: {},
+    tailwindStyles: "",
+  } as unknown as EditorElement;
+  useElementStore.getState().beginPage("proj-1", "page-1", false);
+  useElementStore.getState().setElements([el], true);
+  useSelectionStore.getState().clearSelection();
+  useSelectionStore.getState().setHoveredElement(el);
+
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { gcTime: Infinity, retry: false } },
+  });
+  const r = await render(
+    h(
+      QueryClientProvider,
+      { client: queryClient },
+      withEditor(
+        editorValue(),
+        h(EditorContextMenu, { children: h("div", { id: "menu-target" }, "target") }),
+        EditorContext,
+      ),
+    ),
+  );
+  const openAndPick = async (label: string): Promise<void> => {
+    await React.act(async () => {
+      $q(r.container, "#menu-target").dispatchEvent(
+        new win.MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: 5, clientY: 5 }),
+      );
+    });
+    const item = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]')).find((n) =>
+      n.textContent?.includes(label),
+    );
+    assert.ok(item, "menu item " + label);
+    await React.act(async () => {
+      item.dispatchEvent(new win.MouseEvent("pointerup", { bubbles: true, cancelable: true, button: 0 }));
+      item.dispatchEvent(new win.MouseEvent("click", { bubbles: true, cancelable: true, button: 0 }));
+    });
+  };
+
+  await openAndPick("Save to my library");
+  assert.equal(document.querySelector('[role="dialog"]'), null, "hover alone opens no save dialog");
+
+  useSelectionStore.getState().setSelectedElement(el);
+  await openAndPick("Save to my library");
+  assert.ok(document.querySelector('[role="dialog"]'), "control: the selected element opens the save dialog");
+
+  // Unmount first: observers leaving a cleared cache would schedule new gc timers
+  // that keep the test process alive for 30 minutes.
+  await cleanup();
+  queryClient.clear();
+  useSelectionStore.getState().clearSelection();
 });

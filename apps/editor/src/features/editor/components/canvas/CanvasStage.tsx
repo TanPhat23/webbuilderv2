@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ReactElement,
@@ -168,6 +169,22 @@ export default function CanvasStage(): ReactElement {
     });
   };
 
+  // The site tree must not re-render for editor-chrome state (drag pointer,
+  // hover, zoom) that changes the controller on every pointer frame.
+  const siteContent = useMemo(
+    () =>
+      editor.isLoading ? null : (
+        <ElementLoader
+          page={page}
+          data={previewData}
+          isReadOnly={isReadOnly}
+          isLocked={isLocked}
+          iframeRef={iframeRef}
+        />
+      ),
+    [editor.isLoading, page, previewData, isReadOnly, isLocked],
+  );
+
   const siteFrame = (
     <SiteFrame
       iframeRef={iframeRef}
@@ -176,15 +193,7 @@ export default function CanvasStage(): ReactElement {
       siteHandlers={{ ...siteHandlers, onContextMenuCapture: onSiteContextMenuCapture }}
       onReady={setFrame}
     >
-      {editor.isLoading ? null : (
-        <ElementLoader
-          page={page}
-          data={previewData}
-          isReadOnly={isReadOnly}
-          isLocked={isLocked}
-          iframeRef={iframeRef}
-        />
-      )}
+      {siteContent}
     </SiteFrame>
   );
 

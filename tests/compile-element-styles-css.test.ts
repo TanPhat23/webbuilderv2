@@ -64,7 +64,7 @@ test("walks nested container children and deduplicates repeated ids", () => {
   const css = compileElementStylesCss([root]);
 
   assert.ok(css.includes('[data-element-id="sec-1"]{gap:16px;}'));
-  assert.ok(css.includes('[data-element-id="btn\\:1"]{height:44px;}'));
+  assert.ok(css.includes('[data-element-id="btn:1"]{height:44px;}'));
   assert.ok(!css.includes("99px"));
 });
 
@@ -181,4 +181,32 @@ test("getSafeStyles returns {} and PreviewElementLoader omits inline style while
   );
   assert.ok(pageHtml.includes('[data-element-id="box-1"]{width:300px;}'));
   assert.ok(pageHtml.includes('@media (min-width: 768px){[data-element-id="box-1"]{width:700px;}}'));
+});
+
+test("element id selectors escape only quotes, backslashes and control chars, identically with or without CSS.escape", () => {
+  const elements = [
+    makeElement('a"b\\c]d e.f:g', { default: { color: "red" } }),
+    makeElement("line\nbreak", { default: { color: "blue" } }),
+  ];
+  const expected = [
+    '[data-element-id="a\\"b\\\\c]d e.f:g"]{color:red;}',
+    '[data-element-id="line\\a break"]{color:blue;}',
+  ].join("");
+
+  const withoutCss = compileElementStylesCss(elements);
+  assert.equal(withoutCss, expected);
+
+  const globals = globalThis as { CSS?: unknown };
+  const hadCss = Object.hasOwn(globals, "CSS");
+  const previous = globals.CSS;
+  globals.CSS = { escape: (value: string): string => `ESCAPED(${value})` };
+  try {
+    assert.equal(compileElementStylesCss(elements), withoutCss, "browser CSS.escape must not change the output");
+  } finally {
+    if (hadCss) globals.CSS = previous;
+    else delete globals.CSS;
+  }
+
+  const plain = compileElementStylesCss([makeElement("el-1_ok", { default: { color: "red" } })]);
+  assert.equal(plain, '[data-element-id="el-1_ok"]{color:red;}');
 });
