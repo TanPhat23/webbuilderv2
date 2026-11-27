@@ -186,6 +186,29 @@ test('a single click selects an editable heading without entering text editing',
   assert.equal(node.getAttribute('contenteditable'), null);
 });
 
+test('a context menu during a press cancels it, so the release never selects (macOS Ctrl+click)', async () => {
+  const { node, controller } = await renderHeadingCanvas();
+  useSelectionStore.setState({ selectedElementId: 'other' });
+
+  await act(() => {
+    controller().siteHandlers.onPointerDown({ ...pointerDown(node, 20, 20), ctrlKey: true } as unknown as React.PointerEvent);
+    controller().siteHandlers.onContextMenu({
+      target: node,
+      preventDefault() {},
+      stopPropagation() {},
+    } as unknown as React.MouseEvent);
+  });
+  assert.equal(useSelectionStore.getState().selectedElementId, 'h1', 'the menu selects the pressed element');
+
+  // Something under the open menu changes the selection before the button is released.
+  useSelectionStore.setState({ selectedElementId: 'other' });
+  await act(() => {
+    window.dispatchEvent(makePointerEvent('pointerup', { clientX: 20, clientY: 20 }));
+  });
+  assert.equal(useSelectionStore.getState().selectedElementId, 'other', 'the pointerup of the cancelled press selects nothing');
+  assert.equal(controller().session.kind, 'idle');
+});
+
 test('a double click enters inline text editing and enables contentEditable', async () => {
   const { node, controller } = await renderHeadingCanvas();
 

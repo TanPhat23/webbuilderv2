@@ -1,5 +1,18 @@
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { IS_APPLE } from "../platform";
 import { findParentElement, getAncestorChain } from "./ancestors";
+
+/**
+ * Whether a press carries the "climb to the parent" modifier: Ctrl or Cmd, but
+ * only Cmd on Apple platforms, where Ctrl+click is a right-click that opens
+ * the context menu instead.
+ */
+export function isClimbModifier(
+  event: { readonly ctrlKey?: boolean; readonly metaKey?: boolean },
+  apple: boolean = IS_APPLE,
+): boolean {
+  return Boolean(event.metaKey || (!apple && event.ctrlKey));
+}
 
 export interface ClickSelectionInput {
   readonly clickedId: string;

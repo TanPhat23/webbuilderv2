@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { CONTEXT_MENU_TRIGGER_ATTR } from "@/features/editor/components/canvas/contextMenuRetarget";
 import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
+import { IS_APPLE } from "@/features/editor/utils/platform";
 
 import { toast } from "sonner";
 import { buildAgentReference } from "@/features/editor/lib/agentReference";
@@ -45,8 +46,6 @@ interface EditorContextMenuProps {
 
 const keyboardEventHandler = new ElementKeyboardActions();
 
-const IS_APPLE =
-  typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform);
 /** Shortcut modifier label for the user's platform (⌘ on Apple, Ctrl elsewhere). */
 const MOD = IS_APPLE ? "⌘" : "Ctrl+";
 /** The same modifier as an aria-keyshortcuts token. */

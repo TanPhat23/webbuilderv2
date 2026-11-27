@@ -544,6 +544,9 @@ export function useCanvasController({
   };
 
   const onContextMenu = (event: React.MouseEvent): void => {
+    // On macOS Ctrl+click is pointerdown, contextmenu, pointerup: the menu
+    // owns the gesture, so the pending press must not select on release.
+    manipulation.cancel();
     const shared = (event.target as Element | null)?.closest<HTMLElement>(
       "[data-shared-section-id]",
     );

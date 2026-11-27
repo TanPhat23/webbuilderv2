@@ -7,7 +7,7 @@ import type { Breakpoint, ResponsiveStyles } from "@webbuilder/site-runtime/type
 import { useCanvasViewportStore } from "@/features/editor/store/canvas-viewport-store";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { useSelectionStore } from "@/features/editor/store/selection-store";
-import { resolveClickSelection } from "@/features/editor/utils/element/clickSelection";
+import { isClimbModifier, resolveClickSelection } from "@/features/editor/utils/element/clickSelection";
 import {
   computeResizePreview,
   detectLengthUnit,
@@ -717,7 +717,7 @@ export function useCanvasManipulation({
       const geometry = (): IframeGeometry => readGeometry(view, iframeRef, getZoom);
       const start = clientToIframeClient(event, geometry());
       const altClick = Boolean(event.altKey);
-      const modClick = Boolean(event.ctrlKey || event.metaKey);
+      const modClick = isClimbModifier(event);
 
       let active = false;
       let unlockCursor: (() => void) | null = null;

@@ -7,6 +7,7 @@ import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { useParentLayout } from "@/features/editor/hooks/useParentLayout";
 import { useElementStore } from "@/features/editor/store/element-store";
 import { SelectionStore } from "@/features/editor/store/selection-store";
+import { elementTree } from "@webbuilder/site-runtime/elements/lib/element-tree-helper";
 import { findParentElement } from "@/features/editor/utils/element/ancestors";
 import {
   sizeLabel,
@@ -25,7 +26,8 @@ export const ElementLabel = memo(function ElementLabel({
   onToggleSpacing,
 }: ElementLabelProps) {
   const layout = useParentLayout(element);
-  const parent = useElementStore((s) => findParentElement(s.elements, element.id));
+  // The id, not the element: a primitive keeps the label from re-rendering on every subtree edit.
+  const parentId = useElementStore((s) => findParentElement(s.elements, element.id)?.id);
   const base = (element.styles?.default ?? {}) as SizingStyles;
   return (
     <div
@@ -40,7 +42,7 @@ export const ElementLabel = memo(function ElementLabel({
         transform: "translateY(-100%) translateY(-10px)",
       }}
     >
-      {parent && (
+      {parentId && (
         <button
           type="button"
           data-action="select-parent"
@@ -51,7 +53,9 @@ export const ElementLabel = memo(function ElementLabel({
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
-            SelectionStore.getState().setSelectedElement(parent);
+            SelectionStore.getState().setSelectedElement(
+              elementTree.findById(useElementStore.getState().elements, parentId),
+            );
           }}
           className={cn(
             "-ml-1 p-0.5 rounded hover:bg-black/10 transition-colors pointer-events-auto cursor-pointer",

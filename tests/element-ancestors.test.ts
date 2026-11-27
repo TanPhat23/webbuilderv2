@@ -5,7 +5,7 @@ import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
 const { findParentElement, getAncestorChain, layerLabel, LAYER_LABEL_TEXT_LIMIT } = await import(
   '../apps/editor/src/features/editor/utils/element/ancestors'
 );
-const { resolveClickSelection } = await import(
+const { resolveClickSelection, isClimbModifier } = await import(
   '../apps/editor/src/features/editor/utils/element/clickSelection'
 );
 
@@ -110,4 +110,20 @@ test('Alt wins over Ctrl/Cmd so Alt+click keeps working', () => {
 
 test('a stale selected id that is not in the tree is ignored', () => {
   assert.equal(click({ mod: true, selectedId: 'gone' }), 'text');
+});
+
+test('the climb modifier is Ctrl or Cmd, but only Cmd on Apple where Ctrl+click is a right-click', () => {
+  assert.equal(isClimbModifier({ ctrlKey: true }, false), true);
+  assert.equal(isClimbModifier({ metaKey: true }, false), true);
+  assert.equal(isClimbModifier({}, false), false);
+  assert.equal(isClimbModifier({ metaKey: true }, true), true);
+  assert.equal(isClimbModifier({ ctrlKey: true }, true), false, 'Ctrl+click opens the context menu on a Mac');
+  assert.equal(isClimbModifier({ ctrlKey: false, metaKey: false }, true), false);
+});
+
+test('getAncestorChain finds an element in a later sibling subtree', () => {
+  const deep = el('deep', 'Text');
+  const wrap = el('wrap', 'Frame', {}, [deep]);
+  const root2 = el('root2', 'Section', {}, [el('first', 'Frame'), wrap]);
+  assert.deepEqual(getAncestorChain([section, root2], 'deep').map((e) => e.id), ['deep', 'wrap', 'root2']);
 });

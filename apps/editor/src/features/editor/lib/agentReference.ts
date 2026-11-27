@@ -1,21 +1,8 @@
-import { getAncestorChain } from "../utils/element/ancestors";
+import { clipText, getAncestorChain, layerLabel } from "../utils/element/ancestors";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 
 /** Longest element text copied into an agent reference. */
 export const AGENT_REFERENCE_TEXT_LIMIT = 500;
-
-const ELLIPSIS = "…";
-
-function clipText(raw: string): string {
-  const flat = raw.replace(/\s+/g, " ").trim();
-  if (flat.length <= AGENT_REFERENCE_TEXT_LIMIT) return flat;
-  return flat.slice(0, AGENT_REFERENCE_TEXT_LIMIT - ELLIPSIS.length) + ELLIPSIS;
-}
-
-function label(element: EditorElement): string {
-  const name = element.name?.trim();
-  return name ? `${element.type} "${name}"` : element.type;
-}
 
 /** Root-to-element chain; just the element when it is not in the tree. */
 function ancestry(element: EditorElement, elements: EditorElement[]): EditorElement[] {
@@ -31,7 +18,10 @@ export function buildAgentReference(
   element: EditorElement,
   elements: EditorElement[],
 ): string {
-  const content = typeof element.content === "string" ? clipText(element.content) : "";
+  const content =
+    typeof element.content === "string"
+      ? clipText(element.content, AGENT_REFERENCE_TEXT_LIMIT)
+      : "";
   const classes =
     typeof element.tailwindStyles === "string" ? element.tailwindStyles.trim() : "";
   const fields: ReadonlyArray<readonly [string, string | undefined]> = [
@@ -39,7 +29,7 @@ export function buildAgentReference(
     ["Type", element.type],
     ["Name", element.name?.trim()],
     ["Page ID", element.pageId],
-    ["Path", ancestry(element, elements).map(label).join(" › ")],
+    ["Path", ancestry(element, elements).map(layerLabel).join(" › ")],
     ["Classes", classes],
     ["Text", content],
   ];
