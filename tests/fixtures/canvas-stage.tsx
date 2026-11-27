@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Outlet, RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from '@tanstack/react-router';
 import CanvasStage from '../../apps/editor/src/features/editor/components/canvas/CanvasStage';
 import { EditorContext, type EditorContextType } from '../../apps/editor/src/features/editor/context/EditorContext';
+import AIChatProvider from '../../apps/editor/src/providers/aiprovider';
 import { useElementStore } from '../../apps/editor/src/features/editor/store/element-store';
 import { useSelectionStore } from '../../apps/editor/src/features/editor/store/selection-store';
 import { useCanvasViewportStore } from '../../apps/editor/src/features/editor/store/canvas-viewport-store';
@@ -83,10 +84,12 @@ function Harness(): React.ReactElement {
   return (
     <QueryClientProvider client={queryClient}>
       <EditorContext.Provider value={editorValue}>
-        <div data-testid="stage-host" style={{ width: stageWidth, height: stageHeight, position: 'relative' }}>
-          <CanvasStage />
-        </div>
-        <output data-testid="selected">{useSelectionStoreId()}</output>
+        <AIChatProvider>
+          <div data-testid="stage-host" style={{ width: stageWidth, height: stageHeight, position: 'relative' }}>
+            <CanvasStage />
+          </div>
+          <output data-testid="selected">{useSelectionStoreId()}</output>
+        </AIChatProvider>
       </EditorContext.Provider>
     </QueryClientProvider>
   );

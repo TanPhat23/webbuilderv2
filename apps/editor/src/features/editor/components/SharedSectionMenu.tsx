@@ -26,7 +26,7 @@ export function SharedSectionMenu({ container, editable }: { container: HTMLElem
   return (
     <>
       <ContextMenuSub>
-        <ContextMenuSubTrigger className="gap-2">
+        <ContextMenuSubTrigger className="gap-2" data-action="shared-section">
           <Component />
           Shared section
         </ContextMenuSubTrigger>

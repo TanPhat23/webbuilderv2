@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 import { SelectionStore } from "@/features/editor/store/selection-store";
 import { isTypingTarget } from "@/features/editor/components/layout/isTypingTarget";
+import { openElementContextMenu } from "@/features/editor/components/canvas/openElementContextMenu";
 
 const OVERLAY_SELECTOR =
   "[role=dialog],[role=menu],[role=listbox],[role=menuitem]";
@@ -46,6 +47,12 @@ function isCanvasKeyTarget(
     return true;
   }
   return stage?.contains(target) ?? false;
+}
+
+/** Shift+F10 or the ContextMenu key: the keyboard way to open the context menu. */
+function isContextMenuKey(e: KeyboardEvent): boolean {
+  if (e.ctrlKey || e.metaKey || e.altKey) return false;
+  return e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey);
 }
 
 /** True when the user has text selected somewhere other than the canvas. */
@@ -124,6 +131,18 @@ export function useEditorShortcuts({
       }
 
       if (editing || isTypingTarget(e.target)) return;
+
+      if (isContextMenuKey(e)) {
+        const selectedId = SelectionStore.getState().selectedElementId;
+        if (!selectedId) return;
+        // The site nodes live in the iframe document, or in this one in tests.
+        const siteDoc =
+          mountNode?.ownerDocument ??
+          stageRef?.current?.querySelector("iframe")?.contentDocument ??
+          parentDoc;
+        if (openElementContextMenu(siteDoc, selectedId)) e.preventDefault();
+        return;
+      }
 
       const mod = e.ctrlKey || e.metaKey;
       if (mod) {

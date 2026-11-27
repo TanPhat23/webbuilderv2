@@ -12,6 +12,7 @@ import {
 import {
   BringToFront,
   ClipboardPaste,
+  Bot,
   Copy,
   Component,
   Save,
@@ -22,12 +23,16 @@ import {
 import { CONTEXT_MENU_TRIGGER_ATTR } from "@/features/editor/components/canvas/contextMenuRetarget";
 import { ElementKeyboardActions } from "@/features/editor/lib/keyBoardEvents";
 
+import { toast } from "sonner";
+import { buildAgentReference } from "@/features/editor/lib/agentReference";
+import { ElementStore } from "@/features/editor/store/element-store";
 import { useComponentActions } from "@/features/editor/hooks/useComponentActions";
 import { getSelectedElement } from "@/features/editor/store/selected-element";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { ComponentNameDialog } from "./ComponentNameDialog";
 import { SaveElementDialog } from "./SaveElementDialog";
 import { SharedSectionMenu } from "./SharedSectionMenu";
+import { AskAiMenu } from "./AskAiMenu";
 
 interface EditorContextMenuProps {
   children: React.ReactNode;
@@ -39,11 +44,12 @@ interface EditorContextMenuProps {
 
 const keyboardEventHandler = new ElementKeyboardActions();
 
+const IS_APPLE =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform);
 /** Shortcut modifier label for the user's platform (⌘ on Apple, Ctrl elsewhere). */
-const MOD =
-  typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
-    ? "⌘"
-    : "Ctrl+";
+const MOD = IS_APPLE ? "⌘" : "Ctrl+";
+/** The same modifier as an aria-keyshortcuts token. */
+const ARIA_MOD = IS_APPLE ? "Meta" : "Control";
 
 /**
  * The canvas and Layers panel select the right-clicked element before
@@ -68,11 +74,28 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
   const handleSendToBack = () => keyboardEventHandler.sendToBack();
   const handleDelete = () => keyboardEventHandler.deleteElement();
   const handleSave = () => setSaveElement(getSelectedElement());
+  const handleCopyForAgent = async (): Promise<void> => {
+    const selected = getSelectedElement();
+    if (!selected) {
+      toast.error("Select an element first");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(
+        buildAgentReference(selected, ElementStore.getState().elements),
+      );
+      toast.success("Copied element reference for your AI agent");
+    } catch {
+      toast.error("Could not copy to the clipboard");
+    }
+  };
 
   const triggerRef = React.useRef<HTMLDivElement | null>(null);
 
   const [portalContainer, setPortalContainer] =
     React.useState<HTMLElement | null>(null);
+  // Names the menu for assistive tech and AI agents reading the page.
+  const [menuLabel, setMenuLabel] = React.useState("Actions for element");
 
   // Radix only listens for outside clicks / Esc on the document that holds the
   // menu. The canvas lives in an iframe, so a click in the editor chrome (or
@@ -126,6 +149,8 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
       <ContextMenu
         onOpenChange={(open: boolean) => {
           if (open) {
+            const target = getSelectedElement();
+            setMenuLabel(`Actions for ${target?.name?.trim() || target?.type || "element"}`);
             const ownerDoc = triggerRef.current?.ownerDocument;
             const container =
               (ownerDoc && ownerDoc.body) ||
@@ -146,6 +171,7 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
           <ContextMenuPortal container={portalContainer}>
             <ContextMenuPrimitive.Content
               data-slot="context-menu-content"
+              aria-label={menuLabel}
               className={
                 "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out " +
                 "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 " +
@@ -154,17 +180,17 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
                 "min-w-52 origin-(--radix-context-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border p-1 shadow-md"
               }
             >
-              <ContextMenuItem onSelect={handleCopy}>
+              <ContextMenuItem data-action="copy" aria-keyshortcuts={`${ARIA_MOD}+C`} onSelect={handleCopy}>
                 <Copy />
                 Copy
                 <ContextMenuShortcut>{MOD}C</ContextMenuShortcut>
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={handleCut}>
+              <ContextMenuItem data-action="cut" aria-keyshortcuts={`${ARIA_MOD}+X`} disabled={!canEdit} onSelect={handleCut}>
                 <Scissors />
                 Cut
                 <ContextMenuShortcut>{MOD}X</ContextMenuShortcut>
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={handlePaste}>
+              <ContextMenuItem data-action="paste" aria-keyshortcuts={`${ARIA_MOD}+V`} disabled={!canEdit} onSelect={handlePaste}>
                 <ClipboardPaste />
                 Paste
                 <ContextMenuShortcut>{MOD}V</ContextMenuShortcut>
@@ -172,22 +198,30 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
 
               <ContextMenuSeparator />
 
-              <ContextMenuItem disabled={!canEdit} onSelect={handleBringToFront}>
+              <AskAiMenu container={portalContainer} editable={canEdit} />
+              <ContextMenuItem data-action="copy-for-agent" onSelect={() => void handleCopyForAgent()}>
+                <Bot />
+                Copy for AI agent
+              </ContextMenuItem>
+
+              <ContextMenuSeparator />
+
+              <ContextMenuItem data-action="bring-to-front" disabled={!canEdit} onSelect={handleBringToFront}>
                 <BringToFront />
                 Bring to front
               </ContextMenuItem>
-              <ContextMenuItem disabled={!canEdit} onSelect={handleSendToBack}>
+              <ContextMenuItem data-action="send-to-back" disabled={!canEdit} onSelect={handleSendToBack}>
                 <SendToBack />
                 Send to back
               </ContextMenuItem>
 
               <ContextMenuSeparator />
 
-              <ContextMenuItem disabled={!canReplace || !canEdit} onSelect={() => setSource(getSelectedElement())}>
+              <ContextMenuItem data-action="create-component" disabled={!canReplace || !canEdit} onSelect={() => setSource(getSelectedElement())}>
                 <Component />
                 Create component…
               </ContextMenuItem>
-              <ContextMenuItem onSelect={handleSave}>
+              <ContextMenuItem data-action="save-to-library" onSelect={handleSave}>
                 <Save />
                 Save to my library…
               </ContextMenuItem>
@@ -197,6 +231,8 @@ export const EditorContextMenu: React.FC<EditorContextMenuProps> = ({
               <SharedSectionMenu container={portalContainer} editable={canEdit} />
 
               <ContextMenuItem
+                data-action="delete"
+                aria-keyshortcuts="Delete"
                 variant="destructive"
                 disabled={!canEdit}
                 onSelect={handleDelete}

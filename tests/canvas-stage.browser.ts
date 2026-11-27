@@ -12,12 +12,11 @@ const stubs: ReadonlyArray<readonly [RegExp, string]> = [
   [/^@clerk\/tanstack-react-start\/server$/, resolve('tests/support/test-clerk-server-stub.ts')],
   [/^@\/features\/auth\/lib\/gettoken$/, fixture('interactions-pick-auth-stub.ts')],
   [/^@\/features\/editor\/lib\/dropElement$/, fixture('interactions-pick-drop-stub.ts')],
-  [/^@\/features\/editor\/components\/EditorContextMenu$/, fixture('interactions-pick-context-stub.tsx')],
   [/^@\/features\/editor\/utils\/element\/create\/ElementFactory$/, fixture('interactions-pick-factory-stub.ts')],
   [/^@\/features\/editor\/hooks\/useEditorPermissions$/, fixture('canvas-stage-permissions-stub.ts')],
   [/^@\/features\/projects\/api\/project\.api$/, fixture('canvas-stage-api-stub.ts')],
   [/^@\/features\/elements\/services\/element\.service$/, fixture('canvas-stage-api-stub.ts')],
-  [/^@\/features\/collaboration$/, resolve('apps/editor/src/features/collaboration/interfaces/collaboration.interface.ts')],
+  [/^@\/features\/collaboration$/, fixture('canvas-stage-collaboration-stub.ts')],
 ];
 
 let server: ViteDevServer;
@@ -227,5 +226,41 @@ test('6. dragging a width scrub handle changes the frame width', async (t) => {
   assert.ok(Math.abs(after.frameWidthPx - (before - Math.round((60 * 2) / zoom))) <= 4, `width ${after.frameWidthPx} tracks the pointer`);
   assert.equal(after.preset, 'custom');
   assert.equal(await frameWidth(page), after.frameWidthPx, 'iframe viewport follows');
+  await page.close();
+});
+
+test('7. right-clicking a Text shows the machine-readable menu and Shift+F10 reopens it at the element', async (t) => {
+  const page = await openStage();
+  const menu = page.locator('[role="menu"]');
+  const target = text(page, 'text-1');
+
+  await target.click({ button: 'right' });
+  await menu.waitFor();
+  assert.equal(await selectedId(page), 'text-1', 'right-click selects the element');
+  assert.equal(await menu.getAttribute('aria-label'), 'Actions for Text');
+  for (const action of ['copy', 'cut', 'paste', 'ask-ai', 'copy-for-agent', 'delete']) {
+    assert.equal(await menu.locator(`[data-action="${action}"]`).count(), 1, `data-action=${action}`);
+  }
+  assert.equal(await menu.locator('[data-action="delete"]').getAttribute('aria-keyshortcuts'), 'Delete');
+  assert.match((await menu.locator('[data-action="copy"]').getAttribute('aria-keyshortcuts')) ?? '', /^(Control|Meta)\+C$/);
+  assert.equal(await page.evaluate(() => document.querySelector('[role="menu"]')!.ownerDocument === document), true, 'menu is in the editor document, not the iframe');
+
+  await page.keyboard.press('Escape');
+  await menu.waitFor({ state: 'detached' });
+  await target.click();
+  assert.equal(await selectedId(page), 'text-1');
+  await page.keyboard.press('Shift+F10');
+  await menu.waitFor();
+  const centre = await page.locator('#preview-iframe').evaluate((el, id) => {
+    const iframe = el as HTMLIFrameElement;
+    const frameBox = iframe.getBoundingClientRect();
+    const zoom = frameBox.width / iframe.contentWindow!.innerWidth;
+    const r = iframe.contentDocument!.querySelector(`[data-element-id="${id}"]`)!.getBoundingClientRect();
+    return { x: frameBox.left + (r.left + r.width / 2) * zoom, y: frameBox.top + (r.top + r.height / 2) * zoom };
+  }, 'text-1');
+  const box = await menu.boundingBox();
+  assert.ok(box);
+  t.diagnostic(`menu ${JSON.stringify(box)} element centre ${JSON.stringify(centre)}`);
+  assert.ok(Math.abs(box.x - centre.x) <= 8 && Math.abs(box.y - centre.y) <= 8, 'menu opens at the element centre');
   await page.close();
 });
