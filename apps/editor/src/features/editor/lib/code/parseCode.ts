@@ -2,11 +2,25 @@ import { parse } from "@babel/parser";
 import * as t from "@babel/types";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { cleanJsxText, type CodeDiagnostic, CodeError, diagnosticAt } from "./astLiterals";
+import {
+  EMPTY_COMPONENT_CATALOG,
+  lucidePascalToKebab,
+  type ComponentCatalog,
+} from "./catalog";
 import type { Preamble } from "./customCode";
 import { extractPreamble, locatePage } from "./extractPreamble";
 import { convertElement, indexById, keepUnsupported, type ParseContext } from "./parseElements";
 
 export type { CodeDiagnostic } from "./astLiterals";
+
+export interface ParseCodeOptions {
+  readonly catalog?: ComponentCatalog;
+  readonly mode?: "preview" | "commit";
+  readonly pageMeta?: {
+    readonly isComponentPage?: boolean;
+    readonly componentName?: string;
+  };
+}
 
 export type ParseCodeResult =
   | { ok: true; elements: EditorElement[]; preamble: Preamble }
@@ -36,6 +50,22 @@ function readSyntaxError(err: unknown): { message: string; loc: t.SourceLocation
   return { message, loc: null };
 }
 
+function collectLucideImports(program: t.Program): Map<string, string> {
+  const icons = new Map<string, string>();
+  for (const stmt of program.body) {
+    if (!t.isImportDeclaration(stmt) || stmt.source.value !== "lucide-react") continue;
+    for (const spec of stmt.specifiers) {
+      if (!t.isImportSpecifier(spec)) continue;
+      const imported = t.isIdentifier(spec.imported)
+        ? spec.imported.name
+        : spec.imported.value;
+      const local = spec.local.name;
+      icons.set(local, lucidePascalToKebab(imported));
+    }
+  }
+  return icons;
+}
+
 function collectRootElements(root: t.JSXElement | t.JSXFragment): t.JSXElement[] {
   if (!t.isJSXFragment(root)) return [root];
   const nodes: t.JSXElement[] = [];
@@ -44,18 +74,29 @@ function collectRootElements(root: t.JSXElement | t.JSXFragment): t.JSXElement[]
       nodes.push(child);
     } else if (t.isJSXText(child)) {
       if (cleanJsxText(child.value).trim() !== "") {
-        throw new CodeError("Text at the root must sit inside an element like <div> or <section>.", child.loc);
+        throw new CodeError(
+          "Text at the root must sit inside an element like <div> or <section>.",
+          child.loc,
+        );
       }
     } else if (t.isJSXExpressionContainer(child) && t.isJSXEmptyExpression(child.expression)) {
       continue;
     } else {
-      throw new CodeError("Only elements are supported at the top level of the component.", child.loc);
+      throw new CodeError(
+        "Only elements are supported at the top level of the component.",
+        child.loc,
+      );
     }
   }
   return nodes;
 }
 
-export function parseCode(code: string, current: EditorElement[], pageId: string | undefined): ParseCodeResult {
+export function parseCode(
+  code: string,
+  current: EditorElement[],
+  pageId: string | undefined,
+  opts?: ParseCodeOptions,
+): ParseCodeResult {
   let ast: t.File;
   try {
     ast = parse(code, { sourceType: "module", plugins: ["jsx", "typescript"] });
@@ -66,13 +107,28 @@ export function parseCode(code: string, current: EditorElement[], pageId: string
 
   const page = locatePage(ast.program);
   if (!page) {
-    return { ok: false, diagnostic: diagnosticAt("No JSX found: the component should return the page's elements.") };
+    return {
+      ok: false,
+      diagnostic: diagnosticAt("No JSX found: the component should return the page's elements."),
+    };
   }
 
-  const ctx: ParseContext = { byId: indexById(current), pageId, claimed: new Set() };
+  const ctx: ParseContext = {
+    byId: indexById(current),
+    pageId,
+    claimed: new Set(),
+    lucideImports: collectLucideImports(ast.program),
+    catalog: opts?.catalog ?? EMPTY_COMPONENT_CATALOG,
+  };
   try {
-    const elements = collectRootElements(page.root).map((node) => convertElement(node, undefined, ctx));
-    return { ok: true, elements: keepUnsupported(elements, current), preamble: extractPreamble(code, ast.program, page) };
+    const elements = collectRootElements(page.root).map((node) =>
+      convertElement(node, undefined, ctx),
+    );
+    return {
+      ok: true,
+      elements: keepUnsupported(elements, current),
+      preamble: extractPreamble(code, ast.program, page),
+    };
   } catch (err) {
     if (err instanceof CodeError) return { ok: false, diagnostic: diagnosticAt(err.message, err.loc) };
     throw err;

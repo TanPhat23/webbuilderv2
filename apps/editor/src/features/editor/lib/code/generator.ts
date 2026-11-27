@@ -1,13 +1,19 @@
-import { EditorElement } from "@webbuilder/site-runtime/types/global.type";
-import * as t from "@babel/types";
 import { generate } from "@babel/generator";
-import { generateStrategies, generationOptions } from "./generatestrategies";
-import { hasInteractionCode, toCode, type CodegenInput } from "@/features/interactions/codegen/interactions";
-import { generateImports } from "./generateImports";
-import { isEmptyPreamble, type Preamble } from "./customCode";
+import * as t from "@babel/types";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { format } from "prettier/standalone";
 import * as babelPlugin from "prettier/plugins/babel";
 import * as estreePlugin from "prettier/plugins/estree";
+import {
+  hasInteractionCode,
+  toCode,
+  type CodegenInput,
+} from "@/features/interactions/codegen/interactions";
+import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
+import type { GenerateNodeContext } from "./codecs/types";
+import { isEmptyPreamble, type Preamble } from "./customCode";
+import { generateImports } from "./generateImports";
+import { generateStrategies, generationOptions } from "./generatestrategies";
 
 const options: {
   wrapComponent?: boolean;
@@ -21,6 +27,16 @@ const options: {
 export interface InteractionLogic {
   variables: CodegenInput["variables"];
   flows: CodegenInput["flows"];
+}
+
+export interface GenerateToJsxOptions {
+  readonly tagIds?: boolean;
+  readonly preamble?: Preamble;
+  readonly catalog?: ComponentCatalog;
+  readonly pageMeta?: {
+    readonly isComponentPage?: boolean;
+    readonly componentName?: string;
+  };
 }
 
 /** Formats generated source; if Prettier cannot parse it, the raw source is still usable. */
@@ -49,14 +65,19 @@ class CodeGenerator {
     return CodeGenerator.instance;
   }
 
-  private elementToJSX(element: EditorElement): t.JSXElement | null {
-    const strategy = generateStrategies[element.type];
+  private elementToJSX(
+    element: EditorElement,
+    ctx: GenerateNodeContext,
+  ): t.JSXElement | null {
+    const strategy = Object.hasOwn(generateStrategies, element.type)
+      ? generateStrategies[element.type]
+      : undefined;
     if (!strategy) {
       console.warn(`No generate strategy for element type: ${element.type}`);
       return null;
     }
     try {
-      return strategy.generate(element);
+      return strategy.generate(element, ctx);
     } catch (err) {
       console.error(
         `Error generating JSX for element type ${element.type}:`,
@@ -67,16 +88,22 @@ class CodeGenerator {
   }
 
   /** Variables and flows in scope for these elements; absent means none. */
-  private interactionInput(elements: EditorElement[], logic?: InteractionLogic): CodegenInput {
+  private interactionInput(
+    elements: EditorElement[],
+    logic?: InteractionLogic,
+  ): CodegenInput {
     return {
-      elements: elements as unknown as CodegenInput["elements"],
+      elements,
       variables: logic?.variables ?? {},
       flows: logic?.flows ?? {},
     };
   }
 
   /** The `interactions.ts` module for these elements, or null when there is nothing to generate. */
-  public generateInteractions(elements: EditorElement[], logic?: InteractionLogic): string | null {
+  public generateInteractions(
+    elements: EditorElement[],
+    logic?: InteractionLogic,
+  ): string | null {
     const input = this.interactionInput(elements, logic);
     return hasInteractionCode(input) ? toCode(input) : null;
   }
@@ -89,15 +116,28 @@ class CodeGenerator {
   public async generateToJSX(
     elements: EditorElement[],
     logic?: InteractionLogic,
-    { tagIds = false, preamble }: { tagIds?: boolean; preamble?: Preamble } = {},
+    { tagIds = false, preamble, catalog }: GenerateToJsxOptions = {},
   ): Promise<string> {
-    const withInteractions = hasInteractionCode(this.interactionInput(elements, logic));
-    // Elements need `data-element-id` so the interactions module can find them.
-    generationOptions.tagElementIds = withInteractions || tagIds;
+    const withInteractions = hasInteractionCode(
+      this.interactionInput(elements, logic),
+    );
+    const shouldTagIds = withInteractions || tagIds;
+    generationOptions.tagElementIds = shouldTagIds;
+
+    const usedLucideIcons = new Set<string>();
+    const usedProjectComponents = new Set<string>();
+    const ctx: GenerateNodeContext = {
+      catalog: catalog ?? EMPTY_COMPONENT_CATALOG,
+      tagElementIds: shouldTagIds,
+      usedLucideIcons,
+      usedProjectComponents,
+      generateChild: (child) => this.elementToJSX(child, ctx),
+    };
+
     let nodes: t.JSXElement[];
     try {
       nodes = elements
-        .map((el) => this.elementToJSX(el))
+        .map((el) => this.elementToJSX(el, ctx))
         .filter((el): el is t.JSXElement => el !== null);
     } finally {
       generationOptions.tagElementIds = false;
@@ -108,17 +148,31 @@ class CodeGenerator {
 
     let result = inner;
     if (options.wrapComponent) {
-      const custom = preamble && !isEmptyPreamble(preamble) ? preamble : undefined;
+      const custom =
+        preamble && !isEmptyPreamble(preamble) ? preamble : undefined;
       let imports =
-        generateImports(inner) +
-        (withInteractions ? "\nimport { bindInteractions } from './interactions';" : "");
+        generateImports(inner, {
+          lucideIcons: [...usedLucideIcons],
+          projectComponents: [...usedProjectComponents],
+        }) +
+        (withInteractions
+          ? "\nimport { bindInteractions } from './interactions';"
+          : "");
       if (custom?.imports.trim()) {
         // A user's own `import React ...` replaces the generated one.
-        if (/^\s*import\s+React\b/m.test(custom.imports)) imports = imports.replace("import React from 'react';\n", "").replace("import React from 'react';", "");
+        if (/^\s*import\s+React\b/m.test(custom.imports)) {
+          imports = imports
+            .replace("import React from 'react';\n", "")
+            .replace("import React from 'react';", "");
+        }
         imports += `\n${custom.imports.trim()}`;
       }
-      const effect = withInteractions ? "React.useEffect(() => bindInteractions(), []);" : "";
-      const bodyStatements = [effect, custom?.body.trim() ?? ""].filter(Boolean).join("\n\n");
+      const effect = withInteractions
+        ? "React.useEffect(() => bindInteractions(), []);"
+        : "";
+      const bodyStatements = [effect, custom?.body.trim() ?? ""]
+        .filter(Boolean)
+        .join("\n\n");
 
       // Prettier lays the JSX out; babel's generator prints it on one line.
       result = await formatSource(`/**

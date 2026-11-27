@@ -34,13 +34,22 @@ const ok = (code: string, t = tree()) => {
   assert.ok(r.ok, r.ok ? "" : `${r.diagnostic.message} @${r.diagnostic.line}:${r.diagnostic.column}\n${code}`);
   return r.elements;
 };
-const find = (elements: EditorElement[], id: string): any => {
+type TestElementRecord = EditorElement & {
+  elements?: EditorElement[];
+  settings: Record<string, unknown> & {
+    interactions?: Record<string, unknown>;
+    codeProps?: string[];
+  };
+};
+
+const find = (elements: EditorElement[], id: string): TestElementRecord => {
   for (const e of elements) {
-    if (e.id === id) return e;
-    const hit = find(((e as any).elements ?? []) as EditorElement[], id);
+    if (e.id === id) return e as unknown as TestElementRecord;
+    const nested = "elements" in e && Array.isArray(e.elements) ? e.elements : [];
+    const hit = find(nested, id);
     if (hit) return hit;
   }
-  return undefined;
+  return undefined as unknown as TestElementRecord;
 };
 
 test("the generated code reads back to exactly the same tree", async () => {
@@ -89,12 +98,24 @@ test("editing attributes updates href, src, alt and settings", async () => {
 });
 
 test("deleting a tag deletes its element, and edits never delete elements the code can't show", async () => {
-  const code = (await generate()).replace(/<button[\s\S]*?<\/button>/, "");
-  const parsed = ok(code);
+  const withFuture: EditorElement[] = [
+    el("sec", "Section", {
+      elements: [
+        el("head", "Heading", { content: "Not in code", settings: { level: 2 } }),
+        el("future", "FutureWidget", { content: "Untouched" }),
+        el("cta", "Button", { content: "Buy now" }),
+      ],
+    }),
+  ];
+  const generated = await generate(withFuture);
+  assert.match(generated, /<h2[^>]*>\s*Not in code\s*<\/h2>/);
+  const code = generated.replace(/<button[\s\S]*?<\/button>/, "");
+  const parsed = ok(code, withFuture);
   assert.equal(find(parsed, "cta"), undefined);
-  assert.ok(find(parsed, "head"), "the Heading has no code form and stays");
+  assert.ok(find(parsed, "head"), "the Heading round-trips as <h2>");
+  assert.ok(find(parsed, "future"), "unknown future element stays untouched");
   assert.deepEqual(
-    diffTrees(tree(), parsed).map((op) => op.type),
+    diffTrees(withFuture, parsed).map((op) => op.type),
     ["delete"],
   );
 });
@@ -115,7 +136,7 @@ test("a pasted copy of a tag becomes its own element", async () => {
   const code = await generate();
   const copy = code.match(/<button[\s\S]*?<\/button>/)![0];
   const parsed = ok(code.replace(copy, copy + copy));
-  const buttons = find(parsed, "sec").elements.filter((e: any) => e.type === "Button");
+  const buttons = (find(parsed, "sec").elements ?? []).filter((e) => e.type === "Button");
   assert.equal(buttons.length, 2);
   assert.notEqual(buttons[0].id, buttons[1].id);
   assert.equal(buttons[0].id, "cta");
@@ -141,9 +162,9 @@ test("list items, options and ordered lists read back", async () => {
 });
 
 test("code it can't read leaves the design alone and says where", async () => {
-  const unsupported = parse((await generate()).replace("<button", "<video").replace("</button>", "</video>"));
+  const unsupported = parse((await generate()).replace("<button", "<marquee").replace("</button>", "</marquee>"));
   assert.equal(unsupported.ok, false);
-  if (!unsupported.ok) assert.match(unsupported.diagnostic.message, /<video>/);
+  if (!unsupported.ok) assert.match(unsupported.diagnostic.message, /<marquee>/);
 
   const broken = parse((await generate()).replace("</section>", ""));
   assert.equal(broken.ok, false);

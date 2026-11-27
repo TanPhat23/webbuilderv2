@@ -1,429 +1,14 @@
-import { ContainerElement, EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import * as t from "@babel/types";
-import { parseExpression } from "@babel/parser";
-import { classNameFor } from "./classNames";
-import { HIDDEN_SETTINGS, MAX_CODE_PROPS, MAX_CODE_PROP_LENGTH } from "./customCode";
+import { ALL_ELEMENT_TYPES, type ElementType } from "@webbuilder/site-runtime/types/elements";
+import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
+import { EMPTY_COMPONENT_CATALOG } from "./catalog";
+import { ELEMENT_CODECS } from "./codecs/registry";
+import { decorateGeneratedElement } from "./codecs/shared";
+import type { GenerateNodeContext } from "./codecs/types";
 
-interface GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null;
+export interface GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null;
 }
-
-type JSXChild = t.JSXText | t.JSXElement | t.JSXExpressionContainer;
-
-/**
- * Element text as a JSX child. Text JSX would misread or trim (braces, angle
- * brackets, ampersands, edge or repeated whitespace) goes in a string literal.
- */
-const textChild = (content: string): t.JSXText | t.JSXExpressionContainer =>
-  /[{}<>&]|^\s|\s$|\s{2,}|[\n\r\t]/.test(content)
-    ? t.jsxExpressionContainer(t.stringLiteral(content))
-    : t.jsxText(content);
-
-const buildJsxChildren = (element: EditorElement): JSXChild[] => {
-  const children: JSXChild[] = [];
-
-  if (element.content) {
-    children.push(textChild(element.content));
-  }
-
-  const elems = (element as ContainerElement).elements;
-  if (Array.isArray(elems) && elems.length > 0) {
-    elems.forEach((child: EditorElement) => {
-      const childStrategy = generateStrategies[child.type];
-      if (!childStrategy) return;
-      const childJSX = childStrategy.generate(child);
-      if (childJSX) {
-        children.push(childJSX);
-      }
-    });
-  }
-  return children;
-};
-
-const buildJsxAttributes = (element: EditorElement): t.JSXAttribute[] => {
-  const attributes: t.JSXAttribute[] = [];
-  attributes.push(
-    t.jsxAttribute(
-      t.jsxIdentifier("className"),
-      t.stringLiteral(classNameFor(element)),
-    ),
-  );
-  return attributes;
-};
-
-/**
- * Helper to convert an element.settings (plain JS object) into JSX attributes.
- * It uses t.valueToNode for non-string values so numbers/booleans/objects become expression containers.
- */
-const settingsToAttributes = (
-  settings: Record<string, any> | undefined,
-): t.JSXAttribute[] => {
-  const attrs: t.JSXAttribute[] = [];
-  if (!settings || typeof settings !== "object") return attrs;
-
-  for (const [key, value] of Object.entries(settings)) {
-    if (value === undefined) continue;
-    // Interactions and the code view's own bookkeeping are not attributes.
-    if (HIDDEN_SETTINGS.includes(key)) continue;
-
-    if (typeof value === "string") {
-      attrs.push(t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value)));
-    } else {
-      try {
-        const node = t.valueToNode(value as any) as t.Expression;
-        attrs.push(
-          t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(node)),
-        );
-      } catch {
-        attrs.push(
-          t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(String(value))),
-        );
-      }
-    }
-  }
-
-  return attrs;
-};
-
-export class SectionGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Section") return null;
-    const children = buildJsxChildren(element);
-
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("section"),
-      buildJsxAttributes(element),
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("section"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class ButtonGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Button") return null;
-    const children: JSXChild[] = [];
-    if (element.content) {
-      children.push(textChild(element.content));
-    }
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("button"),
-      buildJsxAttributes(element),
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("button"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class TextGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Text") return null;
-    const children: JSXChild[] = [];
-    if (element.content) children.push(textChild(element.content));
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      buildJsxAttributes(element),
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class ImageGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Image") return null;
-    const attrs = buildJsxAttributes(element);
-    if (element.src) {
-      attrs.push(
-        t.jsxAttribute(t.jsxIdentifier("src"), t.stringLiteral(element.src)),
-      );
-    }
-    attrs.push(
-      t.jsxAttribute(
-        t.jsxIdentifier("alt"),
-        t.stringLiteral(element.content || ""),
-      ),
-    );
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("img"),
-      attrs,
-      true,
-    );
-    // Self-closing element
-    return t.jsxElement(openingElement, null, [], true);
-  }
-}
-
-export class LinkGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Link") return null;
-    const children = buildJsxChildren(element);
-    if (children.length === 0 && element.content)
-      children.push(textChild(element.content));
-    const attrs = buildJsxAttributes(element);
-    if (element.href)
-      attrs.push(
-        t.jsxAttribute(t.jsxIdentifier("href"), t.stringLiteral(element.href)),
-      );
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("a"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("a"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class InputGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Input") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("input"),
-      attrs,
-      true,
-    );
-    return t.jsxElement(openingElement, null, [], true);
-  }
-}
-
-export class SelectGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Select") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const options: t.JSXElement[] = [];
-    const elems = element.elements;
-    if (Array.isArray(elems)) {
-      elems.forEach((opt) => {
-        const value = opt.content || "";
-        const optionAttrs: t.JSXAttribute[] = [
-          t.jsxAttribute(t.jsxIdentifier("value"), t.stringLiteral(value)),
-        ];
-        const optOpening = t.jsxOpeningElement(
-          t.jsxIdentifier("option"),
-          optionAttrs,
-          false,
-        );
-        const optClosing = t.jsxClosingElement(t.jsxIdentifier("option"));
-        options.push(
-          t.jsxElement(
-            optOpening,
-            optClosing,
-            (value ? [textChild(value)] : []) as any,
-            false,
-          ),
-        );
-      });
-    }
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("select"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("select"));
-    return t.jsxElement(openingElement, closingElement, options as any, false);
-  }
-}
-
-export class ListGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "List") return null;
-    // if settings indicate ordered, use ol else ul
-    const ordered = !!(element.settings && (element.settings as any).ordered);
-    const tag = ordered ? "ol" : "ul";
-    const children: t.JSXElement[] = [];
-    const elems = (element as ContainerElement).elements;
-    if (Array.isArray(elems)) {
-      elems.forEach((child) => {
-        const childStrategy = generateStrategies[child.type];
-        if (!childStrategy) return;
-        const childJSX = childStrategy.generate(child);
-        if (childJSX) {
-          const liOpening = t.jsxOpeningElement(
-            t.jsxIdentifier("li"),
-            [],
-            false,
-          );
-          const liClosing = t.jsxClosingElement(t.jsxIdentifier("li"));
-          children.push(
-            t.jsxElement(liOpening, liClosing, [childJSX] as any, false),
-          );
-        }
-      });
-    }
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier(tag),
-      buildJsxAttributes(element),
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier(tag));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class FrameGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Frame") return null;
-    const children = buildJsxChildren(element);
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      buildJsxAttributes(element),
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class FormGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Form") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const children = buildJsxChildren(element);
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("form"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("form"));
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class CarouselGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "Carousel") return null;
-
-    const slides: t.JSXElement[] = [];
-    const elems = (element as ContainerElement).elements;
-    if (Array.isArray(elems) && elems.length > 0) {
-      elems.forEach((child: EditorElement) => {
-        const childStrategy = generateStrategies[child.type];
-        if (!childStrategy) return;
-        const childJSX = childStrategy.generate(child);
-        if (childJSX) {
-          const slideOpening = t.jsxOpeningElement(
-            t.jsxIdentifier("div"),
-            [
-              t.jsxAttribute(
-                t.jsxIdentifier("className"),
-                t.stringLiteral("embla__slide"),
-              ),
-            ],
-            false,
-          );
-          const slideClosing = t.jsxClosingElement(t.jsxIdentifier("div"));
-          const slide = t.jsxElement(
-            slideOpening,
-            slideClosing,
-            [childJSX] as any,
-            false,
-          );
-          slides.push(slide);
-        }
-      });
-    }
-
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("Carousel"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("Carousel"));
-    return t.jsxElement(openingElement, closingElement, slides as any, false);
-  }
-}
-
-export class CMSContentListGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "CMSContentList") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    // elements is a template for each item
-    const children = buildJsxChildren(element);
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class CMSContentItemGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "CMSContentItem") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    const children = buildJsxChildren(element);
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-export class CMSContentGridGenerateStrategy implements GenerateStrategy {
-  generate(element: EditorElement): t.JSXElement | null {
-    if (element.type !== "CMSContentGrid") return null;
-    const attrs = [
-      ...buildJsxAttributes(element),
-      ...settingsToAttributes(element.settings as any),
-    ];
-    const openingElement = t.jsxOpeningElement(
-      t.jsxIdentifier("div"),
-      attrs,
-      false,
-    );
-    const closingElement = t.jsxClosingElement(t.jsxIdentifier("div"));
-    const children = buildJsxChildren(element);
-    return t.jsxElement(openingElement, closingElement, children as any, false);
-  }
-}
-
-const rawStrategies: Record<string, GenerateStrategy> = {
-  Section: new SectionGenerateStrategy(),
-  Button: new ButtonGenerateStrategy(),
-  Text: new TextGenerateStrategy(),
-  Image: new ImageGenerateStrategy(),
-  Link: new LinkGenerateStrategy(),
-  Input: new InputGenerateStrategy(),
-  Select: new SelectGenerateStrategy(),
-  List: new ListGenerateStrategy(),
-  Frame: new FrameGenerateStrategy(),
-  Form: new FormGenerateStrategy(),
-  Carousel: new CarouselGenerateStrategy(),
-
-  CMSContentList: new CMSContentListGenerateStrategy(),
-  CMSContentItem: new CMSContentItemGenerateStrategy(),
-  CMSContentGrid: new CMSContentGridGenerateStrategy(),
-};
 
 /**
  * When on, every generated element carries `data-element-id`, which is how the
@@ -432,39 +17,199 @@ const rawStrategies: Record<string, GenerateStrategy> = {
  */
 export const generationOptions = { tagElementIds: false };
 
-/** Attributes from source text such as `{...register("a")}`; text that does not parse is skipped. */
-function codePropAttributes(props: unknown): Array<t.JSXAttribute | t.JSXSpreadAttribute> {
-  if (!Array.isArray(props)) return [];
-  const out: Array<t.JSXAttribute | t.JSXSpreadAttribute> = [];
-  for (const source of props.slice(0, MAX_CODE_PROPS)) {
-    if (typeof source !== "string" || source.length > MAX_CODE_PROP_LENGTH) continue;
-    try {
-      const tag = parseExpression(`<x ${source} />`, { plugins: ["jsx", "typescript"] });
-      if (!t.isJSXElement(tag)) continue;
-      for (const attr of tag.openingElement.attributes) out.push(t.cloneNode(attr, true, true));
-    } catch {
-      // Not valid attribute source.
-    }
+function invokeCodec(element: EditorElement, ctx: GenerateNodeContext): t.JSXElement {
+  switch (element.type) {
+    case "Text":
+      return ELEMENT_CODECS.Text.generate(element, ctx);
+    case "Span":
+      return ELEMENT_CODECS.Span.generate(element, ctx);
+    case "Heading":
+      return ELEMENT_CODECS.Heading.generate(element, ctx);
+    case "Label":
+      return ELEMENT_CODECS.Label.generate(element, ctx);
+    case "Blockquote":
+      return ELEMENT_CODECS.Blockquote.generate(element, ctx);
+    case "Code":
+      return ELEMENT_CODECS.Code.generate(element, ctx);
+    case "Separator":
+      return ELEMENT_CODECS.Separator.generate(element, ctx);
+    case "Icon":
+      return ELEMENT_CODECS.Icon.generate(element, ctx);
+    case "Image":
+      return ELEMENT_CODECS.Image.generate(element, ctx);
+    case "Video":
+      return ELEMENT_CODECS.Video.generate(element, ctx);
+    case "Audio":
+      return ELEMENT_CODECS.Audio.generate(element, ctx);
+    case "IFrame":
+      return ELEMENT_CODECS.IFrame.generate(element, ctx);
+    case "Button":
+      return ELEMENT_CODECS.Button.generate(element, ctx);
+    case "Link":
+      return ELEMENT_CODECS.Link.generate(element, ctx);
+    case "Input":
+      return ELEMENT_CODECS.Input.generate(element, ctx);
+    case "Textarea":
+      return ELEMENT_CODECS.Textarea.generate(element, ctx);
+    case "Checkbox":
+      return ELEMENT_CODECS.Checkbox.generate(element, ctx);
+    case "Radio":
+      return ELEMENT_CODECS.Radio.generate(element, ctx);
+    case "Progress":
+      return ELEMENT_CODECS.Progress.generate(element, ctx);
+    case "List":
+      return ELEMENT_CODECS.List.generate(element, ctx);
+    case "Select":
+      return ELEMENT_CODECS.Select.generate(element, ctx);
+    case "Form":
+      return ELEMENT_CODECS.Form.generate(element, ctx);
+    case "Table":
+      return ELEMENT_CODECS.Table.generate(element, ctx);
+    case "Frame":
+      return ELEMENT_CODECS.Frame.generate(element, ctx);
+    case "Section":
+      return ELEMENT_CODECS.Section.generate(element, ctx);
+    case "Nav":
+      return ELEMENT_CODECS.Nav.generate(element, ctx);
+    case "Header":
+      return ELEMENT_CODECS.Header.generate(element, ctx);
+    case "Footer":
+      return ELEMENT_CODECS.Footer.generate(element, ctx);
+    case "Article":
+      return ELEMENT_CODECS.Article.generate(element, ctx);
+    case "Aside":
+      return ELEMENT_CODECS.Aside.generate(element, ctx);
+    case "CMSContentList":
+      return ELEMENT_CODECS.CMSContentList.generate(element, ctx);
+    case "CMSContentItem":
+      return ELEMENT_CODECS.CMSContentItem.generate(element, ctx);
+    case "CMSContentGrid":
+      return ELEMENT_CODECS.CMSContentGrid.generate(element, ctx);
+    case "Carousel":
+      return ELEMENT_CODECS.Carousel.generate(element, ctx);
   }
-  return out;
 }
 
-const withElementId = (strategy: GenerateStrategy): GenerateStrategy => ({
-  generate(element) {
-    const node = strategy.generate(element);
-    const settings = element.settings as Record<string, unknown> | null | undefined;
-    if (node && settings?.codeProps) {
-      node.openingElement.attributes.push(...codePropAttributes(settings.codeProps));
-    }
-    if (node && generationOptions.tagElementIds) {
-      node.openingElement.attributes.push(
-        t.jsxAttribute(t.jsxIdentifier("data-element-id"), t.stringLiteral(element.id)),
-      );
-    }
-    return node;
-  },
-});
+function createStandaloneContext(): GenerateNodeContext {
+  const ctx: GenerateNodeContext = {
+    catalog: EMPTY_COMPONENT_CATALOG,
+    get tagElementIds(): boolean {
+      return generationOptions.tagElementIds;
+    },
+    usedLucideIcons: new Set<string>(),
+    usedProjectComponents: new Set<string>(),
+    generateChild(child: EditorElement): t.JSXElement | null {
+      if (!Object.hasOwn(generateStrategies, child.type)) return null;
+      const strategy = generateStrategies[child.type];
+      return strategy ? strategy.generate(child, ctx) : null;
+    },
+  };
+  return ctx;
+}
+
+function generateForType(
+  expectedType: ElementType,
+  element: EditorElement,
+  ctx?: GenerateNodeContext,
+): t.JSXElement | null {
+  if (element.type !== expectedType) return null;
+  const activeCtx = ctx ?? createStandaloneContext();
+  const node = invokeCodec(element, activeCtx);
+  return decorateGeneratedElement(node, element, activeCtx.tagElementIds);
+}
+
+function createTypeStrategy(expectedType: ElementType): GenerateStrategy {
+  return {
+    generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+      return generateForType(expectedType, element, ctx);
+    },
+  };
+}
+
+export class SectionGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Section", element, ctx);
+  }
+}
+
+export class ButtonGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Button", element, ctx);
+  }
+}
+
+export class TextGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Text", element, ctx);
+  }
+}
+
+export class ImageGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Image", element, ctx);
+  }
+}
+
+export class LinkGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Link", element, ctx);
+  }
+}
+
+export class InputGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Input", element, ctx);
+  }
+}
+
+export class SelectGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Select", element, ctx);
+  }
+}
+
+export class ListGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("List", element, ctx);
+  }
+}
+
+export class FrameGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Frame", element, ctx);
+  }
+}
+
+export class FormGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Form", element, ctx);
+  }
+}
+
+export class CarouselGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("Carousel", element, ctx);
+  }
+}
+
+export class CMSContentListGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("CMSContentList", element, ctx);
+  }
+}
+
+export class CMSContentItemGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("CMSContentItem", element, ctx);
+  }
+}
+
+export class CMSContentGridGenerateStrategy implements GenerateStrategy {
+  generate(element: EditorElement, ctx?: GenerateNodeContext): t.JSXElement | null {
+    return generateForType("CMSContentGrid", element, ctx);
+  }
+}
 
 export const generateStrategies: Record<string, GenerateStrategy> = Object.fromEntries(
-  Object.entries(rawStrategies).map(([type, strategy]) => [type, withElementId(strategy)]),
+  ALL_ELEMENT_TYPES.map((type) => [type, createTypeStrategy(type)]),
 );

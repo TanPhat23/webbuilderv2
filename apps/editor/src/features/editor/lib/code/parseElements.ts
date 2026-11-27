@@ -1,10 +1,37 @@
 import { generate } from "@babel/generator";
 import * as t from "@babel/types";
 import { isEqual } from "lodash-es";
-import type { TextElement } from "@webbuilder/site-runtime/types/elements";
-import type { EditorElement, ElementType } from "@webbuilder/site-runtime/types/global.type";
-import { componentSetting } from "@webbuilder/site-runtime/projects/components";
+import type { AuthVisibility } from "@webbuilder/site-runtime/lib/site-auth";
 import { newEntityId } from "@webbuilder/site-runtime/lib/entity-id";
+import { componentSetting, type ComponentSetting } from "@webbuilder/site-runtime/projects/components";
+import type {
+  AudioSettings,
+  BlockquoteSettings,
+  ButtonSettings,
+  CarouselSettings,
+  CheckboxSettings,
+  CMSContentSettings,
+  CodeSettings,
+  ElementEvents,
+  FormSettings,
+  FrameElement,
+  HeadingSettings,
+  IconSettings,
+  IFrameSettings,
+  ImageSettings,
+  InputSettings,
+  LabelSettings,
+  ProgressSettings,
+  RadioSettings,
+  ResponsiveStyles,
+  SelectSettings,
+  TableColumnDefinition,
+  TableSettings,
+  TextareaSettings,
+  TextElement,
+  VideoSettings,
+} from "@webbuilder/site-runtime/types/elements";
+import type { EditorElement, ElementType } from "@webbuilder/site-runtime/types/global.type";
 import {
   attributeName,
   attributeValue,
@@ -16,55 +43,109 @@ import {
   stringAttributeValue,
   tagName,
 } from "./astLiterals";
+import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
 import { splitClasses, styleClasses } from "./classNames";
+import { TAG_CANDIDATES } from "./codecs/registry";
 import { HIDDEN_SETTINGS } from "./customCode";
 import { generateStrategies } from "./generatestrategies";
 
 type LooseRecord = Record<string, unknown>;
+type SettingsEnvelope<S extends object> = (S & {
+  component?: ComponentSetting;
+  authVisibility?: AuthVisibility;
+}) | null;
 
-const TAG_TYPES: Readonly<Record<string, readonly ElementType[]>> = {
-  section: ["Section"],
-  div: ["Frame", "Text", "CMSContentList", "CMSContentItem", "CMSContentGrid"],
-  button: ["Button"],
-  a: ["Link"],
-  img: ["Image"],
-  input: ["Input"],
-  select: ["Select"],
-  ul: ["List"],
-  ol: ["List"],
-  form: ["Form"],
-  Carousel: ["Carousel"],
-};
-
-const SETTINGS_ATTRIBUTE_TYPES: ReadonlySet<string> = new Set([
+const SETTINGS_ATTRIBUTE_TYPES: ReadonlySet<ElementType> = new Set([
+  "Heading",
+  "Label",
+  "Blockquote",
+  "Code",
+  "Icon",
+  "Image",
+  "Video",
+  "Audio",
+  "IFrame",
+  "Button",
   "Input",
+  "Textarea",
+  "Checkbox",
+  "Radio",
+  "Progress",
   "Select",
   "Form",
+  "Table",
   "Carousel",
   "CMSContentList",
   "CMSContentItem",
   "CMSContentGrid",
 ]);
 
-const LEAF_TYPES: ReadonlySet<string> = new Set(["Text", "Button", "Image", "Input"]);
-const MODELED_ATTRIBUTES: Readonly<Record<string, readonly string[]>> = { img: ["src", "alt"], a: ["href"] };
-const SUPPORTED_TAGS = Object.keys(TAG_TYPES).join(", ");
+const LEAF_TYPES: ReadonlySet<ElementType> = new Set([
+  "Text",
+  "Span",
+  "Heading",
+  "Label",
+  "Blockquote",
+  "Code",
+  "Separator",
+  "Icon",
+  "Image",
+  "Video",
+  "Audio",
+  "IFrame",
+  "Button",
+  "Input",
+  "Textarea",
+  "Checkbox",
+  "Radio",
+  "Progress",
+]);
+
+const TABLE_MODELED_ATTRIBUTES: readonly string[] = [
+  "data-bordered",
+  "bordered",
+  "data-striped",
+  "striped",
+  "data-hoverable",
+  "hoverable",
+  "data-compact",
+  "compact",
+];
+
+const SUPPORTED_TAGS = Object.keys(TAG_CANDIDATES).join(", ");
 const HIDDEN_SETTINGS_SET: ReadonlySet<string> = new Set(HIDDEN_SETTINGS);
 
-const WRAPPED_CHILDREN: Readonly<Record<string, { wrapperTag: string; error: (childTag: string) => string }>> = {
-  ul: { wrapperTag: "li", error: (childTag) => `<${childTag}> can't be a direct child of a list; use <li>.` },
-  ol: { wrapperTag: "li", error: (childTag) => `<${childTag}> can't be a direct child of a list; use <li>.` },
-  Carousel: { wrapperTag: "div", error: () => "A carousel's children must be slide <div>s." },
+const WRAPPED_CHILDREN: Readonly<
+  Record<string, { wrapperTag: string; error: (childTag: string) => string }>
+> = {
+  ul: {
+    wrapperTag: "li",
+    error: (childTag) => `<${childTag}> can't be a direct child of a list; use <li>.`,
+  },
+  ol: {
+    wrapperTag: "li",
+    error: (childTag) => `<${childTag}> can't be a direct child of a list; use <li>.`,
+  },
+  Carousel: {
+    wrapperTag: "div",
+    error: () => "A carousel's children must be slide <div>s.",
+  },
 };
 
 export interface ParseContext {
   readonly byId: ReadonlyMap<string, EditorElement>;
   readonly pageId: string | undefined;
   readonly claimed: Set<string>;
+  readonly lucideImports?: ReadonlyMap<string, string>;
+  readonly catalog?: ComponentCatalog;
 }
 
 function isPlainRecord(value: unknown): value is LooseRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasGenerateStrategy(type: string): boolean {
+  return Object.hasOwn(generateStrategies, type) && Boolean(generateStrategies[type]);
 }
 
 function stripUndefined(value: unknown): unknown {
@@ -81,9 +162,12 @@ function childrenOf(el: EditorElement): EditorElement[] {
   return "elements" in el && Array.isArray(el.elements) ? el.elements : [];
 }
 
-export function indexById(tree: readonly EditorElement[], into = new Map<string, EditorElement>()): Map<string, EditorElement> {
+export function indexById(
+  tree: readonly EditorElement[],
+  into = new Map<string, EditorElement>(),
+): Map<string, EditorElement> {
   for (const el of tree) {
-    if (!generateStrategies[el.type]) continue;
+    if (!hasGenerateStrategy(el.type)) continue;
     into.set(el.id, el);
     indexById(childrenOf(el), into);
   }
@@ -105,28 +189,104 @@ function claimExisting(
 ): EditorElement | undefined {
   const wantedId = stringAttributeValue(attrs, "data-element-id");
   const found = wantedId ? ctx.byId.get(wantedId) : undefined;
-  const existing = found && candidates.includes(found.type) && !ctx.claimed.has(found.id) ? found : undefined;
+  const existing =
+    found && candidates.includes(found.type) && !ctx.claimed.has(found.id)
+      ? found
+      : undefined;
   if (existing) ctx.claimed.add(existing.id);
   return existing;
+}
+
+function modeledAttributesFor(type: ElementType, tag: string): ReadonlySet<string> {
+  if (tag === "img") return new Set(["src", "alt"]);
+  if (tag === "a") return new Set(["href"]);
+  if (tag === "video" || tag === "audio" || tag === "iframe") return new Set(["src"]);
+  if (tag === "button") return new Set(["data-href"]);
+  if (type === "Checkbox" || type === "Radio") return new Set(["type"]);
+  if (type === "Heading") return new Set(["level"]);
+  if (type === "Code") return new Set(["data-language", "language", "preformatted"]);
+  if (type === "Icon") return new Set(["iconName"]);
+  if (type === "Table") return new Set(TABLE_MODELED_ATTRIBUTES);
+  return new Set();
+}
+
+function attributeRenameMapFor(type: ElementType): Readonly<Record<string, string>> | undefined {
+  if (type === "Video" || type === "Audio") return { autoPlay: "autoplay" };
+  if (type === "Button") return { type: "buttonType" };
+  if (type === "Checkbox" || type === "Radio" || type === "Progress") {
+    return { "data-label": "label" };
+  }
+  return undefined;
 }
 
 function resolveElementType(
   tag: string,
   candidates: readonly ElementType[],
   existing: EditorElement | undefined,
+  attrs: ReadonlyMap<string, t.JSXAttribute>,
   childNodes: readonly t.JSXElement[],
   text: string,
   node: t.JSXElement,
+  isLucideIcon: boolean,
 ): ElementType {
-  let type: ElementType = existing?.type ?? (tag === "div" && !childNodes.length && text ? "Text" : candidates[0]);
-  if (type === "Text" && childNodes.length) type = "Frame";
+  let type: ElementType;
+  if (isLucideIcon) {
+    type = "Icon";
+  } else if (tag === "input") {
+    const rawType = stringAttributeValue(attrs, "type")?.toLowerCase();
+    if (rawType === "checkbox") type = "Checkbox";
+    else if (rawType === "radio") type = "Radio";
+    else type = "Input";
+  } else if (tag === "div") {
+    type = existing?.type ?? (!childNodes.length && text ? "Text" : candidates[0]!);
+    if (type === "Text" && childNodes.length) type = "Frame";
+  } else {
+    type = existing?.type ?? candidates[0]!;
+  }
+
+  if (type === "Code" && tag === "pre") {
+    if (childNodes.length > 1 || (childNodes.length === 1 && !isTag(childNodes[0]!, "code"))) {
+      throw new CodeError(
+        "<pre> (Code) can only wrap a single <code> element.",
+        childNodes[0]?.loc ?? node.loc,
+      );
+    }
+    if (childNodes.length === 1) {
+      const inner = splitChildren(childNodes[0]!);
+      if (inner.elements.length > 0) {
+        throw new CodeError(
+          "<pre><code> (Code) can't contain other elements.",
+          inner.elements[0]?.loc ?? childNodes[0]!.loc,
+        );
+      }
+    }
+    return type;
+  }
+
+  if ((type === "Video" || type === "Audio") && childNodes.length > 0) {
+    const invalid = childNodes.find((c) => !isTag(c, "source") && !isTag(c, "track"));
+    if (invalid) {
+      throw new CodeError(
+        `<${tag}> (${type}) can't contain <${tagName(invalid)}>.`,
+        invalid.loc ?? node.loc,
+      );
+    }
+    return type;
+  }
+
   if (LEAF_TYPES.has(type) && childNodes.length) {
-    throw new CodeError(`<${tag}> (${type}) can't contain other elements.`, childNodes[0].loc ?? node.loc);
+    throw new CodeError(
+      `<${tag}> (${type}) can't contain other elements.`,
+      childNodes[0]?.loc ?? node.loc,
+    );
   }
   return type;
 }
 
-function ownClasses(written: readonly string[], existing: EditorElement | undefined): string | undefined {
+function ownClasses(
+  written: readonly string[],
+  existing: EditorElement | undefined,
+): string | undefined {
   const derived = new Set(existing ? styleClasses(existing) : []);
   const own = written.filter((cls) => !derived.has(cls));
   const before = existing?.tailwindStyles;
@@ -137,6 +297,8 @@ function ownClasses(written: readonly string[], existing: EditorElement | undefi
 function settingsFromAttributes(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   existing: EditorElement | undefined,
+  modeled: ReadonlySet<string>,
+  renameMap?: Readonly<Record<string, string>>,
 ): LooseRecord | null {
   const before = isPlainRecord(existing?.settings) ? existing.settings : null;
   const next: LooseRecord = {};
@@ -144,9 +306,19 @@ function settingsFromAttributes(
     if (before && key in before) next[key] = before[key];
   }
   for (const [name, attr] of attrs) {
-    if (name === "className" || name === "data-element-id" || HIDDEN_SETTINGS_SET.has(name)) continue;
+    if (
+      name === "className" ||
+      name === "data-element-id" ||
+      HIDDEN_SETTINGS_SET.has(name) ||
+      modeled.has(name)
+    ) {
+      continue;
+    }
     const v = attributeValue(attr);
-    if (v.ok && v.value !== undefined) next[name] = v.value;
+    if (v.ok && v.value !== undefined) {
+      const targetKey = renameMap && Object.hasOwn(renameMap, name) ? renameMap[name]! : name;
+      next[targetKey] = v.value;
+    }
   }
   if (isEqual(stripUndefined(before ?? {}), stripUndefined(next))) return before;
   return next;
@@ -157,11 +329,14 @@ function collectCodeProps(
   type: ElementType,
   tag: string,
 ): string[] {
-  const modeled = new Set(["className", "data-element-id", ...(MODELED_ATTRIBUTES[tag] ?? [])]);
+  const modeled = modeledAttributesFor(type, tag);
   const props: string[] = [];
   for (const attr of node.openingElement.attributes) {
     if (t.isJSXAttribute(attr)) {
-      if (modeled.has(attributeName(attr))) continue;
+      const name = attributeName(attr);
+      if (name === "className" || name === "data-element-id" || modeled.has(name)) {
+        continue;
+      }
       if (SETTINGS_ATTRIBUTE_TYPES.has(type) && attributeValue(attr).ok) continue;
     }
     props.push(generate(attr).code);
@@ -191,16 +366,71 @@ function applyCodeProps(
   return next;
 }
 
+function headingLevelFromTag(tag: string): 1 | 2 | 3 | 4 | 5 | 6 {
+  switch (tag) {
+    case "h1":
+      return 1;
+    case "h2":
+      return 2;
+    case "h3":
+      return 3;
+    case "h4":
+      return 4;
+    case "h5":
+      return 5;
+    case "h6":
+      return 6;
+    default:
+      return 2;
+  }
+}
+
+function mergeStabilizedSettings(
+  next: LooseRecord,
+  existing: EditorElement | undefined,
+): LooseRecord | null {
+  const before = isPlainRecord(existing?.settings) ? existing.settings : null;
+  if (isEqual(stripUndefined(before ?? {}), stripUndefined(next))) return before;
+  return Object.keys(next).length > 0 ? next : before ? {} : null;
+}
+
 function resolveSettings(
   node: t.JSXElement,
   type: ElementType,
   tag: string,
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   existing: EditorElement | undefined,
+  lucideIconName: string | undefined,
 ): LooseRecord | null {
-  let settings: LooseRecord | null | undefined = isPlainRecord(existing?.settings) ? existing.settings : null;
-  if (SETTINGS_ATTRIBUTE_TYPES.has(type)) {
-    settings = settingsFromAttributes(attrs, existing);
+  const modeled = modeledAttributesFor(type, tag);
+  const renameMap = attributeRenameMapFor(type);
+  let settings: LooseRecord | null | undefined = isPlainRecord(existing?.settings)
+    ? existing.settings
+    : null;
+
+  if (type === "Heading") {
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    settings = mergeStabilizedSettings({ ...base, level: headingLevelFromTag(tag) }, existing);
+  } else if (type === "Code") {
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    const next: LooseRecord = { ...base };
+    const lang =
+      stringAttributeValue(attrs, "data-language") ??
+      stringAttributeValue(attrs, "language");
+    if (lang !== undefined) next.language = lang;
+    if (tag === "pre") {
+      next.preformatted = true;
+    } else if (isPlainRecord(existing?.settings) && "preformatted" in existing.settings) {
+      next.preformatted = false;
+    }
+    settings = mergeStabilizedSettings(next, existing);
+  } else if (type === "Icon") {
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    const iconName =
+      lucideIconName ?? stringAttributeValue(attrs, "iconName") ?? "star";
+    settings = mergeStabilizedSettings({ ...base, iconName }, existing);
+  } else if (SETTINGS_ATTRIBUTE_TYPES.has(type) && type !== "Table") {
+    settings = settingsFromAttributes(attrs, existing, modeled, renameMap);
   } else if (tag === "ol" || tag === "ul") {
     if (tag === "ol" && !settings?.ordered) settings = { ...settings, ordered: true };
     else if (tag === "ul" && settings?.ordered) settings = { ...settings, ordered: false };
@@ -208,7 +438,13 @@ function resolveSettings(
   return applyCodeProps(settings, node, type, tag, attrs);
 }
 
-function createTextElement(pageId: string | undefined, parentId: string, content: string, loc?: t.SourceLocation | null): TextElement {
+function createTextElement(
+  pageId: string | undefined,
+  parentId: string,
+  content: string,
+  loc?: t.SourceLocation | null,
+  tailwindStyles?: string,
+): TextElement {
   if (!pageId) throw new CodeError("There's no active page to add elements to.", loc);
   return {
     id: newEntityId(),
@@ -218,10 +454,16 @@ function createTextElement(pageId: string | undefined, parentId: string, content
     content,
     styles: {},
     settings: null,
+    ...(tailwindStyles ? { tailwindStyles } : {}),
   };
 }
 
-function convertChildren(node: t.JSXElement, tag: string, parentId: string, ctx: ParseContext): EditorElement[] {
+function convertChildren(
+  node: t.JSXElement,
+  tag: string,
+  parentId: string,
+  ctx: ParseContext,
+): EditorElement[] {
   const wrapper = WRAPPED_CHILDREN[tag];
   const out: EditorElement[] = [];
 
@@ -277,7 +519,10 @@ function convertOptions(
 
   return optionNodes.map((option, i) => {
     if (!isTag(option, "option")) {
-      throw new CodeError(`<${tagName(option)}> can't be inside a <select>; use <option>.`, option.loc);
+      throw new CodeError(
+        `<${tagName(option)}> can't be inside a <select>; use <option>.`,
+        option.loc,
+      );
     }
     const { text } = splitChildren(option);
     const optionAttrs = readAttributes(option);
@@ -286,19 +531,243 @@ function convertOptions(
     const content = resolveOptionContent(text, value, old);
 
     if (old) {
-      if (old.content === content) return old;
-      return old.type === "Text"
-        ? { ...old, parentId, content }
-        : ({ ...old, parentId, content } as EditorElement);
+      if (old.content === content && old.parentId === parentId) return old;
+      return { ...old, parentId, content };
     }
     return createTextElement(ctx.pageId, parentId, content, option.loc);
   });
 }
 
-export function keepUnsupported(next: readonly EditorElement[], before: readonly EditorElement[]): EditorElement[] {
+function readBooleanAttr(
+  attrs: ReadonlyMap<string, t.JSXAttribute>,
+  primary: string,
+  fallback: string,
+): boolean | undefined {
+  const attr = attrs.get(primary) ?? attrs.get(fallback);
+  if (!attr) return undefined;
+  const val = attributeValue(attr);
+  return val.ok && typeof val.value === "boolean" ? val.value : undefined;
+}
+
+function parseTableColumn(
+  th: t.JSXElement,
+  index: number,
+  existingCol: TableColumnDefinition | undefined,
+): TableColumnDefinition {
+  const thAttrs = readAttributes(th);
+  const id =
+    stringAttributeValue(thAttrs, "data-col-id") ??
+    existingCol?.id ??
+    `col_${index + 1}`;
+  const header = splitChildren(th).text;
+
+  let align: "left" | "center" | "right" | undefined;
+  let width: number | string | undefined;
+
+  const styleAttr = thAttrs.get("style");
+  if (styleAttr) {
+    const styleVal = attributeValue(styleAttr);
+    if (styleVal.ok && isPlainRecord(styleVal.value)) {
+      const ta = styleVal.value.textAlign;
+      if (ta === "left" || ta === "center" || ta === "right") align = ta;
+      const w = styleVal.value.width;
+      if (typeof w === "number" || typeof w === "string") width = w;
+    }
+  }
+  const attrAlign =
+    stringAttributeValue(thAttrs, "data-align") ?? stringAttributeValue(thAttrs, "align");
+  if (attrAlign === "left" || attrAlign === "center" || attrAlign === "right") {
+    align = attrAlign;
+  }
+  const widthAttr = thAttrs.get("data-width") ?? thAttrs.get("width");
+  if (width === undefined && widthAttr) {
+    const wVal = attributeValue(widthAttr);
+    if (wVal.ok && (typeof wVal.value === "number" || typeof wVal.value === "string")) {
+      width = wVal.value;
+    }
+  }
+
+  const accessor =
+    stringAttributeValue(thAttrs, "data-accessor") ?? existingCol?.accessor;
+  const sortableAttr = thAttrs.get("data-sortable");
+  let sortable = existingCol?.sortable;
+  if (sortableAttr) {
+    const sVal = attributeValue(sortableAttr);
+    if (sVal.ok && typeof sVal.value === "boolean") sortable = sVal.value;
+  }
+
+  return {
+    id,
+    header,
+    ...(accessor !== undefined ? { accessor } : {}),
+    ...(width !== undefined ? { width } : {}),
+    ...(align !== undefined ? { align } : {}),
+    ...(sortable !== undefined ? { sortable } : {}),
+  };
+}
+
+function convertHtmlTableRow(
+  tr: t.JSXElement,
+  pageId: string,
+  tableId: string,
+  ctx: ParseContext,
+): FrameElement {
+  const rowId = newEntityId();
+  const trAttrs = readAttributes(tr);
+  const rowClasses = splitClasses(stringAttributeValue(trAttrs, "className", true) ?? "").join(" ");
+  const { elements: cellNodes } = splitChildren(tr);
+
+  const cells: EditorElement[] = cellNodes
+    .filter((cell) => isTag(cell, "td") || isTag(cell, "th"))
+    .map((cell) => {
+      const cellSplit = splitChildren(cell);
+      const cellAttrs = readAttributes(cell);
+      const cellTw = splitClasses(
+        stringAttributeValue(cellAttrs, "className", true) ?? "",
+      ).join(" ");
+      if (cellSplit.elements.length === 0) {
+        return createTextElement(pageId, rowId, cellSplit.text, cell.loc, cellTw || undefined);
+      }
+      const cellId = newEntityId();
+      const nestedChildren = cellSplit.elements.map((el) => convertElement(el, cellId, ctx));
+      const frameCell: FrameElement = {
+        id: cellId,
+        type: "Frame",
+        pageId,
+        parentId: rowId,
+        content: cellSplit.text,
+        styles: {},
+        settings: null,
+        ...(cellTw ? { tailwindStyles: cellTw } : {}),
+        elements: nestedChildren,
+      };
+      return frameCell;
+    });
+
+  return {
+    id: rowId,
+    type: "Frame",
+    pageId,
+    parentId: tableId,
+    content: "",
+    styles: {},
+    settings: null,
+    ...(rowClasses ? { tailwindStyles: rowClasses } : {}),
+    elements: cells,
+  };
+}
+
+function parseTableStructure(
+  node: t.JSXElement,
+  pageId: string,
+  tableId: string,
+  attrs: ReadonlyMap<string, t.JSXAttribute>,
+  existing: EditorElement | undefined,
+  ctx: ParseContext,
+): { settings: LooseRecord | null; elements: EditorElement[] } {
+  const modeled = modeledAttributesFor("Table", "table");
+  const base = settingsFromAttributes(attrs, existing, modeled) ?? {};
+  const nextSettings: LooseRecord = { ...base };
+
+  const bordered = readBooleanAttr(attrs, "data-bordered", "bordered");
+  const striped = readBooleanAttr(attrs, "data-striped", "striped");
+  const hoverable = readBooleanAttr(attrs, "data-hoverable", "hoverable");
+  const compact = readBooleanAttr(attrs, "data-compact", "compact");
+  if (bordered !== undefined) nextSettings.bordered = bordered;
+  if (striped !== undefined) nextSettings.striped = striped;
+  if (hoverable !== undefined) nextSettings.hoverable = hoverable;
+  if (compact !== undefined) nextSettings.compact = compact;
+
+  const existingColumns: readonly TableColumnDefinition[] =
+    existing?.type === "Table" && Array.isArray(existing.settings?.columns)
+      ? existing.settings.columns
+      : [];
+
+  const { text: looseText, elements: tableChildren } = splitChildren(node);
+  if (looseText.trim() !== "") {
+    throw new CodeError(
+      "Text inside <table> must sit inside <caption>, <th>, or <td>.",
+      node.loc,
+    );
+  }
+
+  let caption: string | undefined;
+  const headerCells: t.JSXElement[] = [];
+  const bodyRows: t.JSXElement[] = [];
+
+  for (const child of tableChildren) {
+    const childTag = tagName(child);
+    if (childTag === "caption") {
+      caption = splitChildren(child).text;
+    } else if (childTag === "thead") {
+      const headSplit = splitChildren(child);
+      for (const rowOrCell of headSplit.elements) {
+        if (isTag(rowOrCell, "tr")) {
+          for (const cell of splitChildren(rowOrCell).elements) {
+            if (isTag(cell, "th") || isTag(cell, "td")) headerCells.push(cell);
+          }
+        } else if (isTag(rowOrCell, "th")) {
+          headerCells.push(rowOrCell);
+        }
+      }
+    } else if (childTag === "tbody" || childTag === "tfoot") {
+      for (const row of splitChildren(child).elements) {
+        if (isTag(row, "tr")) bodyRows.push(row);
+      }
+    } else if (childTag === "tr") {
+      bodyRows.push(child);
+    }
+  }
+
+  if (caption !== undefined) {
+    nextSettings.caption = caption;
+  }
+  if (headerCells.length > 0) {
+    nextSettings.columns = headerCells.map((th, idx) =>
+      parseTableColumn(th, idx, existingColumns[idx]),
+    );
+  }
+
+  let bodyElements: EditorElement[] = [];
+  if (bodyRows.length === 1) {
+    const singleRowCells = splitChildren(bodyRows[0]!).elements.filter(
+      (c) => isTag(c, "td") || isTag(c, "th"),
+    );
+    if (singleRowCells.length === 1) {
+      const onlyCell = singleRowCells[0]!;
+      const cellAttrs = readAttributes(onlyCell);
+      const cellSplit = splitChildren(onlyCell);
+      const isSlot =
+        cellAttrs.has("data-wb-slot") ||
+        (cellAttrs.has("colSpan") && cellSplit.text.trim() === "");
+      if (isSlot) {
+        bodyElements = cellSplit.elements.map((el) => convertElement(el, tableId, ctx));
+        const stabilized = mergeStabilizedSettings(nextSettings, existing);
+        return {
+          settings: applyCodeProps(stabilized, node, "Table", "table", attrs),
+          elements: existing
+            ? keepUnsupported(bodyElements, childrenOf(existing))
+            : bodyElements,
+        };
+      }
+    }
+  }
+
+  bodyElements = bodyRows.map((tr) => convertHtmlTableRow(tr, pageId, tableId, ctx));
+  const stabilized = mergeStabilizedSettings(nextSettings, existing);
+  return {
+    settings: applyCodeProps(stabilized, node, "Table", "table", attrs),
+    elements: existing ? keepUnsupported(bodyElements, childrenOf(existing)) : bodyElements,
+  };
+}
+
+export function keepUnsupported(
+  next: readonly EditorElement[],
+  before: readonly EditorElement[],
+): EditorElement[] {
   const out = [...next];
   before.forEach((el, i) => {
-    if (generateStrategies[el.type]) return;
+    if (hasGenerateStrategy(el.type)) return;
     out.splice(Math.min(i, out.length), 0, el);
   });
   return out;
@@ -311,51 +780,245 @@ function toComponentInstance(
   node: t.JSXElement,
 ): EditorElement {
   if (childNodes.length) {
-    throw new CodeError("Edit the component master to change its children.", childNodes[0].loc ?? node.loc);
+    throw new CodeError(
+      "Edit the component master to change its children.",
+      childNodes[0]?.loc ?? node.loc,
+    );
   }
-  const entries = Object.entries(existing).filter(([key]) => key !== "elements");
-  const rest = Object.fromEntries(entries);
-  rest.parentId = parentId;
-  return rest as unknown as EditorElement;
+  return { ...existing, parentId };
 }
 
-function assignElementContentAndUrls(
-  result: LooseRecord,
-  tag: string,
-  text: string,
-  attrs: ReadonlyMap<string, t.JSXAttribute>,
-  existing: EditorElement | undefined,
-): void {
-  if (tag === "img") {
-    const content = stringAttributeValue(attrs, "alt", true) ?? "";
-    if (content !== (existing?.content ?? "")) result.content = content;
-    result.src = stringAttribute(attrs, "src", existing?.src);
-  } else if (tag !== "select") {
-    if (text !== (existing?.content ?? "")) result.content = text;
-  }
-  if (tag === "a") result.href = stringAttribute(attrs, "href", existing?.href);
+function wrapSettings<S extends object>(
+  seed: S,
+  raw: LooseRecord | null,
+): SettingsEnvelope<S> {
+  if (raw === null) return null;
+  const target: S & { component?: ComponentSetting; authVisibility?: AuthVisibility } = {
+    ...seed,
+  };
+  return Object.assign(target, raw);
 }
 
-function assignElementChildren(
-  result: LooseRecord,
+interface BuiltElementFields {
+  readonly id: string;
+  readonly pageId: string;
+  readonly parentId: string | undefined;
+  readonly content: string;
+  readonly name: string | undefined;
+  readonly styles: ResponsiveStyles;
+  readonly tailwindStyles: string | undefined;
+  readonly hasTailwindKey: boolean;
+  readonly href: string | undefined;
+  readonly hasHrefKey: boolean;
+  readonly src: string | undefined;
+  readonly hasSrcKey: boolean;
+  readonly order: number | undefined;
+  readonly orderKey: string | undefined;
+  readonly events: ElementEvents | undefined;
+  readonly settings: LooseRecord | null;
+  readonly elements: EditorElement[] | undefined;
+}
+
+function instantiateElement(type: ElementType, f: BuiltElementFields): EditorElement {
+  const common = {
+    id: f.id,
+    pageId: f.pageId,
+    parentId: f.parentId,
+    content: f.content,
+    styles: f.styles,
+    ...(f.name !== undefined ? { name: f.name } : {}),
+    ...(f.hasTailwindKey ? { tailwindStyles: f.tailwindStyles } : {}),
+    ...(f.hasHrefKey ? { href: f.href } : {}),
+    ...(f.hasSrcKey ? { src: f.src } : {}),
+    ...(f.order !== undefined ? { order: f.order } : {}),
+    ...(f.orderKey !== undefined ? { orderKey: f.orderKey } : {}),
+    ...(f.events !== undefined ? { events: f.events } : {}),
+  };
+  const children = f.elements ?? [];
+
+  switch (type) {
+    case "Text":
+      return { ...common, type: "Text", settings: wrapSettings({}, f.settings) };
+    case "Span":
+      return { ...common, type: "Span", settings: wrapSettings({}, f.settings) };
+    case "Heading": {
+      const rawLvl = f.settings?.level;
+      const level: HeadingSettings["level"] =
+        rawLvl === 1 ||
+        rawLvl === 2 ||
+        rawLvl === 3 ||
+        rawLvl === 4 ||
+        rawLvl === 5 ||
+        rawLvl === 6
+          ? rawLvl
+          : 2;
+      const seed: HeadingSettings & {
+        component?: ComponentSetting;
+        authVisibility?: AuthVisibility;
+      } = { level };
+      return {
+        ...common,
+        type: "Heading",
+        settings: Object.assign(seed, f.settings ?? {}, { level }),
+      };
+    }
+    case "Label":
+      return { ...common, type: "Label", settings: wrapSettings<LabelSettings>({}, f.settings) };
+    case "Blockquote":
+      return {
+        ...common,
+        type: "Blockquote",
+        settings: wrapSettings<BlockquoteSettings>({}, f.settings),
+      };
+    case "Code":
+      return { ...common, type: "Code", settings: wrapSettings<CodeSettings>({}, f.settings) };
+    case "Separator":
+      return { ...common, type: "Separator", settings: wrapSettings({}, f.settings) };
+    case "Icon":
+      return { ...common, type: "Icon", settings: wrapSettings<IconSettings>({}, f.settings) };
+    case "Image":
+      return { ...common, type: "Image", settings: wrapSettings<ImageSettings>({}, f.settings) };
+    case "Video":
+      return { ...common, type: "Video", settings: wrapSettings<VideoSettings>({}, f.settings) };
+    case "Audio":
+      return { ...common, type: "Audio", settings: wrapSettings<AudioSettings>({}, f.settings) };
+    case "IFrame":
+      return { ...common, type: "IFrame", settings: wrapSettings<IFrameSettings>({}, f.settings) };
+    case "Button":
+      return { ...common, type: "Button", settings: wrapSettings<ButtonSettings>({}, f.settings) };
+    case "Link":
+      return {
+        ...common,
+        type: "Link",
+        settings: wrapSettings({}, f.settings),
+        ...(f.elements !== undefined ? { elements: f.elements } : {}),
+      };
+    case "Input":
+      return { ...common, type: "Input", settings: wrapSettings<InputSettings>({}, f.settings) };
+    case "Textarea":
+      return {
+        ...common,
+        type: "Textarea",
+        settings: wrapSettings<TextareaSettings>({}, f.settings),
+      };
+    case "Checkbox":
+      return {
+        ...common,
+        type: "Checkbox",
+        settings: wrapSettings<CheckboxSettings>({}, f.settings),
+      };
+    case "Radio":
+      return { ...common, type: "Radio", settings: wrapSettings<RadioSettings>({}, f.settings) };
+    case "Progress":
+      return {
+        ...common,
+        type: "Progress",
+        settings: wrapSettings<ProgressSettings>({}, f.settings),
+      };
+    case "List":
+      return { ...common, type: "List", settings: wrapSettings({}, f.settings), elements: children };
+    case "Select":
+      return {
+        ...common,
+        type: "Select",
+        settings: wrapSettings<SelectSettings>({}, f.settings),
+        elements: children,
+      };
+    case "Form":
+      return {
+        ...common,
+        type: "Form",
+        settings: wrapSettings<FormSettings>({}, f.settings),
+        elements: children,
+      };
+    case "Table":
+      return {
+        ...common,
+        type: "Table",
+        settings: wrapSettings<TableSettings>({}, f.settings),
+        elements: children,
+      };
+    case "Frame":
+      return { ...common, type: "Frame", settings: wrapSettings({}, f.settings), elements: children };
+    case "Section":
+      return {
+        ...common,
+        type: "Section",
+        settings: wrapSettings({}, f.settings),
+        elements: children,
+      };
+    case "Nav":
+      return { ...common, type: "Nav", settings: wrapSettings({}, f.settings), elements: children };
+    case "Header":
+      return {
+        ...common,
+        type: "Header",
+        settings: wrapSettings({}, f.settings),
+        elements: children,
+      };
+    case "Footer":
+      return {
+        ...common,
+        type: "Footer",
+        settings: wrapSettings({}, f.settings),
+        elements: children,
+      };
+    case "Article":
+      return {
+        ...common,
+        type: "Article",
+        settings: wrapSettings({}, f.settings),
+        elements: children,
+      };
+    case "Aside":
+      return { ...common, type: "Aside", settings: wrapSettings({}, f.settings), elements: children };
+    case "CMSContentList":
+      return {
+        ...common,
+        type: "CMSContentList",
+        settings: wrapSettings<CMSContentSettings>({}, f.settings),
+        elements: children,
+      };
+    case "CMSContentItem":
+      return {
+        ...common,
+        type: "CMSContentItem",
+        settings: wrapSettings<CMSContentSettings>({}, f.settings),
+        elements: children,
+      };
+    case "CMSContentGrid":
+      return {
+        ...common,
+        type: "CMSContentGrid",
+        settings: wrapSettings<CMSContentSettings>({}, f.settings),
+        elements: children,
+      };
+    case "Carousel":
+      return {
+        ...common,
+        type: "Carousel",
+        settings: wrapSettings<CarouselSettings>({}, f.settings),
+        elements: children,
+      };
+  }
+}
+
+const ICON_CANDIDATES: readonly ElementType[] = ["Icon"];
+
+export function convertElement(
   node: t.JSXElement,
-  tag: string,
-  type: ElementType,
-  id: string,
-  existing: EditorElement | undefined,
+  parentId: string | undefined,
   ctx: ParseContext,
-): void {
-  if (tag === "select") {
-    result.elements = convertOptions(node, existing, id, ctx);
-  } else if (!LEAF_TYPES.has(type)) {
-    const children = convertChildren(node, tag, id, ctx);
-    result.elements = existing ? keepUnsupported(children, childrenOf(existing)) : children;
-  }
-}
-
-export function convertElement(node: t.JSXElement, parentId: string | undefined, ctx: ParseContext): EditorElement {
+): EditorElement {
   const tag = tagName(node);
-  const candidates = TAG_TYPES[tag];
+  const lucideIconName = ctx.lucideImports?.get(tag);
+  const candidates =
+    lucideIconName !== undefined
+      ? ICON_CANDIDATES
+      : Object.hasOwn(TAG_CANDIDATES, tag)
+        ? TAG_CANDIDATES[tag]
+        : undefined;
+
   if (!candidates) {
     throw new CodeError(
       `<${tag}> can't be turned into an element yet. Supported tags: ${SUPPORTED_TAGS}.`,
@@ -371,7 +1034,16 @@ export function convertElement(node: t.JSXElement, parentId: string | undefined,
     return toComponentInstance(existing, parentId, childNodes, node);
   }
 
-  const type = resolveElementType(tag, candidates, existing, childNodes, text, node);
+  const type = resolveElementType(
+    tag,
+    candidates,
+    existing,
+    attrs,
+    childNodes,
+    text,
+    node,
+    lucideIconName !== undefined,
+  );
   const pageId = existing ? existing.pageId : ctx.pageId;
   if (!pageId) {
     throw new CodeError("There's no active page to add elements to.", node.loc);
@@ -379,17 +1051,82 @@ export function convertElement(node: t.JSXElement, parentId: string | undefined,
 
   const id = existing ? existing.id : newEntityId();
   const written = splitClasses(stringAttributeValue(attrs, "className", true) ?? "");
-
-  const result: LooseRecord = existing
-    ? { ...existing, type, parentId }
-    : { id, type, pageId, parentId, content: "", styles: {}, settings: null };
-
   const tailwindStyles = ownClasses(written, existing);
-  if (tailwindStyles !== undefined || existing) result.tailwindStyles = tailwindStyles;
+  const hasTailwindKey = tailwindStyles !== undefined || Boolean(existing);
 
-  assignElementContentAndUrls(result, tag, text, attrs, existing);
-  result.settings = resolveSettings(node, type, tag, attrs, existing);
-  assignElementChildren(result, node, tag, type, id, existing, ctx);
+  let content = existing?.content ?? "";
+  let src = existing?.src;
+  let hasSrcKey = Boolean(existing && "src" in existing);
+  let href = existing?.href;
+  let hasHrefKey = Boolean(existing && "href" in existing);
 
-  return result as unknown as EditorElement;
+  if (tag === "img") {
+    content = stringAttributeValue(attrs, "alt", true) ?? "";
+    src = stringAttribute(attrs, "src", existing?.src);
+    hasSrcKey = true;
+  } else if (tag === "video" || tag === "audio") {
+    let mediaSrc = stringAttribute(attrs, "src", existing?.src);
+    if (!mediaSrc && childNodes.length > 0) {
+      const sourceChild = childNodes.find((c) => isTag(c, "source"));
+      if (sourceChild) {
+        mediaSrc = stringAttributeValue(readAttributes(sourceChild), "src", true) ?? mediaSrc;
+      }
+    }
+    src = mediaSrc;
+    hasSrcKey = true;
+  } else if (tag === "iframe") {
+    src = stringAttribute(attrs, "src", existing?.src);
+    hasSrcKey = true;
+  } else if (type === "Code" && tag === "pre" && childNodes.length === 1) {
+    content = splitChildren(childNodes[0]!).text;
+  } else if (tag !== "select" && tag !== "table") {
+    content = text;
+  }
+
+  if (tag === "a") {
+    href = stringAttribute(attrs, "href", existing?.href);
+    hasHrefKey = true;
+  } else if (tag === "button" && (attrs.has("data-href") || existing?.href !== undefined)) {
+    href = stringAttribute(attrs, "data-href", existing?.href);
+    hasHrefKey = true;
+  }
+
+  let settings: LooseRecord | null;
+  let elements: EditorElement[] | undefined;
+
+  if (type === "Table") {
+    const tableParsed = parseTableStructure(node, pageId, id, attrs, existing, ctx);
+    settings = tableParsed.settings;
+    elements = tableParsed.elements;
+  } else {
+    settings = resolveSettings(node, type, tag, attrs, existing, lucideIconName);
+    if (tag === "select") {
+      elements = convertOptions(node, existing, id, ctx);
+    } else if (!LEAF_TYPES.has(type)) {
+      const children = convertChildren(node, tag, id, ctx);
+      elements = existing ? keepUnsupported(children, childrenOf(existing)) : children;
+    }
+  }
+
+  return instantiateElement(type, {
+    id,
+    pageId,
+    parentId,
+    content,
+    name: existing?.name,
+    styles: existing?.styles ?? {},
+    tailwindStyles,
+    hasTailwindKey,
+    href,
+    hasHrefKey,
+    src,
+    hasSrcKey,
+    order: existing?.order,
+    orderKey: existing?.orderKey,
+    events: existing?.events,
+    settings,
+    elements,
+  });
 }
+
+export { EMPTY_COMPONENT_CATALOG };

@@ -108,7 +108,12 @@ function normalizeStatement(source: string): string {
 
 let generatedImports: Set<string> | undefined;
 
-function isGeneratedImport(source: string): boolean {
+function isGeneratedImport(statement: t.ImportDeclaration, rawSource: string): boolean {
+  const moduleName = statement.source.value;
+  if (moduleName === "lucide-react") return true;
+  if (moduleName.startsWith("@/components/") && !moduleName.startsWith("@/components/ui/")) {
+    return true;
+  }
   generatedImports ??= new Set(
     [
       ...Object.values(getAvailableComponentImports()),
@@ -116,7 +121,7 @@ function isGeneratedImport(source: string): boolean {
       "import { bindInteractions } from './interactions';",
     ].map(normalizeStatement),
   );
-  return generatedImports.has(normalizeStatement(source));
+  return generatedImports.has(normalizeStatement(rawSource));
 }
 
 const GENERATED_EFFECT = normalizeStatement("React.useEffect(() => bindInteractions(), []);");
@@ -131,7 +136,7 @@ export function extractPreamble(code: string, program: t.Program, page: LocatedP
     if (statement === page.statement) continue;
     if (t.isImportDeclaration(statement)) {
       const source = slice(statement, false);
-      if (!isGeneratedImport(source)) imports.push(source);
+      if (!isGeneratedImport(statement, source)) imports.push(source);
     } else if (!t.isExportDefaultDeclaration(statement)) {
       top.push(slice(statement));
     }

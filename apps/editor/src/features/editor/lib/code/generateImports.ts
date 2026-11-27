@@ -33,6 +33,11 @@ const COMPONENT_IMPORTS: Record<string, string> = {
     "import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';",
 };
 
+export interface ExtraGeneratedImports {
+  readonly lucideIcons?: readonly string[];
+  readonly projectComponents?: readonly string[];
+}
+
 /**
  * Finds the component tags the generated JSX actually renders. Only these need
  * imports: element types that compile to plain DOM tags (a `Button` element
@@ -41,22 +46,41 @@ const COMPONENT_IMPORTS: Record<string, string> = {
 function findUsedComponents(jsx: string): Set<string> {
   const used = new Set<string>();
   for (const match of jsx.matchAll(/<([A-Z][A-Za-z0-9]*)(?=[\s/>])/g)) {
-    used.add(match[1]);
+    if (match[1]) used.add(match[1]);
   }
   return used;
 }
 
 /**
- * Generates import statements for the components used in the generated JSX.
- * Always includes React import
+ * Generates import statements for the components, Lucide icons, and project
+ * components used in the generated JSX. Always includes React import.
  */
-export function generateImports(jsx: string): string {
+export function generateImports(jsx: string, extra?: ExtraGeneratedImports): string {
   const imports: string[] = ["import React from 'react';"];
+  const lucideSet = new Set(
+    (extra?.lucideIcons ?? []).filter((name) => name.length > 0),
+  );
+  const projectSet = new Set(
+    (extra?.projectComponents ?? []).filter((name) => name.length > 0),
+  );
 
   const usedComponents = findUsedComponents(jsx);
   for (const component of usedComponents) {
-    if (COMPONENT_IMPORTS[component]) {
-      imports.push(COMPONENT_IMPORTS[component]);
+    if (lucideSet.has(component) || projectSet.has(component)) continue;
+    if (Object.hasOwn(COMPONENT_IMPORTS, component)) {
+      const stmt = COMPONENT_IMPORTS[component];
+      if (stmt) imports.push(stmt);
+    }
+  }
+
+  if (lucideSet.size > 0) {
+    const sortedIcons = [...lucideSet].sort();
+    imports.push(`import { ${sortedIcons.join(", ")} } from 'lucide-react';`);
+  }
+
+  if (projectSet.size > 0) {
+    for (const name of [...projectSet].sort()) {
+      imports.push(`import { ${name} } from '@/components/${name}';`);
     }
   }
 
@@ -86,7 +110,9 @@ export function registerComponentImport(
  * Gets the import statement for a specific component
  */
 export function getComponentImport(componentType: string): string | undefined {
-  return COMPONENT_IMPORTS[componentType];
+  return Object.hasOwn(COMPONENT_IMPORTS, componentType)
+    ? COMPONENT_IMPORTS[componentType]
+    : undefined;
 }
 
 /**
@@ -97,7 +123,7 @@ export function getComponentImports(
 ): Record<string, string> {
   const imports: Record<string, string> = {};
   componentTypes.forEach((type) => {
-    const importStmt = COMPONENT_IMPORTS[type];
+    const importStmt = getComponentImport(type);
     if (importStmt) {
       imports[type] = importStmt;
     }
