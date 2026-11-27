@@ -182,27 +182,13 @@ function collectOmittedStatements(
   scope: ModuleScope,
   activeShadcnTags: ReadonlySet<string>,
   consumedConsts: ReadonlySet<string>,
-): Set<t.Statement> {
+  normalizedRoot: t.JSXElement | t.JSXFragment,
+): {
+  readonly omitStatements: Set<t.Statement>;
+  readonly retainStatements: Set<t.Statement>;
+} {
   const omitted = new Set<t.Statement>();
-
-  for (const stmt of program.body) {
-    if (
-      t.isImportDeclaration(stmt) &&
-      stmt.importKind !== "type" &&
-      stmt.source.value.startsWith("@/components/ui/") &&
-      stmt.specifiers.length > 0
-    ) {
-      const allLowered = stmt.specifiers.every(
-        (spec) =>
-          (t.isImportSpecifier(spec) && spec.importKind === "type") ||
-          activeShadcnTags.has(spec.local.name),
-      );
-      if (allLowered) omitted.add(stmt);
-    }
-  }
-
-  if (consumedConsts.size === 0) return omitted;
-
+  const retained = new Set<t.Statement>();
   const candidateVarStmts = new Map<t.Statement, readonly string[]>();
   const otherStatements: t.Statement[] = [];
 
@@ -210,7 +196,10 @@ function collectOmittedStatements(
     if (stmt === page.statement || t.isImportDeclaration(stmt) || t.isExportDefaultDeclaration(stmt)) {
       continue;
     }
-    const names = scope.pureStaticStatements.has(stmt) ? declaredIdentifierNames(stmt) : null;
+    const names =
+      consumedConsts.size > 0 && scope.pureStaticStatements.has(stmt)
+        ? declaredIdentifierNames(stmt)
+        : null;
     if (names && names.every((name) => consumedConsts.has(name))) {
       candidateVarStmts.set(stmt, names);
     } else {
@@ -221,7 +210,10 @@ function collectOmittedStatements(
   if (page.fn && t.isBlockStatement(page.fn.body)) {
     for (const stmt of page.fn.body.body) {
       if (stmt === page.ret) break;
-      const names = scope.pureStaticStatements.has(stmt) ? declaredIdentifierNames(stmt) : null;
+      const names =
+        consumedConsts.size > 0 && scope.pureStaticStatements.has(stmt)
+          ? declaredIdentifierNames(stmt)
+          : null;
       if (names && names.every((name) => consumedConsts.has(name))) {
         candidateVarStmts.set(stmt, names);
       } else {
@@ -249,7 +241,38 @@ function collectOmittedStatements(
   for (const stmt of candidateVarStmts.keys()) {
     omitted.add(stmt);
   }
-  return omitted;
+
+  const keptRefs = collectReferencedIdentifiers(normalizedRoot);
+  for (const stmt of otherStatements) {
+    collectReferencedIdentifiers(stmt, keptRefs, { includeJsxTags: true });
+  }
+
+  for (const stmt of program.body) {
+    if (
+      t.isImportDeclaration(stmt) &&
+      stmt.importKind !== "type" &&
+      stmt.source.value.startsWith("@/components/ui/") &&
+      stmt.specifiers.length > 0
+    ) {
+      const hasKeptRef = stmt.specifiers.some(
+        (spec) =>
+          !(t.isImportSpecifier(spec) && spec.importKind === "type") &&
+          keptRefs.has(spec.local.name),
+      );
+      if (hasKeptRef) {
+        retained.add(stmt);
+        continue;
+      }
+      const canOmit = stmt.specifiers.every(
+        (spec) =>
+          (t.isImportSpecifier(spec) && spec.importKind === "type") ||
+          activeShadcnTags.has(spec.local.name),
+      );
+      if (canOmit) omitted.add(stmt);
+    }
+  }
+
+  return { omitStatements: omitted, retainStatements: retained };
 }
 
 export function parseCode(
@@ -296,17 +319,18 @@ export function parseCode(
     const elements = collectRootElements(normalizedRoot, scope.boundIdentifiers).map((entry) =>
       convertElement(entry.node, undefined, ctx, entry.codeVisible),
     );
-    const omitStatements = collectOmittedStatements(
+    const { omitStatements, retainStatements } = collectOmittedStatements(
       ast.program,
       page,
       scope,
       activeShadcnTags,
       consumedConsts,
+      normalizedRoot,
     );
     return {
       ok: true,
       elements: keepUnsupported(elements, current),
-      preamble: extractPreamble(code, ast.program, page, { omitStatements }),
+      preamble: extractPreamble(code, ast.program, page, { omitStatements, retainStatements }),
     };
   } catch (err) {
     if (err instanceof CodeError) return { ok: false, diagnostic: diagnosticAt(err.message, err.loc) };

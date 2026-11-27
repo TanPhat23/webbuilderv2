@@ -281,3 +281,28 @@ test("shadcn Checkbox, Progress, Input, Textarea, Label, and Table lower cleanly
     ["Label", "Input", "Textarea", "Checkbox", "Progress", "Table"],
   );
 });
+
+test("shadcn ui imports referenced by kept preamble helpers are retained in preamble.imports", () => {
+  const code = `
+    import { Badge } from '@/components/ui/badge';
+    import { Button } from '@/components/ui/button';
+
+    const renderTag = () => <Badge>Tag</Badge>;
+    const ButtonRef = Button;
+
+    export default function Page() {
+      return (
+        <section>
+          <Button>Save</Button>
+          <span>{typeof ButtonRef}</span>
+        </section>
+      );
+    }
+  `;
+  const res = parseCode(code, [], PAGE);
+  assert.ok(res.ok, res.ok ? "" : res.diagnostic.message);
+  if (!res.ok) return;
+
+  assert.match(res.preamble.imports, /@\/components\/ui\/badge/);
+  assert.match(res.preamble.imports, /@\/components\/ui\/button/);
+});

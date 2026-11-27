@@ -128,6 +128,7 @@ const GENERATED_EFFECT = normalizeStatement("React.useEffect(() => bindInteracti
 
 export interface ExtractPreambleOptions {
   readonly omitStatements?: ReadonlySet<t.Statement>;
+  readonly retainStatements?: ReadonlySet<t.Statement>;
 }
 
 export function extractPreamble(
@@ -137,6 +138,7 @@ export function extractPreamble(
   opts?: ExtractPreambleOptions,
 ): Preamble {
   const omit = opts?.omitStatements;
+  const retain = opts?.retainStatements;
   const slice = (n: t.Node, withComments = true): string =>
     code.slice(withComments ? (n.leadingComments?.[0]?.start ?? n.start ?? 0) : (n.start ?? 0), n.end ?? 0);
 
@@ -147,7 +149,7 @@ export function extractPreamble(
     if (omit?.has(statement)) continue;
     if (t.isImportDeclaration(statement)) {
       const source = slice(statement, false);
-      if (!isGeneratedImport(statement, source)) imports.push(source);
+      if (retain?.has(statement) || !isGeneratedImport(statement, source)) imports.push(source);
     } else if (!t.isExportDefaultDeclaration(statement)) {
       top.push(slice(statement));
     }

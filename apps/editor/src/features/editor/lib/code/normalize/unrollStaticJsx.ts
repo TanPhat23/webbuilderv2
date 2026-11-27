@@ -489,9 +489,24 @@ function normalizeElement(
   return out;
 }
 
+function rootJsxIdentifierName(name: t.JSXOpeningElement["name"]): string | null {
+  if (t.isJSXIdentifier(name)) return name.name;
+  if (t.isJSXMemberExpression(name)) {
+    let cur: t.JSXMemberExpression | t.JSXIdentifier = name.object;
+    while (t.isJSXMemberExpression(cur)) cur = cur.object;
+    return cur.name;
+  }
+  return null;
+}
+
+export interface CollectReferencedOptions {
+  readonly includeJsxTags?: boolean;
+}
+
 function collectFromNode(
   node: t.Node,
   into: Set<string>,
+  opts?: CollectReferencedOptions,
 ): void {
   if (
     t.isTSAsExpression(node) ||
@@ -500,7 +515,7 @@ function collectFromNode(
     t.isTSTypeAssertion(node) ||
     t.isTSInstantiationExpression(node)
   ) {
-    collectFromNode(node.expression, into);
+    collectFromNode(node.expression, into, opts);
     return;
   }
   if (node.type.startsWith("TS")) return;
@@ -508,6 +523,10 @@ function collectFromNode(
   if (t.isIdentifier(node)) {
     into.add(node.name);
     return;
+  }
+  if (opts?.includeJsxTags && t.isJSXOpeningElement(node)) {
+    const tag = rootJsxIdentifierName(node.name);
+    if (tag) into.add(tag);
   }
   if (
     t.isJSXIdentifier(node) ||
@@ -520,13 +539,13 @@ function collectFromNode(
     return;
   }
   if (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) {
-    collectFromNode(node.object, into);
-    if (node.computed) collectFromNode(node.property, into);
+    collectFromNode(node.object, into, opts);
+    if (node.computed) collectFromNode(node.property, into, opts);
     return;
   }
   if (t.isObjectProperty(node)) {
-    if (node.computed) collectFromNode(node.key, into);
-    collectFromNode(node.value, into);
+    if (node.computed) collectFromNode(node.key, into, opts);
+    collectFromNode(node.value, into, opts);
     return;
   }
 
@@ -536,20 +555,21 @@ function collectFromNode(
     const child = Reflect.get(node, key);
     if (Array.isArray(child)) {
       for (const item of child) {
-        if (isAstNode(item)) collectFromNode(item, into);
+        if (isAstNode(item)) collectFromNode(item, into, opts);
       }
     } else if (isAstNode(child)) {
-      collectFromNode(child, into);
+      collectFromNode(child, into, opts);
     }
   }
 }
 
-/** Collects all runtime identifier names referenced within an AST node. */
+/** Collects all runtime identifier names (and optionally JSX opening tag roots) referenced within an AST node. */
 export function collectReferencedIdentifiers(
   node: t.Node,
   into = new Set<string>(),
+  opts?: CollectReferencedOptions,
 ): Set<string> {
-  collectFromNode(node, into);
+  collectFromNode(node, into, opts);
   return into;
 }
 
