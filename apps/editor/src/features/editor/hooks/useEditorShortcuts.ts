@@ -79,6 +79,8 @@ interface UseEditorShortcutsOptions {
   mountNode?: HTMLElement | null;
   isReadOnly?: boolean;
   isLocked?: boolean;
+  /** False when no context menu is mounted for this user (viewers). */
+  contextMenuEnabled?: boolean;
 }
 
 export function useEditorShortcuts({
@@ -86,6 +88,7 @@ export function useEditorShortcuts({
   mountNode,
   isReadOnly = false,
   isLocked = false,
+  contextMenuEnabled = true,
 }: UseEditorShortcutsOptions): { keyboardActions: ElementKeyboardActions } {
   const keyboardEventRef = useRef(new ElementKeyboardActions());
 
@@ -133,6 +136,7 @@ export function useEditorShortcuts({
       if (editing || isTypingTarget(e.target)) return;
 
       if (isContextMenuKey(e)) {
+        if (!contextMenuEnabled) return;
         const selectedId = SelectionStore.getState().selectedElementId;
         if (!selectedId) return;
         // The site nodes live in the iframe document, or in this one in tests.
@@ -199,7 +203,7 @@ export function useEditorShortcuts({
     return () => {
       for (const doc of docs) doc.removeEventListener("keydown", handleKeyDown);
     };
-  }, [stageRef, mountNode]);
+  }, [stageRef, mountNode, contextMenuEnabled]);
 
   return {
     keyboardActions: keyboardEventRef.current,

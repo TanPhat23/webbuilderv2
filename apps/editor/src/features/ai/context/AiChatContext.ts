@@ -13,11 +13,7 @@ export interface AiPendingRequest extends AiAskRequest {
 }
 
 export interface AiContextType {
-  chatOpen: boolean;
-  openChat: () => void;
-  closeChat: () => void;
-  toggleChat: () => void;
-  /** Opens the chat and queues a prompt + scope for the composer. */
+  /** Opens the AI rail panel and queues a prompt + scope for the composer. */
   askAi: (request: AiAskRequest) => void;
   /** Waiting for the chat panel to apply it. */
   pendingRequest: AiPendingRequest | undefined;

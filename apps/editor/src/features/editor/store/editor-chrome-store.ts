@@ -51,6 +51,8 @@ interface EditorChromeState extends ChromeLayout {
   settingsOpen: boolean;
   /** Opens `id`; re-selecting the open panel collapses it. */
   selectPanel: (id: RailId) => void;
+  /** Shows `id` and never collapses it (unlike selectPanel on the open panel). */
+  openPanel: (id: RailId) => void;
   togglePanel: () => void;
   closePanel: () => void;
   toggleInspector: () => void;
@@ -68,6 +70,7 @@ export const useEditorChromeStore = create<EditorChromeState>()(
             ? { panelOpen: false }
             : { activePanel: id, panelOpen: true },
         ),
+      openPanel: (id) => set({ activePanel: id, panelOpen: true }),
       togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
       closePanel: () => set({ panelOpen: false }),
       toggleInspector: () => set((s) => ({ inspectorOpen: !s.inspectorOpen })),

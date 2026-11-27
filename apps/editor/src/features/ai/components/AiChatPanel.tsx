@@ -54,7 +54,7 @@ function createId(prefix: string): string {
 export default function AiChatPanel({
   onClose,
 }: AiChatPanelProps = {}): ReactElement {
-  const { closeChat, pendingRequest, consumePendingRequest } = useAiChat();
+  const { pendingRequest, consumePendingRequest } = useAiChat();
   const { selectedElement, setSelectedElement } = useSelectedElementWithSetter();
   const elements = useElements();
   const { editor, mode } = useEditorContext();
@@ -67,7 +67,7 @@ export default function AiChatPanel({
   const [attachments, setAttachments] = useState<readonly AiAttachment[]>([]);
   const [preferredScope, setPreferredScope] = useState<AiPromptScope | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [composerFocusToken, setComposerFocusToken] = useState(0);
+  const [focusComposer, setFocusComposer] = useState(false);
 
   // A prompt queued by askAi (e.g. the canvas context menu) fills the composer
   // once. It is never sent: the user reviews and presses Send.
@@ -76,7 +76,7 @@ export default function AiChatPanel({
     setActiveTab("chat");
     setDraft(pendingRequest.prompt);
     setPreferredScope(pendingRequest.scope);
-    setComposerFocusToken((token) => token + 1);
+    setFocusComposer(true);
     consumePendingRequest(pendingRequest.nonce);
   }, [pendingRequest, consumePendingRequest]);
 
@@ -392,9 +392,8 @@ export default function AiChatPanel({
   );
 
   const handleClose = useCallback((): void => {
-    closeChat();
     onClose?.();
-  }, [closeChat, onClose]);
+  }, [onClose]);
 
   return (
     <div className="bg-card text-card-foreground flex h-full w-full flex-col overflow-hidden">
@@ -513,7 +512,8 @@ export default function AiChatPanel({
             }}
             isSending={isSending}
             onSend={handleSend}
-            focusToken={composerFocusToken}
+            shouldFocus={focusComposer}
+            onFocused={() => setFocusComposer(false)}
           />
         </TabsContent>
 

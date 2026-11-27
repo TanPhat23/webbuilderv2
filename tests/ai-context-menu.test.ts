@@ -9,8 +9,12 @@ redirectModules({
   '@clerk/tanstack-react-start/server': './test-clerk-server-stub.ts',
   '@tanstack/react-start': './test-start-stub.ts',
   '@tanstack/react-router': './editor-router-stub.ts',
+  sonner: './editor-logic-sonner-stub.ts',
 });
 
+const { toasts } = await import('./support/editor-logic-sonner-stub');
+const { default: AIChatProvider } = await import('../apps/editor/src/providers/aiprovider');
+const { useEditorChromeStore } = await import('../apps/editor/src/features/editor/store/editor-chrome-store');
 const { EditorContextMenu } = await import('../apps/editor/src/features/editor/components/EditorContextMenu');
 const { EditorContext } = await import('../apps/editor/src/features/editor/context/EditorContext');
 const { AskAiOptionsContext } = await import('../apps/editor/src/features/editor/context/AskAiOptionsContext');
@@ -73,6 +77,7 @@ beforeEach(async () => {
   await cleanup();
   clipboardWrites = [];
   clipboardFails = false;
+  toasts.length = 0;
   Object.defineProperty(globalThis.navigator, 'clipboard', {
     configurable: true,
     value: {
@@ -168,6 +173,7 @@ test('Copy for AI agent writes the Markdown reference of the selected element to
   await choose(needAction('copy-for-agent'));
   await act(async () => { await Promise.resolve(); });
   assert.deepEqual(clipboardWrites, [buildAgentReference(title, ElementStore.getState().elements)]);
+  assert.deepEqual(toasts.map((t) => t.kind), ['success']);
   assert.match(clipboardWrites[0] ?? '', /- Path: Section "Hero" › Text "Title"/);
 });
 
@@ -177,13 +183,30 @@ test('Copy for AI agent survives a clipboard failure', async () => {
   await choose(needAction('copy-for-agent'));
   await act(async () => { await Promise.resolve(); });
   assert.deepEqual(clipboardWrites, []);
+  assert.deepEqual(toasts.map((t) => t.kind), ['error'], 'error toast shown, success toast not');
+});
+
+test('choosing an Ask AI item leaves the AI panel open in the chrome store, whatever was open before', async () => {
+  for (const before of [{ activePanel: 'layers', panelOpen: true }, { activePanel: 'ai', panelOpen: false }, { activePanel: 'ai', panelOpen: true }] as const) {
+    useEditorChromeStore.setState(before);
+    const menu = h(EditorContextMenu, { children: h('div', { id: 'menu-target' }, 'target') });
+    const r = await render(h(QueryClientProvider, { client: queryClient }, withEditor(editorValue(), h(AIChatProvider, null, menu), EditorContext)));
+    await act(() => {
+      $q(r.container, '#menu-target').dispatchEvent(new win.MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 }));
+    });
+    await act(() => { needAction('ask-ai').dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true })); });
+    await choose(needAction('ask-ai-refine-layout'));
+    assert.equal(useEditorChromeStore.getState().activePanel, 'ai', JSON.stringify(before));
+    assert.equal(useEditorChromeStore.getState().panelOpen, true, JSON.stringify(before));
+    await cleanup();
+  }
 });
 
 // ---- Shift+F10 / ContextMenu key -----------------------------------------------------
 
-function Shortcuts(): null {
+function Shortcuts({ contextMenuEnabled = true }: { contextMenuEnabled?: boolean }): null {
   const stageRef = React.useRef<HTMLElement | null>(null);
-  useEditorShortcuts({ stageRef, mountNode: null, isReadOnly: false, isLocked: false });
+  useEditorShortcuts({ stageRef, mountNode: null, isReadOnly: false, isLocked: false, contextMenuEnabled });
   return null;
 }
 
@@ -257,4 +280,17 @@ test('Shift+F10 is ignored without a selection, inside inputs, while editing and
   await act(() => { press(document.body, 'F10', { shiftKey: true }); });
   assert.equal(events.length, 1, 'control: the same key works on the canvas');
   node.remove(); input.remove(); dialog.remove();
+});
+
+test('Shift+F10 does nothing when the context menu is disabled (viewer)', async () => {
+  const { node, events } = addElementNode();
+  await render(h(Shortcuts, { contextMenuEnabled: false }));
+  let event!: KeyboardEvent;
+  await act(() => { event = press(document.body, 'F10', { shiftKey: true }); });
+  assert.equal(events.length, 0);
+  assert.equal(event.defaultPrevented, false);
+  await act(() => { event = press(document.body, 'ContextMenu'); });
+  assert.equal(events.length, 0);
+  assert.equal(event.defaultPrevented, false);
+  node.remove();
 });

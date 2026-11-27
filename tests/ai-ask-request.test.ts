@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, afterEach, beforeEach, test } from 'node:test';
 import { redirectModules } from './support/test-stub-modules';
-import { $q, act, cleanup, React, render } from './support/sidebar-dom-harness';
+import { $q, act, cleanup, React, render, win } from './support/sidebar-dom-harness';
 import type { EditorElement } from '@webbuilder/site-runtime/types/global.type';
 
 redirectModules({
@@ -18,6 +18,7 @@ const { default: AiChatPanel } = await import('../apps/editor/src/features/ai/co
 const { ELEMENT_STARTER_ACTIONS } = await import('../apps/editor/src/features/ai/utils/aiChatUtils');
 const { EditorContext } = await import('../apps/editor/src/features/editor/context/EditorContext');
 const { ElementStore } = await import('../apps/editor/src/features/editor/store/element-store');
+const { useEditorChromeStore } = await import('../apps/editor/src/features/editor/store/editor-chrome-store');
 const { SelectionStore } = await import('../apps/editor/src/features/editor/store/selection-store');
 const { editorValue, withEditor } = await import('./support/sidebar-fixtures');
 const { QueryClient, QueryClientProvider } = await import('@tanstack/react-query');
@@ -78,24 +79,21 @@ test('the provider exposes the Ask AI menu options, which queue a prompt through
   const ids = options?.map((o) => o.id);
   assert.deepEqual(ids, [...ELEMENT_STARTER_ACTIONS.map((s) => s.id), 'custom']);
   await act(() => options?.find((o) => o.id === 'make-responsive')?.run(title));
-  assert.equal(actions().chatOpen, true);
   assert.equal(actions().pendingRequest?.scope, 'element');
   assert.match(actions().pendingRequest?.prompt ?? '', /"Title"/);
   await act(() => options?.find((o) => o.id === 'custom')?.run(title));
   assert.equal(actions().pendingRequest?.prompt, '');
 });
 
-test('askAi opens the chat and stores one pending request with a fresh nonce each time', async () => {
+test('askAi stores one pending request with a fresh nonce each time', async () => {
   function Reader(): null {
     chat = useAiChat();
     return null;
   }
   await render(h(AIChatProvider, null, h(Reader)));
-  assert.equal(actions().chatOpen, false);
   assert.equal(actions().pendingRequest, undefined);
   await act(() => actions().askAi({ prompt: 'Do it', scope: 'element' }));
   const first = actions().pendingRequest;
-  assert.equal(actions().chatOpen, true);
   assert.equal(first?.prompt, 'Do it');
   assert.equal(first?.scope, 'element');
   await act(() => actions().askAi({ prompt: 'Do it', scope: 'element' }));
@@ -122,13 +120,49 @@ test('AiChatPanel applies a pending request once: draft and scope set, focused, 
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
   assert.equal(composer().value, 'my own words');
-  await act(() => actions().openChat());
-  assert.equal(composer().value, 'my own words');
 
   // The same request again still applies (unique nonce).
   await act(() => actions().askAi({ prompt: 'Polish the title', scope: 'theme' }));
   assert.equal(composer().value, 'Polish the title');
 });
+
+test('the composer takes focus once per request, not again when it remounts on a tab switch', async () => {
+  await mountPanel();
+  await act(() => actions().askAi({ prompt: 'Focus me', scope: 'element' }));
+  assert.equal(document.activeElement, composer());
+  const tab = (name: string): HTMLElement => {
+    const el = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]')).find((n) => (n.textContent ?? '').includes(name));
+    assert.ok(el, name + ' tab');
+    return el;
+  };
+  const activate = (el: HTMLElement) =>
+    act(() => { el.dispatchEvent(new win.MouseEvent('mousedown', { bubbles: true, cancelable: true, button: 0 })); });
+  await activate(tab('Agent'));
+  await activate(tab('Chat'));
+  assert.equal(composer().value, 'Focus me', 'the draft survives the tab switch');
+  assert.notEqual(document.activeElement, composer(), 'no focus stolen on remount');
+});
+
+for (const [name, before] of [
+  ['closed', { activePanel: 'ai', panelOpen: false }],
+  ['another panel active', { activePanel: 'layers', panelOpen: true }],
+  ['another panel collapsed', { activePanel: 'layers', panelOpen: false }],
+  ['already open', { activePanel: 'ai', panelOpen: true }],
+] as const) {
+  test('askAi leaves the AI panel open in the chrome store when it was ' + name, async () => {
+    useEditorChromeStore.setState(before);
+    function Reader(): null {
+      chat = useAiChat();
+      return null;
+    }
+    await render(h(AIChatProvider, null, h(Reader)));
+    await act(() => actions().askAi({ prompt: 'x', scope: 'page' }));
+    assert.equal(useEditorChromeStore.getState().activePanel, 'ai');
+    assert.equal(useEditorChromeStore.getState().panelOpen, true);
+    await act(() => actions().askAi({ prompt: 'y', scope: 'page' }));
+    assert.equal(useEditorChromeStore.getState().panelOpen, true, 'a second ask never toggles it closed');
+  });
+}
 
 test('AiChatPanel applies a request that was stored before it mounted', async () => {
   function Late(): React.ReactElement | null {

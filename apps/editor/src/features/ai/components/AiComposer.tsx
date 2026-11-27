@@ -44,8 +44,9 @@ interface AiComposerProps {
   readonly onClearSelectedElement: () => void;
   readonly isSending: boolean;
   readonly onSend: () => void;
-  /** Focuses the textarea whenever this changes (ignored at 0). */
-  readonly focusToken?: number;
+  /** Focuses the textarea once, then reports it through onFocused. */
+  readonly shouldFocus?: boolean;
+  readonly onFocused?: () => void;
 }
 
 function CommandRowIcon({ id }: { readonly id: AiCommandId }): ReactElement {
@@ -73,7 +74,8 @@ export function AiComposer({
   onClearSelectedElement,
   isSending,
   onSend,
-  focusToken = 0,
+  shouldFocus = false,
+  onFocused,
 }: AiComposerProps): ReactElement {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,8 +104,10 @@ export function AiComposer({
   }, []);
 
   useEffect(() => {
-    if (focusToken > 0) textareaRef.current?.focus();
-  }, [focusToken]);
+    if (!shouldFocus) return;
+    textareaRef.current?.focus();
+    onFocused?.();
+  }, [shouldFocus, onFocused]);
 
   useEffect(() => {
     adjustHeight();

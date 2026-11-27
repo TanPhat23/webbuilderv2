@@ -145,7 +145,14 @@ export default function CanvasStage(): ReactElement {
     userId,
   });
 
-  useEditorShortcuts({ stageRef, mountNode: siteRoot, isReadOnly, isLocked });
+  const menuEnabled = access.permissionsRole !== CollaboratorRole.VIEWER;
+  useEditorShortcuts({
+    stageRef,
+    mountNode: siteRoot,
+    isReadOnly,
+    isLocked,
+    contextMenuEnabled: menuEnabled,
+  });
   useForwardChromeShortcuts(iframeRef);
 
   // The pick crosshair is applied to the site document by the editor.
@@ -157,7 +164,6 @@ export default function CanvasStage(): ReactElement {
   }, [siteRoot, picking]);
 
   const { siteHandlers, stageHandlers } = controller;
-  const menuEnabled = access.permissionsRole !== CollaboratorRole.VIEWER;
   const onSiteContextMenuCapture = (event: React.MouseEvent): void => {
     // The menu opens in the editor document, so the retarget supplies
     // editor-window coordinates to the trigger (see contextMenuRetarget).
