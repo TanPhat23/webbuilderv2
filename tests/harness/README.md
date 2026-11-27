@@ -6,7 +6,7 @@ A login-free page that mounts real editor components in a real browser. There is
 bun run harness        # http://127.0.0.1:3200/  (loopback only, strict port)
 ```
 
-The index page lists the scenarios. Open one with `/?scenario=<name>`. Scenarios: `canvas`, `context-menu`, `empty-page`. The canvas ones also take `&w=800&h=700` to size the stage host.
+The index page lists the scenarios. Open one with `/?scenario=<name>`. Scenarios: `canvas`, `context-menu`, `empty-page`, `edge-card`. The canvas ones also take `&w=800&h=700` to size the stage host.
 
 The server never reads `.env` files (`envDir: false`, no config file). Any request that is not a same-origin GET for a vite module (cross-origin fetch, XHR, beacon, or a server function without a stub) fails and logs `harness: unstubbed request to <url>` to the console.
 

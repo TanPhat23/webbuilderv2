@@ -19,7 +19,7 @@ Start with the harness. Move to the sandbox only when the feature depends on the
 ## Harness (`tests/harness/`, details in tests/harness/README.md)
 
 1. `bun run harness` starts http://127.0.0.1:3200/. Run it as a background task with a short timeout; never use nohup or &.
-2. Open `/?scenario=<name>` (canvas, context-menu, empty-page) with the Playwright MCP or a Playwright script.
+2. Open `/?scenario=<name>` (canvas, context-menu, empty-page, edge-card) with the Playwright MCP or a Playwright script.
 3. Read state through `window.__harness` (getElements, getSelection, reset, stores). The site is inside `#preview-iframe`; editor chrome is in the parent document.
 4. A new feature usually needs a new scenario: add `tests/harness/scenarios/<name>.tsx` and register it in `scenarios/index.ts`.
 5. Stub what surrounds the feature, never the behaviour under test. A console error `harness: unstubbed request to …` means a stub is missing.

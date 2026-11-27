@@ -22,7 +22,7 @@ after(async () => {
   await server?.close();
 });
 
-interface OpenOptions { readonly width?: number; readonly height?: number; readonly scenario?: 'canvas' | 'context-menu' }
+interface OpenOptions { readonly width?: number; readonly height?: number; readonly scenario?: 'canvas' | 'context-menu' | 'edge-card' }
 
 async function openStage(options: OpenOptions = {}): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
@@ -32,7 +32,7 @@ async function openStage(options: OpenOptions = {}): Promise<Page> {
   const query = new URLSearchParams({ scenario: options.scenario ?? 'canvas', w: String(options.width ?? 800), h: String(options.height ?? 700) });
   await page.goto(`${baseUrl}?${query}`);
   await page.locator('#preview-iframe').waitFor();
-  await page.frameLocator('#preview-iframe').locator('[data-element-id="text-1"]').waitFor();
+  await page.frameLocator('#preview-iframe').locator(options.scenario === 'edge-card' ? '[data-element-id="caption"]' : '[data-element-id="text-1"]').waitFor();
   return page;
 }
 
@@ -232,5 +232,89 @@ test('7. right-clicking a Text shows the machine-readable menu and Shift+F10 reo
   assert.ok(box);
   t.diagnostic(`menu ${JSON.stringify(box)} element centre ${JSON.stringify(centre)}`);
   assert.ok(Math.abs(box.x - centre.x) <= 8 && Math.abs(box.y - centre.y) <= 8, 'menu opens at the element centre');
+  await page.close();
+});
+
+const hoveredId = (page: Page): Promise<string | undefined> =>
+  page.evaluate(() => window.__harness!.stores.selection.getState().hoveredElementId);
+const SELECT_PARENT = '[data-action="select-parent"]';
+
+test('8. edge-to-edge card: the label Select parent button climbs to each ancestor and is gone at the root', async () => {
+  const page = await openStage({ scenario: 'edge-card' });
+  const caption = text(page, 'caption');
+  const [captionBox, cardBox] = await Promise.all([caption.boundingBox(), text(page, 'card').boundingBox()]);
+  assert.ok(captionBox && cardBox);
+  for (const key of ['x', 'y', 'width', 'height'] as const) {
+    assert.ok(Math.abs(captionBox[key] - cardBox[key]) <= 1, `the child fills its parent (${key}: ${captionBox[key]} vs ${cardBox[key]})`);
+  }
+
+  await caption.click();
+  assert.equal(await selectedId(page), 'caption', 'clicking only ever reaches the innermost element');
+  const button = page.locator(SELECT_PARENT);
+  assert.equal(await button.count(), 1);
+  assert.equal(await button.getAttribute('aria-label'), 'Select parent');
+  assert.equal(await button.getAttribute('title'), 'Select parent (Esc)');
+  const before = JSON.stringify(await page.evaluate(() => window.__harness!.getElements()));
+
+  for (const expected of ['cover', 'card', 'section']) {
+    await button.click();
+    assert.equal(await selectedId(page), expected);
+    await page.waitForFunction((id) => document.querySelector('[data-selection-outline]') !== null && window.__harness!.getSelection().selectedElementId === id, expected);
+  }
+  assert.equal(await page.locator(SELECT_PARENT).count(), 0, 'a page root has no parent to select');
+  assert.equal(JSON.stringify(await page.evaluate(() => window.__harness!.getElements())), before, 'no drag or edit happened');
+  await page.close();
+});
+
+test('9. edge-to-edge card: right-click > Select layer lists the ancestors and picking one selects it, with a hover preview', async () => {
+  const page = await openStage({ scenario: 'edge-card' });
+  const menu = page.locator('[role="menu"]').first();
+  await text(page, 'caption').click({ button: 'right' });
+  await menu.waitFor();
+  assert.equal(await selectedId(page), 'caption');
+  const trigger = menu.locator('[data-action="select-layer"]');
+  assert.equal(await trigger.count(), 1);
+  assert.equal(await menu.locator('[role="menuitem"]').first().getAttribute('data-action'), 'select-layer', 'first entry of the menu');
+
+  await trigger.click();
+  const items = page.locator('[data-action^="select-layer-"]');
+  await items.first().waitFor();
+  assert.deepEqual(await items.evaluateAll((nodes) => nodes.map((n) => n.getAttribute('data-action'))), [
+    'select-layer-caption', 'select-layer-cover', 'select-layer-card', 'select-layer-section',
+  ]);
+  assert.deepEqual(await items.evaluateAll((nodes) => nodes.map((n) => (n.textContent ?? '').trim())), [
+    'Text "Cardamom Kouign-Amann"', 'Frame', 'Frame', 'Section "Menu"',
+  ]);
+  assert.equal(await page.locator('[data-action="select-layer-caption"]').getAttribute('data-current'), 'true');
+
+  await page.locator('[data-action="select-layer-card"]').hover();
+  await page.waitForFunction(() => window.__harness!.getSelection().hoveredElementId === 'card');
+  assert.equal(await selectedId(page), 'caption', 'hovering previews without selecting');
+  await page.locator('[data-action="select-layer-cover"]').hover();
+  await page.waitForFunction(() => window.__harness!.getSelection().hoveredElementId === 'cover');
+  assert.equal(await hoveredId(page), 'cover');
+
+  await page.locator('[data-action="select-layer-card"]').click();
+  await menu.waitFor({ state: 'detached' });
+  assert.equal(await selectedId(page), 'card');
+  await page.close();
+});
+
+test('10. edge-to-edge card: Ctrl+click climbs one level per click and never starts a drag', async () => {
+  const page = await openStage({ scenario: 'edge-card' });
+  const caption = text(page, 'caption');
+  await caption.click({ modifiers: ['Control'] });
+  assert.equal(await selectedId(page), 'caption', 'nothing selected yet: a plain click');
+  const before = JSON.stringify(await page.evaluate(() => window.__harness!.getElements()));
+  for (const expected of ['cover', 'card', 'section', 'section']) {
+    await caption.click({ modifiers: ['Control'] });
+    assert.equal(await selectedId(page), expected);
+  }
+  assert.equal(JSON.stringify(await page.evaluate(() => window.__harness!.getElements())), before, 'no element moved');
+
+  await caption.click();
+  assert.equal(await selectedId(page), 'caption', 'a plain click goes back to the innermost element');
+  await caption.click({ modifiers: ['Alt'] });
+  assert.equal(await selectedId(page), 'cover', 'Alt+click still selects the parent of the clicked element');
   await page.close();
 });

@@ -41,3 +41,48 @@ export function sectionGridTree(): EditorElement[] {
 }
 
 export const SECTION_GRID_CSS = '#frame-marker{outline:1px solid red}';
+
+/**
+ * Section "Menu" > card Frame > cover Frame > caption Text, where each child exactly
+ * fills its parent (no padding or margin), so only the innermost one can be clicked.
+ */
+export function edgeToEdgeCardTree(): EditorElement[] {
+  const fill = { width: '100%', height: '100%', padding: '0px', margin: '0px' };
+  return [
+    {
+      ...base,
+      id: 'section',
+      type: 'Section',
+      name: 'Menu',
+      styles: { default: { padding: '24px', width: '100%' } },
+      elements: [
+        {
+          ...base,
+          id: 'card',
+          type: 'Frame',
+          parentId: 'section',
+          styles: { default: { width: '400px', height: '200px', padding: '0px', margin: '0px' } },
+          elements: [
+            {
+              ...base,
+              id: 'cover',
+              type: 'Frame',
+              parentId: 'card',
+              styles: { default: { ...fill, backgroundColor: 'rgb(30, 64, 175)' } },
+              elements: [
+                {
+                  ...base,
+                  id: 'caption',
+                  type: 'Text',
+                  content: 'Cardamom Kouign-Amann',
+                  parentId: 'cover',
+                  styles: { default: { ...fill, color: 'rgb(255, 255, 255)', fontSize: '20px' } },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    } as unknown as EditorElement,
+  ];
+}
