@@ -9,8 +9,17 @@ import {
   type ComponentCatalog,
 } from "./catalog";
 import type { Preamble } from "./customCode";
-import { extractPreamble, locatePage } from "./extractPreamble";
-import { analyzeModuleScope, findUnboundIdentifier } from "./normalize/staticScope";
+import { extractPreamble, locatePage, type LocatedPage } from "./extractPreamble";
+import { collectShadcnBindings } from "./normalize/shadcnLowering";
+import {
+  analyzeModuleScope,
+  findUnboundIdentifier,
+  type ModuleScope,
+} from "./normalize/staticScope";
+import {
+  collectReferencedIdentifiers,
+  unrollStaticJsxRoot,
+} from "./normalize/unrollStaticJsx";
 import { convertElement, indexById, keepUnsupported, type ParseContext } from "./parseElements";
 
 export type { CodeDiagnostic } from "./astLiterals";
@@ -120,6 +129,129 @@ function collectRootElements(
   return entries;
 }
 
+function collectProjectComponentImports(
+  program: t.Program,
+  catalog: ComponentCatalog | undefined,
+): Set<string> {
+  const names = new Set<string>();
+  const uiImported = new Set<string>();
+
+  for (const stmt of program.body) {
+    if (!t.isImportDeclaration(stmt) || stmt.importKind === "type") continue;
+    const source = stmt.source.value;
+    if (source.startsWith("@/components/ui/")) {
+      for (const spec of stmt.specifiers) {
+        if (t.isImportSpecifier(spec) && spec.importKind === "type") continue;
+        uiImported.add(spec.local.name);
+      }
+      continue;
+    }
+    if (source.startsWith("@/components/")) {
+      for (const spec of stmt.specifiers) {
+        if (t.isImportSpecifier(spec) && spec.importKind === "type") continue;
+        names.add(spec.local.name);
+      }
+    }
+  }
+
+  if (catalog) {
+    for (const pascalName of catalog.byPascalName.keys()) {
+      if (!uiImported.has(pascalName)) {
+        names.add(pascalName);
+      }
+    }
+  }
+  return names;
+}
+
+function declaredIdentifierNames(stmt: t.Statement): string[] | null {
+  const inner =
+    t.isExportNamedDeclaration(stmt) && stmt.declaration ? stmt.declaration : stmt;
+  if (!t.isVariableDeclaration(inner) || inner.kind !== "const") return null;
+  const names: string[] = [];
+  for (const decl of inner.declarations) {
+    if (!t.isIdentifier(decl.id)) return null;
+    names.push(decl.id.name);
+  }
+  return names.length > 0 ? names : null;
+}
+
+function collectOmittedStatements(
+  program: t.Program,
+  page: LocatedPage,
+  scope: ModuleScope,
+  activeShadcnTags: ReadonlySet<string>,
+  consumedConsts: ReadonlySet<string>,
+): Set<t.Statement> {
+  const omitted = new Set<t.Statement>();
+
+  for (const stmt of program.body) {
+    if (
+      t.isImportDeclaration(stmt) &&
+      stmt.importKind !== "type" &&
+      stmt.source.value.startsWith("@/components/ui/") &&
+      stmt.specifiers.length > 0
+    ) {
+      const allLowered = stmt.specifiers.every(
+        (spec) =>
+          (t.isImportSpecifier(spec) && spec.importKind === "type") ||
+          activeShadcnTags.has(spec.local.name),
+      );
+      if (allLowered) omitted.add(stmt);
+    }
+  }
+
+  if (consumedConsts.size === 0) return omitted;
+
+  const candidateVarStmts = new Map<t.Statement, readonly string[]>();
+  const otherStatements: t.Statement[] = [];
+
+  for (const stmt of program.body) {
+    if (stmt === page.statement || t.isImportDeclaration(stmt) || t.isExportDefaultDeclaration(stmt)) {
+      continue;
+    }
+    const names = scope.pureStaticStatements.has(stmt) ? declaredIdentifierNames(stmt) : null;
+    if (names && names.every((name) => consumedConsts.has(name))) {
+      candidateVarStmts.set(stmt, names);
+    } else {
+      otherStatements.push(stmt);
+    }
+  }
+
+  if (page.fn && t.isBlockStatement(page.fn.body)) {
+    for (const stmt of page.fn.body.body) {
+      if (stmt === page.ret) break;
+      const names = scope.pureStaticStatements.has(stmt) ? declaredIdentifierNames(stmt) : null;
+      if (names && names.every((name) => consumedConsts.has(name))) {
+        candidateVarStmts.set(stmt, names);
+      } else {
+        otherStatements.push(stmt);
+      }
+    }
+  }
+
+  let changed = true;
+  while (changed && candidateVarStmts.size > 0) {
+    changed = false;
+    const referenced = new Set<string>();
+    for (const stmt of otherStatements) {
+      collectReferencedIdentifiers(stmt, referenced);
+    }
+    for (const [stmt, names] of candidateVarStmts) {
+      if (names.some((name) => referenced.has(name))) {
+        candidateVarStmts.delete(stmt);
+        otherStatements.push(stmt);
+        changed = true;
+      }
+    }
+  }
+
+  for (const stmt of candidateVarStmts.keys()) {
+    omitted.add(stmt);
+  }
+  return omitted;
+}
+
 export function parseCode(
   code: string,
   current: EditorElement[],
@@ -143,23 +275,38 @@ export function parseCode(
   }
 
   const scope = analyzeModuleScope(ast.program, page.fn);
+  const catalog = opts?.catalog ?? EMPTY_COMPONENT_CATALOG;
   const ctx: ParseContext = {
     byId: indexById(current),
     pageId,
     claimed: new Set(),
     lucideImports: collectLucideImports(ast.program),
-    catalog: opts?.catalog ?? EMPTY_COMPONENT_CATALOG,
+    catalog,
     boundIdentifiers: scope.boundIdentifiers,
     staticConsts: scope.staticConsts,
   };
   try {
-    const elements = collectRootElements(page.root, scope.boundIdentifiers).map((entry) =>
+    const projectComponentImports = collectProjectComponentImports(ast.program, catalog);
+    const activeShadcnTags = collectShadcnBindings(ast.program, projectComponentImports);
+    const { root: normalizedRoot, consumedConsts } = unrollStaticJsxRoot(
+      page.root,
+      scope,
+      activeShadcnTags,
+    );
+    const elements = collectRootElements(normalizedRoot, scope.boundIdentifiers).map((entry) =>
       convertElement(entry.node, undefined, ctx, entry.codeVisible),
+    );
+    const omitStatements = collectOmittedStatements(
+      ast.program,
+      page,
+      scope,
+      activeShadcnTags,
+      consumedConsts,
     );
     return {
       ok: true,
       elements: keepUnsupported(elements, current),
-      preamble: extractPreamble(code, ast.program, page),
+      preamble: extractPreamble(code, ast.program, page, { omitStatements }),
     };
   } catch (err) {
     if (err instanceof CodeError) return { ok: false, diagnostic: diagnosticAt(err.message, err.loc) };

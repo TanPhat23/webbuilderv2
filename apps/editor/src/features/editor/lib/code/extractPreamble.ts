@@ -126,7 +126,17 @@ function isGeneratedImport(statement: t.ImportDeclaration, rawSource: string): b
 
 const GENERATED_EFFECT = normalizeStatement("React.useEffect(() => bindInteractions(), []);");
 
-export function extractPreamble(code: string, program: t.Program, page: LocatedPage): Preamble {
+export interface ExtractPreambleOptions {
+  readonly omitStatements?: ReadonlySet<t.Statement>;
+}
+
+export function extractPreamble(
+  code: string,
+  program: t.Program,
+  page: LocatedPage,
+  opts?: ExtractPreambleOptions,
+): Preamble {
+  const omit = opts?.omitStatements;
   const slice = (n: t.Node, withComments = true): string =>
     code.slice(withComments ? (n.leadingComments?.[0]?.start ?? n.start ?? 0) : (n.start ?? 0), n.end ?? 0);
 
@@ -134,6 +144,7 @@ export function extractPreamble(code: string, program: t.Program, page: LocatedP
   const top: string[] = [];
   for (const statement of program.body) {
     if (statement === page.statement) continue;
+    if (omit?.has(statement)) continue;
     if (t.isImportDeclaration(statement)) {
       const source = slice(statement, false);
       if (!isGeneratedImport(statement, source)) imports.push(source);
@@ -146,6 +157,7 @@ export function extractPreamble(code: string, program: t.Program, page: LocatedP
   if (page.fn && t.isBlockStatement(page.fn.body)) {
     for (const statement of page.fn.body.body) {
       if (statement === page.ret) break;
+      if (omit?.has(statement)) continue;
       if (normalizeStatement(slice(statement, false)) === GENERATED_EFFECT) continue;
       body.push(slice(statement));
     }
