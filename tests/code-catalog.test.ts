@@ -50,6 +50,8 @@ test("synthesizeComponentProps honors explicit settings.componentProps and strip
     elements: [makeEl("h1", "Heading", { content: "Fast", settings: { level: 2 } })],
   });
   const props = synthesizeComponentProps(root);
+  assert.equal(Object.getPrototypeOf(props), null);
+  assert.equal(props.constructor, undefined);
   assert.deepEqual(Object.keys(props), ["title"]);
   assert.deepEqual(props.title, { nodeId: "h1", field: "text", defaultValue: "Fast" });
 });
@@ -65,6 +67,8 @@ test("synthesizeComponentProps derives deterministic camelCase names for Canvas-
     ],
   });
   const props = synthesizeComponentProps(root);
+  assert.equal(Object.getPrototypeOf(props), null);
+  assert.equal(props.constructor, undefined);
   assert.deepEqual(props.cardTitle, { nodeId: "n1", field: "text", defaultValue: "Starter" });
   assert.deepEqual(props.cardTitle2, { nodeId: "n2", field: "text", defaultValue: "Sub" });
   assert.deepEqual(props.ctaText, { nodeId: "n3", field: "text", defaultValue: "Sign up" });

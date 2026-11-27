@@ -117,6 +117,7 @@ export function readStoredComponentProps(
   if (!isRecord(settings) || !isRecord(settings.componentProps)) return null;
   const source = settings.componentProps;
   const out: Record<string, ComponentPropBinding> = {};
+  Object.setPrototypeOf(out, null);
   let count = 0;
   for (const [propName, raw] of Object.entries(source)) {
     if (
@@ -151,6 +152,7 @@ export function synthesizeComponentProps(
 
   const used = new Set<string>(FORBIDDEN_PROP_NAMES);
   const out: Record<string, ComponentPropBinding> = {};
+  Object.setPrototypeOf(out, null);
 
   const visit = (node: EditorElement): void => {
     const fields = componentOverrideFields(node);
