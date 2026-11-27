@@ -13,6 +13,7 @@
 #   scripts/sandbox/sandbox.sh api PATH   GET an API path as the sandbox user (status, ms, bytes)
 #   scripts/sandbox/sandbox.sh canvas    rendered text of the editor canvas + count of "Missing component" boxes
 #   scripts/sandbox/sandbox.sh console [clear]   recent browser console messages (clear empties the buffer)
+#   scripts/sandbox/sandbox.sh exec FILE | -e 'JS BODY' [--timeout MS]   run a script against the signed-in editor page (page, context, projectId, baseURL, log); prints JSON, exits 1 when ok is false
 #   scripts/sandbox/sandbox.sh logs api|mcp|vite|bot
 #   scripts/sandbox/sandbox.sh restart api|mcp   rebuild + restart Go services after code changes (web hot-reloads)
 #   scripts/sandbox/sandbox.sh down      stop everything and delete all sandbox data
@@ -23,6 +24,7 @@
 # bound to loopback: pg 55432, redis 56379, api 18080, mcp 18090, web 3100, bot 18099.
 set -euo pipefail
 
+CALLER_PWD="$PWD"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GO_API_DIR="${GO_API_DIR:-$ROOT/../webbuilder.api.go}"
 MCP_DIR="${MCP_DIR:-$ROOT/../webbuilder.mcp.go}"
@@ -80,7 +82,7 @@ cmd_up() {
       node --import tsx e2e/helpers/clerk-test-users.ts) >"$S/users.csv"
     PGPASSWORD=sandbox psql -h 127.0.0.1 -p $PG_PORT -U postgres wb -q -v ON_ERROR_STOP=1 \
       -c '\copy "User"("Id","Email","FirstName","LastName","CreatedAt","UpdatedAt") FROM STDIN WITH (FORMAT csv)' <"$S/users.csv"
-    rm -f "$S/env.json" "$S/token"
+    rm -f "$S/env.json" "$S/token" "$S/project.json"   # a fresh database has none of the old project ids
   fi
 
   alive api || { (cd "$S" && start_bg api env -i PATH="$PATH" HOME="$S" PORT=$API_PORT DATABASE_URL="$DB_URL" REDIS_URL="$REDIS_URL" \
@@ -153,6 +155,7 @@ case "${1:-}" in
   api) botcall "/api?path=$(node -e 'process.stdout.write(encodeURIComponent(process.argv[1]))' "${2:?/api/... path}")"; echo ;;
   canvas) botcall "/canvas"; echo ;;
   console) botcall "/console?clear=${2:+1}"; echo ;;
+  exec) shift; (cd "$ROOT" && SANDBOX_CWD="$CALLER_PWD" SANDBOX_DIR="$S" SANDBOX_BOT_PORT=$BOT_PORT node --import tsx scripts/sandbox/exec-cli.ts "$@") ;;
   logs) tail -n "${3:-60}" "$S/${2:?api|mcp|vite|bot}.log" ;;
-  *) sed -n 2,18p "$0"; exit 2 ;;
+  *) sed -n 2,19p "$0"; exit 2 ;;
 esac

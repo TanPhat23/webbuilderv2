@@ -43,4 +43,14 @@ scripts/sandbox/sandbox.sh down                     # stop and delete everything
 node scripts/sandbox/smoke-components.mjs           # end-to-end check of reusable components
 ```
 
+`exec` runs a script against the signed-in editor tab, so an agent can click, type, read the DOM and take screenshots, not just look. The script's default export is called with `{ page, context, projectId, baseURL, log }`; the response is JSON `{ ok, result, logs, error?, consoleErrors, durationMs }` and the command exits 1 when `ok` is false.
+
+```bash
+scripts/sandbox/sandbox.sh exec scripts/sandbox/examples/select-element.ts
+scripts/sandbox/sandbox.sh exec -e "await page.getByRole('button', { name: 'Mobile' }).click(); return page.url()"
+scripts/sandbox/sandbox.sh exec --timeout 120000 path/to/script.ts   # default timeout 60s
+```
+
+The file must be a `.ts`, `.mjs` or `.js` inside the repo; it is imported fresh on every run (its own imports stay cached). `-e` wraps the body in an async default export under `.sandbox/exec/`. Runs are serialised: a second `exec` while one runs is refused with `ExecBusy`. A throwing or timed-out script is reported with its stack and the bot keeps running; afterwards extra tabs are closed, routes cleared, the browser viewport reset to 1440x900 and a closed page reopened. A timed-out script cannot be killed, so it may keep running in the background. `consoleErrors` are page console errors and uncaught page exceptions raised during the run. Like the rest of the bot it listens on loopback only and every request needs `.sandbox/bot.key`; it runs only repo files, never request text. Examples are in `scripts/sandbox/examples/` (select an element, list context-menu actions, screenshot each viewport preset).
+
 State lives in the git-ignored `.sandbox/`. Vite hot updates can leave the editor tab in a broken context after a provider file changes; run `sandbox.sh bot /editor/<projectId>` to reopen it. `SANDBOX_BROWSER=firefox` uses Playwright's Firefox instead of installed Chrome.

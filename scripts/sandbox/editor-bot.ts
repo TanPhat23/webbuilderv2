@@ -3,15 +3,22 @@
 // editor on it and keeps the tab open so MCP tools have an editor to talk to.
 // A tiny control server on 127.0.0.1 lets the sandbox take screenshots, reload,
 // navigate and read console output. Every request needs the random key written
-// to <sandbox>/bot.key; there is deliberately no way to evaluate script.
+// to <sandbox>/bot.key. POST /exec runs a repo-local script against the signed-in
+// page (see runExec); it only imports files inside the repo, never request text.
 import { clerk, clerkSetup } from '@clerk/testing/playwright';
-import { chromium, firefox, type ConsoleMessage } from '@playwright/test';
+import { chromium, firefox, type ConsoleMessage, type Page } from '@playwright/test';
 import { config } from 'dotenv';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:http';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { createServer, type IncomingMessage } from 'node:http';
+import { format } from 'node:util';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { clerkTestConfig, withClerkKeyFallback } from '../../e2e/clerk-test-config';
+import {
+  ExecInputError, describeError, isInside, resolveExecFile, resolveExecTimeout, toJsonSafe,
+  type ExecContext, type ExecFn, type ExecResponse,
+} from './exec-helpers';
 
 config({ path: '.env.test', quiet: true });
 withClerkKeyFallback(process.env, config({ path: '.env', processEnv: {}, quiet: true }).parsed ?? {});
@@ -31,11 +38,24 @@ const browser = process.env.SANDBOX_BROWSER === 'firefox'
   ? await firefox.launch({ headless: true })
   : await chromium.launch({ channel: 'chrome', headless: true });
 const context = await browser.newContext({ baseURL: web, viewport: { width: 1440, height: 900 } });
-const page = await context.newPage();
+let page = await context.newPage();
 const consoleLog: string[] = [];
 const keep = (line: string) => { consoleLog.push(line.slice(0, 500)); if (consoleLog.length > 300) consoleLog.shift(); };
-page.on('console', (m: ConsoleMessage) => keep(`[${m.type()}] ${m.text()}`));
-page.on('pageerror', (e) => keep(`[pageerror] ${e.message}`));
+const watchPage = (p: Page) => {
+  p.on('console', (m: ConsoleMessage) => keep(`[${m.type()}] ${m.text()}`));
+  p.on('pageerror', (e) => keep(`[pageerror] ${e.message}`));
+};
+watchPage(page);
+const VIEWPORT = { width: 1440, height: 900 };
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+// A script that leaves a promise rejecting or throws from a timer must not take the bot down.
+let execLogs: string[] | null = null;
+const survive = (kind: string) => (e: unknown) => {
+  const line = `[bot] ${kind}: ${describeError(e).message}`;
+  keep(line); execLogs?.push(line);
+};
+process.on('unhandledRejection', survive('unhandledRejection'));
+process.on('uncaughtException', survive('uncaughtException'));
 
 await page.goto('/');
 await clerk.signIn({ page, emailAddress: email });
@@ -77,11 +97,115 @@ writeFileSync(envFile, JSON.stringify({
   mcpToken: readFileSync(path.join(dir, 'token'), 'utf8').trim(), shots: path.join(dir, 'shots'),
 }, null, 2));
 
+// ---- POST /exec -----------------------------------------------------------
+// Runs one repo-local script at a time against the signed-in page. A second
+// request while one runs is rejected with 409 rather than queued, so an agent
+// never waits on someone else's script without knowing it.
+let execBusy: { file: string; startedAt: number } | null = null;
+let execSeq = 0;
+
+class ExecTimeoutError extends Error {
+  override readonly name = 'ExecTimeoutError';
+}
+
+async function readJson(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += (chunk as Buffer).length;
+    if (size > 64 * 1024) throw new ExecInputError('request body too large');
+    chunks.push(chunk as Buffer);
+  }
+  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new ExecInputError('body must be JSON'); }
+}
+
+/** Put the shared tab back in a usable state after a script, however it ended. */
+async function restoreAfterExec() {
+  try {
+    for (const p of context.pages()) if (p !== page && !p.isClosed()) await p.close().catch(() => {});
+    await context.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
+    if (page.isClosed()) {
+      page = await context.newPage();
+      watchPage(page);
+      await openEditor();
+      return;
+    }
+    await page.unrouteAll({ behavior: 'ignoreErrors' }).catch(() => {});
+    const size = page.viewportSize();
+    if (!size || size.width !== VIEWPORT.width || size.height !== VIEWPORT.height) await page.setViewportSize(VIEWPORT);
+  } catch (e) { keep(`[bot] restore after exec failed: ${describeError(e).message}`); }
+}
+
+async function runExec(rawBody: unknown): Promise<{ status: number; body: ExecResponse }> {
+  const fail = (status: number, message: string, name = 'ExecInputError'): { status: number; body: ExecResponse } =>
+    ({ status, body: { ok: false, result: null, logs: [], error: { name, message }, consoleErrors: [], durationMs: 0 } });
+  let file: string;
+  let timeoutMs: number;
+  try {
+    if (typeof rawBody !== 'object' || rawBody === null) throw new ExecInputError('body must be a JSON object');
+    const input = rawBody as { file?: unknown; timeoutMs?: unknown };
+    file = resolveExecFile(repoRoot, input.file);
+    timeoutMs = resolveExecTimeout(input.timeoutMs);
+    // Symlinks: the real path must still be inside the repo and keep an allowed extension.
+    const real = realpathSync(file);
+    if (!isInside(realpathSync(repoRoot), real)) throw new ExecInputError('file must resolve inside the repo root');
+    resolveExecFile(repoRoot, real);
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    return fail(400, code === 'ENOENT' ? 'file not found' : describeError(e).message);
+  }
+  if (execBusy) {
+    const s = Math.round((Date.now() - execBusy.startedAt) / 1000);
+    return fail(409, `busy: another exec (${path.relative(repoRoot, execBusy.file)}) has been running for ${s}s; retry when it finishes`, 'ExecBusy');
+  }
+  execBusy = { file, startedAt: Date.now() };
+  const started = performance.now();
+  const logs: string[] = [];
+  const consoleErrors: string[] = [];
+  const onConsole = (m: ConsoleMessage) => { if (m.type() === 'error' && consoleErrors.length < 100) consoleErrors.push(m.text().slice(0, 500)); };
+  const onWebError = (w: { error(): Error }) => { if (consoleErrors.length < 100) consoleErrors.push(`[pageerror] ${w.error().message.slice(0, 500)}`); };
+  context.on('console', onConsole);
+  context.on('weberror', onWebError);
+  execLogs = logs;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const log = (...args: unknown[]) => { if (logs.length < 500) logs.push(format(...args).slice(0, 2000)); };
+    const run = (async () => {
+      const mod: { default?: unknown } = await import(`${pathToFileURL(file).href}?v=${++execSeq}-${Date.now()}`);
+      if (typeof mod.default !== 'function') throw new ExecInputError('the script must have a default export function');
+      const ctx: ExecContext = { page, context, projectId, baseURL: web, log };
+      return await (mod.default as ExecFn)(ctx);
+    })();
+    run.catch(() => {}); // after a timeout the script may still settle; never an unhandled rejection
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new ExecTimeoutError(`exec timed out after ${timeoutMs}ms; the script may still be running in the background`)), timeoutMs);
+    });
+    const result = toJsonSafe(await Promise.race([run, timeout]));
+    return { status: 200, body: { ok: true, result, logs, consoleErrors, durationMs: Math.round(performance.now() - started) } };
+  } catch (e) {
+    return { status: 200, body: { ok: false, result: null, logs, error: describeError(e), consoleErrors, durationMs: Math.round(performance.now() - started) } };
+  } finally {
+    clearTimeout(timer);
+    context.off('console', onConsole);
+    context.off('weberror', onWebError);
+    execLogs = null;
+    await restoreAfterExec();
+    execBusy = null;
+  }
+}
+
 createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', 'http://127.0.0.1');
   const send = (code: number, body: unknown) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(body)); };
   if (req.headers['x-sandbox-key'] !== key) return send(401, { error: 'unauthorized' });
   try {
+    if (url.pathname === '/exec') {
+      if (req.method !== 'POST') return send(405, { error: 'POST a JSON body {file, timeoutMs?}' });
+      let body: unknown;
+      try { body = await readJson(req); } catch (e) { return send(400, { ok: false, error: describeError(e) }); }
+      const out = await runExec(body);
+      return send(out.status, out.body);
+    }
     if (url.pathname === '/shot') {
       const name = (url.searchParams.get('name') ?? 'editor').replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 60) || 'editor';
       const file = path.join(dir, 'shots', `${name}.png`);
