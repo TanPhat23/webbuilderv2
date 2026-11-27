@@ -1,4 +1,11 @@
+import { generate } from "@babel/generator";
 import * as t from "@babel/types";
+import type { CodeTextSegment } from "./customCode";
+import {
+  evaluateStaticExpression,
+  findUnboundIdentifier,
+  type StaticValue,
+} from "./normalize/staticScope";
 
 export interface CodeDiagnostic {
   message: string;
@@ -90,12 +97,17 @@ export function literalValue(node: t.Node): Literal {
   return { ok: false };
 }
 
-export function attributeValue(attr: t.JSXAttribute): Literal {
+export function attributeValue(
+  attr: t.JSXAttribute,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
+): Literal {
   const value = attr.value;
   if (value === null || value === undefined) return { ok: true, value: true };
   if (t.isStringLiteral(value)) return { ok: true, value: value.value };
   if (t.isJSXExpressionContainer(value) && !t.isJSXEmptyExpression(value.expression)) {
-    return literalValue(value.expression);
+    return staticConsts
+      ? evaluateStaticExpression(value.expression, staticConsts)
+      : literalValue(value.expression);
   }
   return { ok: false };
 }
@@ -116,37 +128,120 @@ export function isTag(node: t.Node, name: string): boolean {
   return t.isJSXElement(node) && t.isJSXIdentifier(node.openingElement.name, { name });
 }
 
-export function splitChildren(node: t.JSXElement): { text: string; elements: t.JSXElement[] } {
+export interface SplitChildrenOptions {
+  readonly boundIdentifiers: ReadonlySet<string>;
+  readonly staticConsts: ReadonlyMap<string, StaticValue>;
+  readonly allowDynamicText?: boolean;
+}
+
+export interface SplitChildrenResult {
+  readonly text: string;
+  readonly elements: t.JSXElement[];
+  readonly codeText: readonly CodeTextSegment[] | undefined;
+  readonly visibilityByElement: ReadonlyMap<t.JSXElement, string>;
+}
+
+function appendTextSegment(segments: CodeTextSegment[], text: string): void {
+  if (text === "") return;
+  const lastIdx = segments.length - 1;
+  const last = lastIdx >= 0 ? segments[lastIdx] : undefined;
+  if (typeof last === "string") {
+    segments[lastIdx] = last + text;
+  } else {
+    segments.push(text);
+  }
+}
+
+export function splitChildren(
+  node: t.JSXElement,
+  opts?: SplitChildrenOptions,
+): SplitChildrenResult {
   const text: string[] = [];
   const elements: t.JSXElement[] = [];
+  const segments: CodeTextSegment[] = [];
+  const visibilityByElement = new Map<t.JSXElement, string>();
+  let hasDynamicExpr = false;
+
   for (const child of node.children) {
     if (t.isJSXText(child)) {
-      text.push(cleanJsxText(child.value));
+      const cleaned = cleanJsxText(child.value);
+      text.push(cleaned);
+      appendTextSegment(segments, cleaned);
     } else if (t.isJSXElement(child)) {
       elements.push(child);
     } else if (t.isJSXExpressionContainer(child)) {
       if (t.isJSXEmptyExpression(child.expression)) continue;
-      const v = literalValue(child.expression);
-      if (v.ok && (typeof v.value === "string" || typeof v.value === "number")) {
-        text.push(String(v.value));
-      } else {
+      if (!opts) {
+        const v = literalValue(child.expression);
+        if (v.ok && (typeof v.value === "string" || typeof v.value === "number")) {
+          text.push(String(v.value));
+        } else {
+          throw new CodeError("Dynamic expressions can't be converted to visual elements.", child.loc);
+        }
+        continue;
+      }
+
+      const staticVal = evaluateStaticExpression(child.expression, opts.staticConsts);
+      if (staticVal.ok && (typeof staticVal.value === "string" || typeof staticVal.value === "number")) {
+        const str = String(staticVal.value);
+        text.push(str);
+        appendTextSegment(segments, str);
+        continue;
+      }
+
+      const unparenExpr = unparen(child.expression);
+      if (unparenExpr && t.isLogicalExpression(unparenExpr) && unparenExpr.operator === "&&") {
+        const right = unparen(unparenExpr.right);
+        if (right && t.isJSXElement(right)) {
+          const bad = findUnboundIdentifier(unparenExpr.left, opts.boundIdentifiers);
+          if (bad) {
+            throw new CodeError(
+              `'${bad.name}' is not defined in this component.`,
+              bad.loc ?? unparenExpr.left.loc,
+            );
+          }
+          elements.push(right);
+          visibilityByElement.set(right, generate(unparenExpr.left).code);
+          continue;
+        }
+      }
+
+      const bad = findUnboundIdentifier(child.expression, opts.boundIdentifiers);
+      if (bad) {
+        throw new CodeError(
+          `'${bad.name}' is not defined in this component.`,
+          bad.loc ?? child.loc,
+        );
+      }
+      if (!opts.allowDynamicText) {
         throw new CodeError("Dynamic expressions can't be converted to visual elements.", child.loc);
       }
+      const exprCode = generate(child.expression).code;
+      hasDynamicExpr = true;
+      text.push(`{${exprCode}}`);
+      segments.push({ expr: exprCode });
     } else {
       throw new CodeError("Nested fragments and spread children aren't supported here.", child.loc);
     }
   }
-  return { text: text.join(""), elements };
+
+  return {
+    text: text.join(""),
+    elements,
+    codeText: hasDynamicExpr ? segments : undefined,
+    visibilityByElement,
+  };
 }
 
 export function stringAttributeValue(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   name: string,
   requireLiteral = false,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): string | undefined {
   const attr = attrs.get(name);
   if (!attr) return undefined;
-  const v = attributeValue(attr);
+  const v = attributeValue(attr, staticConsts);
   if (v.ok && typeof v.value === "string") return v.value;
   if (requireLiteral) {
     throw new CodeError(`The "${name}" attribute must be a plain string here.`, attr.loc);
@@ -158,8 +253,9 @@ export function stringAttribute(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   name: string,
   before: string | undefined,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): string | undefined {
-  const value = stringAttributeValue(attrs, name, true);
+  const value = stringAttributeValue(attrs, name, true, staticConsts);
   if (value !== undefined) return value;
   return before ? "" : before;
 }

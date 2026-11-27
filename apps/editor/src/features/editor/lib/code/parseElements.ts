@@ -35,10 +35,10 @@ import type { EditorElement, ElementType } from "@webbuilder/site-runtime/types/
 import {
   attributeName,
   attributeValue,
-  cleanJsxText,
   CodeError,
   isTag,
   splitChildren,
+  type SplitChildrenOptions,
   stringAttribute,
   stringAttributeValue,
   tagName,
@@ -46,8 +46,18 @@ import {
 import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
 import { splitClasses, styleClasses } from "./classNames";
 import { TAG_CANDIDATES } from "./codecs/registry";
-import { HIDDEN_SETTINGS } from "./customCode";
+import {
+  type CodeTextSegment,
+  HIDDEN_SETTINGS,
+  readCodeText,
+  readCodeVisible,
+} from "./customCode";
 import { generateStrategies } from "./generatestrategies";
+import {
+  evaluateStaticExpression,
+  findUnboundIdentifier,
+  type StaticValue,
+} from "./normalize/staticScope";
 
 type LooseRecord = Record<string, unknown>;
 type SettingsEnvelope<S extends object> = (S & {
@@ -138,6 +148,81 @@ export interface ParseContext {
   readonly claimed: Set<string>;
   readonly lucideImports?: ReadonlyMap<string, string>;
   readonly catalog?: ComponentCatalog;
+  readonly boundIdentifiers?: ReadonlySet<string>;
+  readonly staticConsts?: ReadonlyMap<string, StaticValue>;
+}
+
+const EMPTY_BOUND: ReadonlySet<string> = new Set();
+const EMPTY_CONSTS: ReadonlyMap<string, StaticValue> = new Map();
+const NO_DYNAMIC_TEXT_TAGS: ReadonlySet<string> = new Set([
+  "img",
+  "video",
+  "audio",
+  "iframe",
+  "input",
+  "hr",
+  "progress",
+  "select",
+  "table",
+  "ul",
+  "ol",
+  "Carousel",
+]);
+
+function boundSet(ctx: ParseContext): ReadonlySet<string> {
+  return ctx.boundIdentifiers ?? EMPTY_BOUND;
+}
+
+function constsMap(ctx: ParseContext): ReadonlyMap<string, StaticValue> {
+  return ctx.staticConsts ?? EMPTY_CONSTS;
+}
+
+function splitOpts(ctx: ParseContext, allowDynamicText: boolean): SplitChildrenOptions {
+  return {
+    boundIdentifiers: boundSet(ctx),
+    staticConsts: constsMap(ctx),
+    allowDynamicText,
+  };
+}
+
+function assertAttributesScoped(
+  node: t.JSXElement,
+  bound: ReadonlySet<string>,
+): void {
+  for (const attr of node.openingElement.attributes) {
+    if (t.isJSXSpreadAttribute(attr)) {
+      const bad = findUnboundIdentifier(attr.argument, bound);
+      if (bad) {
+        throw new CodeError(
+          `'${bad.name}' is not defined in this component.`,
+          bad.loc ?? attr.loc,
+        );
+      }
+      continue;
+    }
+    if (
+      t.isJSXAttribute(attr) &&
+      t.isJSXExpressionContainer(attr.value) &&
+      !t.isJSXEmptyExpression(attr.value.expression)
+    ) {
+      const bad = findUnboundIdentifier(attr.value.expression, bound);
+      if (bad) {
+        throw new CodeError(
+          `'${bad.name}' is not defined in this component.`,
+          bad.loc ?? attr.loc,
+        );
+      }
+    }
+  }
+}
+
+function isDynamicBoundAttr(
+  attr: t.JSXAttribute | undefined,
+  staticConsts: ReadonlyMap<string, StaticValue>,
+): boolean {
+  if (!attr || !t.isJSXExpressionContainer(attr.value)) return false;
+  if (t.isJSXEmptyExpression(attr.value.expression)) return false;
+  return !evaluateStaticExpression(attr.value.expression, staticConsts).ok;
 }
 
 function isPlainRecord(value: unknown): value is LooseRecord {
@@ -228,12 +313,13 @@ function resolveElementType(
   text: string,
   node: t.JSXElement,
   isLucideIcon: boolean,
+  ctx: ParseContext,
 ): ElementType {
   let type: ElementType;
   if (isLucideIcon) {
     type = "Icon";
   } else if (tag === "input") {
-    const rawType = stringAttributeValue(attrs, "type")?.toLowerCase();
+    const rawType = stringAttributeValue(attrs, "type", false, constsMap(ctx))?.toLowerCase();
     if (rawType === "checkbox") type = "Checkbox";
     else if (rawType === "radio") type = "Radio";
     else type = "Input";
@@ -252,7 +338,7 @@ function resolveElementType(
       );
     }
     if (childNodes.length === 1) {
-      const inner = splitChildren(childNodes[0]!);
+      const inner = splitChildren(childNodes[0]!, splitOpts(ctx, true));
       if (inner.elements.length > 0) {
         throw new CodeError(
           "<pre><code> (Code) can't contain other elements.",
@@ -299,6 +385,7 @@ function settingsFromAttributes(
   existing: EditorElement | undefined,
   modeled: ReadonlySet<string>,
   renameMap?: Readonly<Record<string, string>>,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): LooseRecord | null {
   const before = isPlainRecord(existing?.settings) ? existing.settings : null;
   const next: LooseRecord = {};
@@ -314,7 +401,7 @@ function settingsFromAttributes(
     ) {
       continue;
     }
-    const v = attributeValue(attr);
+    const v = attributeValue(attr, staticConsts);
     if (v.ok && v.value !== undefined) {
       const targetKey = renameMap && Object.hasOwn(renameMap, name) ? renameMap[name]! : name;
       next[targetKey] = v.value;
@@ -328,42 +415,67 @@ function collectCodeProps(
   node: t.JSXElement,
   type: ElementType,
   tag: string,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): string[] {
   const modeled = modeledAttributesFor(type, tag);
   const props: string[] = [];
   for (const attr of node.openingElement.attributes) {
     if (t.isJSXAttribute(attr)) {
       const name = attributeName(attr);
-      if (name === "className" || name === "data-element-id" || modeled.has(name)) {
+      if (name === "className" || name === "data-element-id") {
         continue;
       }
-      if (SETTINGS_ATTRIBUTE_TYPES.has(type) && attributeValue(attr).ok) continue;
+      const v = attributeValue(attr, staticConsts);
+      if (modeled.has(name)) {
+        if (v.ok) continue;
+      } else if (SETTINGS_ATTRIBUTE_TYPES.has(type) && v.ok) {
+        continue;
+      }
     }
     props.push(generate(attr).code);
   }
   return props;
 }
 
-function applyCodeProps(
+function applyCodeSettings(
   settings: LooseRecord | null | undefined,
   node: t.JSXElement,
   type: ElementType,
   tag: string,
   attrs: ReadonlyMap<string, t.JSXAttribute>,
+  codeText: readonly CodeTextSegment[] | undefined,
+  codeVisible: string | undefined,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): LooseRecord | null {
-  const props = collectCodeProps(node, type, tag);
+  const props = collectCodeProps(node, type, tag, staticConsts);
   const before = settings ?? null;
   const beforeProps = Array.isArray(before?.codeProps) ? before.codeProps : [];
-  let next = before;
-  if (!isEqual(beforeProps, props)) {
-    next = { ...before };
-    if (props.length) next.codeProps = props;
-    else delete next.codeProps;
+  const beforeText = readCodeText(before);
+  const beforeVisible = readCodeVisible(before);
+  const hasOnSubmit = tag === "form" && attrs.has("onSubmit");
+
+  const propsChanged = !isEqual(beforeProps, props);
+  const textChanged = !isEqual(beforeText, codeText);
+  const visibleChanged = beforeVisible !== codeVisible;
+  const submitChanged = hasOnSubmit && before?.customSubmit !== true;
+
+  if (!propsChanged && !textChanged && !visibleChanged && !submitChanged) {
+    return before;
   }
-  if (tag === "form" && attrs.has("onSubmit") && next?.customSubmit !== true) {
-    next = { ...next, customSubmit: true };
-  }
-  return next;
+
+  const next: LooseRecord = { ...before };
+  if (props.length > 0) next.codeProps = props;
+  else delete next.codeProps;
+
+  if (codeText && codeText.length > 0) next.codeText = codeText;
+  else delete next.codeText;
+
+  if (codeVisible) next.codeVisible = codeVisible;
+  else delete next.codeVisible;
+
+  if (hasOnSubmit) next.customSubmit = true;
+
+  return Object.keys(next).length > 0 ? next : null;
 }
 
 function headingLevelFromTag(tag: string): 1 | 2 | 3 | 4 | 5 | 6 {
@@ -401,6 +513,9 @@ function resolveSettings(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   existing: EditorElement | undefined,
   lucideIconName: string | undefined,
+  codeText: readonly CodeTextSegment[] | undefined,
+  codeVisible: string | undefined,
+  staticConsts: ReadonlyMap<string, StaticValue>,
 ): LooseRecord | null {
   const modeled = modeledAttributesFor(type, tag);
   const renameMap = attributeRenameMapFor(type);
@@ -409,14 +524,14 @@ function resolveSettings(
     : null;
 
   if (type === "Heading") {
-    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap, staticConsts) ?? {};
     settings = mergeStabilizedSettings({ ...base, level: headingLevelFromTag(tag) }, existing);
   } else if (type === "Code") {
-    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap, staticConsts) ?? {};
     const next: LooseRecord = { ...base };
     const lang =
-      stringAttributeValue(attrs, "data-language") ??
-      stringAttributeValue(attrs, "language");
+      stringAttributeValue(attrs, "data-language", false, staticConsts) ??
+      stringAttributeValue(attrs, "language", false, staticConsts);
     if (lang !== undefined) next.language = lang;
     if (tag === "pre") {
       next.preformatted = true;
@@ -425,17 +540,17 @@ function resolveSettings(
     }
     settings = mergeStabilizedSettings(next, existing);
   } else if (type === "Icon") {
-    const base = settingsFromAttributes(attrs, existing, modeled, renameMap) ?? {};
+    const base = settingsFromAttributes(attrs, existing, modeled, renameMap, staticConsts) ?? {};
     const iconName =
-      lucideIconName ?? stringAttributeValue(attrs, "iconName") ?? "star";
+      lucideIconName ?? stringAttributeValue(attrs, "iconName", false, staticConsts) ?? "star";
     settings = mergeStabilizedSettings({ ...base, iconName }, existing);
   } else if (SETTINGS_ATTRIBUTE_TYPES.has(type) && type !== "Table") {
-    settings = settingsFromAttributes(attrs, existing, modeled, renameMap);
+    settings = settingsFromAttributes(attrs, existing, modeled, renameMap, staticConsts);
   } else if (tag === "ol" || tag === "ul") {
     if (tag === "ol" && !settings?.ordered) settings = { ...settings, ordered: true };
     else if (tag === "ul" && settings?.ordered) settings = { ...settings, ordered: false };
   }
-  return applyCodeProps(settings, node, type, tag, attrs);
+  return applyCodeSettings(settings, node, type, tag, attrs, codeText, codeVisible, staticConsts);
 }
 
 function createTextElement(
@@ -444,8 +559,13 @@ function createTextElement(
   content: string,
   loc?: t.SourceLocation | null,
   tailwindStyles?: string,
+  codeText?: readonly CodeTextSegment[],
+  codeVisible?: string,
 ): TextElement {
   if (!pageId) throw new CodeError("There's no active page to add elements to.", loc);
+  const extraSettings: LooseRecord = {};
+  if (codeText && codeText.length > 0) extraSettings.codeText = codeText;
+  if (codeVisible) extraSettings.codeVisible = codeVisible;
   return {
     id: newEntityId(),
     type: "Text",
@@ -453,7 +573,7 @@ function createTextElement(
     parentId,
     content,
     styles: {},
-    settings: null,
+    settings: Object.keys(extraSettings).length > 0 ? extraSettings : null,
     ...(tailwindStyles ? { tailwindStyles } : {}),
   };
 }
@@ -463,30 +583,43 @@ function convertChildren(
   tag: string,
   parentId: string,
   ctx: ParseContext,
+  elements: readonly t.JSXElement[],
+  visibilityByElement: ReadonlyMap<t.JSXElement, string>,
+  looseText: string,
 ): EditorElement[] {
   const wrapper = WRAPPED_CHILDREN[tag];
+  if (wrapper && looseText.trim() !== "") {
+    throw new CodeError(wrapper.error("#text"), node.loc);
+  }
   const out: EditorElement[] = [];
 
-  for (const child of node.children) {
-    if (t.isJSXText(child)) {
-      if (wrapper && cleanJsxText(child.value).trim() !== "") {
-        throw new CodeError(wrapper.error("#text"), child.loc);
-      }
-      continue;
-    }
-    if (!t.isJSXElement(child)) continue;
-
+  for (const child of elements) {
+    const childCodeVisible = visibilityByElement.get(child);
     if (wrapper) {
+      assertAttributesScoped(child, boundSet(ctx));
       if (!isTag(child, wrapper.wrapperTag)) {
         throw new CodeError(wrapper.error(tagName(child)), child.loc);
       }
-      const inner = splitChildren(child);
+      const inner = splitChildren(child, splitOpts(ctx, true));
       if (inner.text.trim() !== "") {
-        out.push(createTextElement(ctx.pageId, parentId, inner.text, child.loc));
+        out.push(
+          createTextElement(
+            ctx.pageId,
+            parentId,
+            inner.text,
+            child.loc,
+            undefined,
+            inner.codeText,
+            childCodeVisible,
+          ),
+        );
       }
-      for (const el of inner.elements) out.push(convertElement(el, parentId, ctx));
+      for (const el of inner.elements) {
+        const nestedVisible = inner.visibilityByElement.get(el) ?? childCodeVisible;
+        out.push(convertElement(el, parentId, ctx, nestedVisible));
+      }
     } else {
-      out.push(convertElement(child, parentId, ctx));
+      out.push(convertElement(child, parentId, ctx, childCodeVisible));
     }
   }
   return out;
@@ -512,21 +645,22 @@ function convertOptions(
   ctx: ParseContext,
 ): EditorElement[] {
   const before = existing ? childrenOf(existing) : [];
-  const { text: selectText, elements: optionNodes } = splitChildren(node);
+  const { text: selectText, elements: optionNodes } = splitChildren(node, splitOpts(ctx, false));
   if (selectText.trim() !== "") {
     throw new CodeError("Text inside <select> must be placed inside <option>.", node.loc);
   }
 
   return optionNodes.map((option, i) => {
+    assertAttributesScoped(option, boundSet(ctx));
     if (!isTag(option, "option")) {
       throw new CodeError(
         `<${tagName(option)}> can't be inside a <select>; use <option>.`,
         option.loc,
       );
     }
-    const { text } = splitChildren(option);
+    const { text } = splitChildren(option, splitOpts(ctx, false));
     const optionAttrs = readAttributes(option);
-    const value = stringAttributeValue(optionAttrs, "value");
+    const value = stringAttributeValue(optionAttrs, "value", false, constsMap(ctx));
     const old = before[i];
     const content = resolveOptionContent(text, value, old);
 
@@ -542,10 +676,11 @@ function readBooleanAttr(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   primary: string,
   fallback: string,
+  staticConsts?: ReadonlyMap<string, StaticValue>,
 ): boolean | undefined {
   const attr = attrs.get(primary) ?? attrs.get(fallback);
   if (!attr) return undefined;
-  const val = attributeValue(attr);
+  const val = attributeValue(attr, staticConsts);
   return val.ok && typeof val.value === "boolean" ? val.value : undefined;
 }
 
@@ -553,20 +688,23 @@ function parseTableColumn(
   th: t.JSXElement,
   index: number,
   existingCol: TableColumnDefinition | undefined,
+  ctx: ParseContext,
 ): TableColumnDefinition {
+  assertAttributesScoped(th, boundSet(ctx));
   const thAttrs = readAttributes(th);
+  const consts = constsMap(ctx);
   const id =
-    stringAttributeValue(thAttrs, "data-col-id") ??
+    stringAttributeValue(thAttrs, "data-col-id", false, consts) ??
     existingCol?.id ??
     `col_${index + 1}`;
-  const header = splitChildren(th).text;
+  const header = splitChildren(th, splitOpts(ctx, false)).text;
 
   let align: "left" | "center" | "right" | undefined;
   let width: number | string | undefined;
 
   const styleAttr = thAttrs.get("style");
   if (styleAttr) {
-    const styleVal = attributeValue(styleAttr);
+    const styleVal = attributeValue(styleAttr, consts);
     if (styleVal.ok && isPlainRecord(styleVal.value)) {
       const ta = styleVal.value.textAlign;
       if (ta === "left" || ta === "center" || ta === "right") align = ta;
@@ -575,24 +713,25 @@ function parseTableColumn(
     }
   }
   const attrAlign =
-    stringAttributeValue(thAttrs, "data-align") ?? stringAttributeValue(thAttrs, "align");
+    stringAttributeValue(thAttrs, "data-align", false, consts) ??
+    stringAttributeValue(thAttrs, "align", false, consts);
   if (attrAlign === "left" || attrAlign === "center" || attrAlign === "right") {
     align = attrAlign;
   }
   const widthAttr = thAttrs.get("data-width") ?? thAttrs.get("width");
   if (width === undefined && widthAttr) {
-    const wVal = attributeValue(widthAttr);
+    const wVal = attributeValue(widthAttr, consts);
     if (wVal.ok && (typeof wVal.value === "number" || typeof wVal.value === "string")) {
       width = wVal.value;
     }
   }
 
   const accessor =
-    stringAttributeValue(thAttrs, "data-accessor") ?? existingCol?.accessor;
+    stringAttributeValue(thAttrs, "data-accessor", false, consts) ?? existingCol?.accessor;
   const sortableAttr = thAttrs.get("data-sortable");
   let sortable = existingCol?.sortable;
   if (sortableAttr) {
-    const sVal = attributeValue(sortableAttr);
+    const sVal = attributeValue(sortableAttr, consts);
     if (sVal.ok && typeof sVal.value === "boolean") sortable = sVal.value;
   }
 
@@ -611,25 +750,40 @@ function convertHtmlTableRow(
   pageId: string,
   tableId: string,
   ctx: ParseContext,
+  codeVisible?: string,
 ): FrameElement {
+  assertAttributesScoped(tr, boundSet(ctx));
   const rowId = newEntityId();
   const trAttrs = readAttributes(tr);
-  const rowClasses = splitClasses(stringAttributeValue(trAttrs, "className", true) ?? "").join(" ");
-  const { elements: cellNodes } = splitChildren(tr);
+  const consts = constsMap(ctx);
+  const rowClasses = splitClasses(
+    stringAttributeValue(trAttrs, "className", true, consts) ?? "",
+  ).join(" ");
+  const { elements: cellNodes } = splitChildren(tr, splitOpts(ctx, false));
 
   const cells: EditorElement[] = cellNodes
     .filter((cell) => isTag(cell, "td") || isTag(cell, "th"))
     .map((cell) => {
-      const cellSplit = splitChildren(cell);
+      assertAttributesScoped(cell, boundSet(ctx));
+      const cellSplit = splitChildren(cell, splitOpts(ctx, true));
       const cellAttrs = readAttributes(cell);
       const cellTw = splitClasses(
-        stringAttributeValue(cellAttrs, "className", true) ?? "",
+        stringAttributeValue(cellAttrs, "className", true, consts) ?? "",
       ).join(" ");
       if (cellSplit.elements.length === 0) {
-        return createTextElement(pageId, rowId, cellSplit.text, cell.loc, cellTw || undefined);
+        return createTextElement(
+          pageId,
+          rowId,
+          cellSplit.text,
+          cell.loc,
+          cellTw || undefined,
+          cellSplit.codeText,
+        );
       }
       const cellId = newEntityId();
-      const nestedChildren = cellSplit.elements.map((el) => convertElement(el, cellId, ctx));
+      const nestedChildren = cellSplit.elements.map((el) =>
+        convertElement(el, cellId, ctx, cellSplit.visibilityByElement.get(el)),
+      );
       const frameCell: FrameElement = {
         id: cellId,
         type: "Frame",
@@ -637,7 +791,7 @@ function convertHtmlTableRow(
         parentId: rowId,
         content: cellSplit.text,
         styles: {},
-        settings: null,
+        settings: cellSplit.codeText ? { codeText: cellSplit.codeText } : null,
         ...(cellTw ? { tailwindStyles: cellTw } : {}),
         elements: nestedChildren,
       };
@@ -651,7 +805,7 @@ function convertHtmlTableRow(
     parentId: tableId,
     content: "",
     styles: {},
-    settings: null,
+    settings: codeVisible ? { codeVisible } : null,
     ...(rowClasses ? { tailwindStyles: rowClasses } : {}),
     elements: cells,
   };
@@ -664,15 +818,17 @@ function parseTableStructure(
   attrs: ReadonlyMap<string, t.JSXAttribute>,
   existing: EditorElement | undefined,
   ctx: ParseContext,
+  codeVisible?: string,
 ): { settings: LooseRecord | null; elements: EditorElement[] } {
+  const consts = constsMap(ctx);
   const modeled = modeledAttributesFor("Table", "table");
-  const base = settingsFromAttributes(attrs, existing, modeled) ?? {};
+  const base = settingsFromAttributes(attrs, existing, modeled, undefined, consts) ?? {};
   const nextSettings: LooseRecord = { ...base };
 
-  const bordered = readBooleanAttr(attrs, "data-bordered", "bordered");
-  const striped = readBooleanAttr(attrs, "data-striped", "striped");
-  const hoverable = readBooleanAttr(attrs, "data-hoverable", "hoverable");
-  const compact = readBooleanAttr(attrs, "data-compact", "compact");
+  const bordered = readBooleanAttr(attrs, "data-bordered", "bordered", consts);
+  const striped = readBooleanAttr(attrs, "data-striped", "striped", consts);
+  const hoverable = readBooleanAttr(attrs, "data-hoverable", "hoverable", consts);
+  const compact = readBooleanAttr(attrs, "data-compact", "compact", consts);
   if (bordered !== undefined) nextSettings.bordered = bordered;
   if (striped !== undefined) nextSettings.striped = striped;
   if (hoverable !== undefined) nextSettings.hoverable = hoverable;
@@ -683,7 +839,7 @@ function parseTableStructure(
       ? existing.settings.columns
       : [];
 
-  const { text: looseText, elements: tableChildren } = splitChildren(node);
+  const { text: looseText, elements: tableChildren } = splitChildren(node, splitOpts(ctx, false));
   if (looseText.trim() !== "") {
     throw new CodeError(
       "Text inside <table> must sit inside <caption>, <th>, or <td>.",
@@ -693,17 +849,19 @@ function parseTableStructure(
 
   let caption: string | undefined;
   const headerCells: t.JSXElement[] = [];
-  const bodyRows: t.JSXElement[] = [];
+  const bodyRows: Array<{ row: t.JSXElement; codeVisible?: string }> = [];
 
   for (const child of tableChildren) {
+    assertAttributesScoped(child, boundSet(ctx));
     const childTag = tagName(child);
     if (childTag === "caption") {
-      caption = splitChildren(child).text;
+      caption = splitChildren(child, splitOpts(ctx, false)).text;
     } else if (childTag === "thead") {
-      const headSplit = splitChildren(child);
+      const headSplit = splitChildren(child, splitOpts(ctx, false));
       for (const rowOrCell of headSplit.elements) {
+        assertAttributesScoped(rowOrCell, boundSet(ctx));
         if (isTag(rowOrCell, "tr")) {
-          for (const cell of splitChildren(rowOrCell).elements) {
+          for (const cell of splitChildren(rowOrCell, splitOpts(ctx, false)).elements) {
             if (isTag(cell, "th") || isTag(cell, "td")) headerCells.push(cell);
           }
         } else if (isTag(rowOrCell, "th")) {
@@ -711,11 +869,14 @@ function parseTableStructure(
         }
       }
     } else if (childTag === "tbody" || childTag === "tfoot") {
-      for (const row of splitChildren(child).elements) {
-        if (isTag(row, "tr")) bodyRows.push(row);
+      const bodySplit = splitChildren(child, splitOpts(ctx, false));
+      for (const row of bodySplit.elements) {
+        if (isTag(row, "tr")) {
+          bodyRows.push({ row, codeVisible: bodySplit.visibilityByElement.get(row) });
+        }
       }
     } else if (childTag === "tr") {
-      bodyRows.push(child);
+      bodyRows.push({ row: child });
     }
   }
 
@@ -724,27 +885,38 @@ function parseTableStructure(
   }
   if (headerCells.length > 0) {
     nextSettings.columns = headerCells.map((th, idx) =>
-      parseTableColumn(th, idx, existingColumns[idx]),
+      parseTableColumn(th, idx, existingColumns[idx], ctx),
     );
   }
 
   let bodyElements: EditorElement[] = [];
   if (bodyRows.length === 1) {
-    const singleRowCells = splitChildren(bodyRows[0]!).elements.filter(
+    const singleRowCells = splitChildren(bodyRows[0]!.row, splitOpts(ctx, false)).elements.filter(
       (c) => isTag(c, "td") || isTag(c, "th"),
     );
     if (singleRowCells.length === 1) {
       const onlyCell = singleRowCells[0]!;
       const cellAttrs = readAttributes(onlyCell);
-      const cellSplit = splitChildren(onlyCell);
+      const cellSplit = splitChildren(onlyCell, splitOpts(ctx, false));
       const isSlot =
         cellAttrs.has("data-wb-slot") ||
         (cellAttrs.has("colSpan") && cellSplit.text.trim() === "");
       if (isSlot) {
-        bodyElements = cellSplit.elements.map((el) => convertElement(el, tableId, ctx));
+        bodyElements = cellSplit.elements.map((el) =>
+          convertElement(el, tableId, ctx, cellSplit.visibilityByElement.get(el)),
+        );
         const stabilized = mergeStabilizedSettings(nextSettings, existing);
         return {
-          settings: applyCodeProps(stabilized, node, "Table", "table", attrs),
+          settings: applyCodeSettings(
+            stabilized,
+            node,
+            "Table",
+            "table",
+            attrs,
+            undefined,
+            codeVisible,
+            consts,
+          ),
           elements: existing
             ? keepUnsupported(bodyElements, childrenOf(existing))
             : bodyElements,
@@ -753,10 +925,21 @@ function parseTableStructure(
     }
   }
 
-  bodyElements = bodyRows.map((tr) => convertHtmlTableRow(tr, pageId, tableId, ctx));
+  bodyElements = bodyRows.map(({ row, codeVisible: rowVisible }) =>
+    convertHtmlTableRow(row, pageId, tableId, ctx, rowVisible),
+  );
   const stabilized = mergeStabilizedSettings(nextSettings, existing);
   return {
-    settings: applyCodeProps(stabilized, node, "Table", "table", attrs),
+    settings: applyCodeSettings(
+      stabilized,
+      node,
+      "Table",
+      "table",
+      attrs,
+      undefined,
+      codeVisible,
+      consts,
+    ),
     elements: existing ? keepUnsupported(bodyElements, childrenOf(existing)) : bodyElements,
   };
 }
@@ -1009,6 +1192,7 @@ export function convertElement(
   node: t.JSXElement,
   parentId: string | undefined,
   ctx: ParseContext,
+  codeVisible?: string,
 ): EditorElement {
   const tag = tagName(node);
   const lucideIconName = ctx.lucideImports?.get(tag);
@@ -1026,9 +1210,13 @@ export function convertElement(
     );
   }
 
+  assertAttributesScoped(node, boundSet(ctx));
   const attrs = readAttributes(node);
+  const consts = constsMap(ctx);
   const existing = claimExisting(attrs, candidates, ctx);
-  const { text, elements: childNodes } = splitChildren(node);
+  const allowDynamicText = !NO_DYNAMIC_TEXT_TAGS.has(tag);
+  const { text, elements: childNodes, codeText: initialCodeText, visibilityByElement } =
+    splitChildren(node, splitOpts(ctx, allowDynamicText));
 
   if (existing && componentSetting(existing)) {
     return toComponentInstance(existing, parentId, childNodes, node);
@@ -1043,6 +1231,7 @@ export function convertElement(
     text,
     node,
     lucideIconName !== undefined,
+    ctx,
   );
   const pageId = existing ? existing.pageId : ctx.pageId;
   if (!pageId) {
@@ -1050,44 +1239,66 @@ export function convertElement(
   }
 
   const id = existing ? existing.id : newEntityId();
-  const written = splitClasses(stringAttributeValue(attrs, "className", true) ?? "");
+  const written = splitClasses(stringAttributeValue(attrs, "className", true, consts) ?? "");
   const tailwindStyles = ownClasses(written, existing);
   const hasTailwindKey = tailwindStyles !== undefined || Boolean(existing);
 
   let content = existing?.content ?? "";
+  let codeText = initialCodeText;
   let src = existing?.src;
   let hasSrcKey = Boolean(existing && "src" in existing);
   let href = existing?.href;
   let hasHrefKey = Boolean(existing && "href" in existing);
 
   if (tag === "img") {
-    content = stringAttributeValue(attrs, "alt", true) ?? "";
-    src = stringAttribute(attrs, "src", existing?.src);
+    content = isDynamicBoundAttr(attrs.get("alt"), consts)
+      ? (existing?.content ?? "")
+      : (stringAttributeValue(attrs, "alt", true, consts) ?? "");
+    src = isDynamicBoundAttr(attrs.get("src"), consts)
+      ? (existing?.src ?? "")
+      : stringAttribute(attrs, "src", existing?.src, consts);
     hasSrcKey = true;
+    codeText = undefined;
   } else if (tag === "video" || tag === "audio") {
-    let mediaSrc = stringAttribute(attrs, "src", existing?.src);
+    let mediaSrc = isDynamicBoundAttr(attrs.get("src"), consts)
+      ? (existing?.src ?? "")
+      : stringAttribute(attrs, "src", existing?.src, consts);
     if (!mediaSrc && childNodes.length > 0) {
       const sourceChild = childNodes.find((c) => isTag(c, "source"));
       if (sourceChild) {
-        mediaSrc = stringAttributeValue(readAttributes(sourceChild), "src", true) ?? mediaSrc;
+        assertAttributesScoped(sourceChild, boundSet(ctx));
+        const sourceAttrs = readAttributes(sourceChild);
+        if (!isDynamicBoundAttr(sourceAttrs.get("src"), consts)) {
+          mediaSrc = stringAttributeValue(sourceAttrs, "src", true, consts) ?? mediaSrc;
+        }
       }
     }
     src = mediaSrc;
     hasSrcKey = true;
+    codeText = undefined;
   } else if (tag === "iframe") {
-    src = stringAttribute(attrs, "src", existing?.src);
+    src = isDynamicBoundAttr(attrs.get("src"), consts)
+      ? (existing?.src ?? "")
+      : stringAttribute(attrs, "src", existing?.src, consts);
     hasSrcKey = true;
+    codeText = undefined;
   } else if (type === "Code" && tag === "pre" && childNodes.length === 1) {
-    content = splitChildren(childNodes[0]!).text;
+    const preInner = splitChildren(childNodes[0]!, splitOpts(ctx, true));
+    content = preInner.text;
+    codeText = preInner.codeText;
   } else if (tag !== "select" && tag !== "table") {
     content = text;
   }
 
   if (tag === "a") {
-    href = stringAttribute(attrs, "href", existing?.href);
+    href = isDynamicBoundAttr(attrs.get("href"), consts)
+      ? (existing?.href ?? "")
+      : stringAttribute(attrs, "href", existing?.href, consts);
     hasHrefKey = true;
   } else if (tag === "button" && (attrs.has("data-href") || existing?.href !== undefined)) {
-    href = stringAttribute(attrs, "data-href", existing?.href);
+    href = isDynamicBoundAttr(attrs.get("data-href"), consts)
+      ? (existing?.href ?? "")
+      : stringAttribute(attrs, "data-href", existing?.href, consts);
     hasHrefKey = true;
   }
 
@@ -1095,15 +1306,33 @@ export function convertElement(
   let elements: EditorElement[] | undefined;
 
   if (type === "Table") {
-    const tableParsed = parseTableStructure(node, pageId, id, attrs, existing, ctx);
+    const tableParsed = parseTableStructure(node, pageId, id, attrs, existing, ctx, codeVisible);
     settings = tableParsed.settings;
     elements = tableParsed.elements;
   } else {
-    settings = resolveSettings(node, type, tag, attrs, existing, lucideIconName);
+    settings = resolveSettings(
+      node,
+      type,
+      tag,
+      attrs,
+      existing,
+      lucideIconName,
+      codeText,
+      codeVisible,
+      consts,
+    );
     if (tag === "select") {
       elements = convertOptions(node, existing, id, ctx);
     } else if (!LEAF_TYPES.has(type)) {
-      const children = convertChildren(node, tag, id, ctx);
+      const children = convertChildren(
+        node,
+        tag,
+        id,
+        ctx,
+        childNodes,
+        visibilityByElement,
+        text,
+      );
       elements = existing ? keepUnsupported(children, childrenOf(existing)) : children;
     }
   }

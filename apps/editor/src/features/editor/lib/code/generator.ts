@@ -10,6 +10,7 @@ import {
   type CodegenInput,
 } from "@/features/interactions/codegen/interactions";
 import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
+import { wrapCodeVisible } from "./codecs/shared";
 import type { GenerateNodeContext } from "./codecs/types";
 import { isEmptyPreamble, type Preamble } from "./customCode";
 import { generateImports } from "./generateImports";
@@ -131,14 +132,20 @@ class CodeGenerator {
       tagElementIds: shouldTagIds,
       usedLucideIcons,
       usedProjectComponents,
-      generateChild: (child) => this.elementToJSX(child, ctx),
+      generateChild: (child) => {
+        const jsx = this.elementToJSX(child, ctx);
+        return jsx ? wrapCodeVisible(jsx, child) : null;
+      },
     };
 
-    let nodes: t.JSXElement[];
+    let nodes: Array<t.JSXElement | t.JSXExpressionContainer>;
     try {
       nodes = elements
-        .map((el) => this.elementToJSX(el, ctx))
-        .filter((el): el is t.JSXElement => el !== null);
+        .map((el) => {
+          const jsx = this.elementToJSX(el, ctx);
+          return jsx ? wrapCodeVisible(jsx, el) : null;
+        })
+        .filter((el): el is t.JSXElement | t.JSXExpressionContainer => el !== null);
     } finally {
       generationOptions.tagElementIds = false;
     }

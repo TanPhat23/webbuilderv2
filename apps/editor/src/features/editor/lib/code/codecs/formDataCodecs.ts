@@ -3,6 +3,8 @@ import type { TableColumnDefinition } from "@webbuilder/site-runtime/types/eleme
 import {
   buildContainerChildren,
   classNameAttr,
+  codePropNames,
+  elementTextChildren,
   isPlainRecord,
   jsonValueToExpression,
   jsxEl,
@@ -27,8 +29,9 @@ const TABLE_SKIP: ReadonlySet<string> = new Set([
 export const buttonCodec: ElementCodec<"Button"> = {
   type: "Button",
   generate(element) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.href) {
+    if (element.href && !overridden.has("data-href")) {
       attrs.push(
         t.jsxAttribute(t.jsxIdentifier("data-href"), t.stringLiteral(element.href)),
       );
@@ -37,7 +40,7 @@ export const buttonCodec: ElementCodec<"Button"> = {
     return jsxEl(
       "button",
       attrs,
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -45,8 +48,9 @@ export const buttonCodec: ElementCodec<"Button"> = {
 export const linkCodec: ElementCodec<"Link"> = {
   type: "Link",
   generate(element, ctx) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.href) {
+    if (element.href && !overridden.has("href")) {
       attrs.push(t.jsxAttribute(t.jsxIdentifier("href"), t.stringLiteral(element.href)));
     }
     return jsxEl("a", attrs, buildContainerChildren(element, ctx));
@@ -71,8 +75,9 @@ export const textareaCodec: ElementCodec<"Textarea"> = {
       classNameAttr(element),
       ...settingsToAttributes(element.settings),
     ];
-    if (element.content) {
-      return jsxEl("textarea", attrs, [textChild(element.content)]);
+    const children = elementTextChildren(element);
+    if (children.length > 0) {
+      return jsxEl("textarea", attrs, children);
     }
     return selfClosingJsxEl("textarea", attrs);
   },
@@ -81,11 +86,12 @@ export const textareaCodec: ElementCodec<"Textarea"> = {
 export const checkboxCodec: ElementCodec<"Checkbox"> = {
   type: "Checkbox",
   generate(element) {
-    const attrs = [
-      classNameAttr(element),
-      t.jsxAttribute(t.jsxIdentifier("type"), t.stringLiteral("checkbox")),
-      ...settingsToAttributes(element.settings, undefined, LABEL_RENAME),
-    ];
+    const overridden = codePropNames(element.settings);
+    const attrs: t.JSXAttribute[] = [classNameAttr(element)];
+    if (!overridden.has("type")) {
+      attrs.push(t.jsxAttribute(t.jsxIdentifier("type"), t.stringLiteral("checkbox")));
+    }
+    attrs.push(...settingsToAttributes(element.settings, undefined, LABEL_RENAME));
     return selfClosingJsxEl("input", attrs);
   },
 };
@@ -93,11 +99,12 @@ export const checkboxCodec: ElementCodec<"Checkbox"> = {
 export const radioCodec: ElementCodec<"Radio"> = {
   type: "Radio",
   generate(element) {
-    const attrs = [
-      classNameAttr(element),
-      t.jsxAttribute(t.jsxIdentifier("type"), t.stringLiteral("radio")),
-      ...settingsToAttributes(element.settings, undefined, LABEL_RENAME),
-    ];
+    const overridden = codePropNames(element.settings);
+    const attrs: t.JSXAttribute[] = [classNameAttr(element)];
+    if (!overridden.has("type")) {
+      attrs.push(t.jsxAttribute(t.jsxIdentifier("type"), t.stringLiteral("radio")));
+    }
+    attrs.push(...settingsToAttributes(element.settings, undefined, LABEL_RENAME));
     return selfClosingJsxEl("input", attrs);
   },
 };

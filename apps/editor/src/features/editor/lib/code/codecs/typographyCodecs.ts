@@ -1,10 +1,11 @@
 import * as t from "@babel/types";
 import {
   classNameAttr,
+  codePropNames,
+  elementTextChildren,
   jsxEl,
   selfClosingJsxEl,
   settingsToAttributes,
-  textChild,
 } from "./shared";
 import type { ElementCodec } from "./types";
 
@@ -17,7 +18,7 @@ export const textCodec: ElementCodec<"Text"> = {
     return jsxEl(
       "div",
       [classNameAttr(element)],
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -28,7 +29,7 @@ export const spanCodec: ElementCodec<"Span"> = {
     return jsxEl(
       "span",
       [classNameAttr(element)],
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -53,7 +54,7 @@ export const headingCodec: ElementCodec<"Heading"> = {
     return jsxEl(
       `h${level}`,
       attrs,
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -68,7 +69,7 @@ export const labelCodec: ElementCodec<"Label"> = {
     return jsxEl(
       "label",
       attrs,
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -83,7 +84,7 @@ export const blockquoteCodec: ElementCodec<"Blockquote"> = {
     return jsxEl(
       "blockquote",
       attrs,
-      element.content ? [textChild(element.content)] : [],
+      elementTextChildren(element),
     );
   },
 };
@@ -93,14 +94,15 @@ export const codeCodec: ElementCodec<"Code"> = {
   generate(element) {
     const preformatted = element.settings?.preformatted === true;
     const language = element.settings?.language;
+    const overridden = codePropNames(element.settings);
     const attrs = [
       classNameAttr(element),
-      ...(language
+      ...(language && !overridden.has("data-language") && !overridden.has("language")
         ? [t.jsxAttribute(t.jsxIdentifier("data-language"), t.stringLiteral(language))]
         : []),
       ...settingsToAttributes(element.settings, CODE_SKIP),
     ];
-    const children = element.content ? [textChild(element.content)] : [];
+    const children = elementTextChildren(element);
     if (preformatted) {
       return jsxEl("pre", attrs, [jsxEl("code", [], children)]);
     }

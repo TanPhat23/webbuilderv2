@@ -1,7 +1,8 @@
+import { generate } from "@babel/generator";
 import { parse } from "@babel/parser";
 import * as t from "@babel/types";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
-import { cleanJsxText, type CodeDiagnostic, CodeError, diagnosticAt } from "./astLiterals";
+import { cleanJsxText, type CodeDiagnostic, CodeError, diagnosticAt, unparen } from "./astLiterals";
 import {
   EMPTY_COMPONENT_CATALOG,
   lucidePascalToKebab,
@@ -9,6 +10,7 @@ import {
 } from "./catalog";
 import type { Preamble } from "./customCode";
 import { extractPreamble, locatePage } from "./extractPreamble";
+import { analyzeModuleScope, findUnboundIdentifier } from "./normalize/staticScope";
 import { convertElement, indexById, keepUnsupported, type ParseContext } from "./parseElements";
 
 export type { CodeDiagnostic } from "./astLiterals";
@@ -66,12 +68,20 @@ function collectLucideImports(program: t.Program): Map<string, string> {
   return icons;
 }
 
-function collectRootElements(root: t.JSXElement | t.JSXFragment): t.JSXElement[] {
-  if (!t.isJSXFragment(root)) return [root];
-  const nodes: t.JSXElement[] = [];
+interface RootElementEntry {
+  readonly node: t.JSXElement;
+  readonly codeVisible?: string;
+}
+
+function collectRootElements(
+  root: t.JSXElement | t.JSXFragment,
+  boundIdentifiers: ReadonlySet<string>,
+): RootElementEntry[] {
+  if (!t.isJSXFragment(root)) return [{ node: root }];
+  const entries: RootElementEntry[] = [];
   for (const child of root.children) {
     if (t.isJSXElement(child)) {
-      nodes.push(child);
+      entries.push({ node: child });
     } else if (t.isJSXText(child)) {
       if (cleanJsxText(child.value).trim() !== "") {
         throw new CodeError(
@@ -79,8 +89,27 @@ function collectRootElements(root: t.JSXElement | t.JSXFragment): t.JSXElement[]
           child.loc,
         );
       }
-    } else if (t.isJSXExpressionContainer(child) && t.isJSXEmptyExpression(child.expression)) {
-      continue;
+    } else if (t.isJSXExpressionContainer(child)) {
+      if (t.isJSXEmptyExpression(child.expression)) continue;
+      const expr = unparen(child.expression);
+      if (expr && t.isLogicalExpression(expr) && expr.operator === "&&") {
+        const right = unparen(expr.right);
+        if (right && t.isJSXElement(right)) {
+          const bad = findUnboundIdentifier(expr.left, boundIdentifiers);
+          if (bad) {
+            throw new CodeError(
+              `'${bad.name}' is not defined in this component.`,
+              bad.loc ?? expr.left.loc,
+            );
+          }
+          entries.push({ node: right, codeVisible: generate(expr.left).code });
+          continue;
+        }
+      }
+      throw new CodeError(
+        "Only elements are supported at the top level of the component.",
+        child.loc,
+      );
     } else {
       throw new CodeError(
         "Only elements are supported at the top level of the component.",
@@ -88,7 +117,7 @@ function collectRootElements(root: t.JSXElement | t.JSXFragment): t.JSXElement[]
       );
     }
   }
-  return nodes;
+  return entries;
 }
 
 export function parseCode(
@@ -113,16 +142,19 @@ export function parseCode(
     };
   }
 
+  const scope = analyzeModuleScope(ast.program, page.fn);
   const ctx: ParseContext = {
     byId: indexById(current),
     pageId,
     claimed: new Set(),
     lucideImports: collectLucideImports(ast.program),
     catalog: opts?.catalog ?? EMPTY_COMPONENT_CATALOG,
+    boundIdentifiers: scope.boundIdentifiers,
+    staticConsts: scope.staticConsts,
   };
   try {
-    const elements = collectRootElements(page.root).map((node) =>
-      convertElement(node, undefined, ctx),
+    const elements = collectRootElements(page.root, scope.boundIdentifiers).map((entry) =>
+      convertElement(entry.node, undefined, ctx, entry.codeVisible),
     );
     return {
       ok: true,

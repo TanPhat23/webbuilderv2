@@ -2,7 +2,15 @@ import { parseExpression } from "@babel/parser";
 import * as t from "@babel/types";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { classNameFor } from "../classNames";
-import { HIDDEN_SETTINGS, MAX_CODE_PROPS, MAX_CODE_PROP_LENGTH } from "../customCode";
+import {
+  type CodeTextSegment,
+  HIDDEN_SETTINGS,
+  MAX_CODE_PROPS,
+  MAX_CODE_PROP_LENGTH,
+  readCodeText,
+  readCodeVisible,
+  renderCodeTextPlaceholder,
+} from "../customCode";
 import type { GenerateNodeContext } from "./types";
 
 export type JsxChildNode =
@@ -132,14 +140,85 @@ export function settingsToAttributes(
   return attrs;
 }
 
+function codeTextSegmentChild(
+  seg: CodeTextSegment,
+  index: number,
+  total: number,
+): JsxChildNode | null {
+  if (typeof seg !== "string") {
+    try {
+      return t.jsxExpressionContainer(
+        parseExpression(seg.expr, { plugins: ["jsx", "typescript"] }),
+      );
+    } catch {
+      return t.jsxText(`{${seg.expr}}`);
+    }
+  }
+  if (seg === "") return null;
+  const isFirst = index === 0;
+  const isLast = index === total - 1;
+  const needsContainer =
+    /[{}<>&]|[\n\r\t]|\s{2,}/.test(seg) ||
+    (isFirst && /^\s/.test(seg)) ||
+    (isLast && /\s$/.test(seg));
+  return needsContainer
+    ? t.jsxExpressionContainer(t.stringLiteral(seg))
+    : t.jsxText(seg);
+}
+
+/**
+ * Emits mixed JSX text / expression children when `settings.codeText` matches
+ * `element.content`; falls back to plain `textChild(element.content)` if the
+ * user edited `element.content` visually on the Canvas.
+ */
+export function elementTextChildren(element: EditorElement): JsxChildNode[] {
+  const segments = readCodeText(element.settings);
+  if (segments && renderCodeTextPlaceholder(segments) === element.content) {
+    const out: JsxChildNode[] = [];
+    segments.forEach((seg, index) => {
+      const node = codeTextSegmentChild(seg, index, segments.length);
+      if (node) out.push(node);
+    });
+    return out;
+  }
+  return element.content ? [textChild(element.content)] : [];
+}
+
+/** Wraps a generated `JSXElement` in `{cond && (...)}` when `settings.codeVisible` is set. */
+export function wrapCodeVisible(
+  node: t.JSXElement,
+  element: EditorElement,
+): t.JSXElement | t.JSXExpressionContainer {
+  const cond = readCodeVisible(element.settings);
+  if (!cond) return node;
+  try {
+    const condExpr = parseExpression(cond, { plugins: ["jsx", "typescript"] });
+    return t.jsxExpressionContainer(t.logicalExpression("&&", condExpr, node));
+  } catch {
+    return node;
+  }
+}
+
+/** Returns attribute names already supplied by `settings.codeProps`. */
+export function codePropNames(settings: unknown): ReadonlySet<string> {
+  const names = new Set<string>();
+  if (!isPlainRecord(settings) || !Array.isArray(settings.codeProps)) return names;
+  for (const attr of codePropAttributes(settings.codeProps)) {
+    if (t.isJSXAttribute(attr)) {
+      const name = t.isJSXIdentifier(attr.name)
+        ? attr.name.name
+        : `${attr.name.namespace.name}:${attr.name.name.name}`;
+      names.add(name);
+    }
+  }
+  return names;
+}
+
 export function buildContainerChildren(
   element: EditorElement,
   ctx: GenerateNodeContext,
 ): JsxChildNode[] {
-  const children: JsxChildNode[] = [];
-  if (element.content) {
-    children.push(textChild(element.content));
-  }
+  const children: JsxChildNode[] = [...elementTextChildren(element)];
   if ("elements" in element && Array.isArray(element.elements)) {
     for (const child of element.elements) {
       const node = ctx.generateChild(child);

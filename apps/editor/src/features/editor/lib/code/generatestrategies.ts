@@ -3,7 +3,7 @@ import { ALL_ELEMENT_TYPES, type ElementType } from "@webbuilder/site-runtime/ty
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { EMPTY_COMPONENT_CATALOG } from "./catalog";
 import { ELEMENT_CODECS } from "./codecs/registry";
-import { decorateGeneratedElement } from "./codecs/shared";
+import { decorateGeneratedElement, wrapCodeVisible } from "./codecs/shared";
 import type { GenerateNodeContext } from "./codecs/types";
 
 export interface GenerateStrategy {
@@ -98,10 +98,11 @@ function createStandaloneContext(): GenerateNodeContext {
     },
     usedLucideIcons: new Set<string>(),
     usedProjectComponents: new Set<string>(),
-    generateChild(child: EditorElement): t.JSXElement | null {
+    generateChild(child: EditorElement): t.JSXElement | t.JSXExpressionContainer | null {
       if (!Object.hasOwn(generateStrategies, child.type)) return null;
       const strategy = generateStrategies[child.type];
-      return strategy ? strategy.generate(child, ctx) : null;
+      const jsx = strategy ? strategy.generate(child, ctx) : null;
+      return jsx ? wrapCodeVisible(jsx, child) : null;
     },
   };
   return ctx;

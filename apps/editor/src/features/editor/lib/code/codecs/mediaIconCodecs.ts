@@ -1,6 +1,6 @@
 import * as t from "@babel/types";
 import { lucideKebabToPascal } from "../catalog";
-import { classNameAttr, selfClosingJsxEl, settingsToAttributes } from "./shared";
+import { classNameAttr, codePropNames, selfClosingJsxEl, settingsToAttributes } from "./shared";
 import type { ElementCodec } from "./types";
 
 const ICON_SKIP: ReadonlySet<string> = new Set(["iconName"]);
@@ -23,13 +23,16 @@ export const iconCodec: ElementCodec<"Icon"> = {
 export const imageCodec: ElementCodec<"Image"> = {
   type: "Image",
   generate(element) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.src) {
+    if (element.src && !overridden.has("src")) {
       attrs.push(t.jsxAttribute(t.jsxIdentifier("src"), t.stringLiteral(element.src)));
     }
-    attrs.push(
-      t.jsxAttribute(t.jsxIdentifier("alt"), t.stringLiteral(element.content || "")),
-    );
+    if (!overridden.has("alt")) {
+      attrs.push(
+        t.jsxAttribute(t.jsxIdentifier("alt"), t.stringLiteral(element.content || "")),
+      );
+    }
     attrs.push(...settingsToAttributes(element.settings));
     return selfClosingJsxEl("img", attrs);
   },
@@ -38,8 +41,9 @@ export const imageCodec: ElementCodec<"Image"> = {
 export const videoCodec: ElementCodec<"Video"> = {
   type: "Video",
   generate(element) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.src) {
+    if (element.src && !overridden.has("src")) {
       attrs.push(t.jsxAttribute(t.jsxIdentifier("src"), t.stringLiteral(element.src)));
     }
     attrs.push(...settingsToAttributes(element.settings, undefined, MEDIA_RENAME));
@@ -50,8 +54,9 @@ export const videoCodec: ElementCodec<"Video"> = {
 export const audioCodec: ElementCodec<"Audio"> = {
   type: "Audio",
   generate(element) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.src) {
+    if (element.src && !overridden.has("src")) {
       attrs.push(t.jsxAttribute(t.jsxIdentifier("src"), t.stringLiteral(element.src)));
     }
     attrs.push(...settingsToAttributes(element.settings, undefined, MEDIA_RENAME));
@@ -62,8 +67,9 @@ export const audioCodec: ElementCodec<"Audio"> = {
 export const iframeCodec: ElementCodec<"IFrame"> = {
   type: "IFrame",
   generate(element) {
+    const overridden = codePropNames(element.settings);
     const attrs: t.JSXAttribute[] = [classNameAttr(element)];
-    if (element.src) {
+    if (element.src && !overridden.has("src")) {
       attrs.push(t.jsxAttribute(t.jsxIdentifier("src"), t.stringLiteral(element.src)));
     }
     attrs.push(...settingsToAttributes(element.settings));
