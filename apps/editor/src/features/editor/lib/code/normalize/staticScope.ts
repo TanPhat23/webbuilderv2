@@ -59,6 +59,8 @@ const STANDARD_GLOBALS: readonly string[] = [
   "FormData",
   "Event",
   "globalThis",
+  "cn",
+  "clsx",
 ];
 
 function isStaticArray(value: StaticValue): value is readonly StaticValue[] {

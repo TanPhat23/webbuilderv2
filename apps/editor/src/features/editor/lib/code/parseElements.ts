@@ -188,6 +188,7 @@ function splitOpts(ctx: ParseContext, allowDynamicText: boolean): SplitChildrenO
 function assertAttributesScoped(
   node: t.JSXElement,
   bound: ReadonlySet<string>,
+  staticConsts: ReadonlyMap<string, StaticValue>,
 ): void {
   for (const attr of node.openingElement.attributes) {
     if (t.isJSXSpreadAttribute(attr)) {
@@ -205,6 +206,9 @@ function assertAttributesScoped(
       t.isJSXExpressionContainer(attr.value) &&
       !t.isJSXEmptyExpression(attr.value.expression)
     ) {
+      if (evaluateStaticExpression(attr.value.expression, staticConsts).ok) {
+        continue;
+      }
       const bad = findUnboundIdentifier(attr.value.expression, bound);
       if (bad) {
         throw new CodeError(
@@ -422,11 +426,13 @@ function collectCodeProps(
   for (const attr of node.openingElement.attributes) {
     if (t.isJSXAttribute(attr)) {
       const name = attributeName(attr);
-      if (name === "className" || name === "data-element-id") {
+      if (name === "data-element-id") {
         continue;
       }
       const v = attributeValue(attr, staticConsts);
-      if (modeled.has(name)) {
+      if (name === "className") {
+        if (v.ok) continue;
+      } else if (modeled.has(name)) {
         if (v.ok) continue;
       } else if (SETTINGS_ATTRIBUTE_TYPES.has(type) && v.ok) {
         continue;
@@ -596,7 +602,7 @@ function convertChildren(
   for (const child of elements) {
     const childCodeVisible = visibilityByElement.get(child);
     if (wrapper) {
-      assertAttributesScoped(child, boundSet(ctx));
+      assertAttributesScoped(child, boundSet(ctx), constsMap(ctx));
       if (!isTag(child, wrapper.wrapperTag)) {
         throw new CodeError(wrapper.error(tagName(child)), child.loc);
       }
@@ -651,7 +657,7 @@ function convertOptions(
   }
 
   return optionNodes.map((option, i) => {
-    assertAttributesScoped(option, boundSet(ctx));
+    assertAttributesScoped(option, boundSet(ctx), constsMap(ctx));
     if (!isTag(option, "option")) {
       throw new CodeError(
         `<${tagName(option)}> can't be inside a <select>; use <option>.`,
@@ -690,7 +696,7 @@ function parseTableColumn(
   existingCol: TableColumnDefinition | undefined,
   ctx: ParseContext,
 ): TableColumnDefinition {
-  assertAttributesScoped(th, boundSet(ctx));
+  assertAttributesScoped(th, boundSet(ctx), constsMap(ctx));
   const thAttrs = readAttributes(th);
   const consts = constsMap(ctx);
   const id =
@@ -752,7 +758,7 @@ function convertHtmlTableRow(
   ctx: ParseContext,
   codeVisible?: string,
 ): FrameElement {
-  assertAttributesScoped(tr, boundSet(ctx));
+  assertAttributesScoped(tr, boundSet(ctx), constsMap(ctx));
   const rowId = newEntityId();
   const trAttrs = readAttributes(tr);
   const consts = constsMap(ctx);
@@ -764,7 +770,7 @@ function convertHtmlTableRow(
   const cells: EditorElement[] = cellNodes
     .filter((cell) => isTag(cell, "td") || isTag(cell, "th"))
     .map((cell) => {
-      assertAttributesScoped(cell, boundSet(ctx));
+      assertAttributesScoped(cell, boundSet(ctx), constsMap(ctx));
       const cellSplit = splitChildren(cell, splitOpts(ctx, true));
       const cellAttrs = readAttributes(cell);
       const cellTw = splitClasses(
@@ -852,14 +858,14 @@ function parseTableStructure(
   const bodyRows: Array<{ row: t.JSXElement; codeVisible?: string }> = [];
 
   for (const child of tableChildren) {
-    assertAttributesScoped(child, boundSet(ctx));
+    assertAttributesScoped(child, boundSet(ctx), constsMap(ctx));
     const childTag = tagName(child);
     if (childTag === "caption") {
       caption = splitChildren(child, splitOpts(ctx, false)).text;
     } else if (childTag === "thead") {
       const headSplit = splitChildren(child, splitOpts(ctx, false));
       for (const rowOrCell of headSplit.elements) {
-        assertAttributesScoped(rowOrCell, boundSet(ctx));
+        assertAttributesScoped(rowOrCell, boundSet(ctx), constsMap(ctx));
         if (isTag(rowOrCell, "tr")) {
           for (const cell of splitChildren(rowOrCell, splitOpts(ctx, false)).elements) {
             if (isTag(cell, "th") || isTag(cell, "td")) headerCells.push(cell);
@@ -1210,7 +1216,7 @@ export function convertElement(
     );
   }
 
-  assertAttributesScoped(node, boundSet(ctx));
+  assertAttributesScoped(node, boundSet(ctx), constsMap(ctx));
   const attrs = readAttributes(node);
   const consts = constsMap(ctx);
   const existing = claimExisting(attrs, candidates, ctx);
@@ -1239,8 +1245,11 @@ export function convertElement(
   }
 
   const id = existing ? existing.id : newEntityId();
-  const written = splitClasses(stringAttributeValue(attrs, "className", true, consts) ?? "");
-  const tailwindStyles = ownClasses(written, existing);
+  const dynamicClassName = isDynamicBoundAttr(attrs.get("className"), consts);
+  const written = dynamicClassName
+    ? []
+    : splitClasses(stringAttributeValue(attrs, "className", true, consts) ?? "");
+  const tailwindStyles = dynamicClassName ? existing?.tailwindStyles : ownClasses(written, existing);
   const hasTailwindKey = tailwindStyles !== undefined || Boolean(existing);
 
   let content = existing?.content ?? "";
@@ -1266,7 +1275,7 @@ export function convertElement(
     if (!mediaSrc && childNodes.length > 0) {
       const sourceChild = childNodes.find((c) => isTag(c, "source"));
       if (sourceChild) {
-        assertAttributesScoped(sourceChild, boundSet(ctx));
+        assertAttributesScoped(sourceChild, boundSet(ctx), constsMap(ctx));
         const sourceAttrs = readAttributes(sourceChild);
         if (!isDynamicBoundAttr(sourceAttrs.get("src"), consts)) {
           mediaSrc = stringAttributeValue(sourceAttrs, "src", true, consts) ?? mediaSrc;

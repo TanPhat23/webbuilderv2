@@ -253,7 +253,22 @@ export function decorateGeneratedElement(
   tagElementIds: boolean,
 ): t.JSXElement {
   if (isPlainRecord(element.settings) && element.settings.codeProps) {
-    node.openingElement.attributes.push(...codePropAttributes(element.settings.codeProps));
+    const customAttrs = codePropAttributes(element.settings.codeProps);
+    const hasCustomClassName = customAttrs.some(
+      (attr) =>
+        t.isJSXAttribute(attr) &&
+        t.isJSXIdentifier(attr.name, { name: "className" }),
+    );
+    if (hasCustomClassName) {
+      node.openingElement.attributes = node.openingElement.attributes.filter(
+        (attr) =>
+          !(
+            t.isJSXAttribute(attr) &&
+            t.isJSXIdentifier(attr.name, { name: "className" })
+          ),
+      );
+    }
+    node.openingElement.attributes.push(...customAttrs);
   }
   if (tagElementIds) {
     node.openingElement.attributes.push(

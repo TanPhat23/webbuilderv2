@@ -171,3 +171,50 @@ export default function Profile() {
   if (!reparsed.ok) return;
   assert.deepEqual(diffTrees(parsed.elements, reparsed.elements), []);
 });
+
+test("unimported static and dynamic cn(...) and clsx(...) in JSX attributes parse and round-trip", async () => {
+  const src = `
+import React, { useState } from 'react';
+
+export default function Banner() {
+  const [open] = useState(true);
+  return (
+    <section className={cn('p-4', true && 'border')}>
+      <div className={clsx('mt-2', false && 'hidden')}>Static clsx</div>
+      <div className={cn('p-4', open && 'bg-muted')}>Dynamic cn</div>
+    </section>
+  );
+}
+`;
+  const parsed = parseCode(src, [], PAGE);
+  assert.ok(
+    parsed.ok,
+    parsed.ok ? "" : `${parsed.diagnostic.message} @${parsed.diagnostic.line}:${parsed.diagnostic.column}`,
+  );
+  if (!parsed.ok) return;
+
+  const section = parsed.elements[0]!;
+  assert.equal(section.tailwindStyles, "p-4 border");
+  const children = childrenOf(section);
+  assert.equal(children[0]?.tailwindStyles, "mt-2");
+  const dynDiv = children[1]!;
+  const dynProps =
+    dynDiv.settings && "codeProps" in dynDiv.settings && Array.isArray(dynDiv.settings.codeProps)
+      ? dynDiv.settings.codeProps
+      : [];
+  assert.ok(dynProps.some((p) => typeof p === "string" && p.includes("className={cn(")));
+
+  const generated = await codeGenerator.generateToJSX(parsed.elements, undefined, {
+    tagIds: true,
+    preamble: parsed.preamble,
+  });
+  assert.match(generated, /className="p-4 border"/);
+  assert.match(generated, /className="mt-2"/);
+  assert.match(generated, /className=\{cn\('p-4', open && 'bg-muted'\)\}/);
+  assert.equal((generated.match(/className=/g) ?? []).length, 3);
+
+  const reparsed = parseCode(generated, parsed.elements, PAGE);
+  assert.ok(reparsed.ok, reparsed.ok ? "" : reparsed.diagnostic.message);
+  if (!reparsed.ok) return;
+  assert.deepEqual(diffTrees(parsed.elements, reparsed.elements), []);
+});
