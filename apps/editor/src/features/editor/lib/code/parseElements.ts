@@ -45,6 +45,12 @@ import {
 } from "./astLiterals";
 import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
 import { splitClasses, styleClasses } from "./classNames";
+import {
+  matchPropExpression,
+  parseComponentInstance,
+  type ComponentPropSlots,
+  type ParamPropInfo,
+} from "./codecs/componentCodec";
 import { TAG_CANDIDATES } from "./codecs/registry";
 import {
   type CodeTextSegment,
@@ -53,6 +59,7 @@ import {
   readCodeVisible,
 } from "./customCode";
 import { generateStrategies } from "./generatestrategies";
+import type { PendingComponentInstance } from "./normalize/extractComponents";
 import {
   evaluateStaticExpression,
   findUnboundIdentifier,
@@ -148,6 +155,11 @@ export interface ParseContext {
   readonly claimed: Set<string>;
   readonly lucideImports?: ReadonlyMap<string, string>;
   readonly catalog?: ComponentCatalog;
+  readonly uiImports?: ReadonlySet<string>;
+  readonly projectImportAliases?: ReadonlyMap<string, string>;
+  readonly pendingComponentNames?: ReadonlySet<string>;
+  readonly pendingInstances?: PendingComponentInstance[];
+  readonly componentPropSlots?: ComponentPropSlots;
   readonly boundIdentifiers?: ReadonlySet<string>;
   readonly staticConsts?: ReadonlyMap<string, StaticValue>;
 }
@@ -420,13 +432,14 @@ function collectCodeProps(
   type: ElementType,
   tag: string,
   staticConsts?: ReadonlyMap<string, StaticValue>,
+  skipCodePropAttrs?: ReadonlySet<string>,
 ): string[] {
   const modeled = modeledAttributesFor(type, tag);
   const props: string[] = [];
   for (const attr of node.openingElement.attributes) {
     if (t.isJSXAttribute(attr)) {
       const name = attributeName(attr);
-      if (name === "data-element-id") {
+      if (name === "data-element-id" || skipCodePropAttrs?.has(name)) {
         continue;
       }
       const v = attributeValue(attr, staticConsts);
@@ -452,8 +465,9 @@ function applyCodeSettings(
   codeText: readonly CodeTextSegment[] | undefined,
   codeVisible: string | undefined,
   staticConsts?: ReadonlyMap<string, StaticValue>,
+  skipCodePropAttrs?: ReadonlySet<string>,
 ): LooseRecord | null {
-  const props = collectCodeProps(node, type, tag, staticConsts);
+  const props = collectCodeProps(node, type, tag, staticConsts, skipCodePropAttrs);
   const before = settings ?? null;
   const beforeProps = Array.isArray(before?.codeProps) ? before.codeProps : [];
   const beforeText = readCodeText(before);
@@ -522,6 +536,7 @@ function resolveSettings(
   codeText: readonly CodeTextSegment[] | undefined,
   codeVisible: string | undefined,
   staticConsts: ReadonlyMap<string, StaticValue>,
+  skipCodePropAttrs?: ReadonlySet<string>,
 ): LooseRecord | null {
   const modeled = modeledAttributesFor(type, tag);
   const renameMap = attributeRenameMapFor(type);
@@ -556,7 +571,17 @@ function resolveSettings(
     if (tag === "ol" && !settings?.ordered) settings = { ...settings, ordered: true };
     else if (tag === "ul" && settings?.ordered) settings = { ...settings, ordered: false };
   }
-  return applyCodeSettings(settings, node, type, tag, attrs, codeText, codeVisible, staticConsts);
+  return applyCodeSettings(
+    settings,
+    node,
+    type,
+    tag,
+    attrs,
+    codeText,
+    codeVisible,
+    staticConsts,
+    skipCodePropAttrs,
+  );
 }
 
 function createTextElement(
@@ -1194,6 +1219,93 @@ function instantiateElement(type: ElementType, f: BuiltElementFields): EditorEle
 
 const ICON_CANDIDATES: readonly ElementType[] = ["Icon"];
 
+const TEXT_OVERRIDE_TYPES: ReadonlySet<ElementType> = new Set([
+  "Text",
+  "Span",
+  "Heading",
+  "Label",
+  "Blockquote",
+  "Code",
+  "Link",
+  "Button",
+]);
+
+function matchSinglePropTextChild(
+  node: t.JSXElement,
+  slots: ComponentPropSlots | undefined,
+): ParamPropInfo | null {
+  if (!slots) return null;
+  let exprMatch: ParamPropInfo | null = null;
+  for (const child of node.children) {
+    if (t.isJSXText(child)) {
+      if (child.value.trim() !== "") return null;
+      continue;
+    }
+    if (t.isJSXElement(child)) continue;
+    if (t.isJSXExpressionContainer(child)) {
+      if (t.isJSXEmptyExpression(child.expression)) continue;
+      if (exprMatch) return null;
+      const matched = matchPropExpression(child.expression, slots);
+      if (!matched) return null;
+      exprMatch = matched;
+      continue;
+    }
+    return null;
+  }
+  return exprMatch;
+}
+
+function matchPropAttr(
+  attr: t.JSXAttribute | undefined,
+  slots: ComponentPropSlots | undefined,
+): ParamPropInfo | null {
+  if (!slots || !attr || !t.isJSXExpressionContainer(attr.value)) return null;
+  if (t.isJSXEmptyExpression(attr.value.expression)) return null;
+  return matchPropExpression(attr.value.expression, slots);
+}
+
+function recordPropSlotBinding(
+  slots: ComponentPropSlots | undefined,
+  info: ParamPropInfo,
+  nodeId: string,
+  field: "text" | "src" | "alt" | "href",
+): void {
+  if (!slots || slots.bindings.has(info.propName)) return;
+  slots.bindings.set(info.propName, {
+    nodeId,
+    field,
+    defaultValue: info.defaultValue,
+  });
+}
+
+/** Returns a cloned `EditorElement` with `settings` transformed by `updater`. */
+export function updateElementSettings(
+  el: EditorElement,
+  updater: (prev: LooseRecord | null) => LooseRecord | null,
+): EditorElement {
+  const prevSettings = isPlainRecord(el.settings) ? el.settings : null;
+  const nextSettings = updater(prevSettings);
+  return instantiateElement(el.type, {
+    id: el.id,
+    pageId: el.pageId,
+    parentId: el.parentId,
+    content: el.content,
+    name: el.name,
+    styles: el.styles ?? {},
+    tailwindStyles: el.tailwindStyles,
+    hasTailwindKey: "tailwindStyles" in el,
+    href: el.href,
+    hasHrefKey: "href" in el,
+    src: el.src,
+    hasSrcKey: "src" in el,
+    order: el.order,
+    orderKey: el.orderKey,
+    events: el.events,
+    settings: nextSettings,
+    elements: "elements" in el && Array.isArray(el.elements) ? el.elements : undefined,
+  });
+}
+
 export function convertElement(
   node: t.JSXElement,
   parentId: string | undefined,
@@ -1202,6 +1314,19 @@ export function convertElement(
 ): EditorElement {
   const tag = tagName(node);
   const lucideIconName = ctx.lucideImports?.get(tag);
+  if (lucideIconName === undefined && !ctx.uiImports?.has(tag)) {
+    const resolvedName = ctx.projectImportAliases?.get(tag) ?? tag;
+    const catalogEntry =
+      ctx.catalog?.byPascalName.get(tag) ??
+      ctx.catalog?.byPascalName.get(resolvedName);
+    if (catalogEntry) {
+      const isPending = ctx.pendingComponentNames?.has(catalogEntry.pascalName) ?? false;
+      return parseComponentInstance(node, catalogEntry, parentId, ctx, codeVisible, {
+        isPending,
+      });
+    }
+  }
+
   const candidates =
     lucideIconName !== undefined
       ? ICON_CANDIDATES
@@ -1258,14 +1383,29 @@ export function convertElement(
   let hasSrcKey = Boolean(existing && "src" in existing);
   let href = existing?.href;
   let hasHrefKey = Boolean(existing && "href" in existing);
+  const skipCodePropAttrs = new Set<string>();
 
   if (tag === "img") {
-    content = isDynamicBoundAttr(attrs.get("alt"), consts)
-      ? (existing?.content ?? "")
-      : (stringAttributeValue(attrs, "alt", true, consts) ?? "");
-    src = isDynamicBoundAttr(attrs.get("src"), consts)
-      ? (existing?.src ?? "")
-      : stringAttribute(attrs, "src", existing?.src, consts);
+    const altSlot = matchPropAttr(attrs.get("alt"), ctx.componentPropSlots);
+    if (altSlot) {
+      content = altSlot.defaultValue;
+      skipCodePropAttrs.add("alt");
+      recordPropSlotBinding(ctx.componentPropSlots, altSlot, id, "alt");
+    } else {
+      content = isDynamicBoundAttr(attrs.get("alt"), consts)
+        ? (existing?.content ?? "")
+        : (stringAttributeValue(attrs, "alt", true, consts) ?? "");
+    }
+    const srcSlot = matchPropAttr(attrs.get("src"), ctx.componentPropSlots);
+    if (srcSlot) {
+      src = srcSlot.defaultValue;
+      skipCodePropAttrs.add("src");
+      recordPropSlotBinding(ctx.componentPropSlots, srcSlot, id, "src");
+    } else {
+      src = isDynamicBoundAttr(attrs.get("src"), consts)
+        ? (existing?.src ?? "")
+        : stringAttribute(attrs, "src", existing?.src, consts);
+    }
     hasSrcKey = true;
     codeText = undefined;
   } else if (tag === "video" || tag === "audio") {
@@ -1292,22 +1432,52 @@ export function convertElement(
     hasSrcKey = true;
     codeText = undefined;
   } else if (type === "Code" && tag === "pre" && childNodes.length === 1) {
-    const preInner = splitChildren(childNodes[0]!, splitOpts(ctx, true));
-    content = preInner.text;
-    codeText = preInner.codeText;
+    const textSlot = matchSinglePropTextChild(childNodes[0]!, ctx.componentPropSlots);
+    if (textSlot) {
+      content = textSlot.defaultValue;
+      codeText = undefined;
+      recordPropSlotBinding(ctx.componentPropSlots, textSlot, id, "text");
+    } else {
+      const preInner = splitChildren(childNodes[0]!, splitOpts(ctx, true));
+      content = preInner.text;
+      codeText = preInner.codeText;
+    }
   } else if (tag !== "select" && tag !== "table") {
-    content = text;
+    const textSlot = TEXT_OVERRIDE_TYPES.has(type)
+      ? matchSinglePropTextChild(node, ctx.componentPropSlots)
+      : null;
+    if (textSlot) {
+      content = textSlot.defaultValue;
+      codeText = undefined;
+      recordPropSlotBinding(ctx.componentPropSlots, textSlot, id, "text");
+    } else {
+      content = text;
+    }
   }
 
   if (tag === "a") {
-    href = isDynamicBoundAttr(attrs.get("href"), consts)
-      ? (existing?.href ?? "")
-      : stringAttribute(attrs, "href", existing?.href, consts);
+    const hrefSlot = matchPropAttr(attrs.get("href"), ctx.componentPropSlots);
+    if (hrefSlot) {
+      href = hrefSlot.defaultValue;
+      skipCodePropAttrs.add("href");
+      recordPropSlotBinding(ctx.componentPropSlots, hrefSlot, id, "href");
+    } else {
+      href = isDynamicBoundAttr(attrs.get("href"), consts)
+        ? (existing?.href ?? "")
+        : stringAttribute(attrs, "href", existing?.href, consts);
+    }
     hasHrefKey = true;
   } else if (tag === "button" && (attrs.has("data-href") || existing?.href !== undefined)) {
-    href = isDynamicBoundAttr(attrs.get("data-href"), consts)
-      ? (existing?.href ?? "")
-      : stringAttribute(attrs, "data-href", existing?.href, consts);
+    const hrefSlot = matchPropAttr(attrs.get("data-href"), ctx.componentPropSlots);
+    if (hrefSlot) {
+      href = hrefSlot.defaultValue;
+      skipCodePropAttrs.add("data-href");
+      recordPropSlotBinding(ctx.componentPropSlots, hrefSlot, id, "href");
+    } else {
+      href = isDynamicBoundAttr(attrs.get("data-href"), consts)
+        ? (existing?.href ?? "")
+        : stringAttribute(attrs, "data-href", existing?.href, consts);
+    }
     hasHrefKey = true;
   }
 
@@ -1329,6 +1499,7 @@ export function convertElement(
       codeText,
       codeVisible,
       consts,
+      skipCodePropAttrs.size > 0 ? skipCodePropAttrs : undefined,
     );
     if (tag === "select") {
       elements = convertOptions(node, existing, id, ctx);

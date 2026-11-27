@@ -1,15 +1,29 @@
 import { generate } from "@babel/generator";
 import { parse } from "@babel/parser";
 import * as t from "@babel/types";
+import { elementUtils } from "@webbuilder/site-runtime/elements/lib/elementhelper";
+import type { ComponentSetting } from "@webbuilder/site-runtime/projects/components";
 import type { EditorElement } from "@webbuilder/site-runtime/types/global.type";
 import { cleanJsxText, type CodeDiagnostic, CodeError, diagnosticAt, unparen } from "./astLiterals";
 import {
   EMPTY_COMPONENT_CATALOG,
   lucidePascalToKebab,
+  type CatalogComponent,
   type ComponentCatalog,
 } from "./catalog";
+import {
+  extractComponentParamDefaults,
+  findComponentPropsStatement,
+  toNullProtoPropBindings,
+  type ComponentPropSlots,
+} from "./codecs/componentCodec";
 import type { Preamble } from "./customCode";
 import { extractPreamble, locatePage, type LocatedPage } from "./extractPreamble";
+import {
+  processLocalComponents,
+  type ExtractedComponentSpec,
+  type PendingComponentInstance,
+} from "./normalize/extractComponents";
 import { collectShadcnBindings } from "./normalize/shadcnLowering";
 import {
   analyzeModuleScope,
@@ -20,22 +34,40 @@ import {
   collectReferencedIdentifiers,
   unrollStaticJsxRoot,
 } from "./normalize/unrollStaticJsx";
-import { convertElement, indexById, keepUnsupported, type ParseContext } from "./parseElements";
+import {
+  convertElement,
+  indexById,
+  keepUnsupported,
+  updateElementSettings,
+  type ParseContext,
+} from "./parseElements";
 
 export type { CodeDiagnostic } from "./astLiterals";
+export type { ExtractedComponentSpec, PendingComponentInstance } from "./normalize/extractComponents";
 
 export interface ParseCodeOptions {
   readonly catalog?: ComponentCatalog;
   readonly mode?: "preview" | "commit";
+  readonly isComponentPage?: boolean;
+  readonly componentName?: string;
   readonly pageMeta?: {
     readonly isComponentPage?: boolean;
     readonly componentName?: string;
   };
 }
 
+export interface ParseCodeSuccess {
+  readonly ok: true;
+  readonly elements: EditorElement[];
+  readonly preamble: Preamble;
+  readonly pendingComponentNames: readonly string[];
+  readonly extractedComponents: readonly ExtractedComponentSpec[];
+  readonly pendingInstances: readonly PendingComponentInstance[];
+}
+
 export type ParseCodeResult =
-  | { ok: true; elements: EditorElement[]; preamble: Preamble }
-  | { ok: false; diagnostic: CodeDiagnostic };
+  | ParseCodeSuccess
+  | { readonly ok: false; readonly diagnostic: CodeDiagnostic };
 
 function readSyntaxError(err: unknown): { message: string; loc: t.SourceLocation | null } {
   const rawMessage =
@@ -129,24 +161,54 @@ function collectRootElements(
   return entries;
 }
 
+function collectUiImports(program: t.Program): Set<string> {
+  const uiImported = new Set<string>();
+  for (const stmt of program.body) {
+    if (!t.isImportDeclaration(stmt) || stmt.importKind === "type") continue;
+    if (!stmt.source.value.startsWith("@/components/ui/")) continue;
+    for (const spec of stmt.specifiers) {
+      if (t.isImportSpecifier(spec) && spec.importKind === "type") continue;
+      uiImported.add(spec.local.name);
+    }
+  }
+  return uiImported;
+}
+
+function collectProjectImportAliases(program: t.Program): Map<string, string> {
+  const aliases = new Map<string, string>();
+  for (const stmt of program.body) {
+    if (!t.isImportDeclaration(stmt) || stmt.importKind === "type") continue;
+    const source = stmt.source.value;
+    if (!source.startsWith("@/components/") || source.startsWith("@/components/ui/")) {
+      continue;
+    }
+    const moduleLeaf = source.slice(source.lastIndexOf("/") + 1);
+    for (const spec of stmt.specifiers) {
+      if (t.isImportSpecifier(spec)) {
+        if (spec.importKind === "type") continue;
+        const imported = t.isIdentifier(spec.imported)
+          ? spec.imported.name
+          : spec.imported.value;
+        aliases.set(spec.local.name, imported);
+      } else if (t.isImportDefaultSpecifier(spec) && moduleLeaf) {
+        aliases.set(spec.local.name, moduleLeaf);
+      }
+    }
+  }
+  return aliases;
+}
+
 function collectProjectComponentImports(
   program: t.Program,
   catalog: ComponentCatalog | undefined,
+  uiImported: ReadonlySet<string>,
 ): Set<string> {
   const names = new Set<string>();
-  const uiImported = new Set<string>();
 
   for (const stmt of program.body) {
     if (!t.isImportDeclaration(stmt) || stmt.importKind === "type") continue;
     const source = stmt.source.value;
-    if (source.startsWith("@/components/ui/")) {
-      for (const spec of stmt.specifiers) {
-        if (t.isImportSpecifier(spec) && spec.importKind === "type") continue;
-        uiImported.add(spec.local.name);
-      }
-      continue;
-    }
-    if (source.startsWith("@/components/")) {
+    if (source.startsWith("@/components/") && !source.startsWith("@/components/ui/")) {
       for (const spec of stmt.specifiers) {
         if (t.isImportSpecifier(spec) && spec.importKind === "type") continue;
         names.add(spec.local.name);
@@ -162,6 +224,22 @@ function collectProjectComponentImports(
     }
   }
   return names;
+}
+
+function extendCatalogWithEntries(
+  base: ComponentCatalog,
+  extra: readonly CatalogComponent[],
+): ComponentCatalog {
+  if (extra.length === 0) return base;
+  const list = [...base.list];
+  const byPageId = new Map(base.byPageId);
+  const byPascalName = new Map(base.byPascalName);
+  for (const entry of extra) {
+    list.push(entry);
+    byPageId.set(entry.pageId, entry);
+    byPascalName.set(entry.pascalName, entry);
+  }
+  return { list, byPageId, byPascalName };
 }
 
 function declaredIdentifierNames(stmt: t.Statement): string[] | null {
@@ -183,17 +261,23 @@ function collectOmittedStatements(
   activeShadcnTags: ReadonlySet<string>,
   consumedConsts: ReadonlySet<string>,
   normalizedRoot: t.JSXElement | t.JSXFragment,
+  extraOmitStatements?: ReadonlySet<t.Statement>,
 ): {
   readonly omitStatements: Set<t.Statement>;
   readonly retainStatements: Set<t.Statement>;
 } {
-  const omitted = new Set<t.Statement>();
+  const omitted = new Set<t.Statement>(extraOmitStatements);
   const retained = new Set<t.Statement>();
   const candidateVarStmts = new Map<t.Statement, readonly string[]>();
   const otherStatements: t.Statement[] = [];
 
   for (const stmt of program.body) {
-    if (stmt === page.statement || t.isImportDeclaration(stmt) || t.isExportDefaultDeclaration(stmt)) {
+    if (
+      stmt === page.statement ||
+      omitted.has(stmt) ||
+      t.isImportDeclaration(stmt) ||
+      t.isExportDefaultDeclaration(stmt)
+    ) {
       continue;
     }
     const names =
@@ -209,7 +293,7 @@ function collectOmittedStatements(
 
   if (page.fn && t.isBlockStatement(page.fn.body)) {
     for (const stmt of page.fn.body.body) {
-      if (stmt === page.ret) break;
+      if (stmt === page.ret || omitted.has(stmt)) break;
       const names =
         consumedConsts.size > 0 && scope.pureStaticStatements.has(stmt)
           ? declaredIdentifierNames(stmt)
@@ -275,6 +359,36 @@ function collectOmittedStatements(
   return { omitStatements: omitted, retainStatements: retained };
 }
 
+/**
+ * Attaches final `settings.component` links onto placeholder instance elements
+ * once newly extracted `"cp"` master pages have been created and assigned IDs.
+ */
+export function bindExtractedComponentInstances(
+  elements: readonly EditorElement[],
+  pending: readonly PendingComponentInstance[],
+  createdByPascalName: ReadonlyMap<string, { readonly pageId: string; readonly rootId: string }>,
+): EditorElement[] {
+  let next = [...elements];
+  for (const item of pending) {
+    const target = createdByPascalName.get(item.pascalName);
+    if (!target) continue;
+    next = elementUtils.mapUpdateById(next, item.instanceId, (el) => {
+      const compSetting: ComponentSetting = {
+        pageId: target.pageId,
+        rootId: target.rootId,
+        ...(item.overrides && Object.keys(item.overrides).length > 0
+          ? { overrides: item.overrides }
+          : {}),
+      };
+      return updateElementSettings(el, (prev) => ({
+        ...(prev ?? {}),
+        component: compSetting,
+      }));
+    });
+  }
+  return next;
+}
+
 export function parseCode(
   code: string,
   current: EditorElement[],
@@ -299,38 +413,169 @@ export function parseCode(
 
   const scope = analyzeModuleScope(ast.program, page.fn);
   const catalog = opts?.catalog ?? EMPTY_COMPONENT_CATALOG;
-  const ctx: ParseContext = {
-    byId: indexById(current),
-    pageId,
-    claimed: new Set(),
-    lucideImports: collectLucideImports(ast.program),
+  const mode = opts?.mode ?? "preview";
+  const isComponentPage = opts?.isComponentPage ?? opts?.pageMeta?.isComponentPage ?? false;
+  const componentName = opts?.componentName ?? opts?.pageMeta?.componentName;
+
+  const lucideImports = collectLucideImports(ast.program);
+  const uiImports = collectUiImports(ast.program);
+  const projectImportAliases = collectProjectImportAliases(ast.program);
+  const projectComponentImports = collectProjectComponentImports(
+    ast.program,
     catalog,
-    boundIdentifiers: scope.boundIdentifiers,
-    staticConsts: scope.staticConsts,
-  };
+    uiImports,
+  );
+  const activeShadcnTags = collectShadcnBindings(ast.program, projectComponentImports);
+
   try {
-    const projectComponentImports = collectProjectComponentImports(ast.program, catalog);
-    const activeShadcnTags = collectShadcnBindings(ast.program, projectComponentImports);
-    const { root: normalizedRoot, consumedConsts } = unrollStaticJsxRoot(
+    if (isComponentPage) {
+      if (t.isJSXFragment(page.root)) {
+        throw new CodeError(
+          "A component master page must return a single root element, not a fragment.",
+          page.root.loc,
+        );
+      }
+
+      const paramDefaults = extractComponentParamDefaults(page.fn, scope.staticConsts);
+      const { root: normalizedRoot, consumedConsts } = unrollStaticJsxRoot(
+        page.root,
+        scope,
+        activeShadcnTags,
+      );
+      const entries = collectRootElements(normalizedRoot, scope.boundIdentifiers);
+      if (entries.length !== 1) {
+        throw new CodeError(
+          "A component master page must return a single root element.",
+          normalizedRoot.loc,
+        );
+      }
+
+      const componentPropSlots: ComponentPropSlots = {
+        paramsByLocalName: paramDefaults.paramsByLocalName,
+        propsObjectName: paramDefaults.propsObjectName,
+        bindings: new Map(),
+      };
+
+      const ctx: ParseContext = {
+        byId: indexById(current),
+        pageId,
+        claimed: new Set(),
+        lucideImports,
+        catalog,
+        uiImports,
+        projectImportAliases,
+        componentPropSlots,
+        boundIdentifiers: scope.boundIdentifiers,
+        staticConsts: scope.staticConsts,
+      };
+
+      const rawRoot = convertElement(entries[0]!.node, undefined, ctx, entries[0]!.codeVisible);
+      const propBindings = toNullProtoPropBindings(componentPropSlots.bindings);
+      const hasBindings = Object.keys(propBindings).length > 0;
+      const updatedRoot = updateElementSettings(rawRoot, (prev) => {
+        if (!prev) {
+          return hasBindings ? { componentProps: propBindings } : null;
+        }
+        const next: Record<string, unknown> = { ...prev };
+        if (hasBindings) {
+          next.componentProps = propBindings;
+        } else {
+          delete next.componentProps;
+        }
+        return Object.keys(next).length > 0 ? next : null;
+      });
+
+      const extraOmit = new Set<t.Statement>();
+      const propsStmt = findComponentPropsStatement(
+        ast.program,
+        componentName,
+        updatedRoot.name,
+      );
+      if (propsStmt) extraOmit.add(propsStmt);
+
+      const { omitStatements, retainStatements } = collectOmittedStatements(
+        ast.program,
+        page,
+        scope,
+        activeShadcnTags,
+        consumedConsts,
+        normalizedRoot,
+        extraOmit,
+      );
+
+      return {
+        ok: true,
+        elements: keepUnsupported([updatedRoot], current),
+        preamble: extractPreamble(code, ast.program, page, {
+          omitStatements,
+          retainStatements,
+        }),
+        pendingComponentNames: [],
+        extractedComponents: [],
+        pendingInstances: [],
+      };
+    }
+
+    const { root: normalizedPageRoot, consumedConsts } = unrollStaticJsxRoot(
       page.root,
       scope,
       activeShadcnTags,
     );
-    const elements = collectRootElements(normalizedRoot, scope.boundIdentifiers).map((entry) =>
+
+    const localResult = processLocalComponents({
+      program: ast.program,
+      page,
+      normalizedPageRoot,
+      mode,
+      scope,
+      activeShadcnTags,
+      catalog,
+      lucideImports,
+      uiImports,
+      projectImportAliases,
+    });
+
+    const effectiveCatalog = extendCatalogWithEntries(
+      catalog,
+      localResult.extraCatalogEntries,
+    );
+    const pendingInstances: PendingComponentInstance[] = [];
+
+    const ctx: ParseContext = {
+      byId: indexById(current),
+      pageId,
+      claimed: new Set(),
+      lucideImports,
+      catalog: effectiveCatalog,
+      uiImports,
+      projectImportAliases,
+      pendingComponentNames: localResult.pendingCatalogNames,
+      pendingInstances,
+      boundIdentifiers: scope.boundIdentifiers,
+      staticConsts: scope.staticConsts,
+    };
+
+    const elements = collectRootElements(localResult.root, scope.boundIdentifiers).map((entry) =>
       convertElement(entry.node, undefined, ctx, entry.codeVisible),
     );
+
     const { omitStatements, retainStatements } = collectOmittedStatements(
       ast.program,
       page,
       scope,
       activeShadcnTags,
       consumedConsts,
-      normalizedRoot,
+      localResult.root,
+      localResult.omittedHelperStatements,
     );
+
     return {
       ok: true,
       elements: keepUnsupported(elements, current),
       preamble: extractPreamble(code, ast.program, page, { omitStatements, retainStatements }),
+      pendingComponentNames: localResult.pendingComponentNames,
+      extractedComponents: localResult.extractedComponents,
+      pendingInstances,
     };
   } catch (err) {
     if (err instanceof CodeError) return { ok: false, diagnostic: diagnosticAt(err.message, err.loc) };

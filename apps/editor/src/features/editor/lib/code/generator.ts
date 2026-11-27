@@ -9,7 +9,13 @@ import {
   toCode,
   type CodegenInput,
 } from "@/features/interactions/codegen/interactions";
-import { EMPTY_COMPONENT_CATALOG, type ComponentCatalog } from "./catalog";
+import { EMPTY_COMPONENT_CATALOG, synthesizeComponentProps, type ComponentCatalog, type OverrideField } from "./catalog";
+import { componentSetting } from "@webbuilder/site-runtime/projects/components";
+import {
+  bindComponentPropsToJsx,
+  generateComponentInstance,
+  generateComponentMasterModule,
+} from "./codecs/componentCodec";
 import { wrapCodeVisible } from "./codecs/shared";
 import type { GenerateNodeContext } from "./codecs/types";
 import { isEmptyPreamble, type Preamble } from "./customCode";
@@ -70,6 +76,20 @@ class CodeGenerator {
     element: EditorElement,
     ctx: GenerateNodeContext,
   ): t.JSXElement | null {
+    const comp = componentSetting(element);
+    const catalogEntry = comp ? ctx.catalog.byPageId.get(comp.pageId) : undefined;
+    if (catalogEntry) {
+      try {
+        return generateComponentInstance(element, catalogEntry, ctx);
+      } catch (err) {
+        console.error(
+          `Error generating JSX for component instance ${catalogEntry.pascalName}:`,
+          err,
+        );
+        return null;
+      }
+    }
+
     const strategy = Object.hasOwn(generateStrategies, element.type)
       ? generateStrategies[element.type]
       : undefined;
@@ -117,7 +137,7 @@ class CodeGenerator {
   public async generateToJSX(
     elements: EditorElement[],
     logic?: InteractionLogic,
-    { tagIds = false, preamble, catalog }: GenerateToJsxOptions = {},
+    { tagIds = false, preamble, catalog, pageMeta }: GenerateToJsxOptions = {},
   ): Promise<string> {
     const withInteractions = hasInteractionCode(
       this.interactionInput(elements, logic),
@@ -125,15 +145,37 @@ class CodeGenerator {
     const shouldTagIds = withInteractions || tagIds;
     generationOptions.tagElementIds = shouldTagIds;
 
+    const isComponentMaster = pageMeta?.isComponentPage === true;
+    const masterRoot = isComponentMaster && elements.length === 1 ? elements[0] : undefined;
+    const masterProps = masterRoot ? synthesizeComponentProps(masterRoot) : undefined;
+    const propBindingsByNodeId = new Map<string, Map<OverrideField, string>>();
+    if (masterProps) {
+      for (const [propName, binding] of Object.entries(masterProps)) {
+        let byField = propBindingsByNodeId.get(binding.nodeId);
+        if (!byField) {
+          byField = new Map<OverrideField, string>();
+          propBindingsByNodeId.set(binding.nodeId, byField);
+        }
+        byField.set(binding.field, propName);
+      }
+    }
+
     const usedLucideIcons = new Set<string>();
     const usedProjectComponents = new Set<string>();
+    const generateElement = (el: EditorElement): t.JSXElement | null => {
+      const raw = this.elementToJSX(el, ctx);
+      if (!raw) return null;
+      const bindings = propBindingsByNodeId.get(el.id);
+      return bindings ? bindComponentPropsToJsx(raw, el, bindings) : raw;
+    };
+
     const ctx: GenerateNodeContext = {
       catalog: catalog ?? EMPTY_COMPONENT_CATALOG,
       tagElementIds: shouldTagIds,
       usedLucideIcons,
       usedProjectComponents,
       generateChild: (child) => {
-        const jsx = this.elementToJSX(child, ctx);
+        const jsx = generateElement(child);
         return jsx ? wrapCodeVisible(jsx, child) : null;
       },
     };
@@ -142,8 +184,9 @@ class CodeGenerator {
     try {
       nodes = elements
         .map((el) => {
-          const jsx = this.elementToJSX(el, ctx);
-          return jsx ? wrapCodeVisible(jsx, el) : null;
+          const jsx = generateElement(el);
+          if (!jsx) return null;
+          return masterRoot && el === masterRoot ? jsx : wrapCodeVisible(jsx, el);
         })
         .filter((el): el is t.JSXElement | t.JSXExpressionContainer => el !== null);
     } finally {
@@ -181,8 +224,20 @@ class CodeGenerator {
         .filter(Boolean)
         .join("\n\n");
 
-      // Prettier lays the JSX out; babel's generator prints it on one line.
-      result = await formatSource(`/**
+      if (isComponentMaster) {
+        const masterSource = generateComponentMasterModule({
+          componentName: pageMeta?.componentName,
+          root: masterRoot,
+          innerJsx: inner,
+          props: masterProps ?? {},
+          imports,
+          top: custom?.top.trim() ?? "",
+          body: bodyStatements,
+        });
+        result = await formatSource(masterSource);
+      } else {
+        // Prettier lays the JSX out; babel's generator prints it on one line.
+        result = await formatSource(`/**
  * Generated component
  * Note: TypeScript errors in Monaco editor are expected - the editor
  * doesn't have full project context.
@@ -199,6 +254,7 @@ const ${options.componentName} = () => {${bodyStatements ? `\n${bodyStatements}\
 
 export default ${options.componentName};
 `);
+      }
     }
 
     return result;
