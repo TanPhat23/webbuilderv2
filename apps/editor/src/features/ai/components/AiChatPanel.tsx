@@ -54,7 +54,7 @@ function createId(prefix: string): string {
 export default function AiChatPanel({
   onClose,
 }: AiChatPanelProps = {}): ReactElement {
-  const { closeChat } = useAiChat();
+  const { closeChat, pendingRequest, consumePendingRequest } = useAiChat();
   const { selectedElement, setSelectedElement } = useSelectedElementWithSetter();
   const elements = useElements();
   const { editor, mode } = useEditorContext();
@@ -67,6 +67,18 @@ export default function AiChatPanel({
   const [attachments, setAttachments] = useState<readonly AiAttachment[]>([]);
   const [preferredScope, setPreferredScope] = useState<AiPromptScope | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [composerFocusToken, setComposerFocusToken] = useState(0);
+
+  // A prompt queued by askAi (e.g. the canvas context menu) fills the composer
+  // once. It is never sent: the user reviews and presses Send.
+  useEffect(() => {
+    if (!pendingRequest) return;
+    setActiveTab("chat");
+    setDraft(pendingRequest.prompt);
+    setPreferredScope(pendingRequest.scope);
+    setComposerFocusToken((token) => token + 1);
+    consumePendingRequest(pendingRequest.nonce);
+  }, [pendingRequest, consumePendingRequest]);
 
   const previewUrlsRef = useRef<Set<string>>(new Set());
 
@@ -501,6 +513,7 @@ export default function AiChatPanel({
             }}
             isSending={isSending}
             onSend={handleSend}
+            focusToken={composerFocusToken}
           />
         </TabsContent>
 

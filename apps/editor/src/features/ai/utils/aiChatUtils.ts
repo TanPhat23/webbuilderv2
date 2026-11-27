@@ -192,6 +192,24 @@ export function validateAttachmentFile(
   return { ok: true };
 }
 
+/** The slice of an editor element the AI chat prompts and scopes on. */
+export function toAiElementContext(element: {
+  readonly id: string;
+  readonly type: string;
+  readonly name?: string;
+  readonly content?: unknown;
+  readonly tailwindStyles?: unknown;
+}): AiElementContext {
+  return {
+    id: element.id,
+    type: element.type,
+    name: element.name,
+    content: typeof element.content === "string" ? element.content : undefined,
+    tailwindStyles:
+      typeof element.tailwindStyles === "string" ? element.tailwindStyles : undefined,
+  };
+}
+
 export function buildElementContextSummary(element: AiElementContext): string {
   const parts: string[] = [
     `Element ID: ${element.id}`,
