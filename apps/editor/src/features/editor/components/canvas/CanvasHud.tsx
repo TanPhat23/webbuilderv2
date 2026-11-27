@@ -122,6 +122,7 @@ function FloatingChromeLayer({
 function SelectionOutline({ rect }: { readonly rect: ElementRect }): React.ReactElement {
   return (
     <div
+      data-selection-outline
       className="pointer-events-none rounded-[2px] border-[1.5px] border-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.08)]"
       style={boxStyle(rect)}
     />
