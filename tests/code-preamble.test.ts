@@ -34,7 +34,14 @@ afterEach(() => {
 
 test('settings that must never become tag attributes are listed', () => {
   assert.deepEqual(HIDDEN_SETTINGS, [
-    'interactions', 'migratedWorkflowLinks', 'customSubmit', 'codeProps', 'component',
+    'interactions',
+    'migratedWorkflowLinks',
+    'customSubmit',
+    'codeProps',
+    'codeText',
+    'codeVisible',
+    'component',
+    'componentProps',
   ]);
 });
 
