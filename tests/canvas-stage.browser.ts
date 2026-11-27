@@ -2,22 +2,8 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, type ViteDevServer } from 'vite';
 import { chromium, type Browser, type Page } from '@playwright/test';
-import { resolve } from 'node:path';
-import tailwindcss from '@tailwindcss/vite';
-
-const fixture = (name: string): string => resolve('tests/fixtures', name);
-const stubs: ReadonlyArray<readonly [RegExp, string]> = [
-  [/^@tanstack\/react-start$/, resolve('tests/support/test-start-stub.ts')],
-  [/^@clerk\/tanstack-react-start$/, resolve('tests/support/test-clerk-stub.ts')],
-  [/^@clerk\/tanstack-react-start\/server$/, resolve('tests/support/test-clerk-server-stub.ts')],
-  [/^@\/features\/auth\/lib\/gettoken$/, fixture('interactions-pick-auth-stub.ts')],
-  [/^@\/features\/editor\/lib\/dropElement$/, fixture('interactions-pick-drop-stub.ts')],
-  [/^@\/features\/editor\/utils\/element\/create\/ElementFactory$/, fixture('interactions-pick-factory-stub.ts')],
-  [/^@\/features\/editor\/hooks\/useEditorPermissions$/, fixture('canvas-stage-permissions-stub.ts')],
-  [/^@\/features\/projects\/api\/project\.api$/, fixture('canvas-stage-api-stub.ts')],
-  [/^@\/features\/elements\/services\/element\.service$/, fixture('canvas-stage-api-stub.ts')],
-  [/^@\/features\/collaboration$/, fixture('canvas-stage-collaboration-stub.ts')],
-];
+import { createHarnessConfig } from './harness/harness.config';
+import './harness/api';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -25,15 +11,7 @@ let baseUrl: string;
 const errors: string[] = [];
 
 before(async () => {
-  server = await createServer({
-    configFile: false,
-    optimizeDeps: { entries: ['tests/fixtures/canvas-stage.html'] },
-    define: { 'process.env': '{}' },
-    plugins: [tailwindcss()],
-    esbuild: { jsx: 'automatic' },
-    resolve: { alias: [...stubs.map(([find, replacement]) => ({ find, replacement })), { find: '@', replacement: resolve('apps/editor/src') }] },
-    server: { port: 0 },
-  });
+  server = await createServer(createHarnessConfig({ port: 0 }));
   await server.listen();
   baseUrl = server.resolvedUrls!.local[0]!;
   browser = await chromium.launch({ headless: true });
@@ -44,39 +22,31 @@ after(async () => {
   await server?.close();
 });
 
-interface OpenOptions { readonly width?: number; readonly height?: number }
+interface OpenOptions { readonly width?: number; readonly height?: number; readonly scenario?: 'canvas' | 'context-menu' }
 
 async function openStage(options: OpenOptions = {}): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   page.on('pageerror', (error) => { errors.push(String(error)); console.error('PAGE ERROR', error); });
   page.on('console', (msg) => { if (msg.type() === 'error') console.error('CONSOLE ERROR', msg.text()); });
   page.setDefaultTimeout(8000);
-  const query = new URLSearchParams({ w: String(options.width ?? 800), h: String(options.height ?? 700) });
-  await page.goto(`${baseUrl}tests/fixtures/canvas-stage.html?${query}`);
+  const query = new URLSearchParams({ scenario: options.scenario ?? 'canvas', w: String(options.width ?? 800), h: String(options.height ?? 700) });
+  await page.goto(`${baseUrl}?${query}`);
   await page.locator('#preview-iframe').waitFor();
   await page.frameLocator('#preview-iframe').locator('[data-element-id="text-1"]').waitFor();
   return page;
 }
 
-
-
-interface CanvasHandles {
-  readonly viewport: { getState(): { setPreset(p: string): void; frameWidthPx: number; preset: string; zoomMode: string } };
-  readonly selection: { getState(): { selectedElementId?: string; editingElementId?: string } };
-  readonly elementStore: { getState(): { elements: ReadonlyArray<{ id: string; elements?: unknown[]; content?: string }> } };
-}
-
 const setPreset = (page: Page, preset: 'mobile' | 'tablet' | 'desktop'): Promise<void> =>
-  page.evaluate((p) => (window as unknown as { __canvas: CanvasHandles }).__canvas.viewport.getState().setPreset(p), preset);
+  page.evaluate((p) => window.__harness!.stores.viewport.getState().setPreset(p), preset);
 const viewportState = (page: Page) =>
   page.evaluate(() => {
-    const { frameWidthPx, preset, zoomMode } = (window as unknown as { __canvas: CanvasHandles }).__canvas.viewport.getState();
+    const { frameWidthPx, preset, zoomMode } = window.__harness!.stores.viewport.getState();
     return { frameWidthPx, preset, zoomMode };
   });
 const selectedId = (page: Page): Promise<string | undefined> =>
-  page.evaluate(() => (window as unknown as { __canvas: CanvasHandles }).__canvas.selection.getState().selectedElementId);
+  page.evaluate(() => window.__harness!.stores.selection.getState().selectedElementId);
 const editingId = (page: Page): Promise<string | undefined> =>
-  page.evaluate(() => (window as unknown as { __canvas: CanvasHandles }).__canvas.selection.getState().editingElementId);
+  page.evaluate(() => window.__harness!.stores.selection.getState().editingElementId);
 const textColor = (page: Page, id: string): Promise<string> =>
   text(page, id).evaluate((el) => getComputedStyle(el).color);
 const text = (page: Page, id: string) => page.frameLocator('#preview-iframe').locator(`[data-element-id="${id}"]`);
@@ -172,7 +142,7 @@ test('4. click selects, double click edits, Escape leaves editing, Backspace nev
   assert.equal(await text(page, 'text-1').count(), 1, 'element is still rendered');
   const stillStored = await page.evaluate(() => {
     const ids: string[] = [];
-    const queue = [...(window as unknown as { __canvas: CanvasHandles }).__canvas.elementStore.getState().elements] as Array<{ id: string; elements?: unknown[] }>;
+    const queue = [...window.__harness!.getElements()] as Array<{ id: string; elements?: unknown[] }>;
     for (let node = queue.shift(); node; node = queue.shift()) {
       ids.push(node.id);
       queue.push(...((node.elements ?? []) as typeof queue));
@@ -230,7 +200,7 @@ test('6. dragging a width scrub handle changes the frame width', async (t) => {
 });
 
 test('7. right-clicking a Text shows the machine-readable menu and Shift+F10 reopens it at the element', async (t) => {
-  const page = await openStage();
+  const page = await openStage({ scenario: 'context-menu' });
   const menu = page.locator('[role="menu"]');
   const target = text(page, 'text-1');
 

@@ -33,6 +33,7 @@
     "test:style-controls": "node --import tsx --test tests/style-controls.browser.ts",
     "test:unit": "node --import tsx --test --test-concurrency=2 tests/*.test.ts",
     "test:integration": "bash scripts/it-realtime.sh",
+    "harness": "node --import tsx tests/harness/serve.ts",
     "interactions:schema": "node --import tsx scripts/interactions-schema.ts"
   },
   "devDependencies": {
